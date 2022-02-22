@@ -137,7 +137,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mc_student:report" then
 		if fields.back then
 			show_student_menu(player)
-		elseif fields.report ~= " " then
+		-- Checking for nil (caused by player pressing escape instead of Back) ensures the game does not crash
+		elseif fields.report ~= " " and fields.report ~= nil then
 			local pname = player:get_player_name()
 			
 			-- Count the number of words, by counting for replaced spaces
@@ -168,6 +169,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			-- Archive the report in mod storage
 			local key = pname.." "..tostring(os.date("%d-%m-%Y %H:%M:%S"))
 			minetest_classroom.reports:set_string(key, minetest.write_json(fields.report))
+		elseif fields.report == nil then
+			return true
 		else
 			minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF0000","Error: Please add a message to your report."))
 		end
