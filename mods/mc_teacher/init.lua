@@ -1,4 +1,5 @@
 minetest_classroom = {}
+minetest_classroom.classrooms = minetest.get_mod_storage()
 
 -- Required MT version
 assert(minetest.features.formspec_version_element, "Minetest 5.1 or later is required")

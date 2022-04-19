@@ -1,5 +1,6 @@
 local S = minetest_classroom.S
 local FS = minetest_classroom.FS
+context = {}
 local infos = {
 	{
 		title = S"Mute?",
@@ -48,12 +49,12 @@ local mc_teacher_menu =
 		"formspec_version[5]"..
 		"size[7,12]"..
 		"label[1.7,0.7;What do you want to do?]"..
-		"button_exit[2,10.2;3,1.3;exit;Exit]"..
 		"button[2,1.6;3,1.3;tasks;Manage Tasks]"..
 		"button[2,3.3;3,1.3;lessons;Manage Lessons]"..
 		"button[2,5;3,1.3;players;Manage Players]"..
-		"button[2,6.7;3,1.3;maps;Manage Maps]"..
-		"button[2,8.4;3,1.3;mail;Teacher Mail]"
+		"button[2,6.7;3,1.3;classrooms;Manage Classrooms]"..
+		"button[2,8.4;3,1.3;mail;Teacher Mail]"..
+		"button_exit[2,10.2;3,1.3;exit;Exit]"
 
 local function show_teacher_menu(player)
 	if check_perm(player) then
@@ -64,7 +65,7 @@ local function show_teacher_menu(player)
 	
 end
 
--- Define the Manage Tasks formspec
+-- Define the Manage Tasks formspec (teacher-view)
 local mc_teacher_tasks = 
 		"formspec_version[5]"..
         "size[10,13]"..
@@ -468,15 +469,72 @@ local function show_lessons(player)
 	end
 end
 
--- Define the Manage Maps formspec
-local mc_teacher_maps = 
-		"formspec_version[5]"..
-		""
-
-local function show_maps(player)
+-- Define the Manage Classrooms formspec
+local function show_classrooms(player)
 	if check_perm(player) then
+		mc_teacher_classrooms = 
+			"formspec_version[5]"..
+			"size[14,14]"..
+			"label[0.4,0.8;Your Classrooms]"..
+			"button[0.375,6.5;4,0.8;join;Join Selected Classroom]"..
+			"button[0.375,7.5;4,0.8;delete;Delete Selected Classroom]"
+			
+		-- Get the stored classrooms for the teacher	
+		pmeta = player:get_meta()
+		
+		-- reset
+		-- pmeta:set_string("classrooms",nil)
+		-- minetest_classroom.classrooms:set_string("classrooms",nil)
+		
+		pdata = minetest.deserialize(pmeta:get_string("classrooms"))
+		
+		if pdata == nil then
+			-- No classrooms stored, so return an empty list element
+			mc_teacher_classrooms = 
+			mc_teacher_classrooms.. 
+			"textlist[0.4,1.1;13.2,5.2;classroomlist;No Courses Found;1;false]"
+		else
+			mc_teacher_classrooms = mc_teacher_classrooms .. "textlist[0.4,1.1;13.2,5.2;classroomlist;"
+			-- Some classrooms were found, so iterate the list
+			pcc = pdata.course_code
+			psn = pdata.section_number
+			psy = pdata.start_year
+			psm = pdata.start_month
+			psd = pdata.start_day
+			pey = pdata.end_year
+			pem = pdata.end_month
+			ped = pdata.end_day
+			pac = pdata.access_code
+			map = pdata.classroom_map
+			for i in pairs(pcc) do
+				mc_teacher_classrooms = mc_teacher_classrooms..pcc[i].." "..psn[i].." "..map[i].." Expires "..pem[i].." "..ped[i].." "..pey[i].." Access Code = "..pac[i]..","
+			end
+			mc_teacher_classrooms = mc_teacher_classrooms .. ";1;false]"
+		end
+		mc_teacher_classrooms = mc_teacher_classrooms ..
+			"field[7.1,7;2.1,0.8;coursecode;Course Code;CONS340]"..
+			"field[9.4,7;1.2,0.8;sectionnumber;Section Number;101]"..
+			"label[7.1,8.35;Course START Date and Time]"..
+			"dropdown[8.1,8.6;2.3,0.8;startmonth;January,February,March,April,May,June,July,August,September,October,November,December;9;false]"..
+			"dropdown[7.1,8.6;0.9,0.8;startday;1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31;1;false]"..
+			"dropdown[10.5,8.6;1.4,0.8;startyear;2022,2023;1;false]"..
+			"dropdown[12.1,8.6;1.5,0.8;starthour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;9;false]"..
+			"label[7.1,10;Course END Date and Time]"..
+			"dropdown[8.1,10.25;2.3,0.8;endmonth;January,February,March,April,May,June,July,August,September,October,November,December;12;false]"..
+			"dropdown[7.1,10.25;0.9,0.8;endday;1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31;1;false]"..
+			"dropdown[10.5,10.25;1.4,0.8;endyear;2022,2023;1;false]"..
+			"dropdown[12.1,10.25;1.5,0.8;endhour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;21;false]"..
+			"dropdown[12.1,10.25;1.5,0.8;endhour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;21;false]"..
+			"label[7.1,11.75;Map Selection]"..
+			
+			-- TODO: Dynamically populate the map list
+			"dropdown[7.1,12;6.5,0.8;map;vancouver_osm,MKRF512_all,MKRF512_slope,MKRF512_aspect,MKRF512_dtm;1;false]"..
+			"button[9.625,13;4,0.8;submit;Create New Classroom]"..
+			"button[0.375,13;2,0.8;back;Back]"..
+			"button[2.575,13;2,0.8;deleteall;Delete All]"
+			
 		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_teacher:maps", mc_teacher_maps)
+		minetest.show_formspec(pname, "mc_teacher:classrooms", mc_teacher_classrooms)
 		return true
 	end
 end
@@ -497,7 +555,6 @@ local function get_reports_formspec(reports)
 			";1;false]"..
 			"button[0.3,9.1;2,0.8;back;Back]"..
 			"button[2.5,9.1;2.5,0.8;deleteall;Delete All]"
-	
 	return mc_teacher_mail
 end
 
@@ -520,14 +577,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	local wait = os.clock()
 	while os.clock() - wait < 0.05 do end --popups don't work without this
 	
+	local pname = player:get_player_name()
+	
 	-- Menu
 	if formname == "mc_teacher:menu" then 
 		if fields.tasks then
 			show_tasks(player)
 		elseif fields.lessons then
 			show_lessons(player)
-		elseif fields.maps then
-			show_maps(player)
+		elseif fields.classrooms then
+			show_classrooms(player)
 		elseif fields.players then
 			show_players(player)
 		elseif fields.mail then
@@ -552,8 +611,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		if fields.back then
 			show_teacher_menu(player)
 		elseif fields.task and fields.instructions then
-			-- Build the formspec
-			task =
+			-- Build the formspec - this must be a global variable to be accessed by mc_student
+			minetest_classroom.currenttask =
 					"formspec_version[5]"..
 					"size[10,12]"..
 					"style_type[label;font_size=*1.5]"..
@@ -561,11 +620,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					"style[textarea;textcolor=black]"..
 					"textarea[0.375,1.5;9.25,8;instructs;;"..fields.instructions.."]"..
 					"style_type[label;font_size=*1]"..
-					"label[0.375,9.75;Type /task in chat to see these instructions again.]"..
-					"button_exit[3.5,10.5;3,0.8;ok;OK]"
+					"label[0.375,9.75;You can view these task instructions again from your notebook.]"..
+					"button_exit[0.375,10.5;2,0.8;ok;OK]"
 			-- Send the task to everyone
 			for _, player in pairs(minetest.get_connected_players()) do
-				minetest.show_formspec(player:get_player_name(), "task:instructions", task)
+				minetest.show_formspec(player:get_player_name(), "task:instructions", minetest_classroom.currenttask)
 			end
 			-- Kill any existing task timer
 			task_timer.finish()
@@ -580,8 +639,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mc_teacher:mail" then
 		if fields.deleteall then
 			local reports_table = minetest_classroom.reports:to_table()["fields"]
-			for k, v in pairs(reports_table) do
-				minetest_classroom.reports:set_string(k, "")
+			for k, _ in pairs(reports_table) do
+				minetest_classroom.reports:set_string(k, nil)
 			end
 			show_mail(player)
 		end
@@ -590,7 +649,245 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			show_teacher_menu(player)
 		end
 	end
+	
+	if formname == "mc_teacher:classrooms" then
+		if fields.submit then
+			-- validate everything and prepare for storage
+			if string.len(fields.coursecode) ~= 7 then
+				minetest.chat_send_player(pname,pname..": Course code is not valid. Expected format ABCD123. Please try again.")
+				return
+			end
+			
+			if string.len(fields.sectionnumber) ~= 3 then
+				minetest.chat_send_player(pname,pname..": Section number is not valid. Expected format 123. Please try again.")
+				return
+			end
+			
+			-- validate that the end date is after the start date
+			if tonumber(fields.endyear) == tonumber(fields.startyear) and (months[fields.endmonth] == months[fields.startmonth]) and tonumber(fields.endday) >= tonumber(fields.startday) and tonumber(string.sub(fields.endhour, 1, 2)) >= tonumber(string.sub(fields.starthour, 1, 2)) then
+				minetest.chat_send_player(pname,pname..": Start and end dates and times must be different. Please check and try again.")
+				return
+			end
+			
+			if tonumber(fields.endyear) >= tonumber(fields.startyear) then
+				if (months[fields.endmonth] >= months[fields.startmonth]) or (tonumber(fields.endyear) > tonumber(fields.startyear)) then
+					if tonumber(fields.endday) >= tonumber(fields.startday) then
+						if tonumber(string.sub(fields.endhour, 1, 2)) >= tonumber(string.sub(fields.starthour, 1, 2)) then
+							-- Everything checks out so proceed to encode the data to modstorage
+							record_classroom(player,fields.coursecode,fields.sectionnumber,fields.startyear,fields.startmonth,fields.startday,fields.endyear,fields.endmonth,fields.endday,fields.map)
+						else
+							minetest.chat_send_player(pname,pname..": Start hour must come before the end hour, day, month, and year. Please check and try again.")
+						end
+					else
+						minetest.chat_send_player(pname,pname..": Start day must come before the end day, month, and year. Please try again.")
+					end
+				else
+					minetest.chat_send_player(pname,pname..": Start month must come before the end month and year. Please check and try again.")
+				end
+			else 
+				minetest.chat_send_player(pname,pname..": Start year must come before the end year. Please check and try again.")
+			end
+			
+		elseif fields.classroomlist then
+			local event = minetest.explode_textlist_event(fields.classroomlist)
+			if event.type == "CHG" then -- "CHG" = something is selected in the list
+				context.selected = event.index
+			end
+		elseif fields.join then
+			pmeta = player:get_meta()
+			pdata = minetest.deserialize(pmeta:get_string("classrooms"))
+			if context.selected then
+				mdata = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
+				if mdata.spawn_pos[context.selected] then
+					player:set_pos(mdata.spawn_pos[context.selected])
+				else
+					minetest.chat_send_player(pname,pname..": Error receiving the spawn coordinates. Try regenerating the classroom.")
+				end
+			else
+				minetest.chat_send_player(pname,pname..": Please click on a classroom in the list to join.")
+			end
+		elseif fields.back then
+			show_teacher_menu(player)
+		elseif fields.delete then
+		-- TO DO: currently, this function only deletes the symbolic link to the classroom in the palyer/mod metadata. need to also remove the physical world.
+			-- Update player metadata
+			if context.selected then
+				pmeta = player:get_meta()
+				pdata = minetest.deserialize(pmeta:get_string("classrooms"))
+				-- Update modstorage first
+				mdata = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
+				loc = check_access_code(pdata.access_code[context.selected],mdata.access_code)
+				mdata.course_code[loc] = nil
+				mdata.section_number[loc] = nil
+				mdata.start_year[loc] = nil
+				mdata.start_month[loc] = nil
+				mdata.start_day[loc] = nil
+				mdata.end_year[loc] = nil
+				mdata.end_month[loc] = nil
+				mdata.end_day[loc] = nil
+				mdata.classroom_map[loc] = nil
+				mdata.access_code[loc] = nil
+				mdata.spawn_pos[loc] = nil
+				minetest_classroom.classrooms:set_string("classrooms",minetest.serialize(mdata
+				))
+				
+				-- Update player metadata
+				pdata.course_code[context.selected] = nil
+				pdata.section_number[context.selected] = nil
+				pdata.start_year[context.selected] = nil
+				pdata.start_month[context.selected] = nil
+				pdata.start_day[context.selected] = nil
+				pdata.end_year[context.selected] = nil
+				pdata.end_month[context.selected] = nil
+				pdata.end_day[context.selected] = nil
+				pdata.classroom_map[context.selected] = nil
+				pdata.access_code[context.selected] = nil
+				pdata.spawn_pos[context.selected] = nil
+				pmeta:set_string("classrooms",minetest.serialize(pdata
+				))
+				show_classrooms(player)
+			else
+				minetest.chat_send_player(pname,pname..": Please click on a classroom in the list to delete.")
+			end
+		-- TODO: eventually delete this button, only useful for testing
+		elseif fields.deleteall then
+			pmeta:set_string("classrooms", nil)
+			minetest_classroom.classrooms:set_string("classrooms", nil)
+			show_classrooms(player)
+		else -- escape without input
+			return
+		end
+	end
 end)
+
+function record_classroom(player,cc,sn,sy,sm,sd,ey,em,ed,map)
+	if check_perm(player) then
+		local pname = player:get_player_name()
+		pmeta = player:get_meta()
+		
+		-- Focus on modstorage because it is persistent and not dependent on player being online
+		temp = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
+
+		-- Generate an access code
+		math.randomseed(os.time())
+		access_num = tostring(math.floor(math.random()*100000))
+
+		-- Get the last classroom map position
+		last_map_pos = minetest.deserialize(minetest_classroom.classrooms:get_string("last_map_pos"))
+		if last_map_pos == nil then
+			-- this value has not yet been initialized, so use {x=0, z=0, y=0} as a placeholder for the corner of the UBC campus landing map
+			last_map_pos = {x=0, y=0, z=0,}
+			new_map_pos = last_map_pos
+			-- Send to modstorage
+			minetest_classroom.classrooms:set_string("last_map_pos",minetest.serialize(new_map_pos))
+		else
+			-- Update the last map pos by adding 1024 to the x coordinate
+			new_map_pos = last_map_pos
+			new_map_pos.x = last_map_pos.x + 1024
+			
+			-- Update last map pos in modstorage
+			minetest_classroom.classrooms:set_string("last_map_pos",minetest.serialize(new_map_pos))
+		end
+		
+		-- Place the map
+		place_map(player,map,new_map_pos)
+		
+		-- Retrieve spawn position from map metadata
+		local mmeta = Settings(minetest.get_modpath("mc_classrooms").."/maps/"..map..".conf")
+		local spawn_pos_x = tonumber(mmeta:get("spawn_pos_x"))
+		local spawn_pos_y = tonumber(mmeta:get("spawn_pos_y"))
+		local spawn_pos_z = tonumber(mmeta:get("spawn_pos_z"))
+		local spawn_pos = {
+			x = spawn_pos_x,
+			y = spawn_pos_y,
+			z = spawn_pos_z,
+		}
+		
+		if temp == nil then
+			-- Build the new classroom table entry
+			classroomdata = {
+				course_code = { cc },
+				section_number = { sn },
+				start_year = { sy },
+				start_month = { sm },
+				start_day = { sd },
+				end_year = { ey },
+				end_month = { em },
+				end_day = { ed },
+				classroom_map = { map },
+				access_code = { access_num },
+				spawn_pos = { spawn_pos },
+			}
+		else
+			-- Need to recalculate local spawn position based on the last_map_pos
+			spawn_pos.x = spawn_pos.x + last_map_pos.x 
+			
+			table.insert(temp.course_code, cc)
+			table.insert(temp.section_number, sn)
+			table.insert(temp.start_year, sy)
+			table.insert(temp.start_month, sm)
+			table.insert(temp.start_day, sd)
+			table.insert(temp.end_year, ey)
+			table.insert(temp.end_month, em)
+			table.insert(temp.end_day, ed)
+			table.insert(temp.classroom_map, map)
+			table.insert(temp.access_code, access_num)
+			table.insert(temp.spawn_pos, spawn_pos)
+			classroomdata = {
+				course_code = temp.course_code,
+				section_number = temp.section_number,
+				start_year = temp.start_year,
+				start_month = temp.start_month,
+				start_day = temp.start_day,
+				end_year = temp.end_year,
+				end_month = temp.end_month,
+				end_day = temp.end_day,
+				classroom_map = temp.classroom_map,
+				access_code = temp.access_code,
+				spawn_pos = temp.spawn_pos,
+			}
+		end
+		
+		-- Send to modstorage
+		minetest_classroom.classrooms:set_string("classrooms",minetest.serialize(classroomdata))
+		
+		-- Send to teacher player's metadata
+		pmeta:set_string("classrooms",minetest.serialize(classroomdata))
+		minetest.chat_send_player(pname,pname..": Your course was successfully recorded.")
+		
+		-- Send player to spawn pos of classroom map
+		player:set_pos(spawn_pos)
+		
+		-- Update the formspec
+		show_classrooms(player)
+		temp = nil
+	end
+end
+
+-- Month look-up table for classroom scheduling
+months = {
+	January = 1,
+	February = 2,
+	March = 3,
+	April = 4,
+	May = 5,
+	June = 6,
+	July = 7,
+	August = 8,
+	September = 9,
+	October = 10,
+	November = 11,
+	December = 12,
+}
+
+function place_map(player,map_name,pos)
+	local pname = player:get_player_name()
+	if check_perm(player) then
+		minetest.place_schematic(pos, minetest.get_modpath("mc_classrooms").."/maps/"..map_name..".mts", 0, nil, true)
+	else
+		minetest.chat_send_player(pname,pname..": You do not have the teacher privilege to create a new map. Check with the server administrator.")
+	end
+end
 
 -- The controller for accessing the teacher actions
 minetest.register_tool("mc_teacher:controller" , {
