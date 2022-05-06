@@ -793,7 +793,7 @@ function record_classroom(player,cc,sn,sy,sm,sd,ey,em,ed,map)
 		place_map(player,map,new_map_pos)
 		
 		-- Retrieve spawn position from map metadata
-		local mmeta = Settings(minetest.get_modpath("mc_classrooms").."/maps/"..map..".conf")
+		local mmeta = Settings(minetest.get_modpath("mc_teacher").."/maps/"..map..".conf")
 		local spawn_pos_x = tonumber(mmeta:get("spawn_pos_x"))
 		local spawn_pos_y = tonumber(mmeta:get("spawn_pos_y"))
 		local spawn_pos_z = tonumber(mmeta:get("spawn_pos_z"))
@@ -883,7 +883,7 @@ months = {
 function place_map(player,map_name,pos)
 	local pname = player:get_player_name()
 	if check_perm(player) then
-		minetest.place_schematic(pos, minetest.get_modpath("mc_classrooms").."/maps/"..map_name..".mts", 0, nil, true)
+		minetest.place_schematic(pos, minetest.get_modpath("mc_teacher").."/maps/"..map_name..".mts", 0, nil, true)
 	else
 		minetest.chat_send_player(pname,pname..": You do not have the teacher privilege to create a new map. Check with the server administrator.")
 	end
