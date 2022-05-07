@@ -583,7 +583,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	-- Menu
 	if formname == "mc_teacher:menu" then 
 		if fields.spawn then
-			local pname = player:get_player_name()
 			-- TODO: dynamically extract the static spawn point from the minetest.conf file
 			-- local cmeta = Settings(minetest.get_modpath("mc_teacher").."/maps/"..map..".conf")
 			-- local spawn_pos_x = tonumber(cmeta:get("spawn_pos_x"))
@@ -594,7 +593,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				y = 92,
 				z = 1083,
 			}
-			pname:set_pos(spawn_pos)
+			player:set_pos(spawn_pos)
 		elseif fields.tasks then
 			show_tasks(player)
 		elseif fields.lessons then
