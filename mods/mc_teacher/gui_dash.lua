@@ -794,9 +794,9 @@ function record_classroom(player,cc,sn,sy,sm,sd,ey,em,ed,map)
 		
 		-- Retrieve spawn position from map metadata
 		local mmeta = Settings(minetest.get_modpath("mc_teacher").."/maps/"..map..".conf")
-		local spawn_pos_x = tonumber(mmeta:get("spawn_pos_x"))
+		local spawn_pos_x = tonumber(mmeta:get("spawn_pos_x"))+new_map_pos.x
 		local spawn_pos_y = tonumber(mmeta:get("spawn_pos_y"))
-		local spawn_pos_z = tonumber(mmeta:get("spawn_pos_z"))
+		local spawn_pos_z = tonumber(mmeta:get("spawn_pos_z"))+new_map_pos.z
 		local spawn_pos = {
 			x = spawn_pos_x,
 			y = spawn_pos_y,
