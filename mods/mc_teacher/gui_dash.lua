@@ -47,14 +47,15 @@ end)
 -- Define an initial formspec that will redirect to different formspecs depending on what the teacher wants to do
 local mc_teacher_menu =
 		"formspec_version[5]"..
-		"size[7,12]"..
+		"size[7,14]"..
 		"label[1.7,0.7;What do you want to do?]"..
-		"button[2,1.6;3,1.3;tasks;Manage Tasks]"..
-		"button[2,3.3;3,1.3;lessons;Manage Lessons]"..
-		"button[2,5;3,1.3;players;Manage Players]"..
-		"button[2,6.7;3,1.3;classrooms;Manage Classrooms]"..
-		"button[2,8.4;3,1.3;mail;Teacher Mail]"..
-		"button_exit[2,10.2;3,1.3;exit;Exit]"
+		"button[2,1.6;3,1.3;spawn;Go to UBC]"..
+		"button[2,3.3;3,1.3;tasks;Manage Tasks]"..
+		"button[2,5;3,1.3;lessons;Manage Lessons]"..
+		"button[2,6.7;3,1.3;players;Manage Players]"..
+		"button[2,8.4;3,1.3;classrooms;Manage Classrooms]"..
+		"button[2,10.1;3,1.3;mail;Teacher Mail]"..
+		"button_exit[2,11.8;3,1.3;exit;Exit]"
 
 local function show_teacher_menu(player)
 	if check_perm(player) then
@@ -581,7 +582,20 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	
 	-- Menu
 	if formname == "mc_teacher:menu" then 
-		if fields.tasks then
+		if fields.spawn then
+			local pname = player:get_player_name()
+			-- TODO: dynamically extract the static spawn point from the minetest.conf file
+			-- local cmeta = Settings(minetest.get_modpath("mc_teacher").."/maps/"..map..".conf")
+			-- local spawn_pos_x = tonumber(cmeta:get("spawn_pos_x"))
+			-- local spawn_pos_y = tonumber(cmeta:get("spawn_pos_y"))
+			-- local spawn_pos_z = tonumber(cmeta:get("spawn_pos_z"))
+			local spawn_pos = { 
+				x = 1426,
+				y = 92,
+				z = 1083,
+			}
+			pname:set_pos(spawn_pos)
+		elseif fields.tasks then
 			show_tasks(player)
 		elseif fields.lessons then
 			show_lessons(player)
