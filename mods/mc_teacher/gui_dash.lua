@@ -775,8 +775,8 @@ function record_classroom(player,cc,sn,sy,sm,sd,ey,em,ed,map)
 		-- Get the last classroom map position
 		last_map_pos = minetest.deserialize(minetest_classroom.classrooms:get_string("last_map_pos"))
 		if last_map_pos == nil then
-			-- this value has not yet been initialized, so use {x=0, z=0, y=0} as a placeholder for the corner of the UBC campus landing map
-			last_map_pos = {x=0, y=0, z=0,}
+			-- this value has not yet been initialized, so use {x=2000, z=0, y=3500} as a placeholder for the corner of the UBC campus landing map
+			last_map_pos = {x=2000, y=0, z=3500,}
 			new_map_pos = last_map_pos
 			-- Send to modstorage
 			minetest_classroom.classrooms:set_string("last_map_pos",minetest.serialize(new_map_pos))
@@ -883,7 +883,7 @@ months = {
 function place_map(player,map_name,pos)
 	local pname = player:get_player_name()
 	if check_perm(player) then
-		minetest.place_schematic(pos, minetest.get_modpath("mc_teacher").."/maps/"..map_name..".mts", 0, nil, true)
+		minetest.place_schematic(pos, minetest.get_modpath("mc_classrooms").."/maps/"..map_name..".mts", 0, nil, true)
 	else
 		minetest.chat_send_player(pname,pname..": You do not have the teacher privilege to create a new map. Check with the server administrator.")
 	end
