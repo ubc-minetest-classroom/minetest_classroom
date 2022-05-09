@@ -832,9 +832,6 @@ function record_classroom(player,cc,sn,sy,sm,sd,ey,em,ed,map)
 				spawn_pos = { spawn_pos },
 			}
 		else
-			-- Need to recalculate local spawn position based on the last_map_pos
-			spawn_pos.x = spawn_pos.x + last_map_pos.x 
-			
 			table.insert(temp.course_code, cc)
 			table.insert(temp.section_number, sn)
 			table.insert(temp.start_year, sy)
