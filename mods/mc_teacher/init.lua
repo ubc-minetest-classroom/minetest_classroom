@@ -27,13 +27,10 @@ minetest_classroom.get_connected_players = minetest.get_connected_players
 minetest_classroom.get_player_by_name = minetest.get_player_by_name
 minetest_classroom.check_player_privs = minetest.check_player_privs
 
--- Mod storage for persistence
-local storage = minetest.get_mod_storage()
-
-minetest_classroom.load_from(storage)
+minetest_classroom.load_from(minetest_classroom.classrooms)
 
 function minetest_classroom.save()
-	minetest_classroom.save_to(storage)
+	minetest_classroom.save_to(minetest_classroom.classrooms)
 end
 
 minetest.register_on_shutdown(minetest_classroom.save)
