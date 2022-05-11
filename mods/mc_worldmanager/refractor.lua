@@ -10,3 +10,6 @@ function mc_worldManager.place_map(player,map_name,pos)
         minetest.chat_send_player(pname,pname..": You do not have the teacher privilege to create a new map. Check with the server administrator.")
     end
 end
+
+
+
