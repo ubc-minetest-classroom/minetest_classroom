@@ -3,7 +3,7 @@
 
 local realmSettings = { size = 3000, buffer = 1000, worldSize = 20000 }
 
-Realm = { realmCount = 0 }
+Realm = { realmCount = 0, realmList = {} }
 Realm.__index = Realm
 
 ---@public
@@ -33,6 +33,9 @@ function Realm:Create()
     this.SpawnPoint.y = this.Position.y + 2
 
     setmetatable(this, Realm)
+
+    Realm.realmList = Realm.realmList + {0, this}
+
     return this
 end
 
