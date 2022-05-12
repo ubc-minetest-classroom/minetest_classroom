@@ -3,9 +3,10 @@
 -- TODO: save realm info to storage
 -- TODO: add helper functions to do stuff like teleport players into the maps
 -- TODO: add invisible world border around realms
+-- TODO: assign realm ID based on first available ID rather than realm count
 
-local realmSize = 10
-local realmBuffer = 30
+local realmSize = 1024
+local realmBuffer = 50
 
 ---@public
 ---Class that manages all realms in Minetest_Classroom.
@@ -14,7 +15,7 @@ Realm = { storage = minetest.get_mod_storage() }
 Realm.__index = Realm
 
 ---We load our global realm data from storage
-function Realm.load_storage()
+function Realm.LoadFromStorage()
     Realm.realmCount = tonumber(Realm.storage:get_string("realmCount"))
     Realm.realmDict = minetest.deserialize(Realm.storage:get_string("realmDict"))
 
@@ -28,19 +29,24 @@ function Realm.load_storage()
 end
 
 ---We save our global realm data to storage
-function Realm.update_storage ()
+function Realm.UpdateStorage ()
     Realm.storage:set_string("realmDict", minetest.serialize(Realm.realmDict))
     Realm.storage:set_string("realmCount", tostring(Realm.realmCount))
 end
 
-Realm.load_storage()
+Realm.LoadFromStorage()
 
 ---@public
 ---creates a new Dimension.
 ---@return self
-function Realm:new()
+function Realm:New(name)
+
+    if (name == nil) then
+        name = "Unnamed Realm"
+    end
 
     local this = {
+        Name = name,
         ID = Realm.realmCount + 1,
         StartPos = { x = 0, y = 0, z = 0 },
         EndPos = { x = 0, y = 0, z = 0 },
@@ -65,7 +71,7 @@ function Realm:new()
 
     setmetatable(this, self)
     Realm.realmDict[this.ID] = this
-    Realm.update_storage()
+    Realm.UpdateStorage()
 
     return this
 end
@@ -83,35 +89,35 @@ end
 ---@param ID number
 ---@return void
 function Realm.DeleteByID(ID)
-    Realm.realmDict[ID]:clearNodes()
+    Realm.realmDict[ID]:ClearNodes()
     Realm.realmDict[ID] = nil
-    Realm.update_storage()
+    Realm.UpdateStorage()
 end
 
 ---@public
 ---Sets all nodes in a realm to air.
 ---@return void
-function Realm:clearNodes()
+function Realm:ClearNodes()
     local pos1 = self.StartPos
     pos1.y = -1000
     local pos2 = self.EndPos
     pos2.y = 1000
 
-    self:set_nodes(pos1, pos2, "air")
+    self:SetNodes(pos1, pos2, "air")
 end
 
 ---@public
 ---Creates a ground plane between the realms start and end positions.
 ---@return void
-function Realm:ground()
-    self:set_nodes(self.StartPos, self.EndPos, "mc_worldmanager:temp")
+function Realm:CreateGround()
+    self:SetNodes(self.StartPos, self.EndPos, "mc_worldmanager:temp")
 end
 
 ---Helper function to set cubic areas of nodes based on world coordinates and node type
 ---@param pos1 table
 ---@param pos2 table
 ---@param pos2 string
-function Realm:set_nodes(pos1, pos2, node)
+function Realm:SetNodes(pos1, pos2, node)
     local node_id = minetest.get_content_id(node)
 
     -- Read data into LVM
