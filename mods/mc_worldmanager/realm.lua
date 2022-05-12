@@ -4,12 +4,36 @@
 -- TODO: add helper functions to do stuff like teleport players into the maps
 -- TODO: add invisible world border around realms
 
+local realmSize = 10
+local realmBuffer = 30
 
 ---@public
 ---Class that manages all realms in Minetest_Classroom.
 ---@class
-Realm = { realmCount = 0, realmDict = {} }
+Realm = { storage = minetest.get_mod_storage() }
 Realm.__index = Realm
+
+---We load our global realm data from storage
+function Realm.load_storage()
+    Realm.realmCount = tonumber(Realm.storage:get_string("realmCount"))
+    Realm.realmDict = minetest.deserialize(Realm.storage:get_string("realmDict"))
+
+    if Realm.realmDict == nil then
+        Realm.realmDict = {}
+    end
+
+    if Realm.realmCount == nil then
+        Realm.realmCount = 0
+    end
+end
+
+---We save our global realm data to storage
+function Realm.update_storage ()
+    Realm.storage:set_string("realmDict", minetest.serialize(Realm.realmDict))
+    Realm.storage:set_string("realmCount", tostring(Realm.realmCount))
+end
+
+Realm.load_storage()
 
 ---@public
 ---creates a new Dimension.
@@ -31,24 +55,24 @@ function Realm:new()
     realmLocation.z = math.ceil(this.ID / 10)
 
     -- Calculate our world position based on our location on the realm grid
-    this.StartPos.x = -20000 + (1000 * realmLocation.x) + 250
-    this.StartPos.z = -20000 + (1000 * realmLocation.z) + 250
+    this.StartPos.x = -20000 + (realmSize * realmLocation.x) + (realmBuffer * realmLocation.x)
+    this.StartPos.z = -20000 + (realmSize * realmLocation.z) + (realmBuffer * realmLocation.z)
 
-    this.EndPos = this.StartPos
-    this.EndPos.x = this.EndPos.x + 1000
-    this.EndPos.z = this.EndPos.z + 1000
+    this.EndPos = { x = this.StartPos.x + realmSize, y = this.StartPos.y, z = this.StartPos.z + realmSize }
 
     -- Temporary spawn point calculation
-    this.SpawnPoint = this.StartPos
-    this.SpawnPoint.y = this.StartPos.y + 2
+    this.SpawnPoint = { x = (this.StartPos.x + this.EndPos.x) / 2, y = this.StartPos.y + 2, z = (this.StartPos.z + this.EndPos.z) / 2 }
 
+    setmetatable(this, self)
     Realm.realmDict[this.ID] = this
+    Realm.update_storage()
 
-    return setmetatable(this, self)
+    return this
 end
 
 ---@public
 ---Deletes the realm based on class instance.
+---Make sure you clear any references to the realm so that memory can be released by the GC.
 ---@return void
 function Realm:Delete()
     Realm.DeleteByID(self.ID)
@@ -59,14 +83,36 @@ end
 ---@param ID number
 ---@return void
 function Realm.DeleteByID(ID)
-    --TODO: Clear world blocks in the realm before removing reference in the realmDICT
+    Realm.realmDict[ID]:clearNodes()
     Realm.realmDict[ID] = nil
+    Realm.update_storage()
 end
 
-function Realm:ground()
-    local temp_node = minetest.get_content_id("mc_worldmanager:temp")
+---@public
+---Sets all nodes in a realm to air.
+---@return void
+function Realm:clearNodes()
     local pos1 = self.StartPos
+    pos1.y = -1000
     local pos2 = self.EndPos
+    pos2.y = 1000
+
+    self:set_nodes(pos1, pos2, "air")
+end
+
+---@public
+---Creates a ground plane between the realms start and end positions.
+---@return void
+function Realm:ground()
+    self:set_nodes(self.StartPos, self.EndPos, "mc_worldmanager:temp")
+end
+
+---Helper function to set cubic areas of nodes based on world coordinates and node type
+---@param pos1 table
+---@param pos2 table
+---@param pos2 string
+function Realm:set_nodes(pos1, pos2, node)
+    local node_id = minetest.get_content_id(node)
 
     -- Read data into LVM
     local vm = minetest.get_voxel_manip()
@@ -82,21 +128,15 @@ function Realm:ground()
         for y = pos1.y, pos2.y do
             for x = pos1.x, pos2.x do
                 local vi = a:index(x, y, z)
-                local pos = { x = x, y = y, z = z }
-                data[vi] = temp_node
+                data[vi] = node_id
             end
         end
     end
 
-    -- Write data
+    -- Write data to world
     vm:set_data(data)
     vm:write_to_map(true)
 end
-
-function Realm:test()
-    minetest.debug(self.ID)
-end
-
 
 
 
