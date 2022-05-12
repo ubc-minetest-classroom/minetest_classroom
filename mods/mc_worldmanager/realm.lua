@@ -11,30 +11,36 @@ local realmBuffer = 50
 ---@public
 ---Class that manages all realms in Minetest_Classroom.
 ---@class
-Realm = { storage = minetest.get_mod_storage() }
+Realm = { storage = minetest.get_mod_storage(), realmDict = {} }
 Realm.__index = Realm
 
 ---We load our global realm data from storage
 function Realm.LoadFromStorage()
     Realm.realmCount = tonumber(Realm.storage:get_string("realmCount"))
-    Realm.realmDict = minetest.deserialize(Realm.storage:get_string("realmDict"))
-
-    if Realm.realmDict == nil then
-        Realm.realmDict = {}
-    end
-
     if Realm.realmCount == nil then
         Realm.realmCount = 0
     end
+
+    local tmpRealmDict = minetest.deserialize(Realm.storage:get_string("realmDict"))
+    if tmpRealmDict == nil then
+        tmpRealmDict = {}
+    end
+
+    for key, realm in pairs(tmpRealmDict) do
+        Realm:Restore(realm)
+    end
+
+
 end
 
 ---We save our global realm data to storage
 function Realm.UpdateStorage ()
+
+    minetest.debug(minetest.serialize(Realm.realmDict))
+
     Realm.storage:set_string("realmDict", minetest.serialize(Realm.realmDict))
     Realm.storage:set_string("realmCount", tostring(Realm.realmCount))
 end
-
-Realm.LoadFromStorage()
 
 ---@public
 ---creates a new Dimension.
@@ -76,6 +82,25 @@ function Realm:New(name)
     return this
 end
 
+---@private
+---Restores a dimension based on supplied parameters. Do not use this method to make new dimensions; use Realm:New() instead
+---@return self
+function Realm:Restore(template)
+
+    --We are sanitizing input to help stop shenanigans from happening
+    local this = {
+        Name = tostring(template.Name),
+        ID = tonumber(template.ID),
+        StartPos = { x = template.StartPos.x, y = template.StartPos.y, z = template.StartPos.z },
+        EndPos = { x = template.EndPos.x, y = template.EndPos.y, z = template.EndPos.z },
+        SpawnPoint = { x = template.SpawnPoint.x, y = template.SpawnPoint.y, z = template.SpawnPoint.z }
+    }
+
+    setmetatable(this, self)
+    self.realmDict[this.ID] = this
+    return this
+end
+
 ---@public
 ---Deletes the realm based on class instance.
 ---Make sure you clear any references to the realm so that memory can be released by the GC.
@@ -99,10 +124,7 @@ end
 ---@return void
 function Realm:ClearNodes()
     local pos1 = self.StartPos
-    pos1.y = -1000
     local pos2 = self.EndPos
-    pos2.y = 1000
-
     self:SetNodes(pos1, pos2, "air")
 end
 
@@ -144,5 +166,26 @@ function Realm:SetNodes(pos1, pos2, node)
     vm:write_to_map(true)
 end
 
+---LocalToWorldPosition
+---@param position table
+---@return table
+function Realm:LocalToWorldPosition(position)
+    local pos = position
+    pos.x = pos.x + self.StartPos.x
+    pos.y = pos.y + self.StartPos.y
+    pos.z = pos.z + self.StartPos.z
+    return pos
+end
 
+---WorldToLocalPosition
+---@param position table
+---@return table
+function Realm:WorldToLocalPosition(position)
+    local pos = position
+    pos.x = pos.x - self.StartPos.x
+    pos.y = pos.y - self.StartPos.y
+    pos.z = pos.z - self.StartPos.z
+    return pos
+end
 
+Realm.LoadFromStorage()
