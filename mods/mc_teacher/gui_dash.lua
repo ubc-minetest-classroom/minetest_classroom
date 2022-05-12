@@ -46,16 +46,17 @@ end)
 
 -- Define an initial formspec that will redirect to different formspecs depending on what the teacher wants to do
 local mc_teacher_menu =
-		"formspec_version[5]"..
-		"size[7,14]"..
-		"label[1.7,0.7;What do you want to do?]"..
-		"button[2,1.6;3,1.3;spawn;Go to UBC]"..
-		"button[2,3.3;3,1.3;tasks;Manage Tasks]"..
-		"button[2,5;3,1.3;lessons;Manage Lessons]"..
-		"button[2,6.7;3,1.3;players;Manage Players]"..
-		"button[2,8.4;3,1.3;classrooms;Manage Classrooms]"..
-		"button[2,10.1;3,1.3;mail;Teacher Mail]"..
-		"button_exit[2,11.8;3,1.3;exit;Exit]"
+	"formspec_version[5]"..
+	"size[10,9]"..
+	"label[3.2,0.7;What do you want to do?]"..
+	"button[1,1.6;3.8,1.3;spawn;Go to UBC]"..
+	"button[5.2,1.6;3.8,1.3;tasks;Manage Tasks]"..
+	"button[1,3.3;3.8,1.3;lessons;Manage Lessons]"..
+	"button[5.2,3.3;3.8,1.3;players;Manage Players]"..
+	"button[1,5;3.8,1.3;classrooms;Manage Classrooms]"..
+	"button[5.2,5;3.8,1.3;species;Manage Plant Species]"..
+	"button[1,6.7;3.8,1.3;mail;Teacher Mail]"..
+	"button_exit[5.2,6.7;3.8,1.3;exit;Exit]"
 
 local function show_teacher_menu(player)
 	if check_perm(player) then
@@ -81,6 +82,123 @@ local function show_tasks(player)
 		local pname = player:get_player_name()
 		minetest.show_formspec(pname, "mc_teacher:tasks", mc_teacher_tasks)
 		return true
+	end
+end
+
+-- Manage Plant Species formspec
+local mc_teacher_manage_species = 
+	"formspec_version[5]"..
+	"size[13,13]"..
+	"button[3,5;4,1;AddSpecies;Add Species]"..
+	"button[3,7;4,1;EditSpecies;Edit Species]"..
+	"button[3,9;4,1;DeleteSpecies;Delete Species]"..
+	"button_exit[3,11;4,1;End;End]"..
+	"textlist[3,0;4,4;ListOfSpecies;;1;false]"
+
+local function show_species(player)
+	if check_perm(player) then
+		local pname = player:get_player_name()
+		minetest.show_formspec(pname, "mc_teacher:species", mc_teacher_manage_species) 
+		return true
+	end
+end
+
+-- Add Species formspec
+local mc_teacher_add_species =
+	"formspec_version[5]"..
+	"size[14,11.8]"..
+	"box[0.4,0.4;13.2,0.6;#008000]"..
+	"button_exit[7.2,10.4;6.4,1;ok;Create new species]"..
+	"label[0.4,7.3;Associated blocks]"..
+	"textlist[0.4,7.5;6.4,3.9;blocks;;1;false]"..
+	"dropdown[8.5,7.5;5.1,1;block_dropdown;;1;false]"..
+	"button[7.2,8.6;6.4,1;remove_block;Remove selected block from list]"..
+	"button[7.2,7.5;1.2,1;add_block;Add]"..
+	"field[0.4,1.9;6.4,0.8;sci_name;Scientific Name;]"..
+	"field[7.2,1.9;6.4,0.8;com_name;Common Name;]"..
+	"field[0.4,3.2;6.4,0.8;region;Native Region;]"..
+	"field[7.2,3.2;6.4,0.8;status;Status (Endangered\\, Invasive\\, etc.);]"..
+	"field[0.4,4.5;13.2,0.8;more_info;Additional information;]"..
+	"field[0.4,5.8;13.2,0.8;link;Link to image/information;]"..
+	"label[0.5,0.7;Create a New Species]"
+
+-- Edit Species formspec
+--[[ (still a WIP)
+local mc_teacher_edit_species = 
+	"formspec_version[5]"..
+	"size[14,11.8]"..
+	"box[0.4,0.4;13.2,0.6;#008080]"..
+	"button_exit[7.2,10.4;6.4,1;ok;Save changes]"..
+	"label[0.4,7.3;Associated blocks]"..
+	"textlist[0.4,7.5;6.4,3.9;blocks;apples:apple_tree,apples:apple_leaf,apples:apple;1;false]"..
+	"dropdown[8.5,7.5;5.1,1;block_dropdown;".. 
+		default:dirt_with_grass,default:dirt,apples:apple_tree,apples:apple_leaf,apples:apple ..	-- add node list here
+    ";1;false]"..
+	"button[7.2,8.6;6.4,1;remove_block;Remove selected block from list]"..
+	"button[7.2,7.5;1.2,1;add_block;Add]"..
+	"field[0.4,1.9;6.4,0.8;sci_name;Scientific Name;".. Pyrus malus .."]"..							-- add scientific name here
+	"field[7.2,1.9;6.4,0.8;com_name;Common Name;".. Apple .."]"..									-- add common name here
+	"field[0.4,3.2;6.4,0.8;region;Native Region;".. somewhere .."]".. 								-- add region here
+	"field[7.2,3.2;6.4,0.8;status;Status (Endangered\\, Invasive\\, etc.);".. common fruit .."]".. 	-- add status here
+	"field[0.4,4.5;13.2,0.8;more_info;Additional information;".. more information .."]"..			-- add more info here
+	"field[0.4,5.8;13.2,0.8;link;Link to image/information;".. add image link here .."]"..			-- add image link here
+	"label[0.5,0.7;Edit an Existing Species]"
+]]
+
+ -- Delete Species formspec - will likely not be used 
+--local mc_teacher_delete_species = 
+--	"formspec_version[5]"..
+--	"size[10.5,11]"..
+--	"box[1.5,0;5,2;#008000]"..
+--	"button_exit[2,9;4,1;end;End]"..
+--	"label[2.8,1;Are You Sure?]"..
+--	"button[2,4;4,1;delete;Delete]"
+  
+  
+--local function show_delete_confirmation(player)
+--	if check_perm(player) then
+--		local pname = player:get_player_name()
+--		minetest.show_formspec(pname, "mc_teacher:delete_species", mc_teacher_delete_species)
+--		return true
+--	end
+--end
+
+local function clear_ref(ref)
+	local storage_data = minetest_classroom.bc_plants:to_table()
+	for k,v in pairs(storage_data.fields) do
+		if k == ref or v == ref then
+			minetest_classroom.bc_plants:set_string(k, "")
+		end
+	end
+end
+
+local function get_next_free_ref()
+  	local count = minetest_classroom.bc_plants:get_int("count")
+	while minetest_classroom.bc_plants:get_string("ref_" .. count) == nil do
+  		count = count + 1
+  	end
+	minetest_classroom.bc_plants:set_int("count", count)
+	return "ref_"..count
+end
+
+local function serialize_species(s_s_name, s_c_name, s_region, s_stat, s_info, s_image, s_link)
+	local species_table = {
+  		sci_name = s_s_name,
+		com_name = s_c_name,
+		region = s_region,
+		texture = s_image, 
+		status = s_stat,
+		more_info = s_info,
+		external_link = s_link
+	}
+	return minetest.serialize(species_table)
+end
+
+local function create_new_species(serial_table, blocks)
+	local ref = get_next_free_ref()
+	minetest_classroom.bc_plants:set_string(ref, serial_table)
+	for b in blocks do
+  		minetest_classroom.bc_plants:set_string("node_"..b, ref)
 	end
 end
 
@@ -770,6 +888,35 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		else -- escape without input
 			return
 		end
+	end
+
+	if formname == "mc_teacher:species" then
+		-- ...
+		  
+		if fields.AddSpecies then
+			-- show_add_species()
+		elseif fields.EditSpecies then
+			-- show_edit_species()
+		elseif fields.DeleteSpecies then
+			-- delete species
+			local keyToDel = "ref_"
+			clear_ref(keyToDel)
+		end		
+	end
+		
+	if formname == "mc_teacher:add_species" then
+		-- ...
+		if fields.add_block then
+			-- add node to list of associated nodes
+		elseif fields.remove_block then
+		
+		elseif fields.block_dropdown then
+			
+		end
+	end
+		
+	if formname == "mc_teacher:edit_species" then
+		-- ...
 	end
 end)
 
