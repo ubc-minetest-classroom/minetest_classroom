@@ -10,10 +10,24 @@ local testTable = {
 	more_info = "lorem ipsum dolor, sit amet. foobar.",
 	external_link = "https://unsplash.com/s/photos/plant"
 }
+local anotherTestTable = {
+	sci_name = "Glass but scientific",
+	com_name = "Magnifying Glass",
+	region = "The world",
+	texture = "magnifying_tool.png", 
+	status = "Common",
+	more_info = "This isn't a plant, it's a magnifying glass!",
+	external_link = "TBA"
+}
 
 -- adding test plants
-minetest_classroom.bc_plants:set_string("node_default:dirt_with_grass", "ref_test")
-minetest_classroom.bc_plants:set_string("ref_test", minetest.serialize(testTable))
+minetest_classroom.bc_plants:set_string("node_default:dirt_with_grass", "ref_0")
+minetest_classroom.bc_plants:set_string("ref_0", minetest.serialize(testTable))
+minetest_classroom.bc_plants:set_string("node_default:dirt", "ref_1")
+minetest_classroom.bc_plants:set_string("node_default:pine_tree", "ref_1")
+minetest_classroom.bc_plants:set_string("ref_1", minetest.serialize(anotherTestTable))
+-- temporary
+minetest_classroom.bc_plants:set_int("count", 2)
 
 -- Check for shout priv (from mc_student)
 local function check_perm(player)
@@ -76,9 +90,11 @@ minetest.register_tool("magnify:magnifying_tool", {
 			end
 			return nil
 		end
+	end,
+	-- makes the tool undroppable
+	on_drop = function (itemstack, dropper, pos)
+		minetest.set_node(pos, {name="air"})
 	end
-  -- identify = function(itemstack, user, pointed_thing)
-	-- on left click tool activates identify function 
 })
 
 --[[ TODO:
