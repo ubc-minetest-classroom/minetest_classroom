@@ -1,33 +1,14 @@
 minetest_classroom.bc_plants = minetest.get_mod_storage()
 
--- test table
-local testTable = {
-	sci_name = "Scientic Name",
-	com_name = "Common Name",
-	region = "Region",
-	texture = "test.png", 
-	status = "Endangered",
-	more_info = "lorem ipsum dolor, sit amet. foobar.",
-	external_link = "https://unsplash.com/s/photos/plant"
-}
-local anotherTestTable = {
-	sci_name = "Glass but scientific",
-	com_name = "Magnifying Glass",
-	region = "The world",
-	texture = "magnifying_tool.png", 
-	status = "Common",
-	more_info = "This isn't a plant, it's a magnifying glass!",
-	external_link = "TBA"
-}
+--[[ STORAGE RESET CODE - DO NOT UNCOMMENT UNLESS ABSOLUTELY NEEDED
+local plant_table = minetest_classroom.bc_plants:to_table()
+for k,v in plant_table.fields do
+	minetest_classroom.bc_plants:set(k, "")
+end
+]]
 
--- adding test plants
-minetest_classroom.bc_plants:set_string("node_default:dirt_with_grass", "ref_0")
-minetest_classroom.bc_plants:set_string("ref_0", minetest.serialize(testTable))
-minetest_classroom.bc_plants:set_string("node_default:dirt", "ref_1")
-minetest_classroom.bc_plants:set_string("node_default:pine_tree", "ref_1")
-minetest_classroom.bc_plants:set_string("ref_1", minetest.serialize(anotherTestTable))
--- temporary
-minetest_classroom.bc_plants:set_int("count", 2)
+-- reset: ensure count is initialized at 0
+minetest_classroom.bc_plants:set_int("count", 0)
 
 -- Check for shout priv (from mc_student)
 local function check_perm(player)
@@ -35,29 +16,27 @@ local function check_perm(player)
 end
 
 local function build_formspec(node_name)
-	-- local minetest.registered_nodes[node_name]
-	-- local file_path = minetest.get_modpath("...") .. "/bc_plants/" .. node_name .. ".lua"
-  
-  local ref_key = minetest_classroom.bc_plants:get("node_" .. node_name)
-  local info = minetest.deserialize(minetest_classroom.bc_plants:get(ref_key))
-  
-  local identify_formtable = {
+	local ref_key = minetest_classroom.bc_plants:get("node_" .. node_name)
+	local info = minetest.deserialize(minetest_classroom.bc_plants:get(ref_key))
+
+	local identify_formtable = {
 		"formspec_version[5]",
 		"size[14.8,5.8]",
 		"box[0.4,0.4;8.6,1.1;#008000]",
-		"label[0.5,0.7;", info.sci_name, "]",
-		"label[0.5,1.2;Common name: ", info.com_name, "]",
-		"label[0.7,2.1;Native to ", info.region, "]",
-		"image[9.4,0.4;5,5;", info.texture, "]",
-		"label[0.7,2.6;", info.status, "]",
+    "label[0.5,0.7;", info.sci_name or "N/A", "]",
+		"label[0.5,1.2;", (info.com_name and "Common name: "..info.com_name) or "No common name", "]",
+		"label[0.7,2.1;", (info.region and "Native to "..info.region) or "Native region unknown", "]",
+		"image[9.4,0.4;5,5;", info.texture or "test.png", "]",
+		"label[0.7,2.6;", info.status or "Status unknown", "]",
 		"label[0.4,2.1;-]", -- these are bullet points
-		"label[0.4,2.6;-]",
-		"label[0.4,3.1;-]",
-		"label[0.7,3.1;", info.more_info, "]",
-		"button[0.4,4.6;4.2,0.8;more_info;More info (info.external_link)]",
-  		"button_exit[4.8,4.6;4.2,0.8;exit;Back]"
-	}
-
+		"label[0.4,2.6;-]"
+  }
+  -- add additional info bullet if additional info present
+  if info.more_info then
+    table.insert(identify_formtable, "label[0.4,3.1;-]".."label[0.7,3.1;"..info.more_info.."]")
+  end
+  -- finish table
+  table.insert(identify_formtable, "button[0.4,4.6;4.2,0.8;more_info;More info (add link)]".."button_exit[4.8,4.6;4.2,0.8;exit;Back]")
 	return table.concat(identify_formtable, "")
 end
 
@@ -97,27 +76,6 @@ minetest.register_tool("magnify:magnifying_tool", {
 	end
 })
 
---[[ TODO:
-- Add files with node information custom and existing 
-- Determine directory for saving files + save format - pull information to build formspec 
-  - use require("...") to get files
-- Create formspec definition
-- utilize lookup table retrieve data from mod storage  -- CURRENT approach 
-make a table with names (reference) and data underneath, based on table name formspec will show 
-variable 
--- test values into storage table 
-
--- FORMSPEC OUTLINE:
-
---lua table retrives lua file using require to get all info 
-
--- Scientific name 
--- Common Name 
--- Native Region
--- Image 
--- External Link
-]]
-
 -- register on-Join Player 
 -- Give the magnifying glass to any player who joins with shout privileges or take away the magnifying glass if they do not have shout
 minetest.register_on_joinplayer(function(player)
@@ -142,3 +100,24 @@ minetest.register_on_joinplayer(function(player)
 		end
 	end
 end)
+
+--[[ TODO:
+- Add files with node information custom and existing 
+- Determine directory for saving files + save format - pull information to build formspec 
+  - use require("...") to get files
+- Create formspec definition
+- utilize lookup table retrieve data from mod storage  -- CURRENT approach 
+make a table with names (reference) and data underneath, based on table name formspec will show 
+variable 
+-- test values into storage table 
+
+-- FORMSPEC OUTLINE:
+
+--lua table retrives lua file using require to get all info 
+
+-- Scientific name 
+-- Common Name 
+-- Native Region
+-- Image 
+-- External Link
+]]
