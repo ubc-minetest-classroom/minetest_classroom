@@ -1,12 +1,13 @@
--- Realms are 1,000 node * 1,000 node areas seperated by a 500 block border of void (in each dimension);
+-- Realms are 12 mapchunk areas seperated by a 1 mapchunk border of void (in each dimension);
 -- TODO: make realm size dynamic
 -- TODO: save realm info to storage
 -- TODO: add helper functions to do stuff like teleport players into the maps
 -- TODO: add invisible world border around realms
 -- TODO: assign realm ID based on first available ID rather than realm count
 
-local realmSize = 1024
-local realmBuffer = 50
+local realmSize = 80 * 12 -- 12 mapchunks
+local realmBuffer = 80
+local realmHeight = 80 * 4
 
 ---@public
 ---Class that manages all realms in Minetest_Classroom.
@@ -35,9 +36,6 @@ end
 
 ---We save our global realm data to storage
 function Realm.UpdateStorage ()
-
-    minetest.debug(minetest.serialize(Realm.realmDict))
-
     Realm.storage:set_string("realmDict", minetest.serialize(Realm.realmDict))
     Realm.storage:set_string("realmCount", tostring(Realm.realmCount))
 end
@@ -70,7 +68,7 @@ function Realm:New(name)
     this.StartPos.x = -20000 + (realmSize * realmLocation.x) + (realmBuffer * realmLocation.x)
     this.StartPos.z = -20000 + (realmSize * realmLocation.z) + (realmBuffer * realmLocation.z)
 
-    this.EndPos = { x = this.StartPos.x + realmSize, y = this.StartPos.y, z = this.StartPos.z + realmSize }
+    this.EndPos = { x = this.StartPos.x + realmSize, y = this.StartPos.y + realmHeight, z = this.StartPos.z + realmSize }
 
     -- Temporary spawn point calculation
     this.SpawnPoint = { x = (this.StartPos.x + this.EndPos.x) / 2, y = this.StartPos.y + 2, z = (this.StartPos.z + this.EndPos.z) / 2 }
@@ -123,16 +121,48 @@ end
 ---Sets all nodes in a realm to air.
 ---@return void
 function Realm:ClearNodes()
-    local pos1 = self.StartPos
-    local pos2 = self.EndPos
-    self:SetNodes(pos1, pos2, "air")
+    local function emerge_callback(blockpos, action,
+                                   num_calls_remaining, context)
+        -- On first call, record number of blocks
+        if not context.total_blocks then
+            context.total_blocks = num_calls_remaining + 1
+            context.loaded_blocks = 0
+        end
+
+        -- Increment number of blocks loaded
+        context.loaded_blocks = context.loaded_blocks + 1
+
+        -- Send progress message
+        -- Send progress message
+        if context.total_blocks == context.loaded_blocks then
+            minetest.chat_send_all("Finished deleting realm!")
+        else
+            local perc = 100 * context.loaded_blocks / context.total_blocks
+            local msg  = string.format("deleting realm %d %d/%d (%.2f%%) done!",
+                    context.realm.ID,context.loaded_blocks, context.total_blocks, perc)
+            minetest.chat_send_all(msg)
+        end
+
+        local pos1 = { x = blockpos.x * 16, y = blockpos.y * 16, z = blockpos.z * 16 }
+        local pos2 = { x = blockpos.x * 16 + 15, y = blockpos.y * 16 + 15, z = blockpos.z * 16 + 15 }
+
+        context.realm:SetNodes(pos1,pos2,"air")
+    end
+
+    local context = {} -- persist data between callback calls
+    context.realm = self
+    minetest.emerge_area(self.StartPos, self.EndPos, emerge_callback, context)
+
+
 end
 
 ---@public
 ---Creates a ground plane between the realms start and end positions.
 ---@return void
 function Realm:CreateGround()
-    self:SetNodes(self.StartPos, self.EndPos, "mc_worldmanager:temp")
+    local pos2 = { x = self.EndPos.x, y = self.StartPos.y, z = self.EndPos.z }
+
+    self:SetNodes(self.StartPos, pos2, "mc_worldmanager:temp")
 end
 
 ---Helper function to set cubic areas of nodes based on world coordinates and node type
@@ -186,6 +216,21 @@ function Realm:WorldToLocalPosition(position)
     pos.y = pos.y - self.StartPos.y
     pos.z = pos.z - self.StartPos.z
     return pos
+end
+
+function Realm:CalculateSpawn()
+    local posX = self.SpawnPoint.x
+    local posZ = self.SpawnPoint.z
+    local posY = minetest.get_spawn_level(x, z)
+
+    if (posY == nil) then
+        return nil
+    else
+        local pos = { x = posX, y = posY, z = posZ }
+        self.SpawnPoint = pos
+        return pos
+    end
+
 end
 
 Realm.LoadFromStorage()
