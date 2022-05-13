@@ -152,8 +152,17 @@ function Realm:ClearNodes()
     local context = {} -- persist data between callback calls
     context.realm = self
     minetest.emerge_area(self.StartPos, self.EndPos, emerge_callback, context)
+end
 
-
+---@public
+---Updates and saves the spawnpoint of a realm.
+---@param spawnPos table SpawnPoint in localSpace.
+---@return boolean Whether the operation succeeded.
+function Realm:UpdateSpawn(spawnPos)
+    local pos = self:LocalToWorldPosition(spawnPos)
+    self.SpawnPoint = {x=pos.x,y=pos.y,z=pos.z}
+    Realm.UpdateStorage()
+    return true
 end
 
 ---@public

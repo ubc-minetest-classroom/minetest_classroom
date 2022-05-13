@@ -188,7 +188,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                                 y = 92,
                                 z = 1083,
                         }
-                        player:set_pos(spawn_pos)
+						local spawnRealm = Realm.realmDict[1]
+						if (spawnRealm ~= nil) then
+							spawn_pos = spawnRealm.SpawnPoint
+						else
+							minetest.chat_send_player(player:get_player_name(), minetest.colorize("#FF0000", "Error: Spawn area could not be found."))
+							minetest.log("error", "mc_teacher gui_dash.lua: realm with ID 1 does not exist; this is the spawning realm and should always exist... major bug.")
+						end
+						player:set_pos(spawn_pos)
                 elseif fields.report then
 			show_report(player)
 		elseif fields.coordinates then
@@ -328,7 +335,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				minetest.chat_send_player(pname,pname..": The access code you entered has expired. Please contact your instructor.")
 			else
 				-- Send the student to the classroom spawn pos
-				player:set_pos(mdata.spawn_pos[loc])
+
+				local realmSpawnPosition = Realm.realmDict[mdata.realm_id[loc]].SpawnPoint
+
+
+				player:set_pos(realmSpawnPosition)
 			end
 		else
 			show_accesscode_fail(player)
