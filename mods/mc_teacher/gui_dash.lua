@@ -507,6 +507,7 @@ local function show_classrooms(player)
 			ped = pdata.end_day
 			pac = pdata.access_code
 			map = pdata.classroom_map
+			rid = pdata.realm_id
 			for i in pairs(pcc) do
 				mc_teacher_classrooms = mc_teacher_classrooms..pcc[i].." "..psn[i].." "..map[i].." Expires "..pem[i].." "..ped[i].." "..pey[i].." Access Code = "..pac[i]..","
 			end
@@ -722,13 +723,19 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		elseif fields.back then
 			show_teacher_menu(player)
 		elseif fields.delete then
-		-- TO DO: currently, this function only deletes the symbolic link to the classroom in the palyer/mod metadata. need to also remove the physical world.
-			-- Update player metadata
+
 			if context.selected then
 				pmeta = player:get_meta()
 				pdata = minetest.deserialize(pmeta:get_string("classrooms"))
+
+
 				-- Update modstorage first
 				mdata = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
+
+
+				--Delete the realm
+				Realm.realmDict[mdata.realm_id[loc]]:Delete()
+
 				loc = check_access_code(pdata.access_code[context.selected],mdata.access_code)
 				mdata.course_code[loc] = nil
 				mdata.section_number[loc] = nil
@@ -740,7 +747,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				mdata.end_day[loc] = nil
 				mdata.classroom_map[loc] = nil
 				mdata.access_code[loc] = nil
-				mdata.spawn_pos[loc] = nil
+				mdata.realm_id[loc] = nil
 				minetest_classroom.classrooms:set_string("classrooms",minetest.serialize(mdata
 				))
 				
@@ -755,13 +762,18 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				pdata.end_day[context.selected] = nil
 				pdata.classroom_map[context.selected] = nil
 				pdata.access_code[context.selected] = nil
-				pdata.spawn_pos[context.selected] = nil
 				pmeta:set_string("classrooms",minetest.serialize(pdata
 				))
+
+				--delete the realm
+
+
+
 				show_classrooms(player)
 			else
 				minetest.chat_send_player(pname,pname..": Please click on a classroom in the list to delete.")
 			end
+
 		-- TODO: eventually delete this button, only useful for testing
 		elseif fields.deleteall then
 			pmeta:set_string("classrooms", nil)
@@ -785,36 +797,26 @@ function record_classroom(player,cc,sn,sy,sm,sd,ey,em,ed,map)
 		math.randomseed(os.time())
 		access_num = tostring(math.floor(math.random()*100000))
 
-		-- Get the last classroom map position
-		last_map_pos = minetest.deserialize(minetest_classroom.classrooms:get_string("last_map_pos"))
-		if last_map_pos == nil then
-			-- this value has not yet been initialized, so use {x=2000, z=0, y=3500} as a placeholder for the corner of the UBC campus landing map
-			last_map_pos = {x=2000, y=0, z=3500,}
-			new_map_pos = last_map_pos
-			-- Send to modstorage
-			minetest_classroom.classrooms:set_string("last_map_pos",minetest.serialize(new_map_pos))
-		else
-			-- Update the last map pos by adding 1024 to the x coordinate
-			new_map_pos = last_map_pos
-			new_map_pos.x = last_map_pos.x + 1024
-			
-			-- Update last map pos in modstorage
-			minetest_classroom.classrooms:set_string("last_map_pos",minetest.serialize(new_map_pos))
-		end
-		
+		local newRealm = Realm:New()
+
+
+		--TODO: Refractor place_map into the realm system
+
 		-- Place the map
-		mc_worldManager.place_map(player,map,new_map_pos)
+		mc_worldManager.place_map(player,map,newRealm.StartPos)
 		
 		-- Retrieve spawn position from map metadata
 		local mmeta = Settings(minetest.get_modpath("mc_teacher").."/maps/"..map..".conf")
-		local spawn_pos_x = tonumber(mmeta:get("spawn_pos_x"))+new_map_pos.x
+		local spawn_pos_x = tonumber(mmeta:get("spawn_pos_x"))
 		local spawn_pos_y = tonumber(mmeta:get("spawn_pos_y"))
-		local spawn_pos_z = tonumber(mmeta:get("spawn_pos_z"))+new_map_pos.z
+		local spawn_pos_z = tonumber(mmeta:get("spawn_pos_z"))
 		local spawn_pos = {
 			x = spawn_pos_x,
 			y = spawn_pos_y,
 			z = spawn_pos_z,
 		}
+
+		newRealm.SpawnPoint = newRealm:LocalToWorldPosition(spawn_pos)
 		
 		if temp == nil then
 			-- Build the new classroom table entry
@@ -829,7 +831,8 @@ function record_classroom(player,cc,sn,sy,sm,sd,ey,em,ed,map)
 				end_day = { ed },
 				classroom_map = { map },
 				access_code = { access_num },
-				spawn_pos = { spawn_pos },
+				spawn_pos = { spawn_pos }, -- Deprecated
+				realm_id = {newRealm.ID}
 			}
 		else
 			table.insert(temp.course_code, cc)
@@ -843,6 +846,7 @@ function record_classroom(player,cc,sn,sy,sm,sd,ey,em,ed,map)
 			table.insert(temp.classroom_map, map)
 			table.insert(temp.access_code, access_num)
 			table.insert(temp.spawn_pos, spawn_pos)
+			table.insert(temp.realm_id, newRealm.ID)
 			classroomdata = {
 				course_code = temp.course_code,
 				section_number = temp.section_number,
@@ -855,6 +859,7 @@ function record_classroom(player,cc,sn,sy,sm,sd,ey,em,ed,map)
 				classroom_map = temp.classroom_map,
 				access_code = temp.access_code,
 				spawn_pos = temp.spawn_pos,
+				realm_id = temp.realm_id
 			}
 		end
 		
@@ -866,7 +871,7 @@ function record_classroom(player,cc,sn,sy,sm,sd,ey,em,ed,map)
 		minetest.chat_send_player(pname,pname..": Your course was successfully recorded.")
 		
 		-- Send player to spawn pos of classroom map
-		player:set_pos(spawn_pos)
+		player:set_pos(newRealm.SpawnPoint)
 		
 		-- Update the formspec
 		show_classrooms(player)
