@@ -110,8 +110,8 @@ end
 ---Make sure you clear any references to the realm so that memory can be released by the GC.
 ---@return void
 function Realm:Delete()
-    Realm:ClearNodes()
-    table.remove(Realm.realmDict, ID)
+    self:ClearNodes()
+    table.remove(Realm.realmDict, self.ID)
     Realm.UpdateStorage()
 end
 
