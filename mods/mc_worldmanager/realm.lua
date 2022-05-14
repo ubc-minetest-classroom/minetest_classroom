@@ -5,8 +5,8 @@
 -- TODO: add invisible world border around realms
 -- TODO: assign realm ID based on first available ID rather than realm count
 
-local realmSize = 80 * 12 -- 12 mapchunks
-local realmBuffer = 80
+local realmSize = 80 * 6 -- 12 mapchunks
+local realmBuffer = 80 * 4
 local realmHeight = 80 * 4
 
 ---@public
@@ -71,7 +71,7 @@ function Realm:New(name)
     this.EndPos = { x = this.StartPos.x + realmSize, y = this.StartPos.y + realmHeight, z = this.StartPos.z + realmSize }
 
     -- Temporary spawn point calculation
-    this.SpawnPoint = { x = (this.StartPos.x + this.EndPos.x) / 2, y = this.StartPos.y + 2, z = (this.StartPos.z + this.EndPos.z) / 2 }
+    this.SpawnPoint = { x = (this.StartPos.x + this.EndPos.x) / 2, y = ((this.StartPos.y + this.EndPos.y) / 2) + 2, z = (this.StartPos.z + this.EndPos.z) / 2 }
 
     setmetatable(this, self)
     Realm.realmDict[this.ID] = this
@@ -138,15 +138,15 @@ function Realm:ClearNodes()
             minetest.chat_send_all("Finished deleting realm!")
         else
             local perc = 100 * context.loaded_blocks / context.total_blocks
-            local msg  = string.format("deleting realm %d %d/%d (%.2f%%) done!",
-                    context.realm.ID,context.loaded_blocks, context.total_blocks, perc)
+            local msg = string.format("deleting realm %d %d/%d (%.2f%%) done!",
+                    context.realm.ID, context.loaded_blocks, context.total_blocks, perc)
             minetest.chat_send_all(msg)
         end
 
         local pos1 = { x = blockpos.x * 16, y = blockpos.y * 16, z = blockpos.z * 16 }
         local pos2 = { x = blockpos.x * 16 + 15, y = blockpos.y * 16 + 15, z = blockpos.z * 16 + 15 }
 
-        context.realm:SetNodes(pos1,pos2,"air")
+        context.realm:SetNodes(pos1, pos2, "air")
     end
 
     local context = {} -- persist data between callback calls
@@ -160,7 +160,7 @@ end
 ---@return boolean Whether the operation succeeded.
 function Realm:UpdateSpawn(spawnPos)
     local pos = self:LocalToWorldPosition(spawnPos)
-    self.SpawnPoint = {x=pos.x,y=pos.y,z=pos.z}
+    self.SpawnPoint = { x = pos.x, y = pos.y, z = pos.z }
     Realm.UpdateStorage()
     return true
 end
@@ -169,9 +169,36 @@ end
 ---Creates a ground plane between the realms start and end positions.
 ---@return void
 function Realm:CreateGround()
-    local pos2 = { x = self.EndPos.x, y = self.StartPos.y, z = self.EndPos.z }
+    local pos1 = { x = self.StartPos.x, y = (self.StartPos.y + self.EndPos.y) / 2, z = self.StartPos.z }
+    local pos2 = { x = self.EndPos.x, y = (self.StartPos.y + self.EndPos.y) / 2, z = self.EndPos.z }
 
-    self:SetNodes(self.StartPos, pos2, "mc_worldmanager:temp")
+    self:SetNodes(pos1, pos2, "mc_worldmanager:temp")
+end
+
+function Realm:CreateBarriers()
+    local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
+    local pos2 = { x = self.StartPos.x, y = self.EndPos.y, z = self.EndPos.z }
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+
+    local pos1 = { x = self.EndPos.x, y = self.StartPos.y, z = self.StartPos.z }
+    local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+
+    local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
+    local pos2 = { x = self.EndPos.x, y = self.StartPos.y, z = self.EndPos.z }
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+
+    local pos1 = { x = self.StartPos.x, y = self.EndPos.y, z = self.StartPos.z }
+    local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+
+    local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
+    local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.StartPos.z }
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+
+    local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.EndPos.z }
+    local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
 end
 
 ---Helper function to set cubic areas of nodes based on world coordinates and node type

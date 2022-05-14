@@ -5,6 +5,7 @@ minetest.register_chatcommand("realmNew", {
     func = function(name, param)
         local testRealm = Realm:New()
         testRealm:CreateGround()
+        testRealm:CreateBarriers()
         return true, "executed command. New realm has ID: " .. testRealm.ID
     end,
 })
@@ -63,5 +64,42 @@ minetest.register_chatcommand("realmInfo", {
                 .. "x:" .. tostring(startPos.x) .. " y:" .. tostring(startPos.y) .. " z:" .. tostring(startPos.z)
                 .. "; endPos of "
                 .. "x:" .. tostring(endPos.x) .. " y:" .. tostring(endPos.y) .. " z:" .. tostring(endPos.z)
+    end,
+})
+
+minetest.register_chatcommand("realmTP", {
+    params = "Realm ID",
+    privs = {
+        interact = true,
+    },
+    func = function(name, param)
+        local requestedRealm = Realm.realmDict[tonumber(param)]
+        if (requestedRealm == nil) then
+            return false, "Requested realm of ID:" .. param .. " does not exist."
+        end
+
+        player = minetest.get_player_by_name(name)
+
+        local spawn = requestedRealm.SpawnPoint
+        player:set_pos(spawn)
+
+
+    end,
+})
+
+minetest.register_chatcommand("realmWalls", {
+    params = "Realm ID",
+    privs = {
+        interact = true,
+    },
+    func = function(name, param)
+        local requestedRealm = Realm.realmDict[tonumber(param)]
+        if (requestedRealm == nil) then
+            return false, "Requested realm of ID:" .. param .. " does not exist."
+        end
+
+        requestedRealm:CreateBarriers()
+
+
     end,
 })

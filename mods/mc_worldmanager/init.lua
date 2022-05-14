@@ -15,8 +15,9 @@ minetest.register_on_newplayer(function(player)
     if (NewPlayerRealm == nil) then
         NewPlayerRealm = Realm:New("Tutorial Realm")
         NewPlayerRealm:CreateGround()
+        NewPlayerRealm:CreateBarriers()
     end
 
     local name = player:get_player_name()
-    player:set_pos({x=NewPlayerRealm.SpawnPoint.x,y=NewPlayerRealm.SpawnPoint.y+5,z=NewPlayerRealm.SpawnPoint.z})
+    player:set_pos(NewPlayerRealm.SpawnPoint)
 end)
