@@ -581,20 +581,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     -- Menu
     if formname == "mc_teacher:menu" then
         if fields.spawn then
-            -- TODO: dynamically extract the static spawn point from the minetest.conf file
-            -- local cmeta = Settings(minetest.get_modpath("mc_teacher").."/maps/"..map..".conf")
-            -- local spawn_pos_x = tonumber(cmeta:get("spawn_pos_x"))
-            -- local spawn_pos_y = tonumber(cmeta:get("spawn_pos_y"))
-            -- local spawn_pos_z = tonumber(cmeta:get("spawn_pos_z"))
-            local spawnRealm = Realm.realmDict[1]
 
-            local spawn_pos = { x = 0, y = 0, z = 0 }
-			if (spawnRealm ~= nil) then
-				spawn_pos = spawnRealm.SpawnPoint
-			else
-				minetest.chat_send_player(player:get_player_name(), minetest.colorize("#FF0000", "Error: Spawn area could not be found."))
-				minetest.log("error", "mc_teacher gui_dash.lua: realm with ID 1 does not exist; this is the spawning realm and should always exist... major bug.")
-			end
+            local spawnRealm = mc_worldManager.GetSpawnRealm()
+            local spawn_pos = spawnRealm.SpawnPoint
             player:set_pos(spawn_pos)
         elseif fields.tasks then
             show_tasks(player)
@@ -718,12 +707,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
                 local realm = Realm.realmDict[mdata.realm_id[context.selected]]
                 if (realm ~= nil) then
-                    local spawnPos = realm.SpawnPoint
-                    player:set_pos(spawnPos)
+                    local realmSpawnPos = realm.SpawnPoint
+                    player:set_pos(realmSpawnPos)
                 else
                     minetest.chat_send_player(pname, pname .. ": Error receiving the realm / spawn coordinates. Try regenerating the classroom.")
-					minetest.log("warning", "mc_teacher gui_dash.lua: realm with ID: " .. mdata.realm_id[context.selected] .. " does not exist but is associated with a classroom.")
-				end
+                    minetest.log("warning", "mc_teacher gui_dash.lua: realm with ID: " .. mdata.realm_id[context.selected] .. " does not exist but is associated with a classroom.")
+                end
             else
                 minetest.chat_send_player(pname, pname .. ": Please click on a classroom in the list to join.")
             end

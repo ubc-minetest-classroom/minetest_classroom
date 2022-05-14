@@ -101,7 +101,7 @@ function Realm:Restore(template)
     }
 
     setmetatable(this, self)
-    self.realmDict[this.ID] = this
+    table.insert(Realm.realmDict, this.ID, this)
     return this
 end
 
@@ -110,15 +110,7 @@ end
 ---Make sure you clear any references to the realm so that memory can be released by the GC.
 ---@return void
 function Realm:Delete()
-    Realm.DeleteByID(self.ID)
-end
-
----@public
----Deletes the realm based on the supplied realm ID.
----@param ID number
----@return void
-function Realm.DeleteByID(ID)
-    Realm.realmDict[ID]:ClearNodes()
+    Realm:ClearNodes()
     table.remove(Realm.realmDict, ID)
     Realm.UpdateStorage()
 end

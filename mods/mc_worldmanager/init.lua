@@ -24,22 +24,26 @@ local function createSpawnRealm()
     return spawnRealm
 end
 
+function mc_worldManager.GetSpawnRealm()
+
+    local spawnRealm = Realm.realmDict[mc_worldManager.spawnRealmID]
+    if (spawnRealm == nil) then
+        spawnRealm = createSpawnRealm()
+    end
+
+    return spawnRealm
+end
+
 -- To test, we are making a new realm for each new player
 minetest.register_on_newplayer(function(player)
 
-    local spawnRealm = Realm.realmDict[mc_worldManager.spawnRealmID]
-    if (spawnRealmID == nil) then
-        spawnRealm = createSpawnRealm()
-    end
+    local spawnRealm = mc_worldManager.GetSpawnRealm()
 
     player:set_pos(spawnRealm.SpawnPoint)
 end)
 
 minetest.register_on_respawnplayer(function(player)
-    local spawnRealm = Realm.realmDict[mc_worldManager.spawnRealmID]
-    if (spawnRealmID == nil) then
-        spawnRealm = createSpawnRealm()
-    end
+    local spawnRealm = mc_worldManager.GetSpawnRealm()
 
     player:set_pos(spawnRealm.SpawnPoint)
     return true
