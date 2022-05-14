@@ -94,7 +94,7 @@ local function record_coordinates(player,message)
 		local pname = player:get_player_name()
 		pmeta = player:get_meta()
 		local pos = player:get_pos()
-		temp = minetest.deserialize(pmeta:get_string("coordinates"))
+		local temp = minetest.deserialize(pmeta:get_string("coordinates"))
 		if temp == nil then
 			datanew = {
 				coords = {"x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z), },
@@ -281,7 +281,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		local pname = player:get_player_name()
 
 		-- Get the classrooms from modstorage
-		temp = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
+		local temp = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
 		-- Get the classroom accesscodes
 		loc = check_access_code(fields.accesscode,temp.access_code)
 		if loc then

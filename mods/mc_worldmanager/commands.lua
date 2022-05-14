@@ -3,6 +3,7 @@ minetest.register_chatcommand("realmNew", {
         interact = true,
     },
     func = function(name, param)
+        param = param or "Unnamed Realm"
         local testRealm = Realm:New(param, 80, 80)
         testRealm:CreateGround()
         testRealm:CreateBarriers()
@@ -34,7 +35,7 @@ minetest.register_chatcommand("realmList", {
     func = function(name, param)
 
         minetest.chat_send_player(name, "Realm Name : Realm ID")
-        for i, t in ipairs(Realm.realmDict) do
+        for i, t in pairs(Realm.realmDict) do
             minetest.chat_send_player(name, t.Name .. " : " .. t.ID)
         end
 
