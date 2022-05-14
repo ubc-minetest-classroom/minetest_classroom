@@ -12,17 +12,17 @@ local realmHeight = 80 * 4
 ---@public
 ---Class that manages all realms in Minetest_Classroom.
 ---@class
-Realm = { storage = minetest.get_mod_storage(), realmDict = {} }
+Realm = { realmDict = {} }
 Realm.__index = Realm
 
 ---We load our global realm data from storage
 function Realm.LoadFromStorage()
-    Realm.realmCount = tonumber(Realm.storage:get_string("realmCount"))
+    Realm.realmCount = tonumber(mc_worldManager.storage:get_string("realmCount"))
     if Realm.realmCount == nil then
         Realm.realmCount = 0
     end
 
-    local tmpRealmDict = minetest.deserialize(Realm.storage:get_string("realmDict"))
+    local tmpRealmDict = minetest.deserialize(mc_worldManager.storage:get_string("realmDict"))
     if tmpRealmDict == nil then
         tmpRealmDict = {}
     end
@@ -36,14 +36,16 @@ end
 
 ---We save our global realm data to storage
 function Realm.UpdateStorage ()
-    Realm.storage:set_string("realmDict", minetest.serialize(Realm.realmDict))
-    Realm.storage:set_string("realmCount", tostring(Realm.realmCount))
+    mc_worldManager.storage:set_string("realmDict", minetest.serialize(Realm.realmDict))
+    mc_worldManager.storage:set_string("realmCount", tostring(Realm.realmCount))
 end
 
 ---@public
 ---creates a new Dimension.
 ---@return self
-function Realm:New(name)
+function Realm:New(name, size, height)
+    size = size or realmSize
+    height = height or realmHeight
 
     if (name == nil) then
         name = "Unnamed Realm"
@@ -68,13 +70,17 @@ function Realm:New(name)
     this.StartPos.x = -20000 + (realmSize * realmLocation.x) + (realmBuffer * realmLocation.x)
     this.StartPos.z = -20000 + (realmSize * realmLocation.z) + (realmBuffer * realmLocation.z)
 
-    this.EndPos = { x = this.StartPos.x + realmSize, y = this.StartPos.y + realmHeight, z = this.StartPos.z + realmSize }
+    -- Ensures that a realm size is no larger than our maximum size.
+    local finalRealmSize = math.min(realmSize, size)
+    local finalRealmHeight = math.min(realmHeight, height)
+
+    this.EndPos = { x = this.StartPos.x + finalRealmSize, y = this.StartPos.y + finalRealmHeight, z = this.StartPos.z + finalRealmSize }
 
     -- Temporary spawn point calculation
     this.SpawnPoint = { x = (this.StartPos.x + this.EndPos.x) / 2, y = ((this.StartPos.y + this.EndPos.y) / 2) + 2, z = (this.StartPos.z + this.EndPos.z) / 2 }
 
     setmetatable(this, self)
-    Realm.realmDict[this.ID] = this
+    table.insert(Realm.realmDict, this.ID, this)
     Realm.UpdateStorage()
 
     return this
@@ -113,7 +119,7 @@ end
 ---@return void
 function Realm.DeleteByID(ID)
     Realm.realmDict[ID]:ClearNodes()
-    Realm.realmDict[ID] = nil
+    table.remove(Realm.realmDict, ID)
     Realm.UpdateStorage()
 end
 
@@ -168,11 +174,12 @@ end
 ---@public
 ---Creates a ground plane between the realms start and end positions.
 ---@return void
-function Realm:CreateGround()
+function Realm:CreateGround(nodeType)
+    nodeType = nodeType or "mc_worldmanager:temp"
     local pos1 = { x = self.StartPos.x, y = (self.StartPos.y + self.EndPos.y) / 2, z = self.StartPos.z }
     local pos2 = { x = self.EndPos.x, y = (self.StartPos.y + self.EndPos.y) / 2, z = self.EndPos.z }
 
-    self:SetNodes(pos1, pos2, "mc_worldmanager:temp")
+    self:SetNodes(pos1, pos2, nodeType)
 end
 
 function Realm:CreateBarriers()

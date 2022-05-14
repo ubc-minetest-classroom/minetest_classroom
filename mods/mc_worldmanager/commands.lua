@@ -3,7 +3,7 @@ minetest.register_chatcommand("realmNew", {
         interact = true,
     },
     func = function(name, param)
-        local testRealm = Realm:New()
+        local testRealm = Realm:New(param, 80, 80)
         testRealm:CreateGround()
         testRealm:CreateBarriers()
         return true, "executed command. New realm has ID: " .. testRealm.ID
@@ -20,6 +20,7 @@ minetest.register_chatcommand("realmDelete", {
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. param .. " does not exist."
         end
+
         requestedRealm:Delete()
 
         return true, "Deleted realm with ID: " .. param
