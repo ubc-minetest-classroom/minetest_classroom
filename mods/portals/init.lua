@@ -46,7 +46,7 @@ portalstone = minetest.registered_aliases[portalstone] or portalstone
 
 minetest.register_tool("portals:portalwand", {
     description = "Portal Wand",
-    inventory_image = "portals_portalwand.png",
+    inventory_image = "portalWand.png",
     tool_capabilities = {
         groupcaps = {
             choppy = {

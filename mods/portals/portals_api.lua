@@ -220,10 +220,6 @@ portals.PortalShape_Traditional = {
     }
 }
 
-
-
-
-
 -- Portal implementation functions --
 -- =============================== --
 
