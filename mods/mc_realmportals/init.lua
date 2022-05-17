@@ -20,17 +20,13 @@ function mc_realmportals.newPortal(realmName, playerInstanced)
         post_effect_color = portalColor
     })
 
-    portals.register_portal_ignition_item("mc_realmportals:" .. realmName .. "portalwand")
-
     portals.register_portal(realmName .. "_portal", {
         shape = portals.PortalShape_Traditional,
         frame_node_name = "mc_realmportals:" .. realmName .. "stone",
-        wormhole_node_name="mc_realmportals:" .. realmName .. "portal",
+        wormhole_node_name = "mc_realmportals:" .. realmName .. "portal",
         wormhole_node_color = 4, -- 4 is cyan
 
-
-
-        title = ("Surface Portal"),
+        title = (realmName .. " Portal"),
 
         is_within_realm = function(pos, definition)
 
@@ -144,4 +140,5 @@ end
 
 mc_realmportals.newPortal("testRealm", false)
 mc_realmportals.newPortal("lukieRealm", false)
+mc_realmportals.newPortal("realm1024", false)
 
