@@ -17,6 +17,7 @@ function mc_realmportals.newPortal(realmName, playerInstanced)
 
     portals.register_wormhole_node("mc_realmportals:" .. realmName .. "portal", {
         description = ("Portal"),
+        color = portalColor,
         post_effect_color = portalColor
     })
 
@@ -24,7 +25,8 @@ function mc_realmportals.newPortal(realmName, playerInstanced)
         shape = portals.PortalShape_Traditional,
         frame_node_name = "mc_realmportals:" .. realmName .. "stone",
         wormhole_node_name = "mc_realmportals:" .. realmName .. "portal",
-        wormhole_node_color = 4, -- 4 is cyan
+        wormhole_node_color = 7, -- 4 is cyan
+
 
         title = (realmName .. " Portal"),
 
@@ -128,7 +130,7 @@ function mc_realmportals.stringToColor(name)
 
     math.randomseed(seed)
 
-    local alpha = math.random(255)
+    local alpha = 255
     local red = math.random(255)
     local green = math.random(255)
     local blue = math.random(255)
@@ -141,4 +143,6 @@ end
 mc_realmportals.newPortal("testRealm", false)
 mc_realmportals.newPortal("lukieRealm", false)
 mc_realmportals.newPortal("realm1024", false)
+mc_realmportals.newPortal("123", false)
+mc_realmportals.newPortal("456", false)
 
