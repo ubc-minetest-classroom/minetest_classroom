@@ -20,21 +20,6 @@ function mc_realmportals.newPortal(realmName, playerInstanced)
         post_effect_color = portalColor
     })
 
-    minetest.register_tool("mc_realmportals:" .. realmName .. "portalwand", {
-        description = realmName .. "Portal Wand",
-        inventory_image = "portals_portalwand.png",
-        color = portalColor,
-        tool_capabilities = {
-            groupcaps = {
-                choppy = {
-                    maxlevel = 4,
-                    uses = 0,
-                    times = { [1] = 1.60, [2] = 1.20, [3] = 0.80 }
-                },
-            },
-        },
-    })
-
     portals.register_portal_ignition_item("mc_realmportals:" .. realmName .. "portalwand")
 
     portals.register_portal(realmName .. "_portal", {
