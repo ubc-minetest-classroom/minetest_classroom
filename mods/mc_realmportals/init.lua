@@ -11,7 +11,7 @@ function mc_realmportals.newPortal(realmName, playerInstanced)
         description = realmName .. " Portal Stone",
         tiles = { "portalFrame.png" },
         color = portalColor,
-        groups = { stone = 1 },
+        groups = { stone = 1, portalstone = 1},
         is_ground_content = true
     })
 
@@ -50,8 +50,6 @@ function mc_realmportals.newPortal(realmName, playerInstanced)
 
         find_realm_anchorPos = function(surface_anchorPos, player_name)
             -- When finding our way to a realm, we use this function
-
-            minetest.log("error", "find_realm_anchorPos called for surface portal")
             local realm = mc_realmportals.CreateGetRealm(realmName)
 
             local pos = realm.SpawnPoint

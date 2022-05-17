@@ -30,11 +30,10 @@ function mc_worldManager.GetSpawnRealm()
     if (spawnRealm == nil) then
         spawnRealm = createSpawnRealm()
     end
-
     return spawnRealm
 end
 
--- To test, we are making a new realm for each new player
+-- on player spawn, we teleport them to the world spawn.
 minetest.register_on_newplayer(function(player)
 
     local spawnRealm = mc_worldManager.GetSpawnRealm()
