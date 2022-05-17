@@ -12,4 +12,48 @@ function magnify.register_plant(def_table, blocks)
     minetest_classroom.bc_plants:set_int("count", ref + 1)
 end
 
+-- registered species reference table getter
+function magnify.get_all_registered_species()
+    local storage_data = minetest_classroom.bc_plants:to_table()
+    local output = {}
+    for k,v in pairs(storage_data) do
+        if string.sub(k, 1, 4) == "ref_" then
+            local info = minetest.deserialize(v)
+            local name_string = info.com_name .. " (" .. info.sci_name .. ") (#" .. string.sub(k, 5) .. ")"
+            table.insert(output, name_string)
+        end
+    end
+    return output
+end
+
+-- reference clearing function
+function magnify.clear_ref(ref)
+    local storage_data = minetest_classroom.bc_plants:to_table()
+    for k,v in pairs(storage_data.fields) do
+        if k == ref or v == ref then
+            minetest_classroom.bc_plants:set_string(k, "")
+        end
+    end
+end
+
+-- species getter
+function magnify.get_ref(ref)
+    local storage_data = minetest_classroom.bc_plants:to_table()
+    local output = {}
+
+    if minetest_classroom.bc_plants:get(ref) then
+        output["data"] = minetest_classroom.bc_plants:get_string(ref)
+        output.nodes = {}
+      
+        for k,v in pairs(storage_data) do
+            if v == ref then
+                table.insert(output.nodes, string.sub(k, 6))
+            end
+        end
+        return output
+    else
+        return nil
+    end
+end
+
 return magnify

@@ -85,65 +85,81 @@ local function show_tasks(player)
 	end
 end
 
--- Manage Plant Species formspec
-local mc_teacher_manage_species = 
-	"formspec_version[5]"..
-	"size[13,13]"..
-	"button[3,5;4,1;AddSpecies;Add Species]"..
-	"button[3,7;4,1;EditSpecies;Edit Species]"..
-	"button[3,9;4,1;DeleteSpecies;Delete Species]"..
-	"button_exit[3,11;4,1;End;End]"..
-	"textlist[3,0;4,4;ListOfSpecies;;1;false]"
+-- NEW TEACHER VIEWER  // have to connect them // edit to variables 
+-- manage species button in main menu  --> leads to formspec where:
 
 local function show_species(player)
 	if check_perm(player) then
 		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_teacher:species", mc_teacher_manage_species) 
+		minetest.show_formspec(pname, "mc_teacher:species_viewer", mc_teacher_manage_species) -- replace with new formspec
 		return true
 	end
 end
 
--- Add Species formspec
-local mc_teacher_add_species =
-	"formspec_version[5]"..
-	"size[14,11.8]"..
-	"box[0.4,0.4;13.2,0.6;#008000]"..
-	"button_exit[7.2,10.4;6.4,1;ok;Create new species]"..
-	"label[0.4,7.3;Associated blocks]"..
-	"textlist[0.4,7.5;6.4,3.9;blocks;;1;false]"..
-	"dropdown[8.5,7.5;5.1,1;block_dropdown;;1;false]"..
-	"button[7.2,8.6;6.4,1;remove_block;Remove selected block from list]"..
-	"button[7.2,7.5;1.2,1;add_block;Add]"..
-	"field[0.4,1.9;6.4,0.8;sci_name;Scientific Name;]"..
-	"field[7.2,1.9;6.4,0.8;com_name;Common Name;]"..
-	"field[0.4,3.2;6.4,0.8;region;Native Region;]"..
-	"field[7.2,3.2;6.4,0.8;status;Status (Endangered\\, Invasive\\, etc.);]"..
-	"field[0.4,4.5;13.2,0.8;more_info;Additional information;]"..
-	"field[0.4,5.8;13.2,0.8;link;Link to image/information;]"..
-	"label[0.5,0.7;Create a New Species]"
+--> button -> species viewer 
+--> button -> expanded view 
 
--- Edit Species formspec
---[[ (still a WIP)
-local mc_teacher_edit_species = 
-	"formspec_version[5]"..
-	"size[14,11.8]"..
-	"box[0.4,0.4;13.2,0.6;#008080]"..
-	"button_exit[7.2,10.4;6.4,1;ok;Save changes]"..
-	"label[0.4,7.3;Associated blocks]"..
-	"textlist[0.4,7.5;6.4,3.9;blocks;apples:apple_tree,apples:apple_leaf,apples:apple;1;false]"..
-	"dropdown[8.5,7.5;5.1,1;block_dropdown;".. 
-		default:dirt_with_grass,default:dirt,apples:apple_tree,apples:apple_leaf,apples:apple ..	-- add node list here
-    ";1;false]"..
-	"button[7.2,8.6;6.4,1;remove_block;Remove selected block from list]"..
-	"button[7.2,7.5;1.2,1;add_block;Add]"..
-	"field[0.4,1.9;6.4,0.8;sci_name;Scientific Name;".. Pyrus malus .."]"..							-- add scientific name here
-	"field[7.2,1.9;6.4,0.8;com_name;Common Name;".. Apple .."]"..									-- add common name here
-	"field[0.4,3.2;6.4,0.8;region;Native Region;".. somewhere .."]".. 								-- add region here
-	"field[7.2,3.2;6.4,0.8;status;Status (Endangered\\, Invasive\\, etc.);".. common fruit .."]".. 	-- add status here
-	"field[0.4,4.5;13.2,0.8;more_info;Additional information;".. more information .."]"..			-- add more info here
-	"field[0.4,5.8;13.2,0.8;link;Link to image/information;".. add image link here .."]"..			-- add image link here
-	"label[0.5,0.7;Edit an Existing Species]"
+--[[
+formspec_version[5]
+size[12,12]
+box[2.8,0;5.2,1;#FFFF00]
+box[3.1,7;4.9,1;#00FF00]
+box[3.1,4;4.9,1;#00FF00]
+button[4,4;3,1;condensed_view;Species Viewer]
+button[4,7;3,1;expanded_view;Expanded Viewer]
+label[4.2,0.5;Manage Species]
 ]]
+
+--[[
+formspec_version[5]
+size[10,8]
+box[0.4,0.4;9.2,1;#FFFF00]
+label[3.3,0.9;Species Compendium]
+textlist[0.4,1.6;9.2,4.8;species_list;;1;false]
+button[0.4,6.6;4.5,1;view;View Species]
+button_exit[5.1,6.6;4.5,1;;Back]
+
+-- clean up later
+formspec_version[5]
+size[14,8.2]
+box[0.4,0.4;8.6,1.1;#008000]
+label[0.5,0.7;info.sci_name]
+label[0.5,1.2;info.com_name and "Common name: "..info.com_name) or "No common name"]
+label[0.7,2.1;info.region and "Native to "..info.region) or "Native region unknown"]
+image[9.4,0.4;4.2,4.2;info.texture or "test.png]
+label[0.7,2.6;info.status or "Status unknown]
+label[0.4,2.1;-]
+label[0.4,2.6;-]
+label[0.4,3.1;-]
+label[0.7,3.1;"..info.more_info.."]
+button[9.4,4.9;4.2,1.3;more_info;More info (add link)]
+button_exit[9.4,6.5;4.2,1.3;exit;Back]
+textlist[0.4,4.9;8.7,2.9;assoc_nodes;;1;false]
+label[0.5,4.6;Associated nodes:]
+]]
+
+
+
+-- species viewer - both names, native region, status
+
+-- in-progress
+
+--[[
+formspec_version[5]
+size[12,12]
+box[2.8,0;5.2,1;#FFFF00]
+box[3.1,5;4.9,1;#00FF00]
+box[3.1,3;4.9,1;#00FF00]
+label[4.2,0.5;Species Viewer]
+field[3.1,3;4.9,1;;;          common_name]
+box[3.1,7;4.9,1;#00FF00]
+field[3.1,5;4.9,1;;;          scientific_name]
+field[3.1,7;4.9,1;;;            native_region]
+box[3.1,9;4.9,1;#00FF00]
+field[3.1,9;4.9,1;;;               status]
+]]
+
+-- expanded view -- block associated with it, more_info blurb/additioanl link,image(?)
 
  -- Delete Species formspec - will likely not be used 
 --local mc_teacher_delete_species = 
@@ -163,6 +179,7 @@ local mc_teacher_edit_species =
 --	end
 --end
 
+--[[
 local function clear_ref(ref)
 	local storage_data = minetest_classroom.bc_plants:to_table()
 	for k,v in pairs(storage_data.fields) do
@@ -201,6 +218,7 @@ local function create_new_species(serial_table, blocks)
   		minetest_classroom.bc_plants:set_string("node_"..b, ref)
 	end
 end
+]]
 
 -- Set up a task timer
 local hud = mhud.init()
@@ -685,6 +703,24 @@ local function show_mail(player)
 	end
 end
 
+-- Species viewer related getter functions
+local function get_species_list()
+	local pattern = "textlist%[%d+%.?%d*,%d+%.?%d*;%d+%.?%d*,%d+%.?%d*;.*;(.*);%d+;.*%]"
+  	local list_string = string.match("add formspec string here", pattern) or ""
+  	if list_string == "" then
+    	return nil
+	end
+    return string.split(list_string, ",", true) -- minetest helper function
+end
+
+local function get_species_ref(index)
+  	local elem = get_species_list()[index]
+	local ref_num_split = string.split(elem, "#")
+  	local ref_num = ref_num_split[table.getn(ref_num_split)]
+  
+	return "ref_"..ref_num
+end
+
 -- TODO: add Change Server Rules to the menu
 
 -- Processing the form from the menu
@@ -720,6 +756,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			show_classrooms(player)
 		elseif fields.players then
 			show_players(player)
+		elseif fields.species then
+			-- show_species(player) todo
 		elseif fields.mail then
 			show_mail(player)
 		end
@@ -890,34 +928,29 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 	end
 
-	if formname == "mc_teacher:species" then
-		-- ...
-		  
-		if fields.AddSpecies then
-			-- show_add_species()
-		elseif fields.EditSpecies then
-			-- show_edit_species()
-		elseif fields.DeleteSpecies then
-			-- delete species
-			local keyToDel = "ref_"
-			clear_ref(keyToDel)
-		end		
-	end
-		
-	if formname == "mc_teacher:add_species" then
-		-- ...
-		if fields.add_block then
-			-- add node to list of associated nodes
-		elseif fields.remove_block then
-		
-		elseif fields.block_dropdown then
-			
+	if formname == "mc_teacher:species_menu" then
+		if fields.species_list then
+        	local event = minetest.explode_textlist_event(fields.species_list)
+        	if event.type == "CHG" then
+        		context.species_selected = event.index
+        	end
+      	-- use textlist text object
+        -- pattern match to textlist object, split at ","
+        -- get corresponding object's reference number
+		elseif fields.view then
+			if context.species_selected then
+      			local ref = get_species_ref(context.selected)
+          		
+        		-- get species from ref
+        		-- get linked species
+        		-- show formspec
+        	end
 		end
 	end
-		
-	if formname == "mc_teacher:edit_species" then
-		-- ...
-	end
+  
+  	if formname == "mc_teacher:species_view" then
+    	-- handle buttons (TBD)
+    end
 end)
 
 function record_classroom(player,cc,sn,sy,sm,sd,ey,em,ed,map)
