@@ -573,3 +573,44 @@ function place_marker(player,message)
 		minetest.chat_send_player(pname,pname..": You are not allowed to place markers. Please submit a report from your notebook to request this privilege.")
 	end
 end
+
+
+-------------------------
+--    TUTORIAL BOOK    --
+-------------------------
+
+-- Define a formspec that will describe tutorials and give the option to teleport to selected tutorial realm
+local mc_student_tutorial_menu =
+	"formspec_version[5]" .. 
+	"size[13,10]" ..
+	"button[0.2,0.2;4.6,0.8;intro;Introduction]" ..
+	"box[0.2,8.4;12.6,1.4;#505050]" ..
+	"button[0.2,1.2;4.6,0.8;mov;Movement]" ..
+	"textarea[5,0.2;7.8,8;text;;Welcome to Minetest Classroom]" ..
+	"button[0.4,8.5;3,0.8;teleport;Teleport to Tutorial]"
+
+local function show_tutorial_menu(player)
+	if check_perm(player) then
+		local pname = player:get_player_name()
+		minetest.show_formspec(pname, "mc_student:tutorials", mc_student_tutorial_menu)
+		return true
+	end
+end
+
+-- The tutorial book for accessing tutorials
+minetest.register_tool("mc_student:tutorialBook" , {
+	description = "Tutorial book",
+	inventory_image = "tutorial_book.png",
+	-- Left-click the tool activates the tutorial menu
+	on_use = function (itemstack, user, pointed_thing)
+        local pname = user:get_player_name()
+		-- Check for shout privileges
+		if check_perm(user) then
+			show_tutorial_menu(user)
+		end
+	end,
+	-- Destroy the book on_drop to keep things tidy
+	on_drop = function (itemstack, dropper, pos)
+		minetest.set_node(pos, {name="air"})
+	end,
+})
