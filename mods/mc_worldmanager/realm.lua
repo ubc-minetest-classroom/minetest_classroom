@@ -1,8 +1,6 @@
 -- Realms are 12 mapchunk areas seperated by a 1 mapchunk border of void (in each dimension);
 -- TODO: make realm size dynamic
--- TODO: save realm info to storage
 -- TODO: add helper functions to do stuff like teleport players into the maps
--- TODO: add invisible world border around realms
 -- TODO: assign realm ID based on first available ID rather than realm count
 
 local realmSize = 80 * 6 -- 12 mapchunks

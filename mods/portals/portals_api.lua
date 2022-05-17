@@ -396,7 +396,7 @@ local function list_closest_portals(portal_definition, anchorPos, distance_limit
 
     local result = {}
 
-    local isRealm = portal_definition.is_within_realm(anchorPos)
+    local isRealm = portal_definition.is_within_realm(anchorPos,portal_definition)
     if distance_limit == nil then
         distance_limit = -1
     end
@@ -408,7 +408,7 @@ local function list_closest_portals(portal_definition, anchorPos, distance_limit
         local closingBrace = key:find(")", 6, true)
         if closingBrace ~= nil then
             local found_anchorPos = minetest.string_to_pos(key:sub(0, closingBrace))
-            if found_anchorPos ~= nil and portal_definition.is_within_realm(found_anchorPos) == isRealm then
+            if found_anchorPos ~= nil and portal_definition.is_within_realm(found_anchorPos,portal_definition) == isRealm then
                 local found_name = key:sub(closingBrace + 5)
                 if found_name == portal_definition.name then
                     local x = anchorPos.x - found_anchorPos.x
@@ -846,7 +846,7 @@ local function ignite_portal(ignition_pos, player_name, ignition_node_name)
             -- debugf("Found portal frame. Looked at %s, found at %s orientation %s", ignition_pos, anchorPos, orientation)
 
             local destination_anchorPos, destination_orientation
-            if portal_definition.is_within_realm(ignition_pos) then
+            if portal_definition.is_within_realm(ignition_pos,portal_definition) then
                 destination_anchorPos, destination_orientation = portal_definition.find_surface_anchorPos(anchorPos, player_name or "")
             else
                 destination_anchorPos, destination_orientation = portal_definition.find_realm_anchorPos(anchorPos, player_name or "")

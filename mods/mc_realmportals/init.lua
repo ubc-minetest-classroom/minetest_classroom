@@ -1,16 +1,11 @@
-mc_realmportals = {}
+-- RealmIDTable stores the name of portal realms as a key, and the ID of the associated realm as the value.
+
+mc_realmportals = { RealmIDTable = {} }
 
 function mc_realmportals.newPortal(realmName, playerInstanced)
     playerInstanced = playerInstanced or false
 
-
-    local realm = mc_realmportals.realms[realmName]
-    if (realm == nil) then
-        realm = Realm:New(realmName, 80, 80)
-        mc_realmportals.realms[realmName] = realm
-    end
-
-    local portalColor = stringToColor(realmName)
+    local portalColor = mc_realmportals.stringToColor(realmName)
 
     minetest.register_node("mc_realmportals:" .. realmName .. "stone", {
         description = realmName .. " Portal Stone",
@@ -21,7 +16,7 @@ function mc_realmportals.newPortal(realmName, playerInstanced)
     })
 
     portals.register_wormhole_node("mc_realmportals:" .. realmName .. "portal", {
-        description = S("Portal"),
+        description = ("Portal"),
         post_effect_color = portalColor
     })
 
@@ -45,19 +40,41 @@ function mc_realmportals.newPortal(realmName, playerInstanced)
     portals.register_portal(realmName .. "_portal", {
         shape = portals.PortalShape_Traditional,
         frame_node_name = "mc_realmportals:" .. realmName .. "stone",
+        wormhole_node_name="mc_realmportals:" .. realmName .. "portal",
         wormhole_node_color = 4, -- 4 is cyan
-        title = S("Surface Portal"),
 
-        is_within_realm = function(pos)
-            -- return true if pos is inside the realm, TODO: integrate with realms system
-            return true
+
+
+        title = ("Surface Portal"),
+
+        is_within_realm = function(pos, definition)
+
+
+            local realm = mc_realmportals.CreateGetRealm(realmName)
+            -- We can also solve this using a dot product, but that would increase CPU cycles.
+            -- Although this solution is not as pretty, it only uses ~6 cycles (assuming 1 cycle per comparison).
+            -- A dot-product would use ~36 cycles (10 per multiplication + comparisons).
+            if (pos.x < realm.StartPos.x or pos.x > realm.EndPos.x) then
+                return false
+            elseif (pos.z < realm.StartPos.z or pos.z > realm.EndPos.z) then
+                return false
+            elseif (pos.y < realm.StartPos.y or pos.y > realm.EndPos.y) then
+                return false
+            else
+                return true
+            end
         end,
 
         find_realm_anchorPos = function(surface_anchorPos, player_name)
             -- When finding our way to a realm, we use this function
 
             minetest.log("error", "find_realm_anchorPos called for surface portal")
-            return realm.SpawnPoint
+            local realm = mc_realmportals.CreateGetRealm(realmName)
+
+            local pos = realm.SpawnPoint
+            pos.y = pos.y - 1
+
+            return pos
         end,
 
         find_surface_anchorPos = function(realm_anchorPos, player_name)
@@ -97,16 +114,35 @@ function mc_realmportals.newPortal(realmName, playerInstanced)
         end
     })
 
+    function mc_realmportals.CreateGetRealm(realmName)
+        local realmID = mc_realmportals.RealmIDTable[realmName]
 
+        if (realmID == nil) then
+            return mc_realmportals.CreateRalmByName(realmName)
+        end
+
+        local realm = Realm.realmDict[realmID]
+
+        if (realm == nil) then
+            return mc_realmportals.CreateRalmByName(realmName)
+        end
+
+        return realm
+    end
+
+    function mc_realmportals.CreateRalmByName(realmName)
+        local realm = Realm:New(realmName, 80, 80)
+        realm:CreateGround("stone")
+        realm:CreateBarriers()
+        mc_realmportals.RealmIDTable[realmName] = realm.ID
+        return realm
+    end
 end
 
-local encoding = { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "x", "y", "z" }
-local reverse_encoding = table_invert(encoding)
-
-function stringToColor(name)
+function mc_realmportals.stringToColor(name)
     local seed = 0
     for c in name:gmatch(".") do
-        seed = seed + reverse_encoding[c]
+        seed = seed + string.byte(c)
     end
 
     math.randomseed(seed)
@@ -119,10 +155,8 @@ function stringToColor(name)
     return { a = alpha, r = red, g = green, b = blue }
 end
 
-function table_invert(t)
-    local s = {}
-    for k, v in ipairs(t) do
-        s[v] = k
-    end
-    return s
-end
+-- Defining all our portal realms
+
+mc_realmportals.newPortal("testRealm", false)
+mc_realmportals.newPortal("lukieRealm", false)
+
