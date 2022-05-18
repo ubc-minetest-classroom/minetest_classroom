@@ -28,6 +28,24 @@ minetest.register_chatcommand("realmDelete", {
     end,
 })
 
+minetest.register_chatcommand("realmSchematic", {
+    params = "Realm ID",
+    privs = {
+        interact = true,
+    },
+    func = function(name, param)
+        local requestedRealm = Realm.realmDict[tonumber(param)]
+        if (requestedRealm == nil) then
+            return false, "Requested realm of ID:" .. param .. " does not exist."
+        end
+
+        local path = requestedRealm:Save_Schematic()
+
+        return true, "Saved realm with ID ".. param .." at path: " .. path
+    end,
+})
+
+
 minetest.register_chatcommand("realmList", {
     privs = {
         interact = true,

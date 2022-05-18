@@ -2,8 +2,9 @@
 
 mc_realmportals = { RealmIDTable = {} }
 
-function mc_realmportals.newPortal(realmName, playerInstanced)
+function mc_realmportals.newPortal(realmName, playerInstanced, schematic)
     playerInstanced = playerInstanced or false
+    schematic = schematic or nil
 
     local portalColor = mc_realmportals.stringToColor(realmName)
 
@@ -95,26 +96,33 @@ function mc_realmportals.newPortal(realmName, playerInstanced)
         end
     })
 
-    function mc_realmportals.CreateGetRealm(realmName)
+    function mc_realmportals.CreateGetRealm(realmName, schematic)
         local realmID = mc_realmportals.RealmIDTable[realmName]
 
         if (realmID == nil) then
-            return mc_realmportals.CreateRalmByName(realmName)
+            return mc_realmportals.CreateRalmByName(realmName, schematic)
         end
 
         local realm = Realm.realmDict[realmID]
 
         if (realm == nil) then
-            return mc_realmportals.CreateRalmByName(realmName)
+            return mc_realmportals.CreateRalmByName(realmName, schematic)
         end
 
         return realm
     end
 
-    function mc_realmportals.CreateRalmByName(realmName)
+    function mc_realmportals.CreateRalmByName(realmName, schematic)
         local realm = Realm:New(realmName, 80, 80)
-        realm:CreateGround("stone")
+
+        if (schematic == nil) then
+            realm:CreateGround("stone")
+        else
+            realm:Load_Schematic(schematic)
+        end
+
         realm:CreateBarriers()
+
         mc_realmportals.RealmIDTable[realmName] = realm.ID
         return realm
     end
@@ -138,8 +146,8 @@ end
 
 -- Defining all our portal realms
 
-mc_realmportals.newPortal("testRealm", false)
-mc_realmportals.newPortal("lukieRealm", false)
+mc_realmportals.newPortal("testRealm", false, "vancouver")
+mc_realmportals.newPortal("lukieRealm", false, "shack")
 mc_realmportals.newPortal("realm1024", false)
 mc_realmportals.newPortal("123", false)
 mc_realmportals.newPortal("456", false)

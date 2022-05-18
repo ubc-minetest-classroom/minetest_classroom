@@ -14,7 +14,7 @@ Realm = { realmDict = {} }
 Realm.__index = Realm
 
 ---We load our global realm data from storage
-function Realm.LoadFromStorage()
+function Realm.LoadDataFromStorage()
     Realm.realmCount = tonumber(mc_worldManager.storage:get_string("realmCount"))
     if Realm.realmCount == nil then
         Realm.realmCount = 0
@@ -33,7 +33,7 @@ function Realm.LoadFromStorage()
 end
 
 ---We save our global realm data to storage
-function Realm.UpdateStorage ()
+function Realm.SaveDataToStorage ()
     mc_worldManager.storage:set_string("realmDict", minetest.serialize(Realm.realmDict))
     mc_worldManager.storage:set_string("realmCount", tostring(Realm.realmCount))
 end
@@ -79,7 +79,7 @@ function Realm:New(name, size, height)
 
     setmetatable(this, self)
     table.insert(Realm.realmDict, this.ID, this)
-    Realm.UpdateStorage()
+    Realm.SaveDataToStorage()
 
     return this
 end
@@ -110,7 +110,7 @@ end
 function Realm:Delete()
     self:ClearNodes()
     table.remove(Realm.realmDict, self.ID)
-    Realm.UpdateStorage()
+    Realm.SaveDataToStorage()
 end
 
 ---@public
@@ -148,17 +148,6 @@ function Realm:ClearNodes()
     local context = {} -- persist data between callback calls
     context.realm = self
     minetest.emerge_area(self.StartPos, self.EndPos, emerge_callback, context)
-end
-
----@public
----Updates and saves the spawnpoint of a realm.
----@param spawnPos table SpawnPoint in localSpace.
----@return boolean Whether the operation succeeded.
-function Realm:UpdateSpawn(spawnPos)
-    local pos = self:LocalToWorldPosition(spawnPos)
-    self.SpawnPoint = { x = pos.x, y = pos.y, z = pos.z }
-    Realm.UpdateStorage()
-    return true
 end
 
 ---@public
@@ -229,6 +218,57 @@ function Realm:SetNodes(pos1, pos2, node)
     vm:write_to_map(true)
 end
 
+function Realm:Save_Schematic()
+    local folderpath = minetest.get_worldpath() .. "\\schematics\\"
+
+    minetest.mkdir(folderpath)
+
+    local fileName = "Realm " .. self.ID .. " "
+    for i = 1, 4 do
+        fileName = fileName .. math.random(0, 9)
+    end
+
+    fileName = fileName .. os.date(" %Y%m%d %H%M")
+
+    local filepath = folderpath .. "\\" .. fileName .. ".schematic"
+
+    minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath, nil)
+    return filepath
+end
+
+function Realm:Load_Schematic(key)
+    local schematic = schematicManager.getSchematicPath(key)
+
+
+    -- Read data into LVM
+    local vm = minetest.get_voxel_manip()
+    local emin, emax = vm:read_from_map(self.StartPos, self.EndPos)
+    local a = VoxelArea:new {
+        MinEdge = emin,
+        MaxEdge = emax
+    }
+
+    -- Place Schematic
+   -- local results = minetest.place_schematic(self.StartPos, schematic, 0, nil, true)
+
+    local results = minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic, 0, nil, true)
+
+
+    vm:write_to_map(true)
+    return results
+end
+
+---@public
+---Updates and saves the spawnpoint of a realm.
+---@param spawnPos table SpawnPoint in localSpace.
+---@return boolean Whether the operation succeeded.
+function Realm:UpdateSpawn(spawnPos)
+    local pos = self:LocalToWorldPosition(spawnPos)
+    self.SpawnPoint = { x = pos.x, y = pos.y, z = pos.z }
+    Realm.SaveDataToStorage()
+    return true
+end
+
 ---LocalToWorldPosition
 ---@param position table
 ---@return table
@@ -266,4 +306,4 @@ function Realm:CalculateSpawn()
 
 end
 
-Realm.LoadFromStorage()
+Realm.LoadDataFromStorage()

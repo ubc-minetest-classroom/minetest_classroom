@@ -34,3 +34,7 @@ function minetest_classroom.save()
 end
 
 minetest.register_on_shutdown(minetest_classroom.save)
+
+
+schematicManager.registerSchematicPath("vancouver", minetest.get_modpath("mc_teacher") .. "/maps/vancouver_osm.mts")
+
