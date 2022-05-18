@@ -31,6 +31,5 @@ function mc_worldManager.GetSpawnRealm()
     return spawnRealm
 end
 
-
 schematicManager.registerSchematicPath("shack", mc_worldManager.path .. "/schematics/shack.mts")
 

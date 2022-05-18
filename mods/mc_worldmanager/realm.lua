@@ -1,5 +1,4 @@
--- Realms are 12 mapchunk areas seperated by a 1 mapchunk border of void (in each dimension);
--- TODO: make realm size dynamic
+-- Realms are up-to 12 mapchunk areas seperated by a 1 mapchunk border of void (in each dimension);
 -- TODO: add helper functions to do stuff like teleport players into the maps
 -- TODO: assign realm ID based on first available ID rather than realm count
 

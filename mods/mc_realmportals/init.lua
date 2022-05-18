@@ -1,6 +1,19 @@
 -- RealmIDTable stores the name of portal realms as a key, and the ID of the associated realm as the value.
 
-mc_realmportals = { RealmIDTable = {} }
+mc_realmportals = { storage = minetest.get_mod_storage() }
+
+---We load our global realmPortal data from storage
+function mc_realmportals.LoadDataFromStorage()
+    mc_realmportals.RealmIDTable = minetest.deserialize(mc_realmportals.storage:get_string("realmIDLookup"))
+    if mc_realmportals.RealmIDTable == nil then
+        mc_realmportals.RealmIDTable = {}
+    end
+end
+
+---We save our global realmPortal data to storage
+function mc_realmportals.SaveDataToStorage ()
+    mc_realmportals.storage:set_string("realmIDLookup", minetest.serialize(mc_realmportals.RealmIDTable))
+end
 
 function mc_realmportals.newPortal(realmName, playerInstanced, schematic)
     playerInstanced = playerInstanced or false
@@ -33,16 +46,15 @@ function mc_realmportals.newPortal(realmName, playerInstanced, schematic)
 
         is_within_realm = function(pos, definition)
 
+            -- We check if we're in the spawn realm, if not, we are in a realm.
+            local realm = mc_worldManager.GetSpawnRealm()
 
-            local realm = mc_realmportals.CreateGetRealm(realmName)
-            -- We can also solve this using a dot product, but that would increase CPU cycles.
-            -- Although this solution is not as pretty, it only uses ~6 cycles (assuming 1 cycle per comparison).
-            -- A dot-product would use ~36 cycles (10 per multiplication + comparisons).
-            if (pos.x < realm.StartPos.x or pos.x > realm.EndPos.x) then
+
+            if (pos.x > realm.StartPos.x or pos.x < realm.EndPos.x) then
                 return false
-            elseif (pos.z < realm.StartPos.z or pos.z > realm.EndPos.z) then
+            elseif (pos.z > realm.StartPos.z or pos.z < realm.EndPos.z) then
                 return false
-            elseif (pos.y < realm.StartPos.y or pos.y > realm.EndPos.y) then
+            elseif (pos.y > realm.StartPos.y or pos.y < realm.EndPos.y) then
                 return false
             else
                 return true
@@ -52,13 +64,17 @@ function mc_realmportals.newPortal(realmName, playerInstanced, schematic)
         find_realm_anchorPos = function(surface_anchorPos, player_name)
             -- When finding our way to a realm, we use this function
 
+
+            local instanceRealmName = realmName
+
             if (playerInstanced) then
-                realmName = realmName .. " instanced for " .. player_name
+                instanceRealmName = instanceRealmName .. " instanced for " .. player_name
             end
-            local realm = mc_realmportals.CreateGetRealm(realmName, schematic)
+
+            local realm = mc_realmportals.CreateGetRealm(instanceRealmName, schematic)
 
             local pos = realm.SpawnPoint
-            pos.y = pos.y - 1
+            pos.y = pos.y
 
             return pos
         end,
@@ -128,6 +144,7 @@ function mc_realmportals.newPortal(realmName, playerInstanced, schematic)
         realm:CreateBarriers()
 
         mc_realmportals.RealmIDTable[realmName] = realm.ID
+        mc_realmportals.SaveDataToStorage()
         return realm
     end
 end
@@ -147,6 +164,8 @@ function mc_realmportals.stringToColor(name)
 
     return { a = alpha, r = red, g = green, b = blue }
 end
+
+mc_realmportals.LoadDataFromStorage()
 
 -- Defining all our portal realms
 
