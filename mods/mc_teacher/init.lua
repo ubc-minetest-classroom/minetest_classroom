@@ -35,7 +35,7 @@ end
 
 minetest.register_on_shutdown(minetest_classroom.save)
 
-schematicManager.registerSchematicPath("vancouver", minetest.get_modpath("mc_teacher") .. "/maps/vancouver_osm")
+schematicManager.registerSchematicPath("vancouver_osm", minetest.get_modpath("mc_teacher") .. "/maps/vancouver_osm")
 schematicManager.registerSchematicPath("MKRF512_all", minetest.get_modpath("mc_teacher") .. "/maps/MKRF512_all")
 schematicManager.registerSchematicPath("MKRF512_aspect", minetest.get_modpath("mc_teacher") .. "/maps/MKRF512_aspect")
 schematicManager.registerSchematicPath("MKRF512_dtm", minetest.get_modpath("mc_teacher") .. "/maps/MKRF512_dtm")

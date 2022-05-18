@@ -792,26 +792,10 @@ function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
         math.randomseed(os.time())
         access_num = tostring(math.floor(math.random() * 100000))
 
-        local newRealm = Realm:New()
+        local newRealm = Realm:New(cc..sn..map)
+        newRealm:Load_Schematic(map)
 
 
-        --TODO: Refractor place_map into the realm system
-
-        -- Place the map
-        mc_worldManager.place_map(player, map, newRealm.StartPos)
-
-        -- Retrieve spawn position from map metadata
-        local mmeta = Settings(minetest.get_modpath("mc_teacher") .. "/maps/" .. map .. ".conf")
-        local spawn_pos_x = tonumber(mmeta:get("spawn_pos_x"))
-        local spawn_pos_y = tonumber(mmeta:get("spawn_pos_y"))
-        local spawn_pos_z = tonumber(mmeta:get("spawn_pos_z"))
-        local spawn_pos = {
-            x = spawn_pos_x,
-            y = spawn_pos_y,
-            z = spawn_pos_z,
-        }
-
-        newRealm:UpdateSpawn(spawn_pos)
 
         if temp == nil then
             -- Build the new classroom table entry
