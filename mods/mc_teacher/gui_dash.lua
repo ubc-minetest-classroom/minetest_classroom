@@ -794,6 +794,7 @@ function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
 
         local newRealm = Realm:New(cc..sn..map)
         newRealm:Load_Schematic(map)
+        newRealm:CreateBarriers()
 
 
 
