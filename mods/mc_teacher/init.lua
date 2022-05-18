@@ -1,4 +1,3 @@
-minetest_classroom = {}
 minetest_classroom.classrooms = minetest.get_mod_storage()
 
 -- Required MT version
