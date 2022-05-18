@@ -230,15 +230,24 @@ function Realm:Save_Schematic()
 
     fileName = fileName .. os.date(" %Y%m%d %H%M")
 
-    local filepath = folderpath .. "\\" .. fileName .. ".schematic"
+    local filepath = folderpath .. "\\" .. fileName
 
-    minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath, nil)
-    return filepath
+    minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".schematic", nil)
+
+    local settings = Settings(filepath .. ".conf")
+    settings:set("author", "unknown")
+    settings:set("name", "unknown")
+    settings:set("spawn_pos_x", self.SpawnPoint.x)
+    settings:set("spawn_pos_y", self.SpawnPoint.y)
+    settings:set("spawn_pos_z", self.SpawnPoint.z)
+
+    local settingsWrote = settings:write()
+
+    return filepath, settingsWrote
 end
 
 function Realm:Load_Schematic(key)
-    local schematic = schematicManager.getSchematicPath(key)
-
+    local schematic, config = schematicManager.getSchematic(key)
 
     -- Read data into LVM
     local vm = minetest.get_voxel_manip()
@@ -249,12 +258,12 @@ function Realm:Load_Schematic(key)
     }
 
     -- Place Schematic
-   -- local results = minetest.place_schematic(self.StartPos, schematic, 0, nil, true)
+    -- local results = minetest.place_schematic(self.StartPos, schematic, 0, nil, true)
 
     local results = minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic, 0, nil, true)
-
-
     vm:write_to_map(true)
+
+    self:UpdateSpawn(config.spawnPoint)
     return results
 end
 
@@ -303,7 +312,6 @@ function Realm:CalculateSpawn()
         self.SpawnPoint = pos
         return pos
     end
-
 end
 
 Realm.LoadDataFromStorage()

@@ -41,10 +41,9 @@ minetest.register_chatcommand("realmSchematic", {
 
         local path = requestedRealm:Save_Schematic()
 
-        return true, "Saved realm with ID ".. param .." at path: " .. path
+        return true, "Saved realm with ID " .. param .. " at path: " .. path
     end,
 })
-
 
 minetest.register_chatcommand("realmList", {
     privs = {
@@ -121,5 +120,45 @@ minetest.register_chatcommand("realmWalls", {
         requestedRealm:CreateBarriers()
 
 
+    end,
+})
+
+minetest.register_chatcommand("localPos", {
+    params = "Realm ID",
+    privs = {
+        interact = true,
+    },
+    func = function(name, param)
+        local requestedRealm = Realm.realmDict[tonumber(param)]
+        if (requestedRealm == nil) then
+            return false, "Requested realm of ID:" .. param .. " does not exist."
+        end
+
+        local player = minetest.get_player_by_name(name)
+        local position = requestedRealm:WorldToLocalPosition(player:get_pos())
+
+        return true, "Your position in the local space of realm " .. param .. " is x: " .. position.x .. " y: " .. position.y .. " z: " .. position.z
+
+
+    end,
+})
+
+minetest.register_chatcommand("realmSetSpawn", {
+    params = "Realm ID",
+    privs = {
+        interact = true,
+    },
+    func = function(name, param)
+        local requestedRealm = Realm.realmDict[tonumber(param)]
+        if (requestedRealm == nil) then
+            return false, "Requested realm of ID:" .. param .. " does not exist."
+        end
+
+        local player = minetest.get_player_by_name(name)
+        local position = requestedRealm:WorldToLocalPosition(player:get_pos())
+
+        requestedRealm:UpdateSpawn(position)
+
+        return true, "Updated spawnpoint for realm with ID: " .. param
     end,
 })
