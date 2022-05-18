@@ -146,7 +146,7 @@ end
 
 -- Defining all our portal realms
 
-mc_realmportals.newPortal("testRealm", false, "vancouver")
+mc_realmportals.newPortal("testRealm", false, "vancouver_osm")
 mc_realmportals.newPortal("lukieRealm", false, "shack")
 mc_realmportals.newPortal("realm1024", false)
 mc_realmportals.newPortal("123", false)
