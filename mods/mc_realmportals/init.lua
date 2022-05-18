@@ -12,7 +12,7 @@ function mc_realmportals.newPortal(realmName, playerInstanced, schematic)
         description = realmName .. " Portal Stone",
         tiles = { "portalFrame.png" },
         color = portalColor,
-        groups = { stone = 1, portalstone = 1},
+        groups = { stone = 1, portalstone = 1 },
         is_ground_content = true
     })
 
@@ -51,7 +51,11 @@ function mc_realmportals.newPortal(realmName, playerInstanced, schematic)
 
         find_realm_anchorPos = function(surface_anchorPos, player_name)
             -- When finding our way to a realm, we use this function
-            local realm = mc_realmportals.CreateGetRealm(realmName)
+
+            if (playerInstanced) then
+                realmName = realmName .. " instanced for " .. player_name
+            end
+            local realm = mc_realmportals.CreateGetRealm(realmName, schematic)
 
             local pos = realm.SpawnPoint
             pos.y = pos.y - 1
@@ -146,7 +150,7 @@ end
 
 -- Defining all our portal realms
 
-mc_realmportals.newPortal("testRealm", false, "vancouver_osm")
+mc_realmportals.newPortal("testRealm", true, "vancouver_osm")
 mc_realmportals.newPortal("lukieRealm", false, "shack")
 mc_realmportals.newPortal("realm1024", false)
 mc_realmportals.newPortal("123", false)
