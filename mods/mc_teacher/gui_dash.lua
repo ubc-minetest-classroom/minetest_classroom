@@ -24,6 +24,8 @@ local infos = {
 	},
 }
 
+local magnify = dofile(minetest.get_modpath("magnify") .. "/exports.lua")
+
 local function get_group(context)
 	if context and context.groupname then
 		return minetest_classroom.get_group_students(context.groupname)
@@ -87,138 +89,6 @@ end
 
 -- NEW TEACHER VIEWER  // have to connect them // edit to variables 
 -- manage species button in main menu  --> leads to formspec where:
-
-local function show_species(player)
-	if check_perm(player) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_teacher:species_viewer", mc_teacher_manage_species) -- replace with new formspec
-		return true
-	end
-end
-
---> button -> species viewer 
---> button -> expanded view 
-
---[[
-formspec_version[5]
-size[12,12]
-box[2.8,0;5.2,1;#FFFF00]
-box[3.1,7;4.9,1;#00FF00]
-box[3.1,4;4.9,1;#00FF00]
-button[4,4;3,1;condensed_view;Species Viewer]
-button[4,7;3,1;expanded_view;Expanded Viewer]
-label[4.2,0.5;Manage Species]
-]]
-
---[[
-formspec_version[5]
-size[10,8]
-box[0.4,0.4;9.2,1;#FFFF00]
-label[3.3,0.9;Species Compendium]
-textlist[0.4,1.6;9.2,4.8;species_list;;1;false]
-button[0.4,6.6;4.5,1;view;View Species]
-button_exit[5.1,6.6;4.5,1;;Back]
-
--- clean up later
-formspec_version[5]
-size[14,8.2]
-box[0.4,0.4;8.6,1.1;#008000]
-label[0.5,0.7;info.sci_name]
-label[0.5,1.2;info.com_name and "Common name: "..info.com_name) or "No common name"]
-label[0.7,2.1;info.region and "Native to "..info.region) or "Native region unknown"]
-image[9.4,0.4;4.2,4.2;info.texture or "test.png]
-label[0.7,2.6;info.status or "Status unknown]
-label[0.4,2.1;-]
-label[0.4,2.6;-]
-label[0.4,3.1;-]
-label[0.7,3.1;"..info.more_info.."]
-button[9.4,4.9;4.2,1.3;more_info;More info (add link)]
-button_exit[9.4,6.5;4.2,1.3;exit;Back]
-textlist[0.4,4.9;8.7,2.9;assoc_nodes;;1;false]
-label[0.5,4.6;Associated nodes:]
-]]
-
-
-
--- species viewer - both names, native region, status
-
--- in-progress
-
---[[
-formspec_version[5]
-size[12,12]
-box[2.8,0;5.2,1;#FFFF00]
-box[3.1,5;4.9,1;#00FF00]
-box[3.1,3;4.9,1;#00FF00]
-label[4.2,0.5;Species Viewer]
-field[3.1,3;4.9,1;;;          common_name]
-box[3.1,7;4.9,1;#00FF00]
-field[3.1,5;4.9,1;;;          scientific_name]
-field[3.1,7;4.9,1;;;            native_region]
-box[3.1,9;4.9,1;#00FF00]
-field[3.1,9;4.9,1;;;               status]
-]]
-
--- expanded view -- block associated with it, more_info blurb/additioanl link,image(?)
-
- -- Delete Species formspec - will likely not be used 
---local mc_teacher_delete_species = 
---	"formspec_version[5]"..
---	"size[10.5,11]"..
---	"box[1.5,0;5,2;#008000]"..
---	"button_exit[2,9;4,1;end;End]"..
---	"label[2.8,1;Are You Sure?]"..
---	"button[2,4;4,1;delete;Delete]"
-  
-  
---local function show_delete_confirmation(player)
---	if check_perm(player) then
---		local pname = player:get_player_name()
---		minetest.show_formspec(pname, "mc_teacher:delete_species", mc_teacher_delete_species)
---		return true
---	end
---end
-
---[[
-local function clear_ref(ref)
-	local storage_data = minetest_classroom.bc_plants:to_table()
-	for k,v in pairs(storage_data.fields) do
-		if k == ref or v == ref then
-			minetest_classroom.bc_plants:set_string(k, "")
-		end
-	end
-end
-
-local function get_next_free_ref()
-  	local count = minetest_classroom.bc_plants:get_int("count")
-	while minetest_classroom.bc_plants:get_string("ref_" .. count) == nil do
-  		count = count + 1
-  	end
-	minetest_classroom.bc_plants:set_int("count", count)
-	return "ref_"..count
-end
-
-local function serialize_species(s_s_name, s_c_name, s_region, s_stat, s_info, s_image, s_link)
-	local species_table = {
-  		sci_name = s_s_name,
-		com_name = s_c_name,
-		region = s_region,
-		texture = s_image, 
-		status = s_stat,
-		more_info = s_info,
-		external_link = s_link
-	}
-	return minetest.serialize(species_table)
-end
-
-local function create_new_species(serial_table, blocks)
-	local ref = get_next_free_ref()
-	minetest_classroom.bc_plants:set_string(ref, serial_table)
-	for b in blocks do
-  		minetest_classroom.bc_plants:set_string("node_"..b, ref)
-	end
-end
-]]
 
 -- Set up a task timer
 local hud = mhud.init()
@@ -703,21 +573,79 @@ local function show_mail(player)
 	end
 end
 
--- Species viewer related getter functions
-local function get_species_list()
-	local pattern = "textlist%[%d+%.?%d*,%d+%.?%d*;%d+%.?%d*,%d+%.?%d*;.*;(.*);%d+;.*%]"
-  	local list_string = string.match("add formspec string here", pattern) or ""
-  	if list_string == "" then
-    	return nil
+local function get_species_formspec()
+	local species = table.concat(magnify.get_all_registered_species(), ",")
+	local formtable = {
+		"formspec_version[5]",
+		"size[12,8]",
+		"box[0.4,0.4;11.2,1;#FFFF00]",
+		"label[4.3,0.9;Species Compendium]",
+		"textlist[0.4,1.6;11.2,4.8;species_list;", species, ";", context.species_selected or 1, ";false]",
+		"button[0.4,6.6;3.6,1;condensed_view;Standard View]",
+		"button[4.2,6.6;3.6,1;expanded_view;Technical View]",
+		"button[8,6.6;3.6,1;back;Back]"
+	}
+	return table.concat(formtable, "")
+end
+
+local function get_condensed_species_formspec(info)
+	-- add condensed table here
+  local formtable = {
+	  "formspec_version[5]",
+	  "size[14.8,5.8]",
+	  "box[0.4,0.4;8.6,1.1;#008000]",
+	  "label[0.5,0.7;", info.sci_name or "N/A", "]",
+	  "label[0.5,1.2;", (info.com_name and "Common name: "..info.com_name) or "No common name", "]",
+	  "label[0.7,2.1;", (info.region and "Native to "..info.region) or "Native region unknown", "]",
+	  "image[9.4,0.4;5,5;", info.texture or "test.png", "]",
+	  "label[0.7,2.6;", info.status or "Status unknown", "]",
+	  "label[0.4,2.1;-]", -- these are bullet points
+	  "label[0.4,2.6;-]"
+  }
+  -- add additional info bullet if additional info present
+  if info.more_info then
+	  table.insert(formtable, "label[0.4,3.1;-]".."label[0.7,3.1;"..info.more_info.."]")
+  end
+  -- finish table
+  table.insert(formtable, "button[0.4,4.6;4.2,0.8;more_info;More info (add link)]".."button[4.8,4.6;4.2,0.8;back;Back]")
+  return table.concat(formtable, "")
+end
+
+local function get_expanded_species_formspec(info, nodes, ref)
+	-- add expanded table here
+	local formtable = {
+		"formspec_version[5]",
+		"size[12,8.4]",
+		"box[0.4,0.4;11.3,1;#00FF00]",
+		"label[4,0.9;Technical Information Viewer]",
+		"label[0.4,1.9;", info.com_name or info.sci_name or "Unknown", " (", ref, ")]",
+		"image[7.3,1.7;4.4,4.4;", info.texture or "test.png", "]",
+		"textlist[0.4,2.8;6.5,3.3;associated_blocks;", table.concat(nodes, ","), ";1;false]",
+		"label[0.4,6.5;More info: ", info.external_link or "n/a", "]",
+		"label[0.4,2.5;Associated nodes:]",
+		"button[4.6,7;3,1;back;Back]"
+	}
+	return table.concat(formtable, "")
+end
+
+local function show_species(player)
+	if check_perm(player) then
+		if not context.species_selected then
+			context.species_selected = 1
+		end
+		local pname = player:get_player_name()
+		minetest.show_formspec(pname, "mc_teacher:species_menu", get_species_formspec())
+		return true
 	end
-    return string.split(list_string, ",", true) -- minetest helper function
 end
 
 local function get_species_ref(index)
-  	local elem = get_species_list()[index]
-	local ref_num_split = string.split(elem, "#")
-  	local ref_num = ref_num_split[table.getn(ref_num_split)]
-  
+  	local list = magnify.get_all_registered_species()
+	local elem = list[tonumber(index)]
+	local ref_num_split = string.split(elem, ":") -- "###num:rest"
+  	local ref_str = ref_num_split[1]
+	local ref_num = string.sub(ref_str, 4) -- removes "###" from "###num"
+	
 	return "ref_"..ref_num
 end
 
@@ -757,7 +685,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		elseif fields.players then
 			show_players(player)
 		elseif fields.species then
-			-- show_species(player) todo
+			show_species(player)
 		elseif fields.mail then
 			show_mail(player)
 		end
@@ -929,27 +857,39 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 
 	if formname == "mc_teacher:species_menu" then
-		if fields.species_list then
+		if fields.back then
+		  	show_teacher_menu(player)
+		elseif fields.species_list then
         	local event = minetest.explode_textlist_event(fields.species_list)
         	if event.type == "CHG" then
         		context.species_selected = event.index
         	end
-      	-- use textlist text object
-        -- pattern match to textlist object, split at ","
-        -- get corresponding object's reference number
-		elseif fields.view then
+		elseif fields.condensed_view or fields.expanded_view then
 			if context.species_selected then
-      			local ref = get_species_ref(context.selected)
-          		
-        		-- get species from ref
-        		-- get linked species
-        		-- show formspec
+      			local ref = get_species_ref(context.species_selected)
+          		local full_info = magnify.get_species_from_ref(ref)
+          
+          		if fields.condensed_view then -- condensed
+					minetest.show_formspec(pname, "mc_teacher:species_condensed", get_condensed_species_formspec(full_info.data))
+            	else -- expanded
+            		minetest.show_formspec(pname, "mc_teacher:species_expanded", get_expanded_species_formspec(full_info.data, full_info.nodes, ref))
+            	end
         	end
 		end
 	end
   
-  	if formname == "mc_teacher:species_view" then
+  	if formname == "mc_teacher:species_condensed" then
     	-- handle buttons (TBD)
+      	if fields.back then 
+        	show_species(player)
+        end
+    end
+    
+    if formname == "mc_teacher:species_expanded" then
+      -- handle buttons (TBD)
+      	if fields.back then
+          	show_species(player)
+        end
     end
 end)
 

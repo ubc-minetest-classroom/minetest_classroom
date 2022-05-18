@@ -7,7 +7,7 @@ local aspen = {
 	region = "most of North America",
 	texture = "test.png", 
 	status = "Common",
-	more_info = "Smooth-barked, randomly-branching tree. Also known as the golden aspen, due to the golden colour its leaves turn in the fall.",
+	more_info = "Smooth-barked, randomly-branching tree, with leaves that turn golden in the fall",
 	external_link = "https://www.britannica.com/plant/aspen-plant"
 }
 magnify.register_plant(aspen, {"default:aspen_tree", "default:aspen_wood", "default:aspen_leaves", "default:aspen_sapling"})
@@ -59,7 +59,7 @@ magnify.register_plant(Kelp,{"default:sand_with_kelp"})
 local blueberry = {
 	sci_name = "Vaccinium corymbosum",
 	com_name = "Highbush Blueberry",
-	region = "Eastern Canada & Eastern USA",
+	region = "Eastern Canada and Eastern USA",
 	texture = "test.png", 
 	status = "Common",
 	more_info = "One of many species of blueberries, cultivated in North America, South America, and Central Europe",
