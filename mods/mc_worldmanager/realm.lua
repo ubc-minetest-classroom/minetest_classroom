@@ -241,6 +241,10 @@ function Realm:Save_Schematic()
     settings:set("spawn_pos_y", self.SpawnPoint.y)
     settings:set("spawn_pos_z", self.SpawnPoint.z)
 
+    settings:set("schematic_size_x", self.EndPos.x - self.StartPos.x)
+    settings:set("schematic_size_y", self.EndPos.y - self.StartPos.y)
+    settings:set("schematic_size_z", self.EndPos.z - self.StartPos.z)
+
     local settingsWrote = settings:write()
 
     return filepath, settingsWrote
@@ -248,6 +252,11 @@ end
 
 function Realm:Load_Schematic(key)
     local schematic, config = schematicManager.getSchematic(key)
+
+    self.EndPos.x = self.StartPos.x + config.size.x
+    self.EndPos.y = self.StartPos.y + config.size.y
+    self.EndPos.z = self.StartPos.z + config.size.z
+
 
     -- Read data into LVM
     local vm = minetest.get_voxel_manip()
