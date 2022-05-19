@@ -56,7 +56,7 @@ local mc_teacher_menu =
 	"button[1,3.3;3.8,1.3;lessons;Manage Lessons]"..
 	"button[5.2,3.3;3.8,1.3;players;Manage Players]"..
 	"button[1,5;3.8,1.3;classrooms;Manage Classrooms]"..
-	"button[5.2,5;3.8,1.3;species;Manage Plant Species]"..
+	"button[5.2,5;3.8,1.3;species;Plant Compendium]"..
 	"button[1,6.7;3.8,1.3;mail;Teacher Mail]"..
 	"button_exit[5.2,6.7;3.8,1.3;exit;Exit]"
 
@@ -578,8 +578,8 @@ local function get_species_formspec()
 	local formtable = {
 		"formspec_version[5]",
 		"size[12,8]",
-		"box[0.4,0.4;11.2,1;#FFFF00]",
-		"label[4.3,0.9;Species Compendium]",
+		"box[0.4,0.4;11.2,1;#378738]", -- #378742
+		"label[3.9,0.9;Plant Species Compendium]",
 		"textlist[0.4,1.6;11.2,4.8;species_list;", species, ";", context.species_selected or 1, ";false]",
 		"button[0.4,6.6;3.6,1;condensed_view;Standard View]",
 		"button[4.2,6.6;3.6,1;expanded_view;Technical View]",
@@ -590,40 +590,46 @@ end
 
 local function get_condensed_species_formspec(info)
 	-- add condensed table here
-  local formtable = {
-	  "formspec_version[5]",
-	  "size[14.8,5.8]",
-	  "box[0.4,0.4;8.6,1.1;#008000]",
-	  "label[0.5,0.7;", info.sci_name or "N/A", "]",
-	  "label[0.5,1.2;", (info.com_name and "Common name: "..info.com_name) or "No common name", "]",
-	  "label[0.7,2.1;", (info.region and "Native to "..info.region) or "Native region unknown", "]",
-	  "image[9.4,0.4;5,5;", info.texture or "test.png", "]",
-	  "label[0.7,2.6;", info.status or "Status unknown", "]",
-	  "label[0.4,2.1;-]", -- these are bullet points
-	  "label[0.4,2.6;-]"
-  }
-  -- add additional info bullet if additional info present
-  if info.more_info then
-	  table.insert(formtable, "label[0.4,3.1;-]".."label[0.7,3.1;"..info.more_info.."]")
-  end
-  -- finish table
-  table.insert(formtable, "button[0.4,4.6;4.2,0.8;more_info;More info (add link)]".."button[4.8,4.6;4.2,0.8;back;Back]")
-  return table.concat(formtable, "")
+	local formtable = {  
+    	"formspec_version[5]",
+		"size[17.8,7.7]",
+		"box[0.4,0.4;11.2,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), "]",
+		"label[0.5,0.7;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
+		"label[0.5,1.2;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
+    	"label[0.5,1.7;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
+		"image[12,0.4;5.4,5.4;", minetest.formspec_escape(info.texture or "test.png"), "]",
+    
+		"label[0.4,2.5;-]",
+    	"label[0.4,3;-]",
+		"label[0.4,3.5;-]",
+    	"label[0.4,4;-]",
+		"label[0.7,2.5;", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "]",
+    	"label[0.7,3;", minetest.formspec_escape((info.region and "Native to "..info.region) or "Native region unknown"), "]",
+		"label[0.7,3.5;", minetest.formspec_escape(info.height or "Height unknown"), "]",
+		"label[0.7,4;", minetest.formspec_escape(info.bloom or "Bloom pattern unknown"), "]",
+		
+    	"textarea[0.35,4.45;10.9,1.3;;;", minetest.formspec_escape(info.more_info or ""), "]",
+    	"label[0.4,6.25;", minetest.formspec_escape((info.img_credit and "Image © "..info.img_credit) or ""), "]",
+		"label[0.4,6.75;", minetest.formspec_escape((info.external_link and "You can find more information at:") or ""), "]",
+    	"textarea[0.35,6.9;11.2,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
+		
+    	"button[12,6.1;5.4,1.2;back;Back]"
+    }
+	return table.concat(formtable, "")
 end
 
 local function get_expanded_species_formspec(info, nodes, ref)
 	-- add expanded table here
-	local formtable = {
-		"formspec_version[5]",
-		"size[12,8.4]",
-		"box[0.4,0.4;11.3,1;#00FF00]",
-		"label[4,0.9;Technical Information Viewer]",
+	local formtable = {    
+    	"formspec_version[5]",
+		"size[14,8.2]",
+		"box[0.4,0.4;13.2,1;#9192a3]",
+		"label[5.4,0.9;Technical Information]",
 		"label[0.4,1.9;", info.com_name or info.sci_name or "Unknown", " (", ref, ")]",
-		"image[7.3,1.7;4.4,4.4;", info.texture or "test.png", "]",
-		"textlist[0.4,2.8;6.5,3.3;associated_blocks;", table.concat(nodes, ","), ";1;false]",
-		"label[0.4,6.5;More info: ", info.external_link or "n/a", "]",
+		"image[8.8,1.7;4.8,4.8;", info.texture or "test.png", "]",
+		"textlist[0.4,2.8;8.1,3.7;associated_blocks;", table.concat(nodes, ","), ";1;false]",
 		"label[0.4,2.5;Associated nodes:]",
-		"button[4.6,7;3,1;back;Back]"
+		"button[4.8,6.8;4.4,1;back;Back]"
 	}
 	return table.concat(formtable, "")
 end

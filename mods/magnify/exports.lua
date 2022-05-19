@@ -23,6 +23,7 @@ function magnify.get_all_registered_species()
       		table.insert(output, name_string)
       	end
     end
+	table.sort(output)
   	return output
 end
 
