@@ -12,7 +12,7 @@ local black_lily = {
   	external_link = "https://botanyphoto.botanicalgarden.ubc.ca/2008/05/fritillaria-affinis/",
 	img_credit = "Jackie Chambers"
 }
-magnify.register_plant(black_lily, {"default:flowers:tulip_black"})
+magnify.register_plant(black_lily, {"flowers:tulip_black"})
 
 local Bush = {
   	sci_name = "Physocarpus capitatus",
