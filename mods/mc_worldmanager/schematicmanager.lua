@@ -4,6 +4,12 @@ schematicManager = {}
 
 schematicManager.schematics = {}
 
+---@public
+---Registers a schematic (and optional, but highly recommended, config file).
+---Both should share the same file name (minus extension) under the same directory.
+---Schematic should have extension "*.mts"; Config file should have extension "*.conf"
+---@param key string the key to associate with the schematic path.
+---@param rootPath string the path to a schematic and config file.
 function schematicManager.registerSchematicPath(key, rootPath)
 
     -- Sanity checking our schematic registration to ensure we don't enter an invalid state.
@@ -30,8 +36,16 @@ function schematicManager.registerSchematicPath(key, rootPath)
     schematicManager.schematics[key] = rootPath
 end
 
+---@public
+---Function used to retrieve a schematic and its config file from a key previously registered.
+---@return string path to the schematic; or nil if the key is invalid.
+---@return table schematic configuration containing Author, Name, spawnPoint, and size; or nil if the key is invalid.
 function schematicManager.getSchematic(key)
     local rootPath = schematicManager.schematics[key]
+
+    if (rootPath == nil) then
+        return nil, nil
+    end
 
     local schematic = rootPath .. ".mts"
 

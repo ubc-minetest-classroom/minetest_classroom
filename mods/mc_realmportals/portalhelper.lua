@@ -1,3 +1,7 @@
+-- This file creates functionality which lets us create new realms associated with portals.
+-- We will eventually hook this up with a config file and tutorial schematics.
+-- Portal frame blocks are dynamically created and colored based on realm name.
+
 function mc_realmportals.newPortal(realmName, playerInstanced, schematic)
     playerInstanced = playerInstanced or false
     schematic = schematic or nil
@@ -115,7 +119,7 @@ function mc_realmportals.newPortal(realmName, playerInstanced, schematic)
         return realm
     end
 
-    function mc_realmportals.CreateRalmByName(realmName, schematic)
+    function mc_realmportals.CreateRealmByName(realmName, schematic)
         local realm = Realm:New(realmName, 80, 80)
 
         if (schematic == nil) then

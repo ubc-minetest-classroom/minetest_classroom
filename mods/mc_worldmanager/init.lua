@@ -7,14 +7,15 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/commands.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/schematicmanager.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/hooks.lua")
 
-
 ---@private
+---Loads the persistent mod data for mc_worldManager.
 ---@return void
 function mc_worldManager.save_data()
     mc_worldManager.storage:set_string("spawnRealmID", tostring(mc_worldManager.spawnRealmID))
 end
 
 ---@private
+---Saves the persistent mod data for mc_worldManager.
 ---@return void
 function mc_worldManager.load_data()
     mc_worldManager.spawnRealmID = tonumber(mc_worldManager.storage:get_string("spawnRealmID"))
@@ -29,7 +30,6 @@ mc_worldManager.load_data()
 ---This function ensures that systems that rely on a spawn don't break.
 ---@return table Realm
 function mc_worldManager.GetSpawnRealm()
-
     local spawnRealm = Realm.realmDict[mc_worldManager.spawnRealmID]
     if (spawnRealm == nil) then
         spawnRealm = Realm:New("Spawn Realm", 80, 80)
@@ -43,6 +43,5 @@ function mc_worldManager.GetSpawnRealm()
 end
 
 -- Registration
-
 schematicManager.registerSchematicPath("shack", mc_worldManager.path .. "/schematics/shack.mts")
 

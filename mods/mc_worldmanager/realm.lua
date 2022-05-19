@@ -1,8 +1,9 @@
--- Realms are up-to 12 mapchunk areas seperated by a 1 mapchunk border of void (in each dimension);
+-- Realms are up-to 8 mapchunk areas seperated by a 4 mapchunk border of void (in each dimension);
 -- TODO: add helper functions to do stuff like teleport players into the maps
 -- TODO: assign realm ID based on first available ID rather than realm count
 
-local realmSize = 80 * 6 -- 12 mapchunks
+-- "const" values
+local realmSize = 80 * 8 -- 8 mapchunks
 local realmBuffer = 80 * 4
 local realmHeight = 80 * 4
 
@@ -12,7 +13,9 @@ local realmHeight = 80 * 4
 Realm = { realmDict = {} }
 Realm.__index = Realm
 
----We load our global realm data from storage
+---@private
+---Loads the persistant global data for the realm class
+---@return void
 function Realm.LoadDataFromStorage()
     Realm.realmCount = tonumber(mc_worldManager.storage:get_string("realmCount"))
     if Realm.realmCount == nil then
@@ -27,19 +30,23 @@ function Realm.LoadDataFromStorage()
     for key, realm in pairs(tmpRealmDict) do
         Realm:Restore(realm)
     end
-
-
 end
 
----We save our global realm data to storage
+---@private
+---Saves the persistant global data for the realm class
+---@return void
 function Realm.SaveDataToStorage ()
     mc_worldManager.storage:set_string("realmDict", minetest.serialize(Realm.realmDict))
     mc_worldManager.storage:set_string("realmCount", tostring(Realm.realmCount))
 end
 
+
 ---@public
----creates a new Dimension.
----@return self
+---The constructor for the realm class.
+---@param name string
+---@param size number
+---@param height number
+---@return table a new "Realm" table object / class.
 function Realm:New(name, size, height)
     size = size or realmSize
     height = height or realmHeight
@@ -104,7 +111,7 @@ end
 
 ---@public
 ---Deletes the realm based on class instance.
----Make sure you clear any references to the realm so that memory can be released by the GC.
+---NOTE: remember to clear any references to the realm so that memory can be released by the GC.
 ---@return void
 function Realm:Delete()
     self:ClearNodes()
@@ -114,6 +121,7 @@ end
 
 ---@public
 ---Sets all nodes in a realm to air.
+---This function dispatches additional asynchronous function calls to prevent crashing the server.
 ---@return void
 function Realm:ClearNodes()
     local function emerge_callback(blockpos, action,
@@ -160,6 +168,9 @@ function Realm:CreateGround(nodeType)
     self:SetNodes(pos1, pos2, nodeType)
 end
 
+---@public
+---Creates invisible walls around the realm.
+---@return void
 function Realm:CreateBarriers()
     local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
     local pos2 = { x = self.StartPos.x, y = self.EndPos.y, z = self.EndPos.z }
@@ -187,9 +198,9 @@ function Realm:CreateBarriers()
 end
 
 ---Helper function to set cubic areas of nodes based on world coordinates and node type
----@param pos1 table
----@param pos2 table
----@param pos2 string
+---@param pos1 table coordinates
+---@param pos2 table coordinates
+---@param pos2 string nodeType name
 function Realm:SetNodes(pos1, pos2, node)
     local node_id = minetest.get_content_id(node)
 
@@ -217,6 +228,9 @@ function Realm:SetNodes(pos1, pos2, node)
     vm:write_to_map(true)
 end
 
+---@public
+---Save_Schematic
+---@return string, boolean The filepath of the schematic; whether the settings file wrote succesfully.
 function Realm:Save_Schematic()
     local folderpath = minetest.get_worldpath() .. "\\schematics\\"
 
@@ -287,8 +301,8 @@ function Realm:UpdateSpawn(spawnPos)
 end
 
 ---LocalToWorldPosition
----@param position table
----@return table
+---@param position table coordinates
+---@return table localspace coordinates.
 function Realm:LocalToWorldPosition(position)
     local pos = position
     pos.x = pos.x + self.StartPos.x
@@ -299,7 +313,7 @@ end
 
 ---WorldToLocalPosition
 ---@param position table
----@return table
+---@return table worldspace coordinates
 function Realm:WorldToLocalPosition(position)
     local pos = position
     pos.x = pos.x - self.StartPos.x
