@@ -1,3 +1,6 @@
+-- All the functionality from these commands will added to a realm book.
+-- These commands are currently just for testing
+
 minetest.register_chatcommand("realmNew", {
     privs = {
         interact = true,

@@ -1,22 +1,33 @@
 mc_worldManager = { storage = minetest.get_mod_storage(), path = minetest.get_modpath("mc_worldmanager") }
--- Source files
 
+-- Include our source files
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/nodes.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/commands.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/schematicmanager.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/hooks.lua")
 
+
+---@private
+---@return void
 function mc_worldManager.save_data()
     mc_worldManager.storage:set_string("spawnRealmID", tostring(mc_worldManager.spawnRealmID))
 end
 
+---@private
+---@return void
 function mc_worldManager.load_data()
     mc_worldManager.spawnRealmID = tonumber(mc_worldManager.storage:get_string("spawnRealmID"))
 end
 
 mc_worldManager.load_data()
 
+---@public
+---Gets the spawn realm of the world.
+---It's important to use this function to grab the world spawn to ensure that it always exists.
+---Note that although the realm ID for spawn is usually 1, it can change without notice.
+---This function ensures that systems that rely on a spawn don't break.
+---@return table Realm
 function mc_worldManager.GetSpawnRealm()
 
     local spawnRealm = Realm.realmDict[mc_worldManager.spawnRealmID]
@@ -30,6 +41,8 @@ function mc_worldManager.GetSpawnRealm()
     end
     return spawnRealm
 end
+
+-- Registration
 
 schematicManager.registerSchematicPath("shack", mc_worldManager.path .. "/schematics/shack.mts")
 
