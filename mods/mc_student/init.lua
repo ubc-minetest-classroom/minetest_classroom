@@ -373,7 +373,7 @@ minetest.register_tool("mc_student:notebook" , {
 	end,
 })
 
--- Give the notebook to any player who joins with shout privileges or take away the controller if they do not have shout
+-- Give the notebook and tutorialbook to any player who joins with shout privileges or take them away if they do not have shout
 minetest.register_on_joinplayer(function(player)
 	local inv = player:get_inventory()
 	if inv:contains_item("main", ItemStack("mc_student:notebook")) then
@@ -392,6 +392,21 @@ minetest.register_on_joinplayer(function(player)
 			player:get_inventory():add_item('main', 'mc_student:notebook')
 		else
 			-- The player should not have the notebook
+			return
+		end
+	end
+
+	-- Keeping as separate statement for now in case we don't want the tutorialbook as its own item
+	if inv:contains_item("main", ItemStack("mc_student:tutorialbook")) then
+		if check_perm(player) then
+			return
+		else
+			player:get_inventory():remove_item('main', 'mc_student:tutorialbook')
+		end
+	else
+		if check_perm(player) then
+			player:get_inventory():add_item('main', 'mc_student:tutorialbook')
+		else
 			return
 		end
 	end
