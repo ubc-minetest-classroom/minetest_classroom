@@ -598,7 +598,7 @@ local function show_tutorial_menu(player)
 end
 
 -- The tutorial book for accessing tutorials
-minetest.register_tool("mc_student:tutorialBook" , {
+minetest.register_tool("mc_student:tutorialbook" , {
 	description = "Tutorial book",
 	inventory_image = "tutorial_book.png",
 	-- Left-click the tool activates the tutorial menu
@@ -614,3 +614,7 @@ minetest.register_tool("mc_student:tutorialBook" , {
 		minetest.set_node(pos, {name="air"})
 	end,
 })
+
+minetest.register_alias("tutorialbook", "mc_student:tutorialbook")
+portalwand = minetest.registered_aliases[tutorialbook] or tutorialbook
+
