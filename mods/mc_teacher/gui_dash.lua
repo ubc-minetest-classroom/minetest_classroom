@@ -592,12 +592,12 @@ local function get_condensed_species_formspec(info)
 	-- add condensed table here
 	local formtable = {  
     	"formspec_version[5]",
-		"size[17.8,7.7]",
-		"box[0.4,0.4;11.2,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), "]",
+		"size[18.2,7.7]",
+		"box[0.4,0.4;11.6,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), "]",
 		"label[0.5,0.7;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
 		"label[0.5,1.2;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
     	"label[0.5,1.7;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
-		"image[12,0.4;5.4,5.4;", minetest.formspec_escape(info.texture or "test.png"), "]",
+		"image[12.4,0.4;5.4,5.4;", minetest.formspec_escape(info.texture or "test.png"), "]",
     
 		"label[0.4,2.5;-]",
     	"label[0.4,3;-]",
@@ -608,12 +608,12 @@ local function get_condensed_species_formspec(info)
 		"label[0.7,3.5;", minetest.formspec_escape(info.height or "Height unknown"), "]",
 		"label[0.7,4;", minetest.formspec_escape(info.bloom or "Bloom pattern unknown"), "]",
 		
-    	"textarea[0.35,4.45;10.9,1.3;;;", minetest.formspec_escape(info.more_info or ""), "]",
-    	"label[0.4,6.25;", minetest.formspec_escape((info.img_credit and "Image © "..info.img_credit) or ""), "]",
+    	"textarea[0.35,4.45;11.5,1.3;;;", minetest.formspec_escape(info.more_info or ""), "]",
+    	"label[0.4,6.25;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
 		"label[0.4,6.75;", minetest.formspec_escape((info.external_link and "You can find more information at:") or ""), "]",
-    	"textarea[0.35,6.9;11.2,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
+    	"textarea[0.35,6.9;11.6,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
 		
-    	"button[12,6.1;5.4,1.2;back;Back]"
+    	"button[12.4,6.1;5.4,1.2;back;Back]"
     }
 	return table.concat(formtable, "")
 end
@@ -875,11 +875,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
       			local ref = get_species_ref(context.species_selected)
           		local full_info = magnify.get_species_from_ref(ref)
           
-          		if fields.condensed_view then -- condensed
-					minetest.show_formspec(pname, "mc_teacher:species_condensed", get_condensed_species_formspec(full_info.data))
-            	else -- expanded
-            		minetest.show_formspec(pname, "mc_teacher:species_expanded", get_expanded_species_formspec(full_info.data, full_info.nodes, ref))
-            	end
+				if full_info ~= nil then
+          			if fields.condensed_view then -- condensed
+						minetest.show_formspec(pname, "mc_teacher:species_condensed", get_condensed_species_formspec(full_info.data))
+            		else -- expanded
+            			minetest.show_formspec(pname, "mc_teacher:species_expanded", get_expanded_species_formspec(full_info.data, full_info.nodes, ref))
+            		end
+				else
+					minetest.chat_send_player(pname, "An entry for this species exists, but could not be found in the plant database.\nPlease check your server's plant database files to ensure all plants were registered properly.")
+				end	
         	end
 		end
 	end

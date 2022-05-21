@@ -14,17 +14,19 @@ end
 
 -- registered species reference table getter
 function magnify.get_all_registered_species()
-  	local storage_data = minetest_classroom.bc_plants:to_table()
-	local output = {}
-  	for k,v in pairs(storage_data.fields) do
-  		if string.sub(k, 1, 4) == "ref_" then
-      		local info = minetest.deserialize(v)
-      		local name_string = "###" .. string.sub(k, 5) .. ": " .. info.com_name .. " (" .. info.sci_name .. ")" -- if changed, update get_species_ref in mc_teacher/gui_dash.lua
-      		table.insert(output, name_string)
-      	end
-    end
+	local storage_data = minetest_classroom.bc_plants:to_table()
+  	local output = {}
+	for k,v in pairs(storage_data.fields) do
+		if string.sub(k, 1, 4) == "ref_" then
+			local info = minetest.deserialize(v)
+			if info then
+				local name_string = "###" .. string.sub(k, 5) .. ": " .. info.com_name .. " (" .. info.sci_name .. ")" -- if changed, update get_species_ref in mc_teacher/gui_dash.lua
+				table.insert(output, name_string)
+			end
+		end
+  	end
 	table.sort(output)
-  	return output
+	return output
 end
 
 -- reference clearing function
@@ -43,13 +45,18 @@ function magnify.get_species_from_ref(ref)
 	local output = {nodes = {}}
   
   	if minetest_classroom.bc_plants:get(ref) then
-    	output["data"] = minetest.deserialize(minetest_classroom.bc_plants:get_string(ref))
-		for k,v in pairs(storage_data.fields) do
-			if v == ref then
-        		table.insert(output.nodes, string.sub(k, 6))
-    		end
+		local data = minetest.deserialize(minetest_classroom.bc_plants:get_string(ref))
+		if data then
+    		output["data"] = data
+			for k,v in pairs(storage_data.fields) do
+				if v == ref then
+        			table.insert(output.nodes, string.sub(k, 6))
+    			end
+			end
+    		return output
+		else
+			return nil
 		end
-    	return output
     else
     	return nil
     end
