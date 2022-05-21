@@ -176,10 +176,13 @@ local mc_student_tutorial_menu =
 	"formspec_version[5]" .. 
 	"size[13,10]" ..
 	"button[0.2,0.2;4.6,0.8;intro;Introduction]" ..
-	"box[0.2,8.4;12.6,1.4;#505050]" ..
+	"box[0.2,8.4;10.2,1.4;#505050]" ..
 	"button[0.2,1.2;4.6,0.8;mov;Movement]" ..
-	"textarea[5,0.2;7.8,8;text;;Welcome to Minetest Classroom]" ..
-	"button[0.4,8.5;3,0.8;teleport;Teleport to Tutorial]"
+	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]" ..
+	"textarea[5,0.2;7.8,8;text;;Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.]" ..
+	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]" ..
+	"box[10.7,8.4;2.1,1.4;#C0C0C0]" ..
+	"button[11,8.65;1.5,0.9;exit;Exit]"
 
 local function show_tutorial_menu(player)
 	if check_perm(player) then
@@ -211,13 +214,16 @@ minetest.register_alias("tutorialbook", "mc_student:tutorialbook")
 tutorialbook = minetest.registered_aliases[tutorialbook] or tutorialbook
 
 mc_student_mov =
-        "formspec_version[5]" .. 
-        "size[13,10]" ..
-        "button[0.2,0.2;4.6,0.8;intro;Introduction]" ..
-        "box[0.2,8.4;12.6,1.4;#505050]" ..
-        "button[0.2,1.2;4.6,0.8;mov;Movement]" ..
-        "textarea[5,0.2;7.8,8;text;;This tutorial explains how to walk in different directions, jump, and fly. To enter the tutorial, press the 'Teleport to Tutorial' button below.]" ..
-        "button[0.4,8.5;3,0.8;teleport;Teleport to Tutorial]"
+	"formspec_version[5]" .. 
+	"size[13,10]" ..
+	"button[0.2,0.2;4.6,0.8;intro;Introduction]" ..
+	"box[0.2,8.4;10.2,1.4;#505050]" ..
+	"button[0.2,1.2;4.6,0.8;mov;Movement]" ..
+	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]" ..
+	"textarea[5,0.2;7.8,8;text;;This tutorial explains how to walk in different directions, jump, and fly. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.]" ..
+	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]" ..
+	"box[10.7,8.4;2.1,1.4;#C0C0C0]" ..
+	"button[11,8.65;1.5,0.9;exit;Exit]"
 
 local function show_mov(player) 
 	if check_perm(player) then
