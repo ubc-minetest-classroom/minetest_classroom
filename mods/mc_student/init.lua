@@ -182,7 +182,7 @@ local mc_student_tutorial_menu =
 	"textarea[5,0.2;7.8,8;text;;Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.]" ..
 	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]" ..
 	"box[10.7,8.4;2.1,1.4;#C0C0C0]" ..
-	"button[11,8.65;1.5,0.9;exit;Exit]"
+	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
 
 local function show_tutorial_menu(player)
 	if check_perm(player) then
@@ -223,12 +223,32 @@ mc_student_mov =
 	"textarea[5,0.2;7.8,8;text;;This tutorial explains how to walk in different directions, jump, and fly. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.]" ..
 	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]" ..
 	"box[10.7,8.4;2.1,1.4;#C0C0C0]" ..
-	"button[11,8.65;1.5,0.9;exit;Exit]"
+	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
 
 local function show_mov(player) 
 	if check_perm(player) then
 		local pname = player:get_player_name()
 		minetest.show_formspec(pname, "mc_student:mov", mc_student_mov)
+		return true
+	end
+end
+
+mc_student_punch =
+        "formspec_version[5]" .. 
+        "size[13,10]" ..
+        "button[0.2,0.2;4.6,0.8;intro;Introduction]" ..
+        "box[0.2,8.4;10.2,1.4;#505050]" ..
+        "button[0.2,1.2;4.6,0.8;mov;Movement]" ..
+		"button[0.2,2.2;4.6,0.8;punch;Punch A Block]" ..
+        "textarea[5,0.2;7.8,8;text;;This tutorial explains how to punch and place blocks, which will allow you to add materials to your inventory and build. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.]" ..
+        "button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]" ..
+		"box[10.7,8.4;2.1,1.4;#C0C0C0]" ..
+		"button_exit[11,8.65;1.5,0.9;exit;Exit]"
+
+local function show_punch(player) 
+	if check_perm(player) then
+		local pname = player:get_player_name()
+		minetest.show_formspec(pname, "mc_student:punch", mc_student_punch)
 		return true
 	end
 end
@@ -415,14 +435,26 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mc_student:tutorial_menu" then
         if fields.mov then
 			show_mov(player)
+		elseif fields.punch then
+			show_punch(player)
 		end
 	end
 
 	if formname == "mc_student:mov" then
         if fields.intro then
             show_tutorial_menu(player)
+		elseif fields.punch then
+			show_punch(player)
 		end
-	end 
+	end
+
+	if formname == "mc_student:punch" then
+        if fields.intro then
+            show_tutorial_menu(player)
+		elseif fields.mov then
+			show_mov(player)
+		end
+	end
 end)
 
 function check_access_code(submitted, codes)
