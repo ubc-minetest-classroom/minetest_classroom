@@ -1,19 +1,15 @@
 minetest_classroom.bc_plants = minetest.get_mod_storage()
 
--- test table
-local testTable = {
-	sci_name = "Scientic Name",
-	com_name = "Common Name",
-	region = "Region",
-	texture = "test.png", 
-	status = "Endangered",
-	more_info = "lorem ipsum dolor, sit amet. foobar.",
-	external_link = "https://unsplash.com/s/photos/plant"
-}
+local function clear_table()
+	local storage_data = minetest_classroom.bc_plants:to_table()
+	for k,v in pairs(storage_data.fields) do
+		minetest_classroom.bc_plants:set_string(k, "")
+	end
+end
 
--- adding test plants
-minetest_classroom.bc_plants:set_string("node_default:dirt_with_grass", "ref_test")
-minetest_classroom.bc_plants:set_string("ref_test", minetest.serialize(testTable))
+-- reset: ensure count is initialized at 1
+-- clear_table() -- find an alternative for this so that only species that have not been registered get removed
+minetest_classroom.bc_plants:set_int("count", 1)
 
 -- Check for shout priv (from mc_student)
 local function check_perm(player)
@@ -21,30 +17,41 @@ local function check_perm(player)
 end
 
 local function build_formspec(node_name)
-	-- local minetest.registered_nodes[node_name]
-	-- local file_path = minetest.get_modpath("...") .. "/bc_plants/" .. node_name .. ".lua"
-  
-  local ref_key = minetest_classroom.bc_plants:get("node_" .. node_name)
-  local info = minetest.deserialize(minetest_classroom.bc_plants:get(ref_key))
-  
-  local identify_formtable = {
-		"formspec_version[5]",
-		"size[14.8,5.8]",
-		"box[0.4,0.4;8.6,1.1;#008000]",
-		"label[0.5,0.7;", info.sci_name, "]",
-		"label[0.5,1.2;Common name: ", info.com_name, "]",
-		"label[0.7,2.1;Native to ", info.region, "]",
-		"image[9.4,0.4;5,5;", info.texture, "]",
-		"label[0.7,2.6;", info.status, "]",
-		"label[0.4,2.1;-]", -- these are bullet points
-		"label[0.4,2.6;-]",
-		"label[0.4,3.1;-]",
-		"label[0.7,3.1;", info.more_info, "]",
-		"button[0.4,4.6;4.2,0.8;more_info;More info (info.external_link)]",
-  		"button_exit[4.8,4.6;4.2,0.8;exit;Back]"
-	}
+	local ref_key = minetest_classroom.bc_plants:get("node_" .. node_name)
+	local info = minetest.deserialize(minetest_classroom.bc_plants:get(ref_key))
 
-	return table.concat(identify_formtable, "")
+	if info ~= nil then
+		-- entry good, return formspec
+		local formtable = {  
+    		"formspec_version[5]",
+			"size[18.2,7.7]",
+			"box[0.4,0.4;11.6,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), "]",
+			"label[0.5,0.7;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
+			"label[0.5,1.2;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
+    		"label[0.5,1.7;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
+			"image[12.4,0.4;5.4,5.4;", minetest.formspec_escape(info.texture or "test.png"), "]",
+    
+			"label[0.4,2.5;-]",
+    		"label[0.4,3;-]",
+			"label[0.4,3.5;-]",
+    		"label[0.4,4;-]",
+			"label[0.7,2.5;", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "]",
+    		"label[0.7,3;", minetest.formspec_escape((info.region and "Native to "..info.region) or "Native region unknown"), "]",
+			"label[0.7,3.5;", minetest.formspec_escape(info.height or "Height unknown"), "]",
+			"label[0.7,4;", minetest.formspec_escape(info.bloom or "Bloom pattern unknown"), "]",
+		
+    		"textarea[0.35,4.45;11.5,1.3;;;", minetest.formspec_escape(info.more_info or ""), "]",
+    		"label[0.4,6.25;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
+			"label[0.4,6.75;", minetest.formspec_escape((info.external_link and "You can find more information at:") or ""), "]",
+    		"textarea[0.35,6.9;11.6,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
+		
+    		"button_exit[12.4,6.1;5.4,1.2;back;Back]"
+    	}
+		return table.concat(formtable, "")
+	else
+		-- entry bad, go to fallback
+		return nil
+	end
 end
 
 -- register tool
@@ -68,39 +75,27 @@ minetest.register_tool("magnify:magnifying_tool", {
 			local has_node = minetest_classroom.bc_plants:get("node_" .. node_name)
 	
 			if has_node ~= nil then
-				-- good: open formspec
-				minetest.show_formspec(username, "magnifying_tool:identify", build_formspec(node_name))
+				-- try to build formspec
+				local species_formspec = build_formspec(node_name)
+				if species_formspec ~= nil then
+					-- good: open formspec
+					minetest.show_formspec(username, "magnifying_tool:identify", species_formspec)
+				else
+					-- bad: display corrupted node message in chat
+					minetest.chat_send_player(username, "An entry for this item exists, but could not be found in the plant database.\nPlease contact an administrator and ask them to check your server's plant database files to ensure all plants were registered properly.")
+				end
 			else
 				-- bad: display failure message in chat
 				minetest.chat_send_player(username, "No entry for this item could be found.")
 			end
 			return nil
 		end
+	end,
+	-- makes the tool undroppable
+	on_drop = function (itemstack, dropper, pos)
+		minetest.set_node(pos, {name="air"})
 	end
-  -- identify = function(itemstack, user, pointed_thing)
-	-- on left click tool activates identify function 
 })
-
---[[ TODO:
-- Add files with node information custom and existing 
-- Determine directory for saving files + save format - pull information to build formspec 
-  - use require("...") to get files
-- Create formspec definition
-- utilize lookup table retrieve data from mod storage  -- CURRENT approach 
-make a table with names (reference) and data underneath, based on table name formspec will show 
-variable 
--- test values into storage table 
-
--- FORMSPEC OUTLINE:
-
---lua table retrives lua file using require to get all info 
-
--- Scientific name 
--- Common Name 
--- Native Region
--- Image 
--- External Link
-]]
 
 -- register on-Join Player 
 -- Give the magnifying glass to any player who joins with shout privileges or take away the magnifying glass if they do not have shout
