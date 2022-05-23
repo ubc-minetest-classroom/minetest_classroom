@@ -684,6 +684,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             show_players(player)
         elseif fields.mail then
             show_mail(player)
+        elseif fields.species then
+            show_species(player)
         end
     end
 
