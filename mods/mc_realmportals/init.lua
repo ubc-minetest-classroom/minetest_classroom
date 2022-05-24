@@ -24,9 +24,9 @@ mc_realmportals.LoadDataFromStorage()
 
 -- Defining all our portal realms
 
-mc_realmportals.newPortal("testRealm", true, "vancouver_osm")
-mc_realmportals.newPortal("lukieRealm", false, "shack")
-mc_realmportals.newPortal("realm1024", false)
-mc_realmportals.newPortal("123", false)
-mc_realmportals.newPortal("456", false)
+mc_realmportals.newPortal("mc_realmportals","testRealm", true, "vancouver_osm")
+mc_realmportals.newPortal("mc_realmportals","lukieRealm", false, "shack")
+mc_realmportals.newPortal("mc_realmportals","realm1024", false)
+mc_realmportals.newPortal("mc_realmportals","123", false)
+mc_realmportals.newPortal("mc_realmportals","456", false)
 

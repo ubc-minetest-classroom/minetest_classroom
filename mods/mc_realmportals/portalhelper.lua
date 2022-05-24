@@ -2,13 +2,13 @@
 -- We will eventually hook this up with a config file and tutorial schematics.
 -- Portal frame blocks are dynamically created and colored based on realm name.
 
-function mc_realmportals.newPortal(realmName, playerInstanced, schematic)
+function mc_realmportals.newPortal(modName, realmName, playerInstanced, schematic)
     playerInstanced = playerInstanced or false
     schematic = schematic or nil
 
     local portalColor = mc_helpers.stringToColor(realmName)
 
-    minetest.register_node("mc_realmportals:" .. realmName .. "stone", {
+    minetest.register_node(modName .. ":" .. realmName .. "stone", {
         description = realmName .. " Portal Stone",
         tiles = { "portalFrame.png" },
         color = portalColor,
@@ -16,16 +16,16 @@ function mc_realmportals.newPortal(realmName, playerInstanced, schematic)
         is_ground_content = true
     })
 
-    portals.register_wormhole_node("mc_realmportals:" .. realmName .. "portal", {
+    portals.register_wormhole_node(modName .. ":" .. realmName .. "portal", {
         description = ("Portal"),
         color = portalColor,
-        post_effect_color = portalColor
+        post_effect_color = {a=50,r=portalColor.r,g=portalColor.g,b=portalColor.b}
     })
 
     portals.register_portal(realmName .. "_portal", {
         shape = portals.PortalShape_Traditional,
-        frame_node_name = "mc_realmportals:" .. realmName .. "stone",
-        wormhole_node_name = "mc_realmportals:" .. realmName .. "portal",
+        frame_node_name = modName .. ":" .. realmName .. "stone",
+        wormhole_node_name = modName .. ":" .. realmName .. "portal",
         wormhole_node_color = 7, -- 4 is cyan
 
 
@@ -35,7 +35,6 @@ function mc_realmportals.newPortal(realmName, playerInstanced, schematic)
 
             -- We check if we're in the spawn realm, if not, we are in a realm.
             local realm = mc_worldManager.GetSpawnRealm()
-
 
             if (pos.x > realm.StartPos.x or pos.x < realm.EndPos.x) then
                 return false
@@ -107,13 +106,13 @@ function mc_realmportals.newPortal(realmName, playerInstanced, schematic)
         local realmID = mc_realmportals.RealmIDTable[realmName]
 
         if (realmID == nil) then
-            return mc_realmportals.CreateRalmByName(realmName, schematic)
+            return mc_realmportals.CreateRealmByName(realmName, schematic)
         end
 
         local realm = Realm.realmDict[realmID]
 
         if (realm == nil) then
-            return mc_realmportals.CreateRalmByName(realmName, schematic)
+            return mc_realmportals.CreateRealmByName(realmName, schematic)
         end
 
         return realm

@@ -245,7 +245,7 @@ function Realm:Save_Schematic()
 
     local filepath = folderpath .. "\\" .. fileName
 
-    minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".schematic", nil)
+    minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
 
     local settings = Settings(filepath .. ".conf")
     settings:set("author", "unknown")
