@@ -9,16 +9,16 @@ end
 
 -- Define an initial formspec that will redirect to different formspecs depending on what the teacher wants to do
 local mc_student_menu =
-		"formspec_version[5]"..
-		"size[7,14]"..
-		"label[1.7,0.7;What do you want to do?]"..
-		"button[2,1.6;3,1.3;spawn;Go to UBC]"..
-		"button[2,3.3;3,1.3;accesscode;Join Classroom]"..
-		"button[2,5;3,1.3;report;Report]"..
-		"button[2,6.7;3,1.3;coordinates;Store Coordinates]"..
-		"button[2,8.4;3,1.3;marker;Place a Marker]"..
-		"button[2,10.2;3,1.3;taskstudent;View Tasks]"..
-		"button_exit[2,11.8;3,1.3;exit;Exit]"
+    "formspec_version[5]"..
+    "size[10,9]"..
+    "label[3.1,0.7;What do you want to do?]"..
+    "button[1,1.6;3.8,1.3;spawn;Go to UBC]"..
+    "button[5.2,1.6;3.8,1.3;accesscode;Join Classroom]"..
+	"button[1,3.3;3.8,1.3;coordinates;Store Coordinates]"..
+    "button[5.2,3.3;3.8,1.3;marker;Place a Marker]"..
+    "button[1,5;3.8,1.3;taskstudent;View Tasks]"..
+    "button[5.2,5;3.8,1.3;report;Report]"..
+    "button_exit[3.1,6.7;3.8,1.3;exit;Exit]"
 
 local function show_student_menu(player)
 	if check_perm(player) then
