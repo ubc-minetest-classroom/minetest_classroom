@@ -1,5 +1,16 @@
 magnify_plants = minetest.get_mod_storage()
-local magnify = dofile(minetest.get_modpath("magnify") .. "/api.lua")
+dofile(minetest.get_modpath("magnify") .. "/api.lua")
+
+local tool_name = "magnify:magnifying_tool"
+local priv_table = {"shout"}
+
+-- Checks for the 'shout' privilege (mirrors behavious in mc_student)
+local function check_perm_name(name)
+    return minetest.check_player_privs(name, {shout = true})
+end
+local function check_perm(player)
+    return check_perm_name(player:get_player_name())
+end
 
 -- Clears the plant database
 local function clear_table()
@@ -13,19 +24,14 @@ end
 -- clear_table() -- find an alternative for this so that only species that have not been registered get removed
 magnify_plants:set_int("count", 1)
 
--- Checks for the 'shout' privilege (mirrors behavious in mc_student)
-local function check_perm(player)
-    return minetest.check_player_privs(player:get_player_name(), { shout = true })
-end
-
 -- Builds the magnifying glass info formspec for the node with the given name
 local function build_formspec(node_name)
-    local ref_key = magnify_plants:get("node_" .. node_name)
-    return magnify.build_formspec_from_ref(ref_key, true)
+  local ref_key = magnify_plants:get("node_" .. node_name)
+  return magnify.build_formspec_from_ref(ref_key, true)
 end
 
 -- Registers the magnifying glass tool
-minetest.register_tool("magnify:magnifying_tool", {
+minetest.register_tool(tool_name, {
     description = "Magnifying Glass",
     _doc_items_longdesc = "This tool can be used to quickly learn more about about one's closer environment. It identifies and analyzes plant-type blocks and it shows extensive information about the thing on which it is used.",
     _doc_items_usagehelp = "Punch any block resembling a plant you wish to learn more about. This will open up the appropriate help entry.",
@@ -147,30 +153,8 @@ sfinv.register_page("magnify:compendium", {
 	end
 })
 
--- Give the magnifying glass to any player who joins with adequate privileges, or takes it away if they do not have adequate privileges
-minetest.register_on_joinplayer(function(player)
-    local inv = player:get_inventory()
-    if inv:contains_item("main", ItemStack("magnify:magnifying_tool")) then
-        -- Player has the magnifying glass 
-        if check_perm(player) then
-            -- The player should have the magnifying glass
-            return
-        else
-            -- The player should not have the magnifying glass
-            player:get_inventory():remove_item('main', 'magnify:magnifying_tool')
-        end
-    else
-        -- Player does not have the magnifying glass
-        if check_perm(player) then
-            -- The player should have the magnifying glass
-            player:get_inventory():add_item('main', 'magnify:magnifying_tool')
-        else
-            -- The player should not have the magnifying glass
-            return
-        end
-    end
-end)
-
+--[[
+-- Check for species formspec actions (currently has no functionality due to inability to open inventories via Lua)
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	-- check that this is a magnify formspec and that the player has adequate permissions
 	if string.sub(formname, 1, 8) ~= "magnify:" or not check_perm(player) then
@@ -189,4 +173,70 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			-- Would like to re-open inventory, but am unsure if that's possible through Lua
 		end
   	end
+end)
+]]
+
+-- Tool handling functions:
+    -- Give the magnifying tool to any player who joins with shout privileges or take it away if they do not have shout
+    -- Give the magnifying tool to any player who is granted shout
+    -- Take the magnifying tool away from anyone who is revoked shout
+
+-- Give the magnifying tool to any player who joins with shout privileges or take it away if they do not have shout
+minetest.register_on_joinplayer(function(player)
+    local inv = player:get_inventory()
+    if inv:contains_item("main", ItemStack(tool_name)) then
+        -- Player has the magnifying glass 
+        if check_perm(player) then
+            -- The player should have the magnifying glass
+            return
+        else
+            -- The player should not have the magnifying glass
+            player:get_inventory():remove_item('main', tool_name)
+        end
+    else
+        -- Player does not have the magnifying glass
+        if check_perm(player) then
+            -- The player should have the magnifying glass
+            player:get_inventory():add_item('main', tool_name)
+        else
+            -- The player should not have the magnifying glass
+            return
+        end
+    end
+end)
+-- Give the magnifying tool to any player who is granted shout
+minetest.register_on_priv_grant(function(name, granter, priv)
+    -- Check if priv has an effect on the privileges needed for the tool
+    if name == nil or not table._has(priv_table, priv) then
+        return true -- skip this callback, continue to next callback
+    end
+    if not minetest.get_player_by_name(name) then
+        return nil -- player does not exist, skip all callbacks
+    end
+
+    local player = minetest.get_player_by_name(name)
+    local inv = player:get_inventory()
+    if not inv:contains_item("main", ItemStack(tool_name)) and check_perm_name(name) then
+        player:get_inventory():add_item('main', tool_name)
+    end
+
+    return true -- continue to next callback
+end)
+-- Take the magnifying tool away from anyone who is revoked shout
+minetest.register_on_priv_revoke(function(name, revoker, priv)
+    -- Check if priv has an effect on the privileges needed for the tool
+    if name == nil or not table._has(priv_table, priv) then
+        return true -- skip this callback, continue to next callback
+    end
+    if not minetest.get_player_by_name(name) then
+        return nil -- player does not exist, skip all callbacks
+    end
+
+    local player = minetest.get_player_by_name(name)
+    local inv = player:get_inventory()
+    if inv:contains_item("main", ItemStack(tool_name)) and not check_perm_name(name) then
+        player:get_inventory():remove_item('main', tool_name)
+    end
+
+    return true -- continue to next callback
 end)

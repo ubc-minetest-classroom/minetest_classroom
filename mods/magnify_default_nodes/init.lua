@@ -1,5 +1,3 @@
-local magnify = dofile(minetest.get_modpath("magnify").."/api.lua")
-
 --[[
 local template = {
     sci_name = "",        -- Scientific name of species
@@ -79,7 +77,7 @@ local JungleTree = {
     status_col = "#666ae3", -- S5
     height = "Grows up to 24 meters tall",
     bloom = "Produces long, droopy, reddish male catkins or short, woody female cones",
-    --region = "",
+    region = "Coastal BC, Washington, Oregon, California and Southeast Alaska",
     texture = "jungle_tree.jpg",
     more_info = "Trees growing in the forest develop a slightly tapered trunk extending up to a narrow, rounded crown.",
     external_link = "https://www.for.gov.bc.ca/hfd/library/documents/treebook/redalder.htm"--,
@@ -109,12 +107,12 @@ local blueberry = {
     fam_name = "Ericaceae (Crowberry family)",
     cons_status = "S5 - Demonstrably widespread, abundant, and secure",
     status_col = "#666ae3", -- S5
-    bloom = "pinkish red that blooms from April to May",
-    region = "BC",
-    texture = "blueberry.png", 
+    bloom = "Blooms with pinkish red flowers from April to May",
+    region = "Southwest BC and West Coast USA",
+    texture = "Vacciniumovatum.jpg", 
     more_info = "Can tolerate a wide range of light conditions and is very attractive to birds. Foliage is glossy and green with new red growth",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Vaccinium%20ovatum"--,
-    --img_copyright or img_credit = ""
+    img_credit = "Gordon Leppig & Andrea J. Pickart"
 }
 magnify.register_plant(blueberry, {"default:blueberry_bush_leaves", "default:blueberry_bush_leaves_with_berries", "default:blueberries"})
 
@@ -124,13 +122,13 @@ local Bush = {
     fam_name = "Rosaceae (Rose family)",
     cons_status = "S5 - Demonstrably widespread, abundant, and secure",
     status_col = "#666ae3", -- S5
-    --height = "",
-    --bloom = "",
+    height = "1 to 4 meters tall",
+    bloom = "Blooms with half-rounded clusters of showy, white saucer-shaped flowers",
     region = "Southern BC and California",
-    texture = "bush.jpeg",
-    more_info = "Has showy white flower clusters. Attracts native bees and butterflies, and gives great cover for birds and small mammals.",
-    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Physocarpus%20capitatus"--,
-    --img_copyright or img_credit = ""
+    texture = "Physocarpus_capitatus_18343.jpg",
+    more_info = "A shrub which attracts native bees and butterflies, and gives great cover for birds and small mammals.",
+    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Physocarpus%20capitatus",
+    img_copyright = "Walter Siegmund, licensed under CC BY 2.5"
 }
 magnify.register_plant(Bush, {"default:bush_leaves", "default:bush_stem", "default:bush_sapling"})
 
@@ -147,7 +145,6 @@ local Acacia = {
     more_info = "Deciduous tree with heavy, craggy branches, up to 25 m tall but often small, shrubby and as short as 1 m in dry, rocky habitats",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Quercus%20garryana"
     --img_copyright or img_credit = ""
-    --"https://www.google.com/url?q=https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname%3DQuercus%2520garryana&sa=D&source=editors&ust=1653081882250994&usg=AOvVaw0ijQhcVb59jmz2JSD8np-I"
 }
 magnify.register_plant(Acacia, {"default:acacia_tree", "default:acacia_wood", "default:acacia_leaves", "default:acacia_sapling", "default:dry_shrub"})
 
@@ -157,25 +154,25 @@ local Cactus = {
     fam_name = "Cactaceae (Cactus family)",
     cons_status = "S5 - Demonstrably widespread, abundant, and secure",
     status_col = "#666ae3", -- S5
-    height = "5 to 20 cm tall",
+    height = "5 to 20 centimeters tall",
     bloom = "Blooms with paper-thin petals, yelllow, 3-5 cm across with reddish stalks",
-    region = "British Columbia",
-    texture = "catcus.jpeg", 
+    region = "BC to Southwest Ontario and Northern to Midwestern USA",
+    texture = "4691167139_41c8a71b20_o.jpg", 
     more_info = "Perennial herb from a fibrous root; mat-forming; stems prostrate, succulent, subglobose to rounded, fleshy,",
-    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Opuntia%20fragilis&noTransfer=0",
-    img_credit = "the UBC Botanical Garden"
+    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Opuntia%20fragilis",
+    img_copyright = "Alexandre Dell'Olivo, licensed under CC BY-NC-SA 2.0"
 }
 magnify.register_plant(Cactus, {"default:cactus", "default:large_cactus_seedling"})
 
 local Papyrus = {
-    sci_name = "Equisetum telmateia Ehrh.",
+    sci_name = "Equisetum telmateia",
 	com_name = "Giant Horsetail",
-  	fam_name = "Equisetaceae",
+  	fam_name = "Equisetaceae (Horsetail family)",
   	cons_status = "S5 - Demonstrably widespread, abundant, and secure",
-  	status_col = "#666ae3", 
+    status_col = "#666ae3", -- S5
   	height = "15-150 cm tall",
-  	bloom = "non-flowering",
-	region = "requent in coastal BC, rare east of the Coast-Cascade Mountains",
+  	bloom = "Non-flowering",
+	region = "Coastal BC, rare east of the Coast-Cascade Mountains",
 	texture = "horsetail.jpeg", 
 	more_info = "An evergreen perennial. It has vertical green stems with horizontal bands similar to bamboo",
 	external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Equisetum%20telmateia"--,
@@ -205,13 +202,46 @@ local Fern = {
     com_name = "Deer Fern",        
     fam_name = "Blechnaceae (Chain Fern family)",        
     cons_status = "S5 - Demonstrably widespread, abundant, and secure",     
-    status_col = "#666ae3",     
-    height = "grow to 20 inches tall at maturity",         
-    bloom = "not applicable",           
-    region = "common in coastal BC, infrequent in SE BC",         
-    texture = "fern.png",        
+    status_col = "#666ae3", -- S5    
+    height = "Grows to 20 inches tall at maturity",         
+    bloom = "No bloom pattern",           
+    region = "Coastal BC, infrequent in Southeast BC",         
+    texture = "struthiopteris-spicant-1.jpg",        
     more_info = "This fern is particularly distinctive because of its two different types of fronds",      
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Blechnum%20spicant",   
-    img_credit = ""
+    img_copyright = "Daniel Mosquin, licensed under CC BY-NC-SA 4.0"
 }
 magnify.register_plant(Fern, {"default:fern_1", "default:fern_2", "default:fern_3"})
+
+local arbutus = {
+    sci_name = "Arbutus menziesii",
+    com_name = "Arbutus",
+    fam_name = "Ericaceae (Crowberry family)",
+    cons_status = "S5 - Demonstrably widespread, abundant, and secure",
+    status_col = "#666ae3", -- S5
+    height = "6 to 30 meters tall",
+    bloom = "Blooms with large clusters of drooping, urn-shaped white or pink corollas",
+    region = "Southwest BC and West Coast USA",
+    texture = "arbutus.jpg",
+    more_info = "A broadleaf, shrublike tree with peeling brownish-red bark. Typically found in dry open forests and shallow-soiled rocky slopes",
+    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Arbutus%20menziesii"--,
+    --img_copyright = ""
+}
+-- Plant registration call
+magnify.register_plant(arbutus, {"default:acacia_bush_stem", "default:acacia_bush_leaves", "default:acacia_bush_sapling"})
+
+local mannagrass = {
+    sci_name = "Glyceria striata",
+    com_name = "Fowl Mannagrass",
+    fam_name = "Poaceae (Grass family)",
+    cons_status = "S5 - Demonstrably widespread, abundant, and secure",
+    status_col = "#666ae3", -- S5
+    height = "30 to 80 centimeters tall",
+    bloom = "Blooms with slender green panicles of egg-shaped flowers in the early summer",
+    region = "various parts of Canada and the USA, including BC",
+    texture = "1290859805_c0f741fe00_o.jpg",
+    more_info = "A perennial with upright, hollow tufts of grass stemming from rhizomes. Typically found in bogs, lakeshores, and moist to wet meadows in lowland and subalpine zones.",
+    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Glyceria%20striata",
+    img_copyright = "Jason Hollinger, licensed under CC BY 2.0" 
+}
+magnify.register_plant(mannagrass, {"default:junglegrass"})

@@ -31,3 +31,16 @@ function mc_helpers.fileExists(path)
     local f=io.open(path,"r")
     if f~=nil then io.close(f) return true else return false end
 end
+
+--- @public
+--- Returns true if any of the values in the given table is equal to the value provided
+--- @param table The table to check
+--- @param val The value to check for
+--- @return boolean whether the value exists in the table
+function table._has(table, val)
+    if not table or not val then return false end
+    for k,v in pairs(table) do
+        if v == val then return true end
+    end
+    return false
+end

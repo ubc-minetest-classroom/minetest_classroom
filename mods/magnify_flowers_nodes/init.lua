@@ -1,5 +1,3 @@
-local magnify = dofile(minetest.get_modpath("magnify") .. "/api.lua")
-
 --[[
 local template = {
     sci_name = "",        -- Scientific name of species

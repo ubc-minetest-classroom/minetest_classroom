@@ -2,9 +2,15 @@
 minetest_classroom.reports = minetest.get_mod_storage()
 minetest_classroom.mc_students = {teachers = {}}
 
+local tool_name = "mc_student:notebook"
+local priv_table = {"shout"}
+
 -- Check for shout priv
+local function check_perm_name(name)
+    return minetest.check_player_privs(name, {shout = true})
+end
 local function check_perm(player)
-	return minetest.check_player_privs(player:get_player_name(), { shout = true })
+    return check_perm_name(player:get_player_name())
 end
 
 -- Define an initial formspec that will redirect to different formspecs depending on what the teacher wants to do
@@ -356,7 +362,7 @@ function check_access_code(submitted, codes)
 end
 
 -- The student notebook for accessing the student actions
-minetest.register_tool("mc_student:notebook" , {
+minetest.register_tool(tool_name, {
 	description = "Notebook for students",
 	inventory_image = "notebook.png",
 	-- Left-click the tool activates the teacher menu
@@ -373,28 +379,72 @@ minetest.register_tool("mc_student:notebook" , {
 	end,
 })
 
--- Give the notebook to any player who joins with shout privileges or take away the controller if they do not have shout
+-- Tool handling functions:
+    -- Give the notebook to any player who joins with shout privileges or take away the notebook if they do not have shout
+    -- Give the notebook to any player who is granted shout
+    -- Take the notebook away from anyone who is revoked shout
+
+-- Give the notebook to any player who joins with shout privileges or take away the notebook if they do not have shout
 minetest.register_on_joinplayer(function(player)
 	local inv = player:get_inventory()
-	if inv:contains_item("main", ItemStack("mc_student:notebook")) then
+	if inv:contains_item("main", ItemStack(tool_name)) then
 		-- Player has the notebook
 		if check_perm(player) then
 			-- The player should have the notebook
 			return
 		else
 			-- The player should not have the notebook
-			player:get_inventory():remove_item('main', 'mc_student:notebook')
+			player:get_inventory():remove_item('main', tool_name)
 		end
 	else
 		-- Player does not have the notebook
 		if check_perm(player) then
 			-- The player should have the notebook
-			player:get_inventory():add_item('main', 'mc_student:notebook')
+			player:get_inventory():add_item('main', tool_name)
 		else
 			-- The player should not have the notebook
 			return
 		end
 	end
+end)
+-- Give the notebook to any player who is granted shout
+minetest.register_on_priv_grant(function(name, granter, priv)
+    -- Check if priv has an effect on the privileges needed for the tool
+    if name == nil or (not table._has(priv_table, priv)) then
+        return true -- skip this callback, continue to next callback
+    end
+	if not minetest.get_player_by_name(name) then
+        return nil -- player does not exist, skip all callbacks
+    end
+
+    local player = minetest.get_player_by_name(name)
+    local inv = player:get_inventory()
+
+    if (not inv:contains_item("main", ItemStack(tool_name))) and check_perm_name(name) then
+        -- Give the player the tool
+        player:get_inventory():add_item('main', tool_name)
+    end
+
+    return true -- continue to next callback
+end)
+-- Take the notebook away from anyone who is revoked shout
+minetest.register_on_priv_revoke(function(name, revoker, priv)
+    -- Check if priv has an effect on the privileges needed for the tool
+    if name == nil or (not table._has(priv_table, priv)) then
+        return true -- skip this callback, continue to next callback
+    end
+	if not minetest.get_player_by_name(name) then
+        return nil -- player does not exist, skip all callbacks
+    end
+
+    local player = minetest.get_player_by_name(name)
+    local inv = player:get_inventory()
+    if inv:contains_item("main", ItemStack(tool_name)) and (not check_perm_name(name)) then
+        -- Take the tool away from the player
+        player:get_inventory():remove_item('main', tool_name)
+    end
+
+    return true -- continue to next callback
 end)
 
 -- Functions and variables for placing markers

@@ -1,5 +1,5 @@
 -- EXPORTED MAGNIFY FUNCTIONS
-local magnify = {}
+magnify = {}
 
 --- @public
 --- Adds a plant to the magnify plant database
@@ -115,5 +115,3 @@ function magnify.build_formspec_from_ref(ref, is_exit)
 		return nil
 	end
 end
-
-return magnify
