@@ -31,7 +31,7 @@ local black_lily = {
     texture = "fritillaria-affinis.jpg",
     more_info = "A small, thin, bell-like perennial herb. Also known as the checkered lily, due to the greenish-yellow patterns that appear on its purple flowers. Typically found in grassy bluffs, meadows, and open forests.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Fritillaria%20affinis",
-    img_copyright = "Jackie Chambers, licensed under CC BY-NC-SA 4.0" -- cropped, https://botanyphoto.botanicalgarden.ubc.ca/2008/05/fritillaria-affinis/
+    img_copyright = "Jackie Chambers, licensed under CC BY-NC-SA 4.0"
 }
 magnify.register_plant(black_lily, {"flowers:tulip_black"})
 
@@ -79,7 +79,7 @@ local rose = {
     texture = "Castilleja_miniata_var._miniata.jpg", 
     more_info = "A stout, hairy perennial herb with a woody, scaly base. Typically found in areas such as meadows, grassy slopes, clearings, roadsides, and open forests.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Castilleja%20miniata%20var.%20miniata",
-    img_copyright = "Thayne Tuason, licensed under CC BY-SA 4.0" -- cropped, https://commons.wikimedia.org/wiki/File:Castilleja_miniata_var._miniata.jpg
+    img_copyright = "Thayne Tuason, licensed under CC BY-SA 4.0"
 }
 magnify.register_plant(rose, {"flowers:rose"})
 
