@@ -40,7 +40,6 @@ function Realm.SaveDataToStorage ()
     mc_worldManager.storage:set_string("realmCount", tostring(Realm.realmCount))
 end
 
-
 ---@public
 ---The constructor for the realm class.
 ---@param name string
@@ -78,10 +77,14 @@ function Realm:New(name, size, height)
     local finalRealmSize = math.min(realmSize, size)
     local finalRealmHeight = math.min(realmHeight, height)
 
-    this.EndPos = { x = this.StartPos.x + finalRealmSize, y = this.StartPos.y + finalRealmHeight, z = this.StartPos.z + finalRealmSize }
+    this.EndPos = { x = this.StartPos.x + finalRealmSize,
+                    y = this.StartPos.y + finalRealmHeight,
+                    z = this.StartPos.z + finalRealmSize }
 
     -- Temporary spawn point calculation
-    this.SpawnPoint = { x = (this.StartPos.x + this.EndPos.x) / 2, y = ((this.StartPos.y + this.EndPos.y) / 2) + 2, z = (this.StartPos.z + this.EndPos.z) / 2 }
+    this.SpawnPoint = { x = (this.StartPos.x + this.EndPos.x) / 2,
+                        y = ((this.StartPos.y + this.EndPos.y) / 2) + 2,
+                        z = (this.StartPos.z + this.EndPos.z) / 2 }
 
     setmetatable(this, self)
     table.insert(Realm.realmDict, this.ID, this)
@@ -229,67 +232,6 @@ function Realm:SetNodes(pos1, pos2, node)
 end
 
 ---@public
----Save_Schematic
----@return string, boolean The filepath of the schematic; whether the settings file wrote succesfully.
-function Realm:Save_Schematic()
-    local folderpath = minetest.get_worldpath() .. "\\schematics\\"
-
-    minetest.mkdir(folderpath)
-
-    local fileName = "Realm " .. self.ID .. " "
-    for i = 1, 4 do
-        fileName = fileName .. math.random(0, 9)
-    end
-
-    fileName = fileName .. os.date(" %Y%m%d %H%M")
-
-    local filepath = folderpath .. "\\" .. fileName
-
-    minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
-
-    local settings = Settings(filepath .. ".conf")
-    settings:set("author", "unknown")
-    settings:set("name", "unknown")
-    settings:set("spawn_pos_x", self.SpawnPoint.x)
-    settings:set("spawn_pos_y", self.SpawnPoint.y)
-    settings:set("spawn_pos_z", self.SpawnPoint.z)
-
-    settings:set("schematic_size_x", self.EndPos.x - self.StartPos.x)
-    settings:set("schematic_size_y", self.EndPos.y - self.StartPos.y)
-    settings:set("schematic_size_z", self.EndPos.z - self.StartPos.z)
-
-    local settingsWrote = settings:write()
-
-    return filepath, settingsWrote
-end
-
-function Realm:Load_Schematic(key)
-    local schematic, config = schematicManager.getSchematic(key)
-
-    self.EndPos.x = self.StartPos.x + config.size.x
-    self.EndPos.y = self.StartPos.y + config.size.y
-    self.EndPos.z = self.StartPos.z + config.size.z
-
-
-    -- Read data into LVM
-    local vm = minetest.get_voxel_manip()
-    local emin, emax = vm:read_from_map(self.StartPos, self.EndPos)
-    local a = VoxelArea:new {
-        MinEdge = emin,
-        MaxEdge = emax
-    }
-
-    -- Place Schematic
-    -- local results = minetest.place_schematic(self.StartPos, schematic, 0, nil, true)
-
-    local results = minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic, 0, nil, true)
-    vm:write_to_map(true)
-
-    self:UpdateSpawn(config.spawnPoint)
-    return results
-end
-
----@public
 ---Updates and saves the spawnpoint of a realm.
 ---@param spawnPos table SpawnPoint in localSpace.
 ---@return boolean Whether the operation succeeded.
@@ -304,10 +246,10 @@ end
 ---@param position table coordinates
 ---@return table localspace coordinates.
 function Realm:LocalToWorldPosition(position)
-    local pos = position
-    pos.x = pos.x + self.StartPos.x
-    pos.y = pos.y + self.StartPos.y
-    pos.z = pos.z + self.StartPos.z
+    local pos = { x = position.x, y = position.y, z = position.z }
+    pos.x = self.StartPos.x + pos.x
+    pos.y = self.StartPos.y + pos.y
+    pos.z = self.StartPos.z + pos.z
     return pos
 end
 
@@ -315,7 +257,7 @@ end
 ---@param position table
 ---@return table worldspace coordinates
 function Realm:WorldToLocalPosition(position)
-    local pos = position
+    local pos = { x = position.x, y = position.y, z = position.z }
     pos.x = pos.x - self.StartPos.x
     pos.y = pos.y - self.StartPos.y
     pos.z = pos.z - self.StartPos.z
@@ -334,6 +276,67 @@ function Realm:CalculateSpawn()
         self.SpawnPoint = pos
         return pos
     end
+end
+
+---@public
+---Save_Schematic
+---@return string, boolean The filepath of the schematic; whether the settings file wrote succesfully.
+function Realm:Save_Schematic(author)
+    author = author or "unknown"
+
+    local folderpath = minetest.get_worldpath() .. "\\schematics\\"
+
+    minetest.mkdir(folderpath)
+
+    local fileName = "Realm " .. self.ID .. " "
+    for i = 1, 4 do
+        fileName = fileName .. math.random(0, 9)
+    end
+
+    fileName = fileName .. os.date(" %Y%m%d %H%M")
+
+    local filepath = folderpath .. "\\" .. fileName
+
+    minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
+
+    local settings = Settings(filepath .. ".conf")
+    settings:set("author", author)
+    settings:set("name", self.Name)
+    settings:set("spawn_pos_x", self.SpawnPoint.x - self.StartPos.x)
+    settings:set("spawn_pos_y", self.SpawnPoint.y - self.StartPos.y)
+    settings:set("spawn_pos_z", self.SpawnPoint.z - self.StartPos.z)
+
+    settings:set("schematic_size_x", self.EndPos.x - self.StartPos.x)
+    settings:set("schematic_size_y", self.EndPos.y - self.StartPos.y)
+    settings:set("schematic_size_z", self.EndPos.z - self.StartPos.z)
+
+    local settingsWrote = settings:write()
+
+    return filepath, settingsWrote
+end
+
+function Realm:Load_Schematic(key)
+    local schematic, config = schematicManager.getSchematic(key)
+
+    self.Name = config.Name
+    self.EndPos = self:LocalToWorldPosition(config.EndPos)
+
+    -- Read data into LVM
+    local vm = minetest.get_voxel_manip()
+    local emin, emax = vm:read_from_map(self.StartPos, self.EndPos)
+    local a = VoxelArea:new {
+        MinEdge = emin,
+        MaxEdge = emax
+    }
+
+    -- Place Schematic
+    -- local results = minetest.place_schematic(self.StartPos, schematic, 0, nil, true)
+
+    local results = minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic, 0, nil, true)
+    vm:write_to_map(true)
+
+    self:UpdateSpawn(config.SpawnPoint)
+    return results
 end
 
 Realm.LoadDataFromStorage()
