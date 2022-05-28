@@ -1,10 +1,16 @@
 dofile(mc_tutorialFramework.path .. "/Tutorials/Punch-A-Block/blocks.lua")
 
-tutorial = {}
+tutorial = {hud = mhud.init()}
 
-tutorial.hud = mhud.init()
+function tutorial.blockDestroyed(player, blockID)
 
-function tutorial.blockDestroyed(player)
+    local pmeta = player:get_meta()
+
+    local key = "break" .. blockID .. "Block"
+
+    local oldBTBValue = pmeta:get_int(key) or 0
+    pmeta:set_int(key, oldBTBValue + 1)
+
     tutorial.updateHud(player)
 end
 
@@ -32,7 +38,7 @@ function tutorial.CreateHUD(player)
         color = 0x00FF00,
     })
 
-    tutorial.hud:add(player, "pap:stat", {
+    tutorial.hud:add(player, "pab:stat", {
         hud_elem_type = "text",
         position = { x = 1, y = 0 },
         offset = { x = -6, y = 18 },
@@ -48,7 +54,7 @@ function tutorial.updateHud(player)
     local meta = player:get_meta()
     local blocksBroken_text = "Blocks Broken: " .. meta:get_int("breakTutorialBlock")
 
-    tutorial.hud:change(player, "pap:stat", {
+    tutorial.hud:change(player, "pab:stat", {
         hud_elem_type = "text",
         position = { x = 1, y = 0 },
         offset = { x = -6, y = 18 },

@@ -1,8 +1,10 @@
-pap = {}
+pab = {}
 
-function pap.createBreakableBlock(groups, ID)
+function pab.createBreakableBlock(groups, ID)
     groups = groups or { oddly_breakable_by_hand = 1 }
     ID = ID or minetest.serialize(groups)
+
+
     minetest.register_node("mc_tf:" .. ID .. "Block", {
         tiles = { "mc_tf_blankBlock.png" },
         color = mc_helpers.stringToColor(minetest.serialize(groups)),
@@ -25,10 +27,8 @@ function pap.createBreakableBlock(groups, ID)
                 maxsize = 1,
                 node = { name = "mc_tf:" .. ID .. "Block", param2 = oldnode.param2 }
             })
-            local pmeta = digger:get_meta()
-            local oldBTBValue = pmeta:get_int("break" .. ID .. "Block") or 0
-            pmeta:set_int("break" .. ID .. "Block", oldBTBValue + 1)
-            tutorial.blockDestroyed(digger)
+
+            tutorial.blockDestroyed(digger,ID)
         end,
     })
 end

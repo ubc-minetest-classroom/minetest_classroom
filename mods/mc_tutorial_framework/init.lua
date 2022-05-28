@@ -10,5 +10,5 @@ schematicManager.registerSchematicPath("testSchematic", mc_tutorialFramework.pat
 
 mc_realmportals.newPortal("mc_tf","tf_testRealm", false, "testSchematic")
 
-pap.createBreakableBlock(nil,"Tutorial")
-pap.createBreakableBlock(nil,"Test")
+pab.createBreakableBlock(nil,"Tutorial")
+pab.createBreakableBlock(nil,"Test")
