@@ -1,13 +1,13 @@
 pab = {}
 
-function pab.CreateBlockFromGroups(groups, callback)
+function pab.CreateBlockFromGroups(groups, nodeName, afterDigCallback)
     groups = groups or { oddly_breakable_by_hand = 1 }
 
-    local nodeName = "mc_tf:" .. tostring(mc_helpers.stringToNumber(minetest.serialize(groups))) .. "Block"
+
     minetest.debug(nodeName)
 
     minetest.register_node(nodeName, {
-        description = minetest.serialize(groups),
+        description = nodeName,
         tiles = { "mc_tf_blankBlock.png" },
         color = mc_helpers.stringToColor(nodeName),
         is_ground_content = true,
@@ -31,8 +31,8 @@ function pab.CreateBlockFromGroups(groups, callback)
                 node = { name = nodeName, param2 = oldnode.param2 }
             })
 
-            if (callback ~= nil) then
-                callback(pos, oldnode, oldmetadata, digger, nodeName)
+            if (afterDigCallback ~= nil) then
+                afterDigCallback(pos, oldnode, oldmetadata, digger)
             end
         end,
         drop = "",
