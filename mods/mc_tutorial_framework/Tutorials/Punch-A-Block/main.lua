@@ -21,7 +21,7 @@ end
 
 function tutorial.CreateHUD(player)
     local meta = player:get_meta()
-    local blocksBroken_text = "Grey Blocks Broken: " .. meta:get_int("breakTutorialBlock")
+    local blocksBroken_text = "Blocks Broken: " .. meta:get_int("breakTutorialBlock")
 
     tutorial.hud:add(player, "pab:title", {
         hud_elem_type = "text",
@@ -32,7 +32,7 @@ function tutorial.CreateHUD(player)
         color = 0x00FF00,
     })
 
-    tutorial.hud:add(player, "pab:stat", {
+    tutorial.hud:add(player, "pap:stat", {
         hud_elem_type = "text",
         position = { x = 1, y = 0 },
         offset = { x = -6, y = 18 },
@@ -46,9 +46,9 @@ end
 
 function tutorial.updateHud(player)
     local meta = player:get_meta()
-    local blocksBroken_text = "Grey Blocks Broken: " .. meta:get_int("breakTutorialBlock")
+    local blocksBroken_text = "Blocks Broken: " .. meta:get_int("breakTutorialBlock")
 
-    tutorial.hud:change(player, "pab:stat", {
+    tutorial.hud:change(player, "pap:stat", {
         hud_elem_type = "text",
         position = { x = 1, y = 0 },
         offset = { x = -6, y = 18 },
