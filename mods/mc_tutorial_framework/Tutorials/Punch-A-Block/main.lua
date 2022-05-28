@@ -1,17 +1,17 @@
 dofile(mc_tutorialFramework.path .. "/Tutorials/Punch-A-Block/blocks.lua")
 
-tutorial = {hud = mhud.init()}
+tutorial = { hud = mhud.init() }
 
-function tutorial.blockDestroyed(player, blockID)
+local tutorialStage = 0
 
-    local pmeta = player:get_meta()
-
-    local key = "break" .. blockID .. "Block"
+function tutorial.blockDestroyed(pos, oldnode, oldmetadata, digger, nodeName)
+    local pmeta = digger:get_meta()
+    local key = "Break:" .. nodeName
 
     local oldBTBValue = pmeta:get_int(key) or 0
     pmeta:set_int(key, oldBTBValue + 1)
 
-    tutorial.updateHud(player)
+    tutorial.Progress(digger)
 end
 
 function tutorial.startTutorial(player)
@@ -22,12 +22,27 @@ function tutorial.startTutorial(player)
     pmeta:set_int("breakTutorialBlock", 0)
 
     tutorial.CreateHUD(player)
+end
+
+function tutorial.Progress(player)
+    local pmeta = player:get_meta()
+
+    local key = "Break:" .. ""
+    local oldBTBValue = pmeta:get_int(key) or 0
+
+    tutorial.updateHud(player, key, 5, " blocks")
+
 
 end
 
-function tutorial.CreateHUD(player)
+function tutorial.CreateHUD(player, statKey, Goal, HelpText)
+
+    statKey = statKey or "breakTutorialBlock"
+    Goal = Goal or 5
+    HelpText = HelpText or " Blocks"
+
     local meta = player:get_meta()
-    local blocksBroken_text = "Blocks Broken: " .. meta:get_int("breakTutorialBlock")
+    local blocksBroken_text = "Broke: " .. meta:get_int(statKey) .. "/" .. Goal .. HelpText
 
     tutorial.hud:add(player, "pab:title", {
         hud_elem_type = "text",
@@ -50,9 +65,13 @@ function tutorial.CreateHUD(player)
 
 end
 
-function tutorial.updateHud(player)
+function tutorial.updateHud(player, statKey, Goal, HelpText)
+    statKey = statKey or "breakTutorialBlock"
+    Goal = Goal or 5
+    HelpText = HelpText or " Blocks"
+
     local meta = player:get_meta()
-    local blocksBroken_text = "Blocks Broken: " .. meta:get_int("breakTutorialBlock")
+    local blocksBroken_text = "Broke: " .. meta:get_int(statKey) .. "/" .. Goal .. HelpText
 
     tutorial.hud:change(player, "pab:stat", {
         hud_elem_type = "text",

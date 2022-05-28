@@ -1,17 +1,20 @@
 pab = {}
 
-function pab.createBreakableBlock(groups, ID)
+function pab.CreateBlockFromGroups(groups, callback)
     groups = groups or { oddly_breakable_by_hand = 1 }
-    ID = ID or minetest.serialize(groups)
 
+    local nodeName = "mc_tf:" .. tostring(mc_helpers.stringToNumber(minetest.serialize(groups))) .. "Block"
+    minetest.debug(nodeName)
 
-    minetest.register_node("mc_tf:" .. ID .. "Block", {
+    minetest.register_node(nodeName, {
+        description = minetest.serialize(groups),
         tiles = { "mc_tf_blankBlock.png" },
-        color = mc_helpers.stringToColor(minetest.serialize(groups)),
+        color = mc_helpers.stringToColor(nodeName),
         is_ground_content = true,
         groups = groups,
+
+
         after_dig_node = function(pos, oldnode, oldmetadata, digger)
-            minetest.set_timeofday(0.5)
             minetest.add_particlespawner({
                 amount = 100,
                 time = 0.1,
@@ -25,10 +28,13 @@ function pab.createBreakableBlock(groups, ID)
                 maxexptime = 4,
                 minsize = 0,
                 maxsize = 1,
-                node = { name = "mc_tf:" .. ID .. "Block", param2 = oldnode.param2 }
+                node = { name = nodeName, param2 = oldnode.param2 }
             })
 
-            tutorial.blockDestroyed(digger,ID)
+            if (callback ~= nil) then
+                callback(pos, oldnode, oldmetadata, digger, nodeName)
+            end
         end,
+        drop = "",
     })
 end
