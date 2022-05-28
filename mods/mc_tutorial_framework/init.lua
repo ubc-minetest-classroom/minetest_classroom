@@ -16,22 +16,43 @@ local function check_perm(player)
 end
 
 -- Define a formspec that will describe tutorials and give the option to teleport to selected tutorial realm
-local mc_tf_menu =
-	"formspec_version[5]" .. 
-	"size[13,10]" ..
-	"button[0.2,0.2;4.6,0.8;intro;Introduction]" ..
-	"box[0.2,8.4;10.2,1.4;#505050]" ..
-	"button[0.2,1.2;4.6,0.8;mov;Movement]" ..
-	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]" ..
-	"textarea[5,0.2;7.8,8;text;;Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.]" ..
-	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]" ..
-	"box[10.7,8.4;2.1,1.4;#C0C0C0]" ..
-	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
+local mc_tf_menu = {
+	"formspec_version[5]",
+	"size[13,10]", 
+	"box[0.2,8.4;10.2,1.4;#505050]",
+	"box[10.7,8.4;2.1,1.4;#C0C0C0]",
+	"textarea[5,0.2;7.8,8;text;;Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.]",
+	"button_exit[11,8.65;1.5,0.9;exit;Exit]",
+	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]", 
+	"textlist[0.2,0.2;4.6,8;tutorials;Introduction]"
+}
+
+local descriptions = {}
+
+local function addTutorial(name, description) 
+        -- Add tutorial to the text list
+		local textlist = mc_tf_menu[#mc_tf_menu]
+		textlist = textlist:sub(1, textlist:len() - 1) .. "," .. name .. "]"
+        mc_tf_menu[#mc_tf_menu] = textlist
+
+		table.insert(descriptions, #descriptions, description)
+		-- local textarea = mc_tf_menu[5]
+		-- textarea = "textarea[5,0.2;7.8,8;text;;" .. description .. "]"
+		-- mc_tf_menu[5] = textarea
+end 
+
+addTutorial("test", "testing")
 
 local function show_tutorial_menu(player)
 	if check_perm(player) then
 		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_tf:menu", mc_tf_menu)
+
+		local formspec = ""
+		for i=1,#mc_tf_menu do 
+			formspec = formspec .. mc_tf_menu[i]
+		end
+
+		minetest.show_formspec(pname, "mc_tf:menu", formspec)
 		return true
 	end
 end
@@ -57,47 +78,6 @@ minetest.register_tool("mc_tf:tutorialbook" , {
 minetest.register_alias("tutorialbook", "mc_tf:tutorialbook")
 tutorialbook = minetest.registered_aliases[tutorialbook] or tutorialbook
 
-mc_tf_mov =
-	"formspec_version[5]" .. 
-	"size[13,10]" ..
-	"button[0.2,0.2;4.6,0.8;intro;Introduction]" ..
-	"box[0.2,8.4;10.2,1.4;#505050]" ..
-	"button[0.2,1.2;4.6,0.8;mov;Movement]" ..
-	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]" ..
-	"textarea[5,0.2;7.8,8;text;;This tutorial explains how to walk in different directions, jump, and fly. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.]" ..
-	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]" ..
-	"box[10.7,8.4;2.1,1.4;#C0C0C0]" ..
-	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
-
-local function show_mov(player) 
-	if check_perm(player) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_tf:mov", mc_tf_mov)
-		return true
-	end
-end
-
-mc_tf_punch =
-        "formspec_version[5]" .. 
-        "size[13,10]" ..
-        "button[0.2,0.2;4.6,0.8;intro;Introduction]" ..
-        "box[0.2,8.4;10.2,1.4;#505050]" ..
-        "button[0.2,1.2;4.6,0.8;mov;Movement]" ..
-		"button[0.2,2.2;4.6,0.8;punch;Punch A Block]" ..
-        "textarea[5,0.2;7.8,8;text;;This tutorial explains how to punch and place blocks, which will allow you to add materials to your inventory and build. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.]" ..
-        "button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]" ..
-		"box[10.7,8.4;2.1,1.4;#C0C0C0]" ..
-		"button_exit[11,8.65;1.5,0.9;exit;Exit]"
-
-local function show_punch(player) 
-	if check_perm(player) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_tf:punch", mc_tf_punch)
-		return true
-	end
-end
-
-
 -- Processing the form from the menu
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if string.sub(formname, 1, 5) ~= "mc_tf" then
@@ -108,27 +88,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	while os.clock() - wait < 0.05 do end --popups don't work without this
 
 	-- Menu
-	if formname == "mc_tf:menu" then
-        if fields.mov then
-			show_mov(player)
-		elseif fields.punch then
-			show_punch(player)
-		end
-	end
-
-	if formname == "mc_tf:mov" then
-        if fields.intro then
-            show_tutorial_menu(player)
-		elseif fields.punch then
-			show_punch(player)
-		end
-	end
-
-	if formname == "mc_tf:punch" then
-        if fields.intro then
-            show_tutorial_menu(player)
-		elseif fields.mov then
-			show_mov(player)
+	if fields.tutorials then
+		local event = minetest.explode_textlist_event(fields.tutorials)
+		if event.type == "CHG" then
+			local textarea = mc_tf_menu[5]
+			textarea = "textarea[5,0.2;7.8,8;text;;" .. descriptions[event.index - 1] .. "]"
+			mc_tf_menu[5] = textarea
 		end
 	end
 end)
