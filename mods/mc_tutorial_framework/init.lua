@@ -1,8 +1,9 @@
 mc_tutorialFramework = { path = minetest.get_modpath("mc_tf")}
 
+Tutorials = {}
 
 
-dofile(mc_tutorialFramework.path .. "/blocks.lua")
+dofile(mc_tutorialFramework.path .. "/Tutorials/Punch-A-Block/main.lua")
 
 
 schematicManager.registerSchematicPath("testSchematic", mc_tutorialFramework.path .. "/realmTemplates/TestSchematic")

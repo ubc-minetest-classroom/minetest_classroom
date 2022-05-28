@@ -1,10 +1,11 @@
 minetest.register_node("mc_tf:blankBlock", {
-    description = "A blank block",
+    description = "A blank grey block",
     tiles = { "mc_tf_blankBlock.png" },
     color = { a = 255, r = 75, g = 75, b = 75 },
     is_ground_content = true,
-    groups = { cracky = 3, stone = 1, oddly_breakable_by_hand = 1},
+    groups = { oddly_breakable_by_hand = 1},
     after_dig_node = function(pos, oldnode, oldmetadata, digger)
+        minetest.set_timeofday(0.5)
         minetest.add_particlespawner({
             amount = 100,
             time = 0.1,
@@ -24,5 +25,7 @@ minetest.register_node("mc_tf:blankBlock", {
         local oldBTBValue = pmeta:get_int("breakTutorialBlock") or 0
         pmeta:set_int("breakTutorialBlock", oldBTBValue + 1)
         minetest.debug(oldBTBValue + 1)
+
+        tutorial.blockDestroyed(digger)
     end,
 })
