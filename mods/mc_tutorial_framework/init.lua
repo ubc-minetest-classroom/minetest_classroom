@@ -21,27 +21,33 @@ local mc_tf_menu = {
 	"size[13,10]", 
 	"box[0.2,8.4;10.2,1.4;#505050]",
 	"box[10.7,8.4;2.1,1.4;#C0C0C0]",
-	"textarea[5,0.2;7.8,8;text;;Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.]",
+	"textarea[5,0.2;7.8,8;text;;]",
 	"button_exit[11,8.65;1.5,0.9;exit;Exit]",
 	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]", 
-	"textlist[0.2,0.2;4.6,8;tutorials;Introduction]"
+	"textlist[0.2,0.2;4.6,8;tutorials;]"
 }
 
 local descriptions = {}
+local is_first = true
 
+-- To add a tutorial to the tutorialbook, call addTutorial with the tutorial's name and description
 local function addTutorial(name, description) 
         -- Add tutorial to the text list
 		local textlist = mc_tf_menu[#mc_tf_menu]
-		textlist = textlist:sub(1, textlist:len() - 1) .. "," .. name .. "]"
+
+		if not is_first then
+			textlist = textlist:sub(1, textlist:len() - 1) .. "," .. name .. "]"
+		else 
+			textlist = textlist:sub(1, textlist:len() - 1) .. name .. "]"
+			is_first = false
+		end
+
         mc_tf_menu[#mc_tf_menu] = textlist
 
-		table.insert(descriptions, #descriptions, description)
-		-- local textarea = mc_tf_menu[5]
-		-- textarea = "textarea[5,0.2;7.8,8;text;;" .. description .. "]"
-		-- mc_tf_menu[5] = textarea
+		table.insert(descriptions, #descriptions + 1, description)
 end 
 
-addTutorial("test", "testing")
+addTutorial("Introduction", "Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.")
 
 local function show_tutorial_menu(player)
 	if check_perm(player) then
@@ -66,6 +72,10 @@ minetest.register_tool("mc_tf:tutorialbook" , {
         local pname = user:get_player_name()
 		-- Check for shout privileges
 		if check_perm(user) then
+			local textarea = mc_tf_menu[5]
+			textarea = "textarea[5,0.2;7.8,8;text;;" .. descriptions[1] .. "]"
+			mc_tf_menu[5] = textarea
+
 			show_tutorial_menu(user)
 		end
 	end,
@@ -92,8 +102,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		local event = minetest.explode_textlist_event(fields.tutorials)
 		if event.type == "CHG" then
 			local textarea = mc_tf_menu[5]
-			textarea = "textarea[5,0.2;7.8,8;text;;" .. descriptions[event.index - 1] .. "]"
+			textarea = "textarea[5,0.2;7.8,8;text;;" .. descriptions[event.index] .. "]"
 			mc_tf_menu[5] = textarea
+			show_tutorial_menu(player)
 		end
 	end
 end)
