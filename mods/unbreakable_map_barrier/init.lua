@@ -11,7 +11,8 @@ minetest.register_node("unbreakable_map_barrier:barrier", {
         on_destruct = function () end,
         can_dig = function() return false end,
         diggable = false,
-        drop = "",
+		pointable = false, -- The player can't highlight it
+		drop = "",
 })
 
 minetest.register_chatcommand("mapbarrier", {
