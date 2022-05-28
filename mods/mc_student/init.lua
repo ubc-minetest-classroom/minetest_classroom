@@ -7,6 +7,16 @@ local function check_perm(player)
 	return minetest.check_player_privs(player:get_player_name(), { shout = true })
 end
 
+-- Split pos in coordlist from character "x=1 y=2 z=3" to numeric table {1,2,3}
+local function pos_split (inputstr)
+	local t={}
+	for str in string.gmatch(inputstr, "([^=%s]+)") do
+		table.insert(t, str)
+	end
+	local tt={x=tonumber(t[2]),z=tonumber(t[6]),y=tonumber(t[4])}
+	return tt
+end
+
 -- Define an initial formspec that will redirect to different formspecs depending on what the teacher wants to do
 local mc_student_menu =
 		"formspec_version[5]"..
@@ -70,7 +80,7 @@ local function show_coordinates(player)
 		mc_student_coordinates.. 
 		"textlist[0.3,1;14.4,7.5;;No Coordinates Stored;1;false]"
 	else
-		mc_student_coordinates = mc_student_coordinates .. "textlist[0.3,1;14.4,7.5;;"
+		mc_student_coordinates = mc_student_coordinates .. "textlist[0.3,1;14.4,7.5;coordlist;"
 		-- Some coordinates were found, so iterate the list
 		pxyz = pdata.coords
 		pnotes = pdata.notes
@@ -81,9 +91,10 @@ local function show_coordinates(player)
 	end
 
 	mc_student_coordinates = mc_student_coordinates..
-		"button[0.3,9.1;2,0.8;back;Back]"..
-		"button[2.5,9.1;2.5,0.8;deleteall;Delete All]"..
-		"button[5.2,9.1;2,0.8;record;Record]"..
+		"button[0.1,9.1;1.6,0.8;back;Back]"..
+		"button[1.9,9.1;1.4,0.8;go;Go]"..
+		"button[3.5,9.1;1.9,0.8;deleteall;Delete All]"..
+		"button[5.6,9.1;1.6,0.8;record;Record]"..
 		"field[7.4,9.1;7.3,0.8;message;Note;Add a note to record at your current location]"
 	minetest.show_formspec(pname, "mc_student:coordinates", mc_student_coordinates)
 	return true
@@ -264,6 +275,22 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			show_student_menu(player)
 		elseif fields.record then
 			record_coordinates(player,fields.message)
+		elseif fields.coordlist then
+			local event = minetest.explode_textlist_event(fields.coordlist)
+		    	if event.type == "CHG" then
+			-- "CHG" = something is selected in the list
+				context.selected = event.index
+		    	end
+		elseif fields.go then
+			local pname = player:get_player_name()
+			pmeta = player:get_meta()
+			if not context.selected then
+				context.selected = 1
+			end
+		    	local temp = minetest.deserialize(pmeta:get_string("coordinates"))
+		    	local new_pos_char = temp.coords[context.selected]
+			local new_pos_tab = pos_split(new_pos_char)
+		    	player:set_pos(new_pos_tab)
 		elseif fields.deleteall then
 			local pmeta = player:get_meta()
 			pmeta:set_string("coordinates", nil)
