@@ -672,8 +672,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.spawn then
 
             local spawnRealm = mc_worldManager.GetSpawnRealm()
-            local spawn_pos = spawnRealm.SpawnPoint
-            player:set_pos(spawn_pos)
+            spawnRealm:TeleportPlayer(player)
         elseif fields.tasks then
             show_tasks(player)
         elseif fields.lessons then
@@ -798,8 +797,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
                 local realm = Realm.realmDict[mdata.realm_id[context.selected]]
                 if (realm ~= nil) then
-                    local realmSpawnPos = realm.SpawnPoint
-                    player:set_pos(realmSpawnPos)
+                    realm:TeleportPlayer(player)
                 else
                     minetest.chat_send_player(pname, pname .. ": Error receiving the realm / spawn coordinates. Try regenerating the classroom.")
                     minetest.log("warning", "mc_teacher gui_dash.lua: realm with ID: " .. mdata.realm_id[context.selected] .. " does not exist but is associated with a classroom.")
@@ -977,7 +975,7 @@ function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
         minetest.chat_send_player(pname, pname .. ": Your course was successfully recorded.")
 
         -- Send player to spawn pos of classroom map
-        player:set_pos(newRealm.SpawnPoint)
+        newRealm:TeleportPlayer(player)
 
         -- Update the formspec
         show_classrooms(player)
