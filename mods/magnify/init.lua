@@ -1,5 +1,16 @@
 minetest_classroom.bc_plants = minetest.get_mod_storage()
 
+local tool_name = "magnify:magnifying_tool"
+local priv_table = {"shout"}
+
+-- Checks for the 'shout' privilege (mirrors behavious in mc_student)
+local function check_perm_name(name)
+    return minetest.check_player_privs(name, {shout = true})
+end
+local function check_perm(player)
+    return check_perm_name(player:get_player_name())
+end
+
 local function clear_table()
 	local storage_data = minetest_classroom.bc_plants:to_table()
 	for k,v in pairs(storage_data.fields) do
@@ -10,11 +21,6 @@ end
 -- reset: ensure count is initialized at 1
 -- clear_table() -- find an alternative for this so that only species that have not been registered get removed
 minetest_classroom.bc_plants:set_int("count", 1)
-
--- Check for shout priv (from mc_student)
-local function check_perm(player)
-	return minetest.check_player_privs(player:get_player_name(), { shout = true })
-end
 
 local function build_formspec(node_name)
 	local ref_key = minetest_classroom.bc_plants:get("node_" .. node_name)
@@ -55,7 +61,7 @@ local function build_formspec(node_name)
 end
 
 -- register tool
-minetest.register_tool("magnify:magnifying_tool", {
+minetest.register_tool(tool_name, {
 	description = "Magnifying Glass",
 	_doc_items_longdesc = "This tool can be used to quickly learn more about about one's closer environment. It identifies and analyzes plant-type blocks and it shows extensive information about the thing on which it is used.",
 	_doc_items_usagehelp = "Punch any block resembling a plant you wish to learn more about. This will open up the appropriate help entry.",
@@ -97,27 +103,61 @@ minetest.register_tool("magnify:magnifying_tool", {
 	end
 })
 
--- register on-Join Player 
--- Give the magnifying glass to any player who joins with shout privileges or take away the magnifying glass if they do not have shout
+-- Tool handling functions:
+    -- Give the magnifying tool to any player who joins with shout privileges or take it away if they do not have shout
+    -- Give the magnifying tool to any player who is granted shout
+    -- Take the magnifying tool away from anyone who is revoked shout
+
+-- Give the magnifying tool to any player who joins with shout privileges or take it away if they do not have shout
 minetest.register_on_joinplayer(function(player)
-	local inv = player:get_inventory()
-	if inv:contains_item("main", ItemStack("magnify:magnifying_tool")) then
-		-- Player has the magnifying glass 
-		if check_perm(player) then
-			-- The player should have the magnifying glass
-			return
-		else
-			-- The player should not have the magnifying glass
-			player:get_inventory():remove_item('main', 'magnify:magnifying_tool')
-		end
-	else
-		-- Player does not have the magnifying glass
-		if check_perm(player) then
-			-- The player should have the magnifying glass
-			player:get_inventory():add_item('main', 'magnify:magnifying_tool')
-		else
-			-- The player should not have the magnifying glass
-			return
-		end
-	end
+    local inv = player:get_inventory()
+    if inv:contains_item("main", ItemStack(tool_name)) then
+        -- Player has the magnifying glass 
+        if check_perm(player) then
+            -- The player should have the magnifying glass
+            return
+        else
+            -- The player should not have the magnifying glass
+            player:get_inventory():remove_item('main', tool_name)
+        end
+    else
+        -- Player does not have the magnifying glass
+        if check_perm(player) then
+            -- The player should have the magnifying glass
+            player:get_inventory():add_item('main', tool_name)
+        else
+            -- The player should not have the magnifying glass
+            return
+        end
+    end
+end)
+-- Give the magnifying tool to any player who is granted shout
+minetest.register_on_priv_grant(function(name, granter, priv)
+    -- Check if priv has an effect on the privileges needed for the tool
+    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
+        return true -- skip this callback, continue to next callback
+    end
+
+    local player = minetest.get_player_by_name(name)
+    local inv = player:get_inventory()
+    if not inv:contains_item("main", ItemStack(tool_name)) and check_perm_name(name) then
+        player:get_inventory():add_item('main', tool_name)
+    end
+
+    return true -- continue to next callback
+end)
+-- Take the magnifying tool away from anyone who is revoked shout
+minetest.register_on_priv_revoke(function(name, revoker, priv)
+    -- Check if priv has an effect on the privileges needed for the tool
+    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
+        return true -- skip this callback, continue to next callback
+    end
+
+    local player = minetest.get_player_by_name(name)
+    local inv = player:get_inventory()
+    if inv:contains_item("main", ItemStack(tool_name)) and not check_perm_name(name) then
+        player:get_inventory():remove_item('main', tool_name)
+    end
+
+    return true -- continue to next callback
 end)
