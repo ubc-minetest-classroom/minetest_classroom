@@ -21,6 +21,7 @@ Realm.__index = Realm
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmNodeManipulation.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmDataManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmSchematicSaveLoad.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.lua")
 
 ---@public
 ---The constructor for the realm class.
@@ -112,20 +113,6 @@ function Realm:UpdateSpawn(spawnPos)
     self.SpawnPoint = { x = pos.x, y = pos.y, z = pos.z }
     Realm.SaveDataToStorage()
     return true
-end
-
-function Realm:CalculateSpawn()
-    local posX = self.SpawnPoint.x
-    local posZ = self.SpawnPoint.z
-    local posY = minetest.get_spawn_level(x, z)
-
-    if (posY == nil) then
-        return nil
-    else
-        local pos = { x = posX, y = posY, z = posZ }
-        self.SpawnPoint = pos
-        return pos
-    end
 end
 
 Realm.LoadDataFromStorage()
