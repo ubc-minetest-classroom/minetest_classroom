@@ -64,9 +64,14 @@ function Realm:Load_Schematic(key)
 
     self:UpdateSpawn(config.spawnPoint)
 
-    if (config.tableName ~= nil) then
+    if (config.tableName ~= nil and config.onSchematicPlaceFunction ~= nil) then
         local table = loadstring("return " .. config.tableName)()
         table[config.onSchematicPlaceFunction](self)
     end
+
+    if (config.tableName ~= nil and config.onSchematicPlaceFunction ~= nil) then
+        table.insert(self.PlayerJoinTable, { tableName = config.tableName, functionName = config.onSchematicPlaceFunction })
+    end
+
     return results
 end

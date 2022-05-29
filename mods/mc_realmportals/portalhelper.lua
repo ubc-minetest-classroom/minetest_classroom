@@ -61,6 +61,7 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
             local player = minetest.get_player_by_name(player_name)
 
             realm:UpdatePlayerMetaData(player)
+            realm:RunTeleportInFunctions(player)
 
             local pos = realm.SpawnPoint
             pos.y = pos.y - 1
@@ -73,6 +74,7 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
             local spawnRealm = mc_worldManager.GetSpawnRealm()
             local player = minetest.get_player_by_name(player_name)
             spawnRealm:UpdatePlayerMetaData(player)
+            spawnRealm:RunTeleportInFunctions(player)
 
             local pos = spawnRealm.SpawnPoint
             pos.y = pos.y - 1

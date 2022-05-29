@@ -33,7 +33,7 @@ function Realm:New(name, size, height)
     size = size or realmSize
     height = height or realmHeight
 
-    if (name == nil) then
+    if (name == nil or name == "") then
         name = "Unnamed Realm"
     end
 
@@ -42,7 +42,9 @@ function Realm:New(name, size, height)
         ID = Realm.realmCount + 1,
         StartPos = { x = 0, y = 0, z = 0 },
         EndPos = { x = 0, y = 0, z = 0 },
-        SpawnPoint = { x = 0, y = 0, z = 0 }
+        SpawnPoint = { x = 0, y = 0, z = 0 },
+        PlayerJoinTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
+        MetaStorage = {} -- Todo: Add meta storage similar to the metastorage of players/mods/inventories
     }
 
     Realm.realmCount = this.ID
