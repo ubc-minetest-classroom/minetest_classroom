@@ -45,8 +45,8 @@ end
 function Realm:Load_Schematic(key)
     local schematic, config = schematicManager.getSchematic(key)
 
-    self.Name = config.Name
-    self.EndPos = self:LocalToWorldPosition(config.EndPos)
+    self.Name = config.name
+    self.EndPos = self:LocalToWorldPosition(config.endPos)
 
     -- Read data into LVM
     local vm = minetest.get_voxel_manip()
@@ -62,6 +62,6 @@ function Realm:Load_Schematic(key)
     local results = minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic, 0, nil, true)
     vm:write_to_map(true)
 
-    self:UpdateSpawn(config.SpawnPoint)
+    self:UpdateSpawn(config.spawnPoint)
     return results
 end
