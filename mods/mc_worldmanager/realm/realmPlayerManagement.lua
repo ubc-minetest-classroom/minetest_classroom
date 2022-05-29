@@ -1,7 +1,10 @@
 function Realm:TeleportPlayer(player)
-    local pmeta = player:get_meta()
-    pmeta:set_int("realm", self.ID)
-
+    self:UpdatePlayerMetaData(player)
     local spawn = self.SpawnPoint
     player:set_pos(spawn)
+end
+
+function Realm:UpdatePlayerMetaData(player)
+    local pmeta = player:get_meta()
+    pmeta:set_int("realm", self.ID)
 end
