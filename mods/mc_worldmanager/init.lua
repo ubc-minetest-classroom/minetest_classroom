@@ -43,5 +43,5 @@ function mc_worldManager.GetSpawnRealm()
 end
 
 -- Registration
-schematicManager.registerSchematicPath("shack", mc_worldManager.path .. "/schematics/shack.mts")
+schematicManager.registerSchematicPath("shack", mc_worldManager.path .. "/schematics/shack")
 

@@ -65,6 +65,6 @@ function schematicManager.getSchematic(key)
     local _spawnPoint = { x = spawn_pos_x, y = spawn_pos_y, z = spawn_pos_z }
     local _schematicSize = { x = schematic_size_x, y = schematic_size_y, z = schematic_size_z }
 
-    local config = { Author = _author, Name = _name, spawnPoint = _spawnPoint, size = _schematicSize }
+    local config = { Author = _author, Name = _name, SpawnPoint = _spawnPoint, EndPos = _schematicSize }
     return schematic, config
 end
