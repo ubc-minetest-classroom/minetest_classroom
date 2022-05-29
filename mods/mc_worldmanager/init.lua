@@ -1,7 +1,7 @@
 mc_worldManager = { storage = minetest.get_mod_storage(), path = minetest.get_modpath("mc_worldmanager") }
 
 -- Include our source files
-dofile(minetest.get_modpath("mc_worldmanager") .. "/realm.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realm.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/nodes.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/commands.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/schematicmanager.lua")
