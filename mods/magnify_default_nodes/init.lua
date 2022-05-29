@@ -232,7 +232,7 @@ local arbutus = {
     region = "Southwest BC and West Coast USA",
     texture = "arbutus.jpg",
     more_info = "A broadleaf, shrublike tree with peeling brownish-red bark. Typically found in dry open forests and shallow-soiled rocky slopes",
-    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Arbutus%20menziesii"--,
+    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Arbutus%20menziesii",
     img_copyright = ""
 }
 magnify.register_plant(arbutus, {"default:acacia_bush_stem", "default:acacia_bush_leaves", "default:acacia_bush_sapling"})

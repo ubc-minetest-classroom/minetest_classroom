@@ -207,15 +207,13 @@ end)
 -- Give the magnifying tool to any player who is granted shout
 minetest.register_on_priv_grant(function(name, granter, priv)
     -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not table.has(priv_table, priv) then
+    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
         return true -- skip this callback, continue to next callback
-    end
-    if not minetest.get_player_by_name(name) then
-        return nil -- player does not exist, skip all callbacks
     end
 
     local player = minetest.get_player_by_name(name)
     local inv = player:get_inventory()
+
     if not inv:contains_item("main", ItemStack(tool_name)) and check_perm_name(name) then
         player:get_inventory():add_item('main', tool_name)
     end
@@ -225,15 +223,13 @@ end)
 -- Take the magnifying tool away from anyone who is revoked shout
 minetest.register_on_priv_revoke(function(name, revoker, priv)
     -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not table.has(priv_table, priv) then
+    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
         return true -- skip this callback, continue to next callback
-    end
-    if not minetest.get_player_by_name(name) then
-        return nil -- player does not exist, skip all callbacks
     end
 
     local player = minetest.get_player_by_name(name)
     local inv = player:get_inventory()
+    
     if inv:contains_item("main", ItemStack(tool_name)) and not check_perm_name(name) then
         player:get_inventory():remove_item('main', tool_name)
     end

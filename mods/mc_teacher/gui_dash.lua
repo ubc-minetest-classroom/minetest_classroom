@@ -68,7 +68,6 @@ local function show_teacher_menu(player)
         minetest.show_formspec(pname, "mc_teacher:menu", mc_teacher_menu)
         return true
     end
-
 end
 
 -- Define the Manage Tasks formspec (teacher-view)
@@ -87,9 +86,6 @@ local function show_tasks(player)
         return true
     end
 end
-
--- NEW TEACHER VIEWER  // have to connect them // edit to variables 
--- manage species button in main menu  --> leads to formspec where:
 
 -- Set up a task timer
 local hud = mhud.init()
@@ -930,11 +926,8 @@ end)
 -- Give the controller to any player who is granted teacher
 minetest.register_on_priv_grant(function(name, granter, priv)
     -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or (not table.has(priv_table, priv)) then
+    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
         return true -- skip this callback, continue to next callback
-    end
-    if not minetest.get_player_by_name(name) then
-        return nil -- player does not exist, skip all callbacks
     end
 
     local player = minetest.get_player_by_name(name)
@@ -949,15 +942,13 @@ end)
 -- Take the controller away from anyone who is revoked teacher
 minetest.register_on_priv_revoke(function(name, revoker, priv)
     -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or (not table.has(priv_table, priv)) then
+    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
         return true -- skip this callback, continue to next callback
-    end
-    if not minetest.get_player_by_name(name) then
-        return nil -- player does not exist, skip all callbacks
     end
 
     local player = minetest.get_player_by_name(name)
     local inv = player:get_inventory()
+    
     if inv:contains_item("main", ItemStack(tool_name)) and (not check_perm_name(name)) then
         player:get_inventory():remove_item('main', tool_name)
     end

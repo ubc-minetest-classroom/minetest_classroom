@@ -1,6 +1,5 @@
 mc_helpers = {}
 
-
 ---@public
 ---stringToColor
 ---Returns a random color based on input seed.

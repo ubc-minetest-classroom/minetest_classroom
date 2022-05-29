@@ -2,6 +2,7 @@
 minetest_classroom.reports = minetest.get_mod_storage()
 minetest_classroom.mc_students = {teachers = {}}
 
+-- Local variables
 local tool_name = "mc_student:notebook"
 local priv_table = {"shout"}
 
