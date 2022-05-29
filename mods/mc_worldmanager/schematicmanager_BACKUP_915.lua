@@ -62,11 +62,17 @@ function schematicManager.getSchematic(key)
     local schematic_size_y = tonumber(settings:get("schematic_size_y")) or 80
     local schematic_size_z = tonumber(settings:get("schematic_size_z")) or 80
 
+    local schematic_table_name = settings:get("schematic_table_name") or nil
+    local teleport_function_name = settings:get("teleport_function_name") or nil
+    local realm_create_function_name = settings:get("realm_create_function_name") or nil
+
     local _spawnPoint = { x = spawn_pos_x, y = spawn_pos_y, z = spawn_pos_z }
     local _schematicSize = { x = schematic_size_x, y = schematic_size_y, z = schematic_size_z }
 
-    local config = { Author = _author, Name = _name, spawnPoint = _spawnPoint, size = _schematicSize,
-tableName = schematic_table_name, onTeleportFunction = teleport_function_name,
+
+    local config = { AAuthor = _author, Name = _name, SpawnPoint = _spawnPoint, EndPos = _schematicSize,
+                     tableName = schematic_table_name, onTeleportFunction = teleport_function_name,
                      onSchematicPlaceFunction = realm_create_function_name }
+
     return schematic, config
 end

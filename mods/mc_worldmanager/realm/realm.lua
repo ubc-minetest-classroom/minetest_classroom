@@ -60,10 +60,14 @@ function Realm:New(name, size, height)
     local finalRealmSize = math.min(realmSize, size)
     local finalRealmHeight = math.min(realmHeight, height)
 
-    this.EndPos = { x = this.StartPos.x + finalRealmSize, y = this.StartPos.y + finalRealmHeight, z = this.StartPos.z + finalRealmSize }
+    this.EndPos = { x = this.StartPos.x + finalRealmSize,
+                    y = this.StartPos.y + finalRealmHeight,
+                    z = this.StartPos.z + finalRealmSize }
 
     -- Temporary spawn point calculation
-    this.SpawnPoint = { x = (this.StartPos.x + this.EndPos.x) / 2, y = ((this.StartPos.y + this.EndPos.y) / 2) + 2, z = (this.StartPos.z + this.EndPos.z) / 2 }
+    this.SpawnPoint = { x = (this.StartPos.x + this.EndPos.x) / 2,
+                        y = ((this.StartPos.y + this.EndPos.y) / 2) + 2,
+                        z = (this.StartPos.z + this.EndPos.z) / 2 }
 
     setmetatable(this, self)
     table.insert(Realm.realmDict, this.ID, this)

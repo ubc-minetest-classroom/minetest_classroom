@@ -1,7 +1,12 @@
 ---@public
 ---Save_Schematic
 ---@return string, boolean The filepath of the schematic; whether the settings file wrote succesfully.
-function Realm:Save_Schematic()
+---@public
+---Save_Schematic
+---@return string, boolean The filepath of the schematic; whether the settings file wrote succesfully.
+function Realm:Save_Schematic(author)
+    author = author or "unknown"
+
     local folderpath = minetest.get_worldpath() .. "\\schematics\\"
 
     minetest.mkdir(folderpath)
@@ -18,11 +23,11 @@ function Realm:Save_Schematic()
     minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
 
     local settings = Settings(filepath .. ".conf")
-    settings:set("author", "unknown")
-    settings:set("name", "unknown")
-    settings:set("spawn_pos_x", self.SpawnPoint.x)
-    settings:set("spawn_pos_y", self.SpawnPoint.y)
-    settings:set("spawn_pos_z", self.SpawnPoint.z)
+    settings:set("author", author)
+    settings:set("name", self.Name)
+    settings:set("spawn_pos_x", self.SpawnPoint.x - self.StartPos.x)
+    settings:set("spawn_pos_y", self.SpawnPoint.y - self.StartPos.y)
+    settings:set("spawn_pos_z", self.SpawnPoint.z - self.StartPos.z)
 
     settings:set("schematic_size_x", self.EndPos.x - self.StartPos.x)
     settings:set("schematic_size_y", self.EndPos.y - self.StartPos.y)
@@ -40,10 +45,8 @@ end
 function Realm:Load_Schematic(key)
     local schematic, config = schematicManager.getSchematic(key)
 
-    self.EndPos.x = self.StartPos.x + config.size.x
-    self.EndPos.y = self.StartPos.y + config.size.y
-    self.EndPos.z = self.StartPos.z + config.size.z
-
+    self.Name = config.Name
+    self.EndPos = self:LocalToWorldPosition(config.EndPos)
 
     -- Read data into LVM
     local vm = minetest.get_voxel_manip()
@@ -59,6 +62,6 @@ function Realm:Load_Schematic(key)
     local results = minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic, 0, nil, true)
     vm:write_to_map(true)
 
-    self:UpdateSpawn(config.spawnPoint)
+    self:UpdateSpawn(config.SpawnPoint)
     return results
 end
