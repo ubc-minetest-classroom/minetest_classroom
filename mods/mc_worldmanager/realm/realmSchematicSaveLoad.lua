@@ -63,5 +63,10 @@ function Realm:Load_Schematic(key)
     vm:write_to_map(true)
 
     self:UpdateSpawn(config.spawnPoint)
+
+    if (config.tableName ~= nil) then
+        local table = loadstring("return " .. config.tableName)()
+        table[config.onSchematicPlaceFunction](self)
+    end
     return results
 end
