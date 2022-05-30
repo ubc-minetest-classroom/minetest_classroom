@@ -36,15 +36,20 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
             -- We check if we're in the spawn realm, if not, we are in a realm.
             local spawnRealm = mc_worldManager.GetSpawnRealm()
 
+            local inRealm = false
+
+            -- We assume and test that we're in spawn.
+            -- If we're in any position that indicates otherwise, we know that we're in a realm
             if (pos.x < spawnRealm.StartPos.x or pos.x > spawnRealm.EndPos.x) then
-                return false
+                inRealm = true
             elseif (pos.z < spawnRealm.StartPos.z or pos.z > spawnRealm.EndPos.z) then
-                return false
+                inRealm = true
             elseif (pos.y < spawnRealm.StartPos.y or pos.y > spawnRealm.EndPos.y) then
-                return false
+                inRealm = true
             else
-                return true
+                inRealm = false
             end
+            return inRealm
         end,
 
         find_realm_anchorPos = function(surface_anchorPos, player_name)
