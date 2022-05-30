@@ -4,11 +4,11 @@ minetest_classroom.mc_students = {teachers = {}}
 
 -- Local variables
 local tool_name = "mc_student:notebook"
-local priv_table = {"shout"}
+local priv_table = {"interact"}
 
--- Check for shout priv
+-- Check for adequate privileges
 local function check_perm_name(name)
-    return minetest.check_player_privs(name, {shout = true})
+    return minetest.check_player_privs(name, {interact = true})
 end
 local function check_perm(player)
     return check_perm_name(player:get_player_name())
@@ -390,7 +390,7 @@ minetest.register_tool(tool_name , {
 	-- Left-click the tool activates the teacher menu
 	on_use = function (itemstack, user, pointed_thing)
         local pname = user:get_player_name()
-		-- Check for shout privileges
+		-- Check for adequate privileges
 		if check_perm(user) then
 			show_student_menu(user)
 		end
@@ -402,11 +402,11 @@ minetest.register_tool(tool_name , {
 })
 
 -- Tool handling functions:
-    -- Give the notebook to any player who joins with shout privileges or take away the notebook if they do not have shout
-    -- Give the notebook to any player who is granted shout
-    -- Take the notebook away from anyone who is revoked shout
+    -- Give the notebook to any player who joins with adequate privileges or take away the notebook if they do not have them
+    -- Give the notebook to any player who is granted adequate privileges
+    -- Take the notebook away from anyone who is revoked privileges
 
--- Give the notebook to any player who joins with shout privileges or take away the notebook if they do not have shout
+-- Give the notebook to any player who joins with adequate privileges or take away the notebook if they do not have them
 minetest.register_on_joinplayer(function(player)
 	local inv = player:get_inventory()
 	if inv:contains_item("main", ItemStack(tool_name)) then
@@ -429,7 +429,7 @@ minetest.register_on_joinplayer(function(player)
 		end
 	end
 end)
--- Give the notebook to any player who is granted shout
+-- Give the notebook to any player who is granted adequate privileges
 minetest.register_on_priv_grant(function(name, granter, priv)
     -- Check if priv has an effect on the privileges needed for the tool
     if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
@@ -446,7 +446,7 @@ minetest.register_on_priv_grant(function(name, granter, priv)
 
     return true -- continue to next callback
 end)
--- Take the notebook away from anyone who is revoked shout
+-- Take the notebook away from anyone who is revoked privileges
 minetest.register_on_priv_revoke(function(name, revoker, priv)
     -- Check if priv has an effect on the privileges needed for the tool
     if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
