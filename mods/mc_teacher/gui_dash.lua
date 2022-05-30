@@ -585,8 +585,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     -- Menu
     if formname == "mc_teacher:menu" then
         if fields.spawn then
-            local spawnRealm = mc_worldManager.GetSpawnRealm()
-            spawnRealm:TeleportPlayer(player)
+	    -- Temporary patch to stop server from crashing
+            --local spawnRealm = mc_worldManager.GetSpawnRealm()
+            --spawnRealm:TeleportPlayer(player)
+            local spawn_pos = {
+            	x = 1426,
+            	y = 92,
+            	z = 1083,
+             }
+             player:set_pos(spawn_pos)		
         elseif fields.tasks then
             show_tasks(player)
         elseif fields.lessons then
