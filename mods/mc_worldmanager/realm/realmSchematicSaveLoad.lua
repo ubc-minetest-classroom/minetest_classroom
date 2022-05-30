@@ -69,8 +69,8 @@ function Realm:Load_Schematic(key)
         table[config.onSchematicPlaceFunction](self)
     end
 
-    if (config.tableName ~= nil and config.onSchematicPlaceFunction ~= nil) then
-        table.insert(self.PlayerJoinTable, { tableName = config.tableName, functionName = config.onSchematicPlaceFunction })
+    if (config.tableName ~= nil and config.onTeleportFunction ~= nil) then
+        table.insert(self.PlayerJoinTable, { tableName = config.tableName, functionName = config.onTeleportFunction })
     end
 
     return results

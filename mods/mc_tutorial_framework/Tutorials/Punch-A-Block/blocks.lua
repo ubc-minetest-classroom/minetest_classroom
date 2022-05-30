@@ -3,9 +3,6 @@ pab = {}
 function pab.CreateBlockFromGroups(groups, nodeName, afterDigCallback)
     groups = groups or { oddly_breakable_by_hand = 1 }
 
-
-    minetest.debug(nodeName)
-
     minetest.register_node(nodeName, {
         description = nodeName,
         tiles = { "mc_tf_blankBlock.png" },
@@ -35,6 +32,6 @@ function pab.CreateBlockFromGroups(groups, nodeName, afterDigCallback)
                 afterDigCallback(pos, oldnode, oldmetadata, digger)
             end
         end,
-        drop = "",
+        drop = ""
     })
 end

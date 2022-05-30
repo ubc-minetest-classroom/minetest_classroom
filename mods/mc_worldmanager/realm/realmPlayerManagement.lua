@@ -12,8 +12,16 @@ end
 
 function Realm:RunTeleportInFunctions(player)
 
-    for key, value in pairs(self.PlayerJoinTable) do
-        local table = loadstring("return " .. value.tableName)()
-        table[value.functionName](self, player)
+    if (self.PlayerJoinTable ~= nil) then
+        for key, value in pairs(self.PlayerJoinTable) do
+            minetest.debug(value.tableName)
+            minetest.debug(value.functionName)
+            if (value.tableName ~= nil and value.functionName ~= nil) then
+                local table = loadstring("return " .. value.tableName)()
+                table[value.functionName](self, player)
+            end
+
+
+        end
     end
 end

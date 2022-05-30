@@ -1,10 +1,10 @@
 dofile(mc_tutorialFramework.path .. "/Tutorials/Punch-A-Block/blocks.lua")
 
-tutorial = { hud = mhud.init() }
+punchABlock = { hud = mhud.init() }
 
-tutorial.tutorialStage = {}
+punchABlock.tutorialStage = {}
 
-function tutorial.blockDestroyed(pos, oldnode, oldmetadata, player)
+function punchABlock.blockDestroyed(pos, oldnode, oldmetadata, player)
     local pmeta = player:get_meta()
 
     -- Make sure we're in the tutorial before wasting resources
@@ -20,10 +20,10 @@ function tutorial.blockDestroyed(pos, oldnode, oldmetadata, player)
     local newValue = oldValue + 1
     pmeta:set_int(key, newValue)
 
-    tutorial.progress(player)
+    punchABlock.progress(player)
 end
 
-function tutorial.progress(player)
+function punchABlock.progress(player)
     local pmeta = player:get_meta()
 
     local levels = {}
@@ -47,7 +47,7 @@ function tutorial.progress(player)
                   welcomeText = "Level Up! You're now a lumberjack! Go cut some wood",
                   reward = ItemStack("default:diamond") }
 
-    local level = levels[tutorial.tutorialStage[player]]
+    local level = levels[punchABlock.tutorialStage[player]]
     local key = level.key
     local goal = level.goal
     local value = pmeta:get_int(key)
@@ -57,31 +57,35 @@ function tutorial.progress(player)
             player:get_inventory():add_item("main", level.reward)
         end
 
-        tutorial.tutorialStage[player] = tutorial.tutorialStage[player] + 1
-        level = levels[tutorial.tutorialStage[player]]
+        punchABlock.tutorialStage[player] = punchABlock.tutorialStage[player] + 1
+        level = levels[punchABlock.tutorialStage[player]]
 
         if (level == nil) then
-            minetest.debug("Congratulations! You finished the tutorial")
+            minetest.chat_send_player(player:get_player_name(), "Congratulations! You finished the tutorial")
+            removeHUD(player)
         else
             if (level.welcomeText ~= nil) then
-                minetest.debug(level.welcomeText)
+                minetest.chat_send_player(player:get_player_name(), level.welcomeText)
             end
         end
 
     end
 
-    tutorial.updateHud(player, key, 5, " " .. level.helpText)
+    if (level ~= nil) then
+        punchABlock.updateHud(player, key, 5, " " .. level.helpText)
+    end
+
 end
 
-function tutorial.startTutorial(player)
+function punchABlock.startTutorial(realm, player)
     local pmeta = player:get_meta()
 
-    minetest.debug("Started tutorial...")
+    minetest.chat_send_player(player:get_player_name(), "Welcome to the punch-a-block tutorial. Eventually this will be formspec instructions.")
 
-    tutorial.CreateHUD(player)
+    punchABlock.CreateHUD(player)
 
     --Reset all our values
-    tutorial.tutorialStage[player] = 0
+    punchABlock.tutorialStage[player] = 0
     pmeta:set_int("Break:mc_tf:handBreakable", 0)
     pmeta:set_int("Break:mc_tf:shovelBreakable", 0)
     pmeta:set_int("Break:mc_tf:spadeBreakable", 0)
@@ -91,23 +95,23 @@ function tutorial.startTutorial(player)
     pmeta:set_string("startedPunchABlock", "true")
 end
 
-function tutorial.endTutorial(player)
+function punchABlock.endTutorial(player)
     local pmeta = player:get_meta()
 
     -- Clear that we're in a tutorial
     pmeta:set_string("startedPunchABlock", nil)
 
     --Clear all our meta values
-    tutorial.tutorialStage[player] = nil
+    punchABlock.tutorialStage[player] = nil
     pmeta:set_int("Break:mc_tf:handBreakable", nil)
     pmeta:set_int("Break:mc_tf:shovelBreakable", nil)
     pmeta:set_int("Break:mc_tf:spadeBreakable", nil)
     pmeta:set_int("Break:mc_tf:axeBreakable", nil)
 
-    tutorial.removeHUD(player)
+    punchABlock.removeHUD(player)
 end
 
-function tutorial.CreateHUD(player, statKey, Goal, HelpText)
+function punchABlock.CreateHUD(player, statKey, Goal, HelpText)
 
     statKey = statKey or "breakTutorialBlock"
     Goal = Goal or 5
@@ -116,7 +120,7 @@ function tutorial.CreateHUD(player, statKey, Goal, HelpText)
     local meta = player:get_meta()
     local blocksBroken_text = "Broke: " .. meta:get_int(statKey) .. "/" .. Goal .. HelpText
 
-    tutorial.hud:add(player, "pab:title", {
+    punchABlock.hud:add(player, "pab:title", {
         hud_elem_type = "text",
         position = { x = 1, y = 0 },
         offset = { x = -6, y = 0 },
@@ -125,7 +129,7 @@ function tutorial.CreateHUD(player, statKey, Goal, HelpText)
         color = 0x00FF00,
     })
 
-    tutorial.hud:add(player, "pab:stat", {
+    punchABlock.hud:add(player, "pab:stat", {
         hud_elem_type = "text",
         position = { x = 1, y = 0 },
         offset = { x = -6, y = 18 },
@@ -137,7 +141,7 @@ function tutorial.CreateHUD(player, statKey, Goal, HelpText)
 
 end
 
-function tutorial.updateHud(player, statKey, Goal, HelpText)
+function punchABlock.updateHud(player, statKey, Goal, HelpText)
     statKey = statKey or "breakTutorialBlock"
     Goal = Goal or 5
     HelpText = HelpText or " Blocks"
@@ -145,7 +149,7 @@ function tutorial.updateHud(player, statKey, Goal, HelpText)
     local meta = player:get_meta()
     local blocksBroken_text = "Broke: " .. meta:get_int(statKey) .. "/" .. Goal .. HelpText
 
-    tutorial.hud:change(player, "pab:stat", {
+    punchABlock.hud:change(player, "pab:stat", {
         hud_elem_type = "text",
         position = { x = 1, y = 0 },
         offset = { x = -6, y = 18 },
@@ -155,15 +159,6 @@ function tutorial.updateHud(player, statKey, Goal, HelpText)
     })
 end
 
-function tutorial.removeHUD(player)
-    tutorial.hud:remove(player)
+function punchABlock.removeHUD(player)
+    punchABlock.hud:remove(player)
 end
-
-minetest.register_on_joinplayer(function(player)
-
-    tutorial.startTutorial(player)
-    return true
-end)
-
-
-
