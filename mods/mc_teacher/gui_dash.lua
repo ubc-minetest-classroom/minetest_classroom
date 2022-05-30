@@ -26,7 +26,7 @@ local infos = {
 local tool_name = "mc_teacher:controller"
 local priv_table = {"teacher"}
 
-local magnify = dofile(minetest.get_modpath("magnify") .. "/exports.lua")
+local magnify = dofile(minetest.get_modpath("magnify") .. "/api.lua")
 
 -- Checks for the 'teacher' privilege
 local function check_perm_name(name)
