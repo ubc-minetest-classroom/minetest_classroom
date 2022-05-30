@@ -38,6 +38,8 @@ function Realm:Restore(template)
         EndPos = { x = template.EndPos.x, y = template.EndPos.y, z = template.EndPos.z },
         SpawnPoint = { x = template.SpawnPoint.x, y = template.SpawnPoint.y, z = template.SpawnPoint.z },
         PlayerJoinTable = template.PlayerJoinTable,
+        PlayerLeaveTable = template.PlayerLeaveTable,
+        RealmDeleteTable = template.RealmDeleteTable,
         MetaStorage = template.MetaStorage
     }
 

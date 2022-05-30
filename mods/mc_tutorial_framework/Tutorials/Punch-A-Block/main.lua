@@ -100,14 +100,14 @@ function punchABlock.endTutorial(realm, player)
     local pmeta = player:get_meta()
 
     -- Clear that we're in a tutorial
-    pmeta:set_string("startedPunchABlock", nil)
+    pmeta:set_string("startedPunchABlock", false)
 
     --Clear all our meta values
-    punchABlock.tutorialStage[player] = nil
-    pmeta:set_int("Break:mc_tf:handBreakable", nil)
-    pmeta:set_int("Break:mc_tf:shovelBreakable", nil)
-    pmeta:set_int("Break:mc_tf:spadeBreakable", nil)
-    pmeta:set_int("Break:mc_tf:axeBreakable", nil)
+    punchABlock.tutorialStage[player] = 0
+    pmeta:set_int("Break:mc_tf:handBreakable", 0)
+    pmeta:set_int("Break:mc_tf:shovelBreakable", 0)
+    pmeta:set_int("Break:mc_tf:spadeBreakable", 0)
+    pmeta:set_int("Break:mc_tf:axeBreakable", 0)
 
     punchABlock.removeHUD(player)
     mc_worldManager.GetSpawnRealm():TeleportPlayer(player)
