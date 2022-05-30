@@ -29,9 +29,11 @@ local mc_tf_menu = {
 
 local descriptions = {}
 local is_first = true
+local realmIDs = {}
+local selectedRealmID
 
--- To add a tutorial to the tutorialbook, call addTutorial with the tutorial's name and description
-local function addTutorial(name, description) 
+-- To add a tutorial to the tutorialbook, call addTutorial with the tutorial's name, description, and realmID
+local function addTutorial(name, description, realmID) 
         -- Add tutorial to the text list
 		local textlist = mc_tf_menu[#mc_tf_menu]
 
@@ -45,9 +47,14 @@ local function addTutorial(name, description)
         mc_tf_menu[#mc_tf_menu] = textlist
 
 		table.insert(descriptions, #descriptions + 1, description)
+
+		if realmID ~= 0 then
+			table.insert(realmIDs, #realmIDs + 1, realmID)
+		end
 end 
 
-addTutorial("Introduction", "Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.")
+addTutorial("Introduction", "Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.", 0)
+addTutorial("Movement", "Movement tutorial", 10)
 
 local function show_tutorial_menu(player)
 	if check_perm(player) then
@@ -101,10 +108,21 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if fields.tutorials then
 		local event = minetest.explode_textlist_event(fields.tutorials)
 		if event.type == "CHG" then
+			if event.index ~= 1 then
+				selectedRealmID = realmIDs[event.index - 1]
+			end
+
 			local textarea = mc_tf_menu[5]
 			textarea = "textarea[5,0.2;7.8,8;text;;" .. descriptions[event.index] .. "]"
 			mc_tf_menu[5] = textarea
 			show_tutorial_menu(player)
+		end
+	end
+
+	if fields.teleport then
+		if selectedRealmID then
+			local selectedRealm = Realm.realmDict[selectedRealmID]
+			selectedRealm:TeleportPlayer(player)
 		end
 	end
 end)
