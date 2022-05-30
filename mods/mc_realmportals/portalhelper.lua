@@ -19,7 +19,7 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
     portals.register_wormhole_node(modName .. ":" .. realmName .. "portal", {
         description = ("Portal"),
         color = portalColor,
-        post_effect_color = {a=50,r=portalColor.r,g=portalColor.g,b=portalColor.b}
+        post_effect_color = { a = 50, r = portalColor.r, g = portalColor.g, b = portalColor.b }
     })
 
     portals.register_portal(realmName .. "_portal", {
@@ -58,16 +58,28 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
             end
 
             local realm = mc_realmportals.CreateGetRealm(instanceRealmName, schematic)
+            local player = minetest.get_player_by_name(player_name)
+
+            realm:UpdatePlayerMetaData(player)
+            realm:RunTeleportInFunctions(player)
 
             local pos = realm.SpawnPoint
-            pos.y = pos.y
+            pos.y = pos.y - 1
 
             return pos
         end,
 
         find_surface_anchorPos = function(realm_anchorPos, player_name)
             -- when finding our way back to spawn, we use this function
-            return mc_worldManager.GetSpawnRealm().SpawnPoint
+            local spawnRealm = mc_worldManager.GetSpawnRealm()
+            local player = minetest.get_player_by_name(player_name)
+            spawnRealm:UpdatePlayerMetaData(player)
+            spawnRealm:RunTeleportInFunctions(player)
+
+            local pos = spawnRealm.SpawnPoint
+            pos.y = pos.y - 1
+
+            return pos
         end,
 
         on_ignite = function(portalDef, anchorPos, orientation)

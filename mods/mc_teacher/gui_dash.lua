@@ -448,7 +448,6 @@ local function handle_results(player, context, fields)
             return true
         end
     end
-
 end
 
 local _contexts = {}
@@ -586,10 +585,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     -- Menu
     if formname == "mc_teacher:menu" then
         if fields.spawn then
-
             local spawnRealm = mc_worldManager.GetSpawnRealm()
-            local spawn_pos = spawnRealm.SpawnPoint
-            player:set_pos(spawn_pos)
+            spawnRealm:TeleportPlayer(player)
         elseif fields.tasks then
             show_tasks(player)
         elseif fields.lessons then
@@ -712,8 +709,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
                 local realm = Realm.realmDict[mdata.realm_id[context.selected]]
                 if (realm ~= nil) then
-                    local realmSpawnPos = realm.SpawnPoint
-                    player:set_pos(realmSpawnPos)
+                    realm:TeleportPlayer(player)
                 else
                     minetest.chat_send_player(pname, pname .. ": Error receiving the realm / spawn coordinates. Try regenerating the classroom.")
                     minetest.log("warning", "mc_teacher gui_dash.lua: realm with ID: " .. mdata.realm_id[context.selected] .. " does not exist but is associated with a classroom.")
@@ -853,7 +849,7 @@ function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
         minetest.chat_send_player(pname, pname .. ": Your course was successfully recorded.")
 
         -- Send player to spawn pos of classroom map
-        player:set_pos(newRealm.SpawnPoint)
+        newRealm:TeleportPlayer(player)
 
         -- Update the formspec
         show_classrooms(player)
@@ -923,6 +919,7 @@ minetest.register_on_joinplayer(function(player)
         end
     end
 end)
+
 -- Give the controller to any player who is granted adequate privileges
 minetest.register_on_priv_grant(function(name, granter, priv)
     -- Check if priv has an effect on the privileges needed for the tool
