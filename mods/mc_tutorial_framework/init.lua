@@ -121,7 +121,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 
 	if fields.teleport then
-		if selectedRealm ~= 1 then
+		if selectedRealm ~= 0 then
 			selectedRealm = mc_realmportals.CreateGetRealm(tutorialTable[selectedRealm].name, tutorialTable[selectedRealm].schematic)
 			selectedRealm:TeleportPlayer(player)
 		end
