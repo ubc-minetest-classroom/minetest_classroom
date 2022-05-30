@@ -2,8 +2,10 @@ mc_tutorialFramework = { path = minetest.get_modpath("mc_tf")}
 
 
 schematicManager.registerSchematicPath("testSchematic", mc_tutorialFramework.path .. "/realmTemplates/TestSchematic")
+schematicManager.registerSchematicPath("movementTutorial", mc_tutorialFramework.path .. "/realmTemplates/MovementTutorial")
 
 mc_realmportals.newPortal("mc_tf","tf_testRealm", false, "testSchematic")
+mc_realmportals.newPortal("mc_tf","tf_movementRealm", false, "movementTutorial")
 
 
 ----------------------------------
@@ -31,6 +33,8 @@ local descriptions = {}
 local is_first = true
 
 -- To add a tutorial to the tutorialbook, call addTutorial with the tutorial's name and description
+--- @param name string
+--- @param description string
 local function addTutorial(name, description) 
         -- Add tutorial to the text list
 		local textlist = mc_tf_menu[#mc_tf_menu]
