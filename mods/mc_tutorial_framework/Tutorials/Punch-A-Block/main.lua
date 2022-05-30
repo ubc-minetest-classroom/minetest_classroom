@@ -62,7 +62,7 @@ function punchABlock.progress(player)
 
         if (level == nil) then
             minetest.chat_send_player(player:get_player_name(), "Congratulations! You finished the tutorial")
-            removeHUD(player)
+            endTutorial(nil, player)
         else
             if (level.welcomeText ~= nil) then
                 minetest.chat_send_player(player:get_player_name(), level.welcomeText)
@@ -95,7 +95,7 @@ function punchABlock.startTutorial(realm, player)
     pmeta:set_string("startedPunchABlock", "true")
 end
 
-function punchABlock.endTutorial(player)
+function punchABlock.endTutorial(realm, player)
     local pmeta = player:get_meta()
 
     -- Clear that we're in a tutorial
@@ -109,6 +109,7 @@ function punchABlock.endTutorial(player)
     pmeta:set_int("Break:mc_tf:axeBreakable", nil)
 
     punchABlock.removeHUD(player)
+    mc_worldManager.GetSpawnRealm():TeleportPlayer(player)
 end
 
 function punchABlock.CreateHUD(player, statKey, Goal, HelpText)

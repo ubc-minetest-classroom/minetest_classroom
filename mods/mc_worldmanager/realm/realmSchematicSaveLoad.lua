@@ -64,13 +64,23 @@ function Realm:Load_Schematic(key)
 
     self:UpdateSpawn(config.spawnPoint)
 
-    if (config.tableName ~= nil and config.onSchematicPlaceFunction ~= nil) then
-        local table = loadstring("return " .. config.tableName)()
-        table[config.onSchematicPlaceFunction](self)
-    end
+    if (config.tableName ~= nil) then
+        if (config.onSchematicPlaceFunction ~= nil) then
+            local table = loadstring("return " .. config.tableName)()
+            table[config.onSchematicPlaceFunction](self)
+        end
 
-    if (config.tableName ~= nil and config.onTeleportFunction ~= nil) then
-        table.insert(self.PlayerJoinTable, { tableName = config.tableName, functionName = config.onTeleportFunction })
+        if (config.onTeleportInFunction ~= nil) then
+            table.insert(self.PlayerJoinTable, { tableName = config.tableName, functionName = config.onTeleportInFunction })
+        end
+
+        if (config.onTeleportOutFunction ~= nil) then
+            table.insert(self.PlayerLeaveTable, { tableName = config.tableName, functionName = config.onTeleportOutFunction })
+        end
+
+        if (config.onRealmDeleteFunction ~= nil) then
+            table.insert(self.RealmDeleteTable, { tableName = config.tableName, functionName = config.onRealmDeleteFunction })
+        end
     end
 
     return results
