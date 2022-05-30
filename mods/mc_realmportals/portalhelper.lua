@@ -60,9 +60,6 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
             local realm = mc_realmportals.CreateGetRealm(instanceRealmName, schematic)
             local player = minetest.get_player_by_name(player_name)
 
-            realm:UpdatePlayerMetaData(player)
-            realm:RunTeleportInFunctions(player)
-
             local pos = realm.SpawnPoint
             pos.y = pos.y - 1
 
@@ -73,8 +70,6 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
             -- when finding our way back to spawn, we use this function
             local spawnRealm = mc_worldManager.GetSpawnRealm()
             local player = minetest.get_player_by_name(player_name)
-            spawnRealm:UpdatePlayerMetaData(player)
-            spawnRealm:RunTeleportInFunctions(player)
 
             local pos = spawnRealm.SpawnPoint
             pos.y = pos.y - 1
@@ -82,6 +77,11 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
             return pos
         end,
 
+        on_player_teleported = function(portalDef, player, oldPos, newPos)
+            local spawnRealm = mc_worldManager.GetSpawnRealm()
+
+         -- TODO: We'll want to include our code used to update player realm information here (e.g., call realmTeleportIn function)
+        end,
         on_ignite = function(portalDef, anchorPos, orientation)
 
             local p1, p2 = portalDef.shape:get_p1_and_p2_from_anchorPos(anchorPos, orientation)
