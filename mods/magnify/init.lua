@@ -12,7 +12,6 @@ local function check_perm(player)
     return check_perm_name(player:get_player_name())
 end
 
--- Clears the plant database
 local function clear_table()
     local storage_data = magnify_plants:to_table()
     for k,v in pairs(storage_data.fields) do
@@ -83,7 +82,6 @@ local function get_species_ref(index)
 	local ref_num_split = string.split(elem, ":") -- "###num:rest"
   	local ref_str = ref_num_split[1]
 	local ref_num = string.sub(ref_str, 4) -- removes "###" from "###num"
-	
 	return "ref_"..ref_num
 end
 
@@ -153,29 +151,6 @@ sfinv.register_page("magnify:compendium", {
 	end
 })
 
---[[
--- Check for species formspec actions (currently has no functionality due to inability to open inventories via Lua)
-minetest.register_on_player_receive_fields(function(player, formname, fields)
-	-- check that this is a magnify formspec and that the player has adequate permissions
-	if string.sub(formname, 1, 8) ~= "magnify:" or not check_perm(player) then
-        return false
-    end
-
-	-- brief delay: popups don't work without this
-    local wait = os.clock()
-    while os.clock() - wait < 0.05 do end 
-
-    local pname = player:get_player_name()
-
-	-- handle formspecs
-	if formname == "magnify:species_standard" or formname == "magnify:species_technical" then
-		if fields.back then
-			-- Would like to re-open inventory, but am unsure if that's possible through Lua
-		end
-  	end
-end)
-]]
-
 -- Tool handling functions:
     -- Give the magnifying tool to any player who joins with shout privileges or take it away if they do not have shout
     -- Give the magnifying tool to any player who is granted shout
@@ -204,6 +179,7 @@ minetest.register_on_joinplayer(function(player)
         end
     end
 end)
+
 -- Give the magnifying tool to any player who is granted shout
 minetest.register_on_priv_grant(function(name, granter, priv)
     -- Check if priv has an effect on the privileges needed for the tool
@@ -213,13 +189,14 @@ minetest.register_on_priv_grant(function(name, granter, priv)
 
     local player = minetest.get_player_by_name(name)
     local inv = player:get_inventory()
-
+    
     if not inv:contains_item("main", ItemStack(tool_name)) and check_perm_name(name) then
         player:get_inventory():add_item('main', tool_name)
     end
 
     return true -- continue to next callback
 end)
+
 -- Take the magnifying tool away from anyone who is revoked shout
 minetest.register_on_priv_revoke(function(name, revoker, priv)
     -- Check if priv has an effect on the privileges needed for the tool
@@ -229,7 +206,7 @@ minetest.register_on_priv_revoke(function(name, revoker, priv)
 
     local player = minetest.get_player_by_name(name)
     local inv = player:get_inventory()
-    
+
     if inv:contains_item("main", ItemStack(tool_name)) and not check_perm_name(name) then
         player:get_inventory():remove_item('main', tool_name)
     end
