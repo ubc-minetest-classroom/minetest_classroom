@@ -37,7 +37,8 @@ function Realm:Restore(template)
         StartPos = { x = template.StartPos.x, y = template.StartPos.y, z = template.StartPos.z },
         EndPos = { x = template.EndPos.x, y = template.EndPos.y, z = template.EndPos.z },
         SpawnPoint = { x = template.SpawnPoint.x, y = template.SpawnPoint.y, z = template.SpawnPoint.z },
-        PlayerJoinTable = template.PlayerJoinTable
+        PlayerJoinTable = template.PlayerJoinTable,
+        MetaStorage = template.MetaStorage
     }
 
     --Reconstruct the class metatables
@@ -46,4 +47,20 @@ function Realm:Restore(template)
     --Insert ourselves into the realmDict
     table.insert(Realm.realmDict, this.ID, this)
     return this
+end
+
+function Realm.storage:set_string(key, value)
+    self.MetaStorage[key] = value
+end
+
+function Realm.storage:get_string(key)
+    return self.MetaStorage[key]
+end
+
+function Realm.storage:set_int(key, value)
+    self.MetaStorage[key] = tostring(value)
+end
+
+function Realm.storage:get_int(key)
+    return tonumber(self.MetaStorage[key])
 end

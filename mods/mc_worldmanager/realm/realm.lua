@@ -46,7 +46,7 @@ function Realm:New(name, size, height)
         PlayerJoinTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
         PlayerLeaveTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
         RealmDeleteTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
-        MetaStorage = {} -- Todo: Add meta storage similar to the metastorage of players/mods/inventories
+        MetaStorage = {}
     }
 
     Realm.realmCount = this.ID
