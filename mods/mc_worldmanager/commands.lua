@@ -42,7 +42,7 @@ minetest.register_chatcommand("realmSchematic", {
             return false, "Requested realm of ID:" .. param .. " does not exist."
         end
 
-        local path = requestedRealm:Save_Schematic()
+        local path = requestedRealm:Save_Schematic(name)
 
         return true, "Saved realm with ID " .. param .. " at path: " .. path
     end,
@@ -102,10 +102,7 @@ minetest.register_chatcommand("realmTP", {
 
         player = minetest.get_player_by_name(name)
 
-        local spawn = requestedRealm.SpawnPoint
-        player:set_pos(spawn)
-
-
+        requestedRealm:TeleportPlayer(player)
     end,
 })
 
