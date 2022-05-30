@@ -24,7 +24,7 @@ local infos = {
     },
 }
 
-local magnify = dofile(minetest.get_modpath("magnify") .. "/exports.lua")
+local magnify = dofile(minetest.get_modpath("magnify") .. "/api.lua")
 
 local function get_group(context)
     if context and context.groupname then
