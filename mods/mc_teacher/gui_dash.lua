@@ -26,8 +26,6 @@ local infos = {
 local tool_name = "mc_teacher:controller"
 local priv_table = {"teacher"}
 
-local magnify = dofile(minetest.get_modpath("magnify") .. "/api.lua")
-
 -- Checks for the 'teacher' privilege
 local function check_perm_name(name)
     return minetest.check_player_privs(name, {teacher = true})
@@ -55,15 +53,14 @@ end)
 local mc_teacher_menu =
 	"formspec_version[5]"..
 	"size[10,9]"..
-	"label[3.2,0.7;What do you want to do?]"..
+	"label[3.1,0.7;What do you want to do?]"..
 	"button[1,1.6;3.8,1.3;spawn;Go to UBC]"..
 	"button[5.2,1.6;3.8,1.3;tasks;Manage Tasks]"..
 	"button[1,3.3;3.8,1.3;lessons;Manage Lessons]"..
 	"button[5.2,3.3;3.8,1.3;players;Manage Players]"..
 	"button[1,5;3.8,1.3;classrooms;Manage Classrooms]"..
-	"button[5.2,5;3.8,1.3;species;Plant Compendium]"..
-	"button[1,6.7;3.8,1.3;mail;Teacher Mail]"..
-	"button_exit[5.2,6.7;3.8,1.3;exit;Exit]"
+	"button[5.2,5;3.8,1.3;mail;Teacher Mail]"..
+	"button_exit[3.1,6.7;3.8,1.3;exit;Exit]"
 
 local function show_teacher_menu(player)
     if check_perm(player) then
@@ -89,9 +86,6 @@ local function show_tasks(player)
         return true
     end
 end
-
--- NEW TEACHER VIEWER  // have to connect them // edit to variables 
--- manage species button in main menu  --> leads to formspec where:
 
 -- Set up a task timer
 local hud = mhud.init()
@@ -454,7 +448,6 @@ local function handle_results(player, context, fields)
             return true
         end
     end
-
 end
 
 local _contexts = {}
@@ -575,88 +568,6 @@ local function show_mail(player)
     end
 end
 
-local function get_species_formspec()
-	local species = table.concat(magnify.get_all_registered_species(), ",")
-	local formtable = {
-		"formspec_version[5]",
-		"size[12,8]",
-		"box[0.4,0.4;11.2,1;#378738]", -- #378742
-		"label[3.9,0.9;Plant Species Compendium]",
-		"textlist[0.4,1.6;11.2,4.8;species_list;", species, ";", context.species_selected or 1, ";false]",
-		"button[0.4,6.6;3.6,1;condensed_view;Standard View]",
-		"button[4.2,6.6;3.6,1;expanded_view;Technical View]",
-		"button[8,6.6;3.6,1;back;Back]"
-	}
-	return table.concat(formtable, "")
-end
-
-local function get_condensed_species_formspec(info)
-	-- add condensed table here
-	local formtable = {  
-    	"formspec_version[5]",
-		"size[18.2,7.7]",
-		"box[0.4,0.4;11.6,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), "]",
-		"label[0.5,0.7;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
-		"label[0.5,1.2;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
-    	"label[0.5,1.7;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
-		"image[12.4,0.4;5.4,5.4;", minetest.formspec_escape(info.texture or "test.png"), "]",
-    
-		"label[0.4,2.5;-]",
-    	"label[0.4,3;-]",
-		"label[0.4,3.5;-]",
-    	"label[0.4,4;-]",
-		"label[0.7,2.5;", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "]",
-    	"label[0.7,3;", minetest.formspec_escape((info.region and "Native to "..info.region) or "Native region unknown"), "]",
-		"label[0.7,3.5;", minetest.formspec_escape(info.height or "Height unknown"), "]",
-		"label[0.7,4;", minetest.formspec_escape(info.bloom or "Bloom pattern unknown"), "]",
-		
-    	"textarea[0.35,4.45;11.5,1.3;;;", minetest.formspec_escape(info.more_info or ""), "]",
-    	"label[0.4,6.25;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
-		"label[0.4,6.75;", minetest.formspec_escape((info.external_link and "You can find more information at:") or ""), "]",
-    	"textarea[0.35,6.9;11.6,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
-		
-    	"button[12.4,6.1;5.4,1.2;back;Back]"
-    }
-	return table.concat(formtable, "")
-end
-
-local function get_expanded_species_formspec(info, nodes, ref)
-	-- add expanded table here
-	local formtable = {    
-    	"formspec_version[5]",
-		"size[14,8.2]",
-		"box[0.4,0.4;13.2,1;#9192a3]",
-		"label[5.4,0.9;Technical Information]",
-		"label[0.4,1.9;", info.com_name or info.sci_name or "Unknown", " (", ref, ")]",
-		"image[8.8,1.7;4.8,4.8;", info.texture or "test.png", "]",
-		"textlist[0.4,2.8;8.1,3.7;associated_blocks;", table.concat(nodes, ","), ";1;false]",
-		"label[0.4,2.5;Associated nodes:]",
-		"button[4.8,6.8;4.4,1;back;Back]"
-	}
-	return table.concat(formtable, "")
-end
-
-local function show_species(player)
-	if check_perm(player) then
-		if not context.species_selected then
-			context.species_selected = 1
-		end
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_teacher:species_menu", get_species_formspec())
-		return true
-	end
-end
-
-local function get_species_ref(index)
-  	local list = magnify.get_all_registered_species()
-	local elem = list[tonumber(index)]
-	local ref_num_split = string.split(elem, ":") -- "###num:rest"
-  	local ref_str = ref_num_split[1]
-	local ref_num = string.sub(ref_str, 4) -- removes "###" from "###num"
-	
-	return "ref_"..ref_num
-end
-
 -- TODO: add Change Server Rules to the menu
 
 -- Processing the form from the menu
@@ -674,7 +585,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     -- Menu
     if formname == "mc_teacher:menu" then
         if fields.spawn then
-
             local spawnRealm = mc_worldManager.GetSpawnRealm()
             spawnRealm:TeleportPlayer(player)
         elseif fields.tasks then
@@ -687,8 +597,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             show_players(player)
         elseif fields.mail then
             show_mail(player)
-        elseif fields.species then
-            show_species(player)
         end
     end
 
@@ -871,44 +779,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             return
         end
     end
-    
-    if formname == "mc_teacher:species_menu" then
-		if fields.back then
-		  	show_teacher_menu(player)
-		elseif fields.species_list then
-        	local event = minetest.explode_textlist_event(fields.species_list)
-        	if event.type == "CHG" then
-        		context.species_selected = event.index
-        	end
-		elseif fields.condensed_view or fields.expanded_view then
-			if context.species_selected then
-      			local ref = get_species_ref(context.species_selected)
-          		local full_info = magnify.get_species_from_ref(ref)
-
-				if full_info ~= nil then
-          			if fields.condensed_view then -- condensed
-						minetest.show_formspec(pname, "mc_teacher:species_condensed", get_condensed_species_formspec(full_info.data))
-            		else -- expanded
-            			minetest.show_formspec(pname, "mc_teacher:species_expanded", get_expanded_species_formspec(full_info.data, full_info.nodes, ref))
-            		end
-				else
-					minetest.chat_send_player(pname, "An entry for this species exists, but could not be found in the plant database.\nPlease check your server's plant database files to ensure all plants were registered properly.")
-				end	
-        	end
-		end
-	end
-	
-	if formname == "mc_teacher:species_condensed" then
-      	if fields.back then 
-        	show_species(player)
-	    end
-    end
-    
-    if formname == "mc_teacher:species_expanded" then
-      	if fields.back then
-          	show_species(player)
-      	end
-    end
 end)
 
 function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
@@ -1022,11 +892,11 @@ minetest.register_tool(tool_name, {
 })
 
 -- Tool handling functions:
-    -- Give the controller to any player who joins with teacher privileges or take away the controller if they do not have teacher
-    -- Give the controller to any player who is granted teacher
-    -- Take the controller away from anyone who is revoked teacher
+    -- Give the controller to any player who joins with adequate privileges or take away the controller if they do not have them
+    -- Give the controller to any player who is granted adequate privileges
+    -- Take the controller away from anyone who is revoked privileges and no longer has adequate ones
 
--- Give the controller to any player who joins with teacher privileges or take away the controller if they do not have teacher
+-- Give the controller to any player who joins with adequate privileges or take away the controller if they do not have them
 minetest.register_on_joinplayer(function(player)
     local inv = player:get_inventory()
     if inv:contains_item("main", ItemStack(tool_name)) then
@@ -1049,7 +919,8 @@ minetest.register_on_joinplayer(function(player)
         end
     end
 end)
--- Give the controller to any player who is granted teacher
+
+-- Give the controller to any player who is granted adequate privileges
 minetest.register_on_priv_grant(function(name, granter, priv)
     -- Check if priv has an effect on the privileges needed for the tool
     if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
@@ -1065,7 +936,8 @@ minetest.register_on_priv_grant(function(name, granter, priv)
 
     return true -- continue to next callback
 end)
--- Take the controller away from anyone who is revoked teacher
+
+-- Take the controller away from anyone who is revoked privileges and no longer has adequate ones
 minetest.register_on_priv_revoke(function(name, revoker, priv)
     -- Check if priv has an effect on the privileges needed for the tool
     if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
