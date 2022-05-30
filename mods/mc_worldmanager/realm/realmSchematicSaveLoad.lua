@@ -62,8 +62,6 @@ function Realm:Load_Schematic(key)
     local results = minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic, 0, nil, true)
     vm:write_to_map(true)
 
-    self:UpdateSpawn(config.spawnPoint)
-
     if (config.tableName ~= nil) then
         if (config.onSchematicPlaceFunction ~= nil) then
             local table = loadstring("return " .. config.tableName)()
@@ -82,6 +80,8 @@ function Realm:Load_Schematic(key)
             table.insert(self.RealmDeleteTable, { tableName = config.tableName, functionName = config.onRealmDeleteFunction })
         end
     end
+
+    self:UpdateSpawn(config.spawnPoint)
 
     return results
 end
