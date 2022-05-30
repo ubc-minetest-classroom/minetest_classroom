@@ -26,16 +26,16 @@ end
 
 -- Define an initial formspec that will redirect to different formspecs depending on what the teacher wants to do
 local mc_student_menu =
-		"formspec_version[5]"..
-		"size[7,14]"..
-		"label[1.7,0.7;What do you want to do?]"..
-		"button[2,1.6;3,1.3;spawn;Go to UBC]"..
-		"button[2,3.3;3,1.3;accesscode;Join Classroom]"..
-		"button[2,5;3,1.3;report;Report]"..
-		"button[2,6.7;3,1.3;coordinates;My Coordinates]"..
-		"button[2,8.4;3,1.3;marker;Place a Marker]"..
-		"button[2,10.2;3,1.3;taskstudent;View Tasks]"..
-		"button_exit[2,11.8;3,1.3;exit;Exit]"
+	"formspec_version[5]"..
+	"size[10,9]"..
+	"label[3.1,0.7;What do you want to do?]"..
+	"button[1,1.6;3.8,1.3;spawn;Go to UBC]"..
+	"button[5.2,1.6;3.8,1.3;accesscode;Join Classroom]"..
+	"button[1,3.3;3.8,1.3;coordinates;My Coordinates]"..
+	"button[5.2,3.3;3.8,1.3;marker;Place a Marker]"..
+	"button[1,5;3.8,1.3;taskstudent;View Tasks]"..
+	"button[5.2,5;3.8,1.3;report;Report]"..
+	"button_exit[3.1,6.7;3.8,1.3;exit;Exit]"
 
 local function show_student_menu(player)
 	if check_perm(player) then
@@ -384,7 +384,7 @@ function check_access_code(submitted, codes)
 end
 
 -- The student notebook for accessing the student actions
-minetest.register_tool(tool_name , {
+minetest.register_tool(tool_name, {
 	description = "Notebook for students",
 	inventory_image = "notebook.png",
 	-- Left-click the tool activates the teacher menu
@@ -404,7 +404,7 @@ minetest.register_tool(tool_name , {
 -- Tool handling functions:
     -- Give the notebook to any player who joins with adequate privileges or take away the notebook if they do not have them
     -- Give the notebook to any player who is granted adequate privileges
-    -- Take the notebook away from anyone who is revoked privileges
+    -- Take the notebook away from anyone who is revoked privileges and no longer has adequate ones
 
 -- Give the notebook to any player who joins with adequate privileges or take away the notebook if they do not have them
 minetest.register_on_joinplayer(function(player)
@@ -429,6 +429,7 @@ minetest.register_on_joinplayer(function(player)
 		end
 	end
 end)
+
 -- Give the notebook to any player who is granted adequate privileges
 minetest.register_on_priv_grant(function(name, granter, priv)
     -- Check if priv has an effect on the privileges needed for the tool
@@ -446,7 +447,8 @@ minetest.register_on_priv_grant(function(name, granter, priv)
 
     return true -- continue to next callback
 end)
--- Take the notebook away from anyone who is revoked privileges
+
+-- Take the notebook away from anyone who is revoked privileges and no longer has adequate ones
 minetest.register_on_priv_revoke(function(name, revoker, priv)
     -- Check if priv has an effect on the privileges needed for the tool
     if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
