@@ -184,6 +184,7 @@ local function show_marker(player)
 	end
 end
 
+
 -- Processing the form from the menu
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if string.sub(formname, 1, 10) ~= "mc_student" then
