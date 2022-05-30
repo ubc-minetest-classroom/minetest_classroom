@@ -130,9 +130,10 @@ function Realm:RunFunctionFromTable(table, player)
         for key, value in pairs(table) do
 
             if (value.tableName ~= nil and value.functionName ~= nil) then
+                minetest.debug(value.tableName)
+                minetest.debug(value.functionName)
                 local table = loadstring("return " .. value.tableName)
-                table[value.functionName](self,player)
-                --table[value.functionName](self, player)
+                table()[value.functionName](self, player)
             end
         end
     end

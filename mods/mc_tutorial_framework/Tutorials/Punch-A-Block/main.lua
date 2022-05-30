@@ -78,6 +78,7 @@ function punchABlock.progress(player)
 end
 
 function punchABlock.startTutorial(realm, player)
+    punchABlock.removeHUD(player)
     local pmeta = player:get_meta()
 
     minetest.chat_send_player(player:get_player_name(), "Welcome to the punch-a-block tutorial. Eventually this will be formspec instructions.")
