@@ -85,7 +85,41 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
         on_player_teleported = function(portalDef, player, oldPos, newPos)
             local spawnRealm = mc_worldManager.GetSpawnRealm()
 
-         -- TODO: We'll want to include our code used to update player realm information here (e.g., call realmTeleportIn function)
+            local isWithinRealm = portalDef.is_within_realm(newPos, portalDef)
+
+            --Since we're not running the methods that our own teleport methods normally run,
+            --we're calling them here. They run immediately after players teleport via portal
+            if (isWithinRealm ~= true) then
+                minetest.debug("Entering Spawn")
+                -- Since we're entering spawn, we already have all the references we need and this is easy.
+                local newRealmID, OldRealmID = spawnRealm:UpdatePlayerMetaData(player)
+                spawnRealm:RunTeleportInFunctions(player)
+
+                local oldRealm = Realm.realmDict[OldRealmID]
+                oldRealm:RunTeleportOutFunctions(player)
+            else
+                minetest.debug("Leaving Spawn")
+
+                --Firstly, we figure out where the player is teleporting to. This mirrors the portal pathfinding logic.
+                local instanceRealmName = realmName
+                local player_name = player:get_player_name()
+                if (playerInstanced) then
+                    instanceRealmName = instanceRealmName .. " instanced for " .. player_name
+                end
+                local realm = mc_realmportals.CreateGetRealm(instanceRealmName, schematic)
+
+                -- Next we tell the realm that the player is teleporting to, to update their metainfo
+                -- In the process, we get the OldRealmID for the realm that the player is teleporting from.
+                -- Usually this should be the spawn realm, but we have no idea; so it's good not to assume
+                local newRealmID, OldRealmID = realm:UpdatePlayerMetaData(player)
+                realm:RunTeleportInFunctions(player)
+
+                -- We get the instance for the old realm by its ID
+                local oldRealm = Realm.realmDict[OldRealmID]
+
+                -- We run the teleportOut functions (e.g., the callbacks for that realm)
+                oldRealm:RunTeleportOutFunctions(player)
+            end
         end,
         on_ignite = function(portalDef, anchorPos, orientation)
 
