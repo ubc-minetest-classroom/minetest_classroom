@@ -672,10 +672,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     -- Menu
     if formname == "mc_teacher:menu" then
         if fields.spawn then
-
             local spawnRealm = mc_worldManager.GetSpawnRealm()
-            local spawn_pos = spawnRealm.SpawnPoint
-            player:set_pos(spawn_pos)
+            spawnRealm:TeleportPlayer(player)
         elseif fields.tasks then
             show_tasks(player)
         elseif fields.lessons then
@@ -800,8 +798,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
                 local realm = Realm.realmDict[mdata.realm_id[context.selected]]
                 if (realm ~= nil) then
-                    local realmSpawnPos = realm.SpawnPoint
-                    player:set_pos(realmSpawnPos)
+                    realm:TeleportPlayer(player)
                 else
                     minetest.chat_send_player(pname, pname .. ": Error receiving the realm / spawn coordinates. Try regenerating the classroom.")
                     minetest.log("warning", "mc_teacher gui_dash.lua: realm with ID: " .. mdata.realm_id[context.selected] .. " does not exist but is associated with a classroom.")
@@ -870,44 +867,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             -- escape without input
             return
         end
-    end
-    
-    if formname == "mc_teacher:species_menu" then
-		if fields.back then
-		  	show_teacher_menu(player)
-		elseif fields.species_list then
-        	local event = minetest.explode_textlist_event(fields.species_list)
-        	if event.type == "CHG" then
-        		context.species_selected = event.index
-        	end
-		elseif fields.condensed_view or fields.expanded_view then
-			if context.species_selected then
-      			local ref = get_species_ref(context.species_selected)
-          		local full_info = magnify.get_species_from_ref(ref)
-
-				if full_info ~= nil then
-          			if fields.condensed_view then -- condensed
-						minetest.show_formspec(pname, "mc_teacher:species_condensed", get_condensed_species_formspec(full_info.data))
-            		else -- expanded
-            			minetest.show_formspec(pname, "mc_teacher:species_expanded", get_expanded_species_formspec(full_info.data, full_info.nodes, ref))
-            		end
-				else
-					minetest.chat_send_player(pname, "An entry for this species exists, but could not be found in the plant database.\nPlease check your server's plant database files to ensure all plants were registered properly.")
-				end	
-        	end
-		end
-	end
-	
-	if formname == "mc_teacher:species_condensed" then
-      	if fields.back then 
-        	show_species(player)
-	    end
-    end
-    
-    if formname == "mc_teacher:species_expanded" then
-      	if fields.back then
-          	show_species(player)
-      	end
     end
 end)
 
@@ -979,7 +938,7 @@ function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
         minetest.chat_send_player(pname, pname .. ": Your course was successfully recorded.")
 
         -- Send player to spawn pos of classroom map
-        player:set_pos(newRealm.SpawnPoint)
+        newRealm:TeleportPlayer(player)
 
         -- Update the formspec
         show_classrooms(player)

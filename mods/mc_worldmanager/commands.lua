@@ -102,10 +102,7 @@ minetest.register_chatcommand("realmTP", {
 
         player = minetest.get_player_by_name(name)
 
-        local spawn = requestedRealm.SpawnPoint
-        player:set_pos(spawn)
-
-
+        requestedRealm:TeleportPlayer(player)
     end,
 })
 
