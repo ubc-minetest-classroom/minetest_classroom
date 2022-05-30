@@ -23,8 +23,18 @@ local infos = {
         privs = { interact = true },
     },
 }
+local tool_name = "mc_teacher:controller"
+local priv_table = {"teacher"}
 
-local magnify = dofile(minetest.get_modpath("magnify") .. "/exports.lua")
+local magnify = dofile(minetest.get_modpath("magnify") .. "/api.lua")
+
+-- Checks for the 'teacher' privilege
+local function check_perm_name(name)
+    return minetest.check_player_privs(name, {teacher = true})
+end
+local function check_perm(player)
+    return check_perm_name(player:get_player_name())
+end
 
 local function get_group(context)
     if context and context.groupname then
@@ -32,11 +42,6 @@ local function get_group(context)
     else
         return minetest_classroom.get_students()
     end
-end
-
--- Check for teacher priv
-local function check_perm(player)
-    return minetest.check_player_privs(player:get_player_name(), { teacher = true })
 end
 
 -- Label the teacher in red
@@ -66,7 +71,6 @@ local function show_teacher_menu(player)
         minetest.show_formspec(pname, "mc_teacher:menu", mc_teacher_menu)
         return true
     end
-
 end
 
 -- Define the Manage Tasks formspec (teacher-view)
@@ -1000,7 +1004,7 @@ months = {
 }
 
 -- The controller for accessing the teacher actions
-minetest.register_tool("mc_teacher:controller", {
+minetest.register_tool(tool_name, {
     description = "Controller for teachers",
     inventory_image = "controller.png",
     -- Left-click the tool activates the teacher menu
@@ -1017,26 +1021,63 @@ minetest.register_tool("mc_teacher:controller", {
     end,
 })
 
--- Give the controller to any player who joins with teacher privileges or take away the controller if they are not teacher
+-- Tool handling functions:
+    -- Give the controller to any player who joins with teacher privileges or take away the controller if they do not have teacher
+    -- Give the controller to any player who is granted teacher
+    -- Take the controller away from anyone who is revoked teacher
+
+-- Give the controller to any player who joins with teacher privileges or take away the controller if they do not have teacher
 minetest.register_on_joinplayer(function(player)
     local inv = player:get_inventory()
-    if inv:contains_item("main", ItemStack("mc_teacher:controller")) then
+    if inv:contains_item("main", ItemStack(tool_name)) then
         -- Player has the controller
         if check_perm(player) then
             -- The player should have the controller
             return
         else
             -- The player should not have the controller
-            player:get_inventory():remove_item('main', 'mc_teacher:controller')
+            player:get_inventory():remove_item('main', tool_name)
         end
     else
         -- Player does not have the controller
         if check_perm(player) then
             -- The player should have the controller
-            player:get_inventory():add_item('main', 'mc_teacher:controller')
+            player:get_inventory():add_item('main', tool_name)
         else
             -- The player should not have the controller
             return
         end
     end
+end)
+-- Give the controller to any player who is granted teacher
+minetest.register_on_priv_grant(function(name, granter, priv)
+    -- Check if priv has an effect on the privileges needed for the tool
+    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
+        return true -- skip this callback, continue to next callback
+    end
+
+    local player = minetest.get_player_by_name(name)
+    local inv = player:get_inventory()
+
+    if (not inv:contains_item("main", ItemStack(tool_name))) and check_perm_name(name) then
+        player:get_inventory():add_item('main', tool_name)
+    end
+
+    return true -- continue to next callback
+end)
+-- Take the controller away from anyone who is revoked teacher
+minetest.register_on_priv_revoke(function(name, revoker, priv)
+    -- Check if priv has an effect on the privileges needed for the tool
+    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
+        return true -- skip this callback, continue to next callback
+    end
+
+    local player = minetest.get_player_by_name(name)
+    local inv = player:get_inventory()
+	
+    if inv:contains_item("main", ItemStack(tool_name)) and (not check_perm_name(name)) then
+        player:get_inventory():remove_item('main', tool_name)
+    end
+
+    return true -- continue to next callback
 end)

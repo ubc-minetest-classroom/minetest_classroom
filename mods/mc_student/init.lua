@@ -2,9 +2,16 @@
 minetest_classroom.reports = minetest.get_mod_storage()
 minetest_classroom.mc_students = {teachers = {}}
 
--- Check for shout priv
+-- Local variables
+local tool_name = "mc_student:notebook"
+local priv_table = {"interact"}
+
+-- Check for adequate privileges
+local function check_perm_name(name)
+    return minetest.check_player_privs(name, {interact = true})
+end
 local function check_perm(player)
-	return minetest.check_player_privs(player:get_player_name(), { shout = true })
+    return check_perm_name(player:get_player_name())
 end
 
 -- Split pos in coordlist from character "x=1 y=2 z=3" to numeric table {1,2,3}
@@ -378,13 +385,13 @@ function check_access_code(submitted, codes)
 end
 
 -- The student notebook for accessing the student actions
-minetest.register_tool("mc_student:notebook" , {
+minetest.register_tool(tool_name , {
 	description = "Notebook for students",
 	inventory_image = "notebook.png",
 	-- Left-click the tool activates the teacher menu
 	on_use = function (itemstack, user, pointed_thing)
         local pname = user:get_player_name()
-		-- Check for shout privileges
+		-- Check for adequate privileges
 		if check_perm(user) then
 			show_student_menu(user)
 		end
@@ -395,28 +402,67 @@ minetest.register_tool("mc_student:notebook" , {
 	end,
 })
 
--- Give the notebook to any player who joins with shout privileges or take them away if they do not have shout
+-- Tool handling functions:
+    -- Give the notebook to any player who joins with adequate privileges or take away the notebook if they do not have them
+    -- Give the notebook to any player who is granted adequate privileges
+    -- Take the notebook away from anyone who is revoked privileges
+
+-- Give the notebook to any player who joins with adequate privileges or take away the notebook if they do not have them
 minetest.register_on_joinplayer(function(player)
 	local inv = player:get_inventory()
-	if inv:contains_item("main", ItemStack("mc_student:notebook")) then
+	if inv:contains_item("main", ItemStack(tool_name)) then
 		-- Player has the notebook
 		if check_perm(player) then
 			-- The player should have the notebook
 			return
 		else
 			-- The player should not have the notebook
-			player:get_inventory():remove_item('main', 'mc_student:notebook')
+			player:get_inventory():remove_item('main', tool_name)
 		end
 	else
 		-- Player does not have the notebook
 		if check_perm(player) then
 			-- The player should have the notebook
-			player:get_inventory():add_item('main', 'mc_student:notebook')
+			player:get_inventory():add_item('main', tool_name)
 		else
 			-- The player should not have the notebook
 			return
 		end
 	end
+end)
+-- Give the notebook to any player who is granted adequate privileges
+minetest.register_on_priv_grant(function(name, granter, priv)
+    -- Check if priv has an effect on the privileges needed for the tool
+    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
+        return true -- skip this callback, continue to next callback
+    end
+
+    local player = minetest.get_player_by_name(name)
+    local inv = player:get_inventory()
+
+    if (not inv:contains_item("main", ItemStack(tool_name))) and check_perm_name(name) then
+        -- Give the player the tool
+        player:get_inventory():add_item('main', tool_name)
+    end
+
+    return true -- continue to next callback
+end)
+-- Take the notebook away from anyone who is revoked privileges
+minetest.register_on_priv_revoke(function(name, revoker, priv)
+    -- Check if priv has an effect on the privileges needed for the tool
+    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
+        return true -- skip this callback, continue to next callback
+    end
+
+    local player = minetest.get_player_by_name(name)
+    local inv = player:get_inventory()
+	
+    if inv:contains_item("main", ItemStack(tool_name)) and (not check_perm_name(name)) then
+        -- Take the tool away from the player
+        player:get_inventory():remove_item('main', tool_name)
+    end
+
+    return true -- continue to next callback
 end)
 
 -- Functions and variables for placing markers
@@ -595,4 +641,3 @@ function place_marker(player,message)
 		minetest.chat_send_player(pname,pname..": You are not allowed to place markers. Please submit a report from your notebook to request this privilege.")
 	end
 end
-
