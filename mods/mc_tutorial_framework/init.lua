@@ -35,7 +35,7 @@ local is_first = true
 local selectedRealm = 0
 
 -- To add a tutorial to the tutorialbook, call addTutorial with the tutorial's name, description, and schematic
-local function addTutorial(name, description, schematic)
+function mc_tutorialFramework.addTutorialEntry(name, description, schematic)
         name = name or "Unknown Tutorial"
         description = description or "Unknown Tutorial"
         schematic = schematic or "shack"
