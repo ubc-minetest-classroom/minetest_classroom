@@ -34,13 +34,13 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
         is_within_realm = function(pos, definition)
 
             -- We check if we're in the spawn realm, if not, we are in a realm.
-            local realm = mc_worldManager.GetSpawnRealm()
+            local spawnRealm = mc_worldManager.GetSpawnRealm()
 
-            if (pos.x > realm.StartPos.x or pos.x < realm.EndPos.x) then
+            if (pos.x < spawnRealm.StartPos.x or pos.x > spawnRealm.EndPos.x) then
                 return false
-            elseif (pos.z > realm.StartPos.z or pos.z < realm.EndPos.z) then
+            elseif (pos.z < spawnRealm.StartPos.z or pos.z > spawnRealm.EndPos.z) then
                 return false
-            elseif (pos.y > realm.StartPos.y or pos.y < realm.EndPos.y) then
+            elseif (pos.y < spawnRealm.StartPos.y or pos.y > spawnRealm.EndPos.y) then
                 return false
             else
                 return true
