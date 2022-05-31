@@ -86,19 +86,61 @@ local function get_species_ref(index)
 	return "ref_"..ref_num
 end
 
+--- Dynamically creates a square table of node images
+--- @param nodes The nodes to include images for in the table
+--- @param x X position of the table in the formspec
+--- @param y Y position of the table in the formspec
+--- @param side_length Width and height of the table in the formspec
+--- @return formspec element string
+local function create_image_table(nodes, x, y, side_length)
+    local node_count = #nodes
+    local node_ctr = 0
+    local row_cells = math.ceil(math.sqrt(node_count))
+    local cell_length = side_length / row_cells
+    local output = {}
+    local x_0 = 0
+    local y_0 = side_length - cell_length
+
+    for k,v in pairs(nodes) do
+        -- create formspec element
+        local string_table = {
+            "item_image[", x + x_0, ",", y + y_0, ";", cell_length, ",", cell_length, ";", v, "]"
+        }
+        table.insert(output, table.concat(string_table, ""))
+        node_ctr = node_ctr + 1
+
+        -- adjust sizing: move across a column
+        if x_0 >= row_cells then
+            -- move up a row
+            x_0 = 0
+            y_0 = y_0 - cell_length
+            if node_count - node_ctr < row_cells then
+                -- center remaining elements in new row
+                local increment = (row_cells - node_count + node_ctr) * cell_length / 2
+                x_0 = x_0 + increment
+            end
+        else
+            x_0 = x_0 + cell_length
+        end
+    end
+
+    return table.concat(output, "")
+end
+
 --- Return the technical formspec for a species
 --- @return formspec string
 local function get_expanded_species_formspec(info, nodes, ref)
+    local sorted_nodes = table.sort(nodes, function(a, b) return a < b end)
 	local formtable = {    
     	"formspec_version[5]",
 		"size[14,8.2]",
 		"box[0.4,0.4;13.2,1;#9192a3]",
 		"label[5.4,0.9;Technical Information]",
 		"label[0.4,1.9;", info.com_name or info.sci_name or "Unknown", " (", ref, ")]",
-		"image[8.8,1.7;4.8,4.8;", info.texture or "test.png", "]",
-		"textlist[0.4,2.8;8.1,3.7;associated_blocks;", table.concat(nodes, ","), ";1;false]",
+		"textlist[0.4,2.8;8.1,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
 		"label[0.4,2.5;Associated nodes:]",
-		"button_exit[4.8,6.8;4.4,1;back;Back]"
+		"button_exit[4.8,6.8;4.4,1;back;Back]",
+        create_image_table(sorted_nodes or nodes, 8.8, 1.7, 4.8)
 	}
 	return table.concat(formtable, "")
 end
@@ -118,7 +160,7 @@ sfinv.register_page("magnify:compendium", {
         return sfinv.make_formspec(player, context, table.concat(formtable, ""), true)
 	end,
 	on_enter = function(self, player, context)
-		if not context.species_selected then
+		if context.species_selected == nil then
 			context.species_selected = 1
 		end
 	end,
@@ -130,9 +172,12 @@ on_player_receive_fields = function(self, player, context, fields)
         	end
 		elseif fields.standard_view or fields.technical_view then
 			if context.species_selected then
+              -- refresh inventory formspec
+              sfinv.set_player_inventory_formspec(player)
+
       		    local ref = get_species_ref(context.species_selected)
           		local full_info = magnify.get_species_from_ref(ref)
-				local pname = player:get_player_name()
+          		local pname = player:get_player_name()
 				if full_info ~= nil then
           			if fields.standard_view then -- standard
 						minetest.show_formspec(pname, "magnify:species_standard", magnify.build_formspec_from_ref(ref, true))
