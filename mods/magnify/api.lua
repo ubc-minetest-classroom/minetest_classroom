@@ -112,8 +112,8 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             	"textarea[0.35,3.9;12.2,2.2;;;", minetest.formspec_escape((info.more_info and info.more_info.."\n") or ""), minetest.formspec_escape(info.bloom or "Bloom pattern unknown"), "]",
       
 				"label[0.4,6.55;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
-				"label[0.4,7.15;", minetest.formspec_escape((info.external_link and "You can find more information at:") or ""), "]",
-				"textarea[0.35,7.35;12.2,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
+				--"label[0.4,7.15;", minetest.formspec_escape((info.external_link and "You can find more information at:") or ""), "]",
+				--"textarea[0.35,7.35;12.2,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
 				"button", (is_exit and "_exit") or "", "[0.4,8;12,0.9;back;Back]"
     		}
       		return table.concat(formtable_v2, "")
@@ -140,8 +140,8 @@ function magnify.build_formspec_from_ref(ref, is_exit)
 		
     			"textarea[0.35,4.45;11.5,1.3;;;", minetest.formspec_escape(info.more_info or ""), "]",
     			"label[0.4,6.25;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
-				"label[0.4,6.75;", minetest.formspec_escape((info.external_link and "You can find more information at:") or ""), "]",
-    			"textarea[0.35,6.9;11.6,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
+				--"label[0.4,6.75;", minetest.formspec_escape((info.external_link and "You can find more information at:") or ""), "]",
+    			--"textarea[0.35,6.9;11.6,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
 		
     			"button", (is_exit and "_exit") or "", "[12.4,6.1;5.4,1.2;back;Back]"
     		}
