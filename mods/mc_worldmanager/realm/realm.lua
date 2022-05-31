@@ -44,7 +44,9 @@ function Realm:New(name, size, height)
         EndPos = { x = 0, y = 0, z = 0 },
         SpawnPoint = { x = 0, y = 0, z = 0 },
         PlayerJoinTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
-        MetaStorage = {} -- Todo: Add meta storage similar to the metastorage of players/mods/inventories
+        PlayerLeaveTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
+        RealmDeleteTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
+        MetaStorage = {}
     }
 
     Realm.realmCount = this.ID
@@ -86,6 +88,8 @@ function Realm:Delete()
     self:ClearNodes()
     table.remove(Realm.realmDict, self.ID)
     Realm.SaveDataToStorage()
+
+    self:RunFunctionFromTable(self.RealmDeleteTable)
 end
 
 ---LocalToWorldPosition
@@ -119,6 +123,17 @@ function Realm:UpdateSpawn(spawnPos)
     self.SpawnPoint = { x = pos.x, y = pos.y, z = pos.z }
     Realm.SaveDataToStorage()
     return true
+end
+
+function Realm:RunFunctionFromTable(table, player)
+    if (table ~= nil) then
+        for key, value in pairs(table) do
+            if (value.tableName ~= nil and value.functionName ~= nil) then
+                local table = loadstring("return " .. value.tableName)
+                table()[value.functionName](self, player)
+            end
+        end
+    end
 end
 
 Realm.LoadDataFromStorage()

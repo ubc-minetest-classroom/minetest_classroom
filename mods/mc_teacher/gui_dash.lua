@@ -26,8 +26,6 @@ local infos = {
 local tool_name = "mc_teacher:controller"
 local priv_table = {"teacher"}
 
-local magnify = dofile(minetest.get_modpath("magnify") .. "/api.lua")
-
 -- Checks for the 'teacher' privilege
 local function check_perm_name(name)
     return minetest.check_player_privs(name, {teacher = true})
@@ -52,46 +50,46 @@ minetest.register_on_joinplayer(function(player)
 end)
 
 -- Define an initial formspec that will redirect to different formspecs depending on what the teacher wants to do
-local mc_teacher_menu =
-	"formspec_version[5]"..
-	"size[10,9]"..
-	"label[3.2,0.7;What do you want to do?]"..
-	"button[1,1.6;3.8,1.3;spawn;Go to UBC]"..
-	"button[5.2,1.6;3.8,1.3;tasks;Manage Tasks]"..
-	"button[1,3.3;3.8,1.3;lessons;Manage Lessons]"..
-	"button[5.2,3.3;3.8,1.3;players;Manage Players]"..
-	"button[1,5;3.8,1.3;classrooms;Manage Classrooms]"..
-	"button[5.2,5;3.8,1.3;species;Plant Compendium]"..
-	"button[1,6.7;3.8,1.3;mail;Teacher Mail]"..
+local mc_teacher_menu = {
+	"formspec_version[5]",
+	"size[10,9]",
+	"label[3.2,0.7;What do you want to do?]",
+	"button[1,1.6;3.8,1.3;spawn;Go to UBC]",
+	"button[5.2,1.6;3.8,1.3;tasks;Manage Tasks]",
+	"button[1,3.3;3.8,1.3;lessons;Manage Lessons]",
+	"button[5.2,3.3;3.8,1.3;players;Manage Players]",
+	"button[1,5;3.8,1.3;classrooms;Manage Classrooms]",
+	"button[5.2,5;3.8,1.3;rules;Manage Server Rules]",
+	"button[1,6.7;3.8,1.3;mail;Teacher Mail]",
 	"button_exit[5.2,6.7;3.8,1.3;exit;Exit]"
+}
 
 local function show_teacher_menu(player)
     if check_perm(player) then
         local pname = player:get_player_name()
-        minetest.show_formspec(pname, "mc_teacher:menu", mc_teacher_menu)
+        minetest.show_formspec(pname, "mc_teacher:menu", table.concat(mc_teacher_menu,""))
         return true
     end
 end
 
 -- Define the Manage Tasks formspec (teacher-view)
-local mc_teacher_tasks = "formspec_version[5]" ..
-        "size[10,13]" ..
-        "field[0.375,0.75;9.25,0.8;task;Enter task below;]" ..
-        "textarea[0.375,2.5;9.25,7;instructions;Enter instructions below;]" ..
-        "field[0.375,10.5;9.25,0.8;timer;Enter timer for task in seconds (0 or blank = no timer);]" ..
-        "button[0.375,11.5;2,0.8;back;Back]" ..
-        "button_exit[2.575,11.5;2,0.8;submit;Submit]"
+local mc_teacher_tasks = {
+	"formspec_version[5]",
+	"size[10,13]",
+	"field[0.375,0.75;9.25,0.8;task;Enter task below;]",
+	"textarea[0.375,2.5;9.25,7;instructions;Enter instructions below;]",
+	"field[0.375,10.5;9.25,0.8;timer;Enter timer for task in seconds (0 or blank = no timer);]",
+	"button[0.375,11.5;2,0.8;back;Back]",
+	"button_exit[2.575,11.5;2,0.8;submit;Submit]"
+}
 
 local function show_tasks(player)
     if check_perm(player) then
         local pname = player:get_player_name()
-        minetest.show_formspec(pname, "mc_teacher:tasks", mc_teacher_tasks)
+        minetest.show_formspec(pname, "mc_teacher:tasks", table.concat(mc_teacher_tasks,""))
         return true
     end
 end
-
--- NEW TEACHER VIEWER  // have to connect them // edit to variables 
--- manage species button in main menu  --> leads to formspec where:
 
 -- Set up a task timer
 local hud = mhud.init()
@@ -454,7 +452,6 @@ local function handle_results(player, context, fields)
             return true
         end
     end
-
 end
 
 local _contexts = {}
@@ -469,8 +466,8 @@ local function show_players(player)
 end
 
 -- Define the Manage Lessons formspec
-local mc_teacher_lessons = "formspec_version[5]" ..
-        ""
+-- TODO: incorporate or abandon this feature
+local mc_teacher_lessons = "formspec_version[5]"
 
 local function show_lessons(player)
     if check_perm(player) then
@@ -483,11 +480,13 @@ end
 -- Define the Manage Classrooms formspec
 local function show_classrooms(player)
     if check_perm(player) then
-        mc_teacher_classrooms = "formspec_version[5]" ..
-                "size[14,14]" ..
-                "label[0.4,0.8;Your Classrooms]" ..
-                "button[0.375,6.5;4,0.8;join;Join Selected Classroom]" ..
+        local mc_teacher_classrooms = { 
+                "formspec_version[5]",
+                "size[14,14]",
+                "label[0.4,0.8;Your Classrooms]",
+                "button[0.375,6.5;4,0.8;join;Join Selected Classroom]",
                 "button[0.375,7.5;4,0.8;delete;Delete Selected Classroom]"
+        }
 
         -- Get the stored classrooms for the teacher
         pmeta = player:get_meta()
@@ -500,10 +499,9 @@ local function show_classrooms(player)
 
         if pdata == nil then
             -- No classrooms stored, so return an empty list element
-            mc_teacher_classrooms = mc_teacher_classrooms ..
-                    "textlist[0.4,1.1;13.2,5.2;classroomlist;No Courses Found;1;false]"
+            mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "textlist[0.4,1.1;13.2,5.2;classroomlist;No Courses Found;1;false]"
         else
-            mc_teacher_classrooms = mc_teacher_classrooms .. "textlist[0.4,1.1;13.2,5.2;classroomlist;"
+            mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "textlist[0.4,1.1;13.2,5.2;classroomlist;"
             -- Some classrooms were found, so iterate the list
             pcc = pdata.course_code
             psn = pdata.section_number
@@ -517,54 +515,72 @@ local function show_classrooms(player)
             map = pdata.classroom_map
             rid = pdata.realm_id
             for i in pairs(pcc) do
-                mc_teacher_classrooms = mc_teacher_classrooms .. pcc[i] .. " " .. psn[i] .. " " .. map[i] .. " Expires " .. pem[i] .. " " .. ped[i] .. " " .. pey[i] .. " Access Code = " .. pac[i] .. ","
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = pcc[i]
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " "
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] =  psn[i]
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " "
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] =  map[i]
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " Expires "
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = pem[i] 
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " "
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = ped[i]
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " "
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = pey[i]
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " Access Code = "
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = pac[i]
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = ","
             end
-            mc_teacher_classrooms = mc_teacher_classrooms .. ";1;false]"
+            mc_teacher_classrooms[#mc_teacher_classrooms + 1] = ";1;false]"
         end
-        mc_teacher_classrooms = mc_teacher_classrooms ..
-                "field[7.1,7;2.1,0.8;coursecode;Course Code;CONS340]" ..
-                "field[9.4,7;1.2,0.8;sectionnumber;Section Number;101]" ..
-                "label[7.1,8.35;Course START Date and Time]" ..
-                "dropdown[8.1,8.6;2.3,0.8;startmonth;January,February,March,April,May,June,July,August,September,October,November,December;9;false]" ..
-                "dropdown[7.1,8.6;0.9,0.8;startday;1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31;1;false]" ..
-                "dropdown[10.5,8.6;1.4,0.8;startyear;2022,2023;1;false]" ..
-                "dropdown[12.1,8.6;1.5,0.8;starthour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;9;false]" ..
-                "label[7.1,10;Course END Date and Time]" ..
-                "dropdown[8.1,10.25;2.3,0.8;endmonth;January,February,March,April,May,June,July,August,September,October,November,December;12;false]" ..
-                "dropdown[7.1,10.25;0.9,0.8;endday;1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31;1;false]" ..
-                "dropdown[10.5,10.25;1.4,0.8;endyear;2022,2023;1;false]" ..
-                "dropdown[12.1,10.25;1.5,0.8;endhour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;21;false]" ..
-                "dropdown[12.1,10.25;1.5,0.8;endhour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;21;false]" ..
-                "label[7.1,11.75;Map Selection]" ..
 
-                -- TODO: Dynamically populate the map list
-                "dropdown[7.1,12;6.5,0.8;map;vancouver_osm,MKRF512_all,MKRF512_slope,MKRF512_aspect,MKRF512_dtm;1;false]" ..
-                "button[9.625,13;4,0.8;submit;Create New Classroom]" ..
-                "button[0.375,13;2,0.8;back;Back]" ..
-                "button[2.575,13;2,0.8;deleteall;Delete All]"
+        -- TODO: Integrate asynchronous and automatic deletion of realms based on user-entered information below
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "field[7.1,7;2.1,0.8;coursecode;Course Code;CONS340]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "field[9.4,7;1.2,0.8;sectionnumber;Section Number;101]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "label[7.1,8.35;Course START Date and Time]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[8.1,8.6;2.3,0.8;startmonth;January,February,March,April,May,June,July,August,September,October,November,December;9;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[7.1,8.6;0.9,0.8;startday;1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31;1;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[10.5,8.6;1.4,0.8;startyear;2022,2023;1;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[12.1,8.6;1.5,0.8;starthour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;9;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "label[7.1,10;Course END Date and Time]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[8.1,10.25;2.3,0.8;endmonth;January,February,March,April,May,June,July,August,September,October,November,December;12;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[7.1,10.25;0.9,0.8;endday;1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31;1;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[10.5,10.25;1.4,0.8;endyear;2022,2023;1;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[12.1,10.25;1.5,0.8;endhour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;21;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[12.1,10.25;1.5,0.8;endhour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;21;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "label[7.1,11.75;Map Selection]"
 
+        -- TODO: Dynamically populate the realm/schematic list
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[7.1,12;6.5,0.8;map;vancouver_osm,MKRF512_all,MKRF512_slope,MKRF512_aspect,MKRF512_dtm;1;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "button[9.625,13;4,0.8;submit;Create New Classroom]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "button[0.375,13;2,0.8;back;Back]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "button[2.575,13;2,0.8;deleteall;Delete All]"
+        
         local pname = player:get_player_name()
-        minetest.show_formspec(pname, "mc_teacher:classrooms", mc_teacher_classrooms)
+        minetest.show_formspec(pname, "mc_teacher:classrooms", table.concat(mc_teacher_classrooms, ""))
         return true
     end
 end
 
 -- Define the Teacher Mail formspec
 local function get_reports_formspec(reports)
-    local mc_teacher_mail = "formspec_version[5]" ..
-            "size[15,10]" ..
-            "label[6.3,0.5;Reports Received]" ..
-            "textlist[0.3,1;14.4,8;;"
+    local mc_teacher_mail = {
+        "formspec_version[5]",
+        "size[15,10]",
+        "label[6.3,0.5;Reports Received]",
+        "textlist[0.3,1;14.4,8;;"
+    }
     -- Add the reports
     local reports_table = minetest_classroom.reports:to_table()["fields"]
     for k, v in pairs(reports_table) do
-        mc_teacher_mail = mc_teacher_mail .. k .. " " .. v .. ","
+        mc_teacher_mail[#mc_teacher_mail + 1] = k 
+        mc_teacher_mail[#mc_teacher_mail + 1] = " "
+        mc_teacher_mail[#mc_teacher_mail + 1] = v
+        mc_teacher_mail[#mc_teacher_mail + 1] = ","
     end
-    local mc_teacher_mail = mc_teacher_mail ..
-            ";1;false]" ..
-            "button[0.3,9.1;2,0.8;back;Back]" ..
-            "button[2.5,9.1;2.5,0.8;deleteall;Delete All]"
-    return mc_teacher_mail
+    mc_teacher_mail[#mc_teacher_mail + 1] = ";1;false]"
+    mc_teacher_mail[#mc_teacher_mail + 1] = "button[0.3,9.1;2,0.8;back;Back]"
+    mc_teacher_mail[#mc_teacher_mail + 1] = "button[2.5,9.1;2.5,0.8;deleteall;Delete All]"
+    return table.concat(mc_teacher_mail, "")
 end
 
 local function show_mail(player)
@@ -575,89 +591,8 @@ local function show_mail(player)
     end
 end
 
-local function get_species_formspec()
-	local species = table.concat(magnify.get_all_registered_species(), ",")
-	local formtable = {
-		"formspec_version[5]",
-		"size[12,8]",
-		"box[0.4,0.4;11.2,1;#378738]", -- #378742
-		"label[3.9,0.9;Plant Species Compendium]",
-		"textlist[0.4,1.6;11.2,4.8;species_list;", species, ";", context.species_selected or 1, ";false]",
-		"button[0.4,6.6;3.6,1;condensed_view;Standard View]",
-		"button[4.2,6.6;3.6,1;expanded_view;Technical View]",
-		"button[8,6.6;3.6,1;back;Back]"
-	}
-	return table.concat(formtable, "")
-end
-
-local function get_condensed_species_formspec(info)
-	-- add condensed table here
-	local formtable = {  
-    	"formspec_version[5]",
-		"size[18.2,7.7]",
-		"box[0.4,0.4;11.6,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), "]",
-		"label[0.5,0.7;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
-		"label[0.5,1.2;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
-    	"label[0.5,1.7;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
-		"image[12.4,0.4;5.4,5.4;", minetest.formspec_escape(info.texture or "test.png"), "]",
-    
-		"label[0.4,2.5;-]",
-    	"label[0.4,3;-]",
-		"label[0.4,3.5;-]",
-    	"label[0.4,4;-]",
-		"label[0.7,2.5;", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "]",
-    	"label[0.7,3;", minetest.formspec_escape((info.region and "Native to "..info.region) or "Native region unknown"), "]",
-		"label[0.7,3.5;", minetest.formspec_escape(info.height or "Height unknown"), "]",
-		"label[0.7,4;", minetest.formspec_escape(info.bloom or "Bloom pattern unknown"), "]",
-		
-    	"textarea[0.35,4.45;11.5,1.3;;;", minetest.formspec_escape(info.more_info or ""), "]",
-    	"label[0.4,6.25;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
-		"label[0.4,6.75;", minetest.formspec_escape((info.external_link and "You can find more information at:") or ""), "]",
-    	"textarea[0.35,6.9;11.6,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
-		
-    	"button[12.4,6.1;5.4,1.2;back;Back]"
-    }
-	return table.concat(formtable, "")
-end
-
-local function get_expanded_species_formspec(info, nodes, ref)
-	-- add expanded table here
-	local formtable = {    
-    	"formspec_version[5]",
-		"size[14,8.2]",
-		"box[0.4,0.4;13.2,1;#9192a3]",
-		"label[5.4,0.9;Technical Information]",
-		"label[0.4,1.9;", info.com_name or info.sci_name or "Unknown", " (", ref, ")]",
-		"image[8.8,1.7;4.8,4.8;", info.texture or "test.png", "]",
-		"textlist[0.4,2.8;8.1,3.7;associated_blocks;", table.concat(nodes, ","), ";1;false]",
-		"label[0.4,2.5;Associated nodes:]",
-		"button[4.8,6.8;4.4,1;back;Back]"
-	}
-	return table.concat(formtable, "")
-end
-
-local function show_species(player)
-	if check_perm(player) then
-		if not context.species_selected then
-			context.species_selected = 1
-		end
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_teacher:species_menu", get_species_formspec())
-		return true
-	end
-end
-
-local function get_species_ref(index)
-  	local list = magnify.get_all_registered_species()
-	local elem = list[tonumber(index)]
-	local ref_num_split = string.split(elem, ":") -- "###num:rest"
-  	local ref_str = ref_num_split[1]
-	local ref_num = string.sub(ref_str, 4) -- removes "###" from "###num"
-	
-	return "ref_"..ref_num
-end
-
 -- TODO: add Change Server Rules to the menu
+-- Use the "rules" (Manage Server Rules) button
 
 -- Processing the form from the menu
 minetest.register_on_player_receive_fields(function(player, formname, fields)
@@ -674,9 +609,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     -- Menu
     if formname == "mc_teacher:menu" then
         if fields.spawn then
-
-            local spawnRealm = mc_worldManager.GetSpawnRealm()
-            spawnRealm:TeleportPlayer(player)
+	    -- Temporary patch to stop server from crashing
+            --local spawnRealm = mc_worldManager.GetSpawnRealm()
+            --spawnRealm:TeleportPlayer(player)
+            local spawn_pos = {
+            	x = 1426,
+            	y = 92,
+            	z = 1083,
+             }
+             player:set_pos(spawn_pos)		
         elseif fields.tasks then
             show_tasks(player)
         elseif fields.lessons then
@@ -687,8 +628,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             show_players(player)
         elseif fields.mail then
             show_mail(player)
-        elseif fields.species then
-            show_species(player)
         end
     end
 
@@ -871,44 +810,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             return
         end
     end
-    
-    if formname == "mc_teacher:species_menu" then
-		if fields.back then
-		  	show_teacher_menu(player)
-		elseif fields.species_list then
-        	local event = minetest.explode_textlist_event(fields.species_list)
-        	if event.type == "CHG" then
-        		context.species_selected = event.index
-        	end
-		elseif fields.condensed_view or fields.expanded_view then
-			if context.species_selected then
-      			local ref = get_species_ref(context.species_selected)
-          		local full_info = magnify.get_species_from_ref(ref)
-
-				if full_info ~= nil then
-          			if fields.condensed_view then -- condensed
-						minetest.show_formspec(pname, "mc_teacher:species_condensed", get_condensed_species_formspec(full_info.data))
-            		else -- expanded
-            			minetest.show_formspec(pname, "mc_teacher:species_expanded", get_expanded_species_formspec(full_info.data, full_info.nodes, ref))
-            		end
-				else
-					minetest.chat_send_player(pname, "An entry for this species exists, but could not be found in the plant database.\nPlease check your server's plant database files to ensure all plants were registered properly.")
-				end	
-        	end
-		end
-	end
-	
-	if formname == "mc_teacher:species_condensed" then
-      	if fields.back then 
-        	show_species(player)
-	    end
-    end
-    
-    if formname == "mc_teacher:species_expanded" then
-      	if fields.back then
-          	show_species(player)
-      	end
-    end
 end)
 
 function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
@@ -1022,11 +923,11 @@ minetest.register_tool(tool_name, {
 })
 
 -- Tool handling functions:
-    -- Give the controller to any player who joins with teacher privileges or take away the controller if they do not have teacher
-    -- Give the controller to any player who is granted teacher
-    -- Take the controller away from anyone who is revoked teacher
+    -- Give the controller to any player who joins with adequate privileges or take away the controller if they do not have them
+    -- Give the controller to any player who is granted adequate privileges
+    -- Take the controller away from anyone who is revoked privileges and no longer has adequate ones
 
--- Give the controller to any player who joins with teacher privileges or take away the controller if they do not have teacher
+-- Give the controller to any player who joins with adequate privileges or take away the controller if they do not have them
 minetest.register_on_joinplayer(function(player)
     local inv = player:get_inventory()
     if inv:contains_item("main", ItemStack(tool_name)) then
@@ -1049,7 +950,8 @@ minetest.register_on_joinplayer(function(player)
         end
     end
 end)
--- Give the controller to any player who is granted teacher
+
+-- Give the controller to any player who is granted adequate privileges
 minetest.register_on_priv_grant(function(name, granter, priv)
     -- Check if priv has an effect on the privileges needed for the tool
     if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
@@ -1065,7 +967,8 @@ minetest.register_on_priv_grant(function(name, granter, priv)
 
     return true -- continue to next callback
 end)
--- Take the controller away from anyone who is revoked teacher
+
+-- Take the controller away from anyone who is revoked privileges and no longer has adequate ones
 minetest.register_on_priv_revoke(function(name, revoker, priv)
     -- Check if priv has an effect on the privileges needed for the tool
     if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then

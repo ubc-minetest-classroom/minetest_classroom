@@ -2,16 +2,17 @@ magnify_plants = minetest.get_mod_storage()
 dofile(minetest.get_modpath("magnify") .. "/api.lua")
 
 local tool_name = "magnify:magnifying_tool"
-local priv_table = {"shout"}
+local priv_table = {"interact"}
 
--- Checks for the 'shout' privilege (mirrors behavious in mc_student)
+-- Checks for adequate privileges
 local function check_perm_name(name)
-    return minetest.check_player_privs(name, {shout = true})
+    return minetest.check_player_privs(name, {interact = true})
 end
 local function check_perm(player)
     return check_perm_name(player:get_player_name())
 end
 
+-- Clears the plant database
 local function clear_table()
     local storage_data = magnify_plants:to_table()
     for k,v in pairs(storage_data.fields) do
@@ -152,11 +153,11 @@ sfinv.register_page("magnify:compendium", {
 })
 
 -- Tool handling functions:
-    -- Give the magnifying tool to any player who joins with shout privileges or take it away if they do not have shout
-    -- Give the magnifying tool to any player who is granted shout
-    -- Take the magnifying tool away from anyone who is revoked shout
+    -- Give the magnifying tool to any player who joins with adequate privileges or take it away if they do not have them
+    -- Give the magnifying tool to any player who is granted adequate privileges
+    -- Take the magnifying tool away from anyone who is revoked privileges and no longer has adequate ones
 
--- Give the magnifying tool to any player who joins with shout privileges or take it away if they do not have shout
+-- Give the magnifying tool to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
     local inv = player:get_inventory()
     if inv:contains_item("main", ItemStack(tool_name)) then
@@ -180,7 +181,7 @@ minetest.register_on_joinplayer(function(player)
     end
 end)
 
--- Give the magnifying tool to any player who is granted shout
+-- Give the magnifying tool to any player who is granted adequate privileges
 minetest.register_on_priv_grant(function(name, granter, priv)
     -- Check if priv has an effect on the privileges needed for the tool
     if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
@@ -197,7 +198,7 @@ minetest.register_on_priv_grant(function(name, granter, priv)
     return true -- continue to next callback
 end)
 
--- Take the magnifying tool away from anyone who is revoked shout
+-- Take the magnifying tool away from anyone who is revoked privileges and no longer has adequate ones
 minetest.register_on_priv_revoke(function(name, revoker, priv)
     -- Check if priv has an effect on the privileges needed for the tool
     if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
