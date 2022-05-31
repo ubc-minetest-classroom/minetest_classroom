@@ -18,11 +18,6 @@ function Realm:ClearNodes()
         -- Send progress message
         if context.total_blocks == context.loaded_blocks then
             minetest.chat_send_all("Finished deleting realm!")
-        else
-            local perc = 100 * context.loaded_blocks / context.total_blocks
-            local msg = string.format("deleting realm %d %d/%d (%.2f%%) done!",
-                    context.realm.ID, context.loaded_blocks, context.total_blocks, perc)
-            minetest.chat_send_all(msg)
         end
 
         local pos1 = { x = blockpos.x * 16, y = blockpos.y * 16, z = blockpos.z * 16 }
@@ -34,6 +29,8 @@ function Realm:ClearNodes()
     local context = {} -- persist data between callback calls
     context.realm = self
     minetest.emerge_area(self.StartPos, self.EndPos, emerge_callback, context)
+
+    minetest.chat_send_all("[INFO] Started cleaning up a realm, block placement might act unresponsive for a moment.")
 end
 
 ---@public
