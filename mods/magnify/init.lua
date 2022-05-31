@@ -78,12 +78,12 @@ minetest.register_tool(tool_name, {
 --- @return string
 --- @see magnify.get_all_registered_species()
 local function get_species_ref(index)
-  	local list = magnify.get_all_registered_species()
-	local elem = list[tonumber(index)]
-	local ref_num_split = string.split(elem, ":") -- "###num:rest"
-  	local ref_str = ref_num_split[1]
-	local ref_num = string.sub(ref_str, 4) -- removes "###" from "###num"
-	return "ref_"..ref_num
+      local list = magnify.get_all_registered_species()
+    local elem = list[tonumber(index)]
+    local ref_num_split = string.split(elem, ":") -- "###num:rest"
+      local ref_str = ref_num_split[1]
+    local ref_num = string.sub(ref_str, 4) -- removes "###" from "###num"
+    return "ref_"..ref_num
 end
 
 --- Dynamically creates a square table of node images
@@ -131,69 +131,70 @@ end
 --- @return formspec string
 local function get_expanded_species_formspec(info, nodes, ref)
     local sorted_nodes = table.sort(nodes, function(a, b) return a < b end)
-	local formtable = {    
-    	"formspec_version[5]",
-		"size[14,8.2]",
-		"box[0.4,0.4;13.2,1;#9192a3]",
-		"label[5.4,0.9;Technical Information]",
-		"label[0.4,1.9;", info.com_name or info.sci_name or "Unknown", " (", ref, ")]",
-		"textlist[0.4,2.8;8.1,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
-		"label[0.4,2.5;Associated nodes:]",
-		"button_exit[4.8,6.8;4.4,1;back;Back]",
+    local formtable = {    
+        "formspec_version[5]",
+        "size[14,8.2]",
+        "box[0.4,0.4;13.2,1;#9192a3]",
+        "label[5.4,0.9;Technical Information]",
+        "label[0.4,1.9;", info.com_name or info.sci_name or "Unknown", " (", ref, ")]",
+        "textlist[0.4,2.8;8.1,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
+        "label[0.4,2.5;Associated nodes:]",
+        "button_exit[4.8,6.8;4.4,1;back;Back]",
         create_image_table(sorted_nodes or nodes, 8.8, 1.7, 4.8)
-	}
-	return table.concat(formtable, "")
+    }
+    return table.concat(formtable, "")
 end
 
 -- Registers the plant compendium as an inventory tab
 sfinv.register_page("magnify:compendium", {
-	title = "Plant Compendium", -- add translations
-	get = function(self, player, context)
-		-- refactor implementation from mc_teacher
-      	local species = table.concat(magnify.get_all_registered_species(), ",")
+    title = "Plant Compendium", -- add translations
+    get = function(self, player, context)
+        -- refactor implementation from mc_teacher
+          local species = table.concat(magnify.get_all_registered_species(), ",")
         local formtable = {
-			"bgcolor[#00FF00;true]", -- #172e1b
+            "bgcolor[#00FF00;true]", -- #172e1b
             "textlist[0,0;7.8,3.75;species_list;", species, ";", context.species_selected or 1, ";false]",
             "button[0,4.05;4,0.6;standard_view;View Species]",
             "button[4,4.05;4,0.6;technical_view;View Technical Info]"
         }
         return sfinv.make_formspec(player, context, table.concat(formtable, ""), true)
-	end,
-	on_enter = function(self, player, context)
-		if context.species_selected == nil then
-			context.species_selected = 1
-		end
-	end,
-on_player_receive_fields = function(self, player, context, fields)
-    if fields.species_list then
-        local event = minetest.explode_textlist_event(fields.species_list)
-        if event.type == "CHG" then
-        	context.species_selected = event.index
-        	end
-		elseif fields.standard_view or fields.technical_view then
-			if context.species_selected then
-              -- refresh inventory formspec
-              sfinv.set_player_inventory_formspec(player)
+    end,
+    on_enter = function(self, player, context)
+        if context.species_selected == nil then
+            context.species_selected = 1
+        end
+    end,
+    on_player_receive_fields = function(self, player, context, fields)
+        if fields.species_list then
+            local event = minetest.explode_textlist_event(fields.species_list)
+            if event.type == "CHG" then
+                context.species_selected = event.index
+            end
+        elseif fields.standard_view or fields.technical_view then
+            if context.species_selected then
+                -- refresh inventory formspec
+                sfinv.set_player_inventory_formspec(player)
 
-      		    local ref = get_species_ref(context.species_selected)
-          		local full_info = magnify.get_species_from_ref(ref)
-          		local pname = player:get_player_name()
-				if full_info ~= nil then
-          			if fields.standard_view then -- standard
-						minetest.show_formspec(pname, "magnify:species_standard", magnify.build_formspec_from_ref(ref, true))
-            		else -- technical
-            			minetest.show_formspec(pname, "magnify:species_technical", get_expanded_species_formspec(full_info.data, full_info.nodes, ref))
-            		end
-				else
-					minetest.chat_send_player(pname, "An entry for this species exists, but could not be found in the plant database.\nPlease contact an administrator and ask them to check your server's plant database files to ensure all plants were registered properly.")
-				end	
-        	end
-		end
-	end,
-	is_in_nav = function(self, player, context)
-		-- only shows the compendium to players with adequate privileges
-		return check_perm(player)
-	end
+                local ref = get_species_ref(context.species_selected)
+                local full_info = magnify.get_species_from_ref(ref)
+                local pname = player:get_player_name()
+
+                if full_info ~= nil then
+                    if fields.standard_view then -- standard
+                        minetest.show_formspec(pname, "magnify:species_standard", magnify.build_formspec_from_ref(ref, true))
+                    else -- technical
+                        minetest.show_formspec(pname, "magnify:species_technical", get_expanded_species_formspec(full_info.data, full_info.nodes, ref))
+                    end
+                else
+                    minetest.chat_send_player(pname, "An entry for this species exists, but could not be found in the plant database.\nPlease contact an administrator and ask them to check your server's plant database files to ensure all plants were registered properly.")
+                end    
+            end
+        end
+    end,
+    is_in_nav = function(self, player, context)
+        -- only shows the compendium to players with adequate privileges
+        return check_perm(player)
+    end
 })
 
 -- Tool handling functions:
