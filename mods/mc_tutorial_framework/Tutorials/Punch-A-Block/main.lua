@@ -33,18 +33,18 @@ function punchABlock.progress(player)
                   reward = ItemStack("default:shovel_steel") }
 
     levels[1] = { key = "Break:mc_tf:shovelBreakable", goal = 4,
-                  welcomeText = "Level up! Use your new shovel to break the ____ blocks!",
+                  welcomeText = "Level up! Use the new shovel that has been deposited into your inventory to break the pink blocks!",
                   helpText = "Shovel Breakable Blocks",
                   reward = ItemStack("default:pick_steel") }
 
     levels[2] = { key = "Break:mc_tf:pickBreakable", goal = 4,
                   helpText = "Pickaxe Breakable Blocks",
-                  welcomeText = "Level up! Use your new pickaxe to break the ____ blocks!",
+                  welcomeText = "Level up! Use your new pickaxe to break the dark green blocks!",
                   reward = ItemStack("default:axe_steel") }
 
     levels[3] = { key = "Break:mc_tf:axeBreakable", goal = 4,
                   helpText = "Axe Breakable Blocks",
-                  welcomeText = "Level Up! You're now a lumberjack! Go cut some wood",
+                  welcomeText = "Level Up! You're now a lumberjack! Go cut some wood (purple blocks)",
                   reward = ItemStack("default:diamond") }
 
     local level = levels[punchABlock.tutorialStage[player]]
@@ -61,10 +61,12 @@ function punchABlock.progress(player)
         level = levels[punchABlock.tutorialStage[player]]
 
         if (level == nil) then
+            mc_tutorialFramework.infoWindow.show_to(player, "Congratulations! You finished the tutorial")
             minetest.chat_send_player(player:get_player_name(), "Congratulations! You finished the tutorial")
-            endTutorial(nil, player)
+            punchABlock.endTutorial(nil, player)
         else
             if (level.welcomeText ~= nil) then
+                mc_tutorialFramework.infoWindow.show_to(player, level.welcomeText)
                 minetest.chat_send_player(player:get_player_name(), level.welcomeText)
             end
         end
@@ -81,7 +83,14 @@ function punchABlock.startTutorial(realm, player)
     punchABlock.removeHUD(player)
     local pmeta = player:get_meta()
 
-    minetest.chat_send_player(player:get_player_name(), "Welcome to the punch-a-block tutorial. Eventually this will be formspec instructions.")
+    mc_tutorialFramework.infoWindow.show_to(player, "Welcome to the punch-a-block tutorial." ..
+            "This tutorial aims to teach you how to destroy blocks (called nodes)." ..
+            "To destroy a node, press and hold the left mouse button while" ..
+            "your mouse cursor is above a block. Some nodes are protected or require special tools to destroy." ..
+            "You will know if you can destroy a node from the crack-overlay that builds when clicking on the block." ..
+            "To get started, find the pile of nodes in-front of you that can be broken by hand. Destroy 5 of these blocks." ..
+            "You can track your progress    in your upper right hand of the screen")
+    minetest.chat_send_player(player:get_player_name(), "Welcome to the punch-a-block tutorial.")
 
     punchABlock.CreateHUD(player)
 
