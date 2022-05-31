@@ -2,9 +2,16 @@
 minetest_classroom.reports = minetest.get_mod_storage()
 minetest_classroom.mc_students = {teachers = {}}
 
--- Check for shout priv
+-- Local variables
+local tool_name = "mc_student:notebook"
+local priv_table = {"interact"}
+
+-- Check for adequate privileges
+local function check_perm_name(name)
+    return minetest.check_player_privs(name, {interact = true})
+end
 local function check_perm(player)
-	return minetest.check_player_privs(player:get_player_name(), { shout = true })
+    return check_perm_name(player:get_player_name())
 end
 
 -- Split pos in coordlist from character "x=1 y=2 z=3" to numeric table {1,2,3}
@@ -19,16 +26,16 @@ end
 
 -- Define an initial formspec that will redirect to different formspecs depending on what the teacher wants to do
 local mc_student_menu =
-		"formspec_version[5]"..
-		"size[7,14]"..
-		"label[1.7,0.7;What do you want to do?]"..
-		"button[2,1.6;3,1.3;spawn;Go to UBC]"..
-		"button[2,3.3;3,1.3;accesscode;Join Classroom]"..
-		"button[2,5;3,1.3;report;Report]"..
-		"button[2,6.7;3,1.3;coordinates;My Coordinates]"..
-		"button[2,8.4;3,1.3;marker;Place a Marker]"..
-		"button[2,10.2;3,1.3;taskstudent;View Tasks]"..
-		"button_exit[2,11.8;3,1.3;exit;Exit]"
+	"formspec_version[5]"..
+	"size[10,9]"..
+	"label[3.1,0.7;What do you want to do?]"..
+	"button[1,1.6;3.8,1.3;spawn;Go to UBC]"..
+	"button[5.2,1.6;3.8,1.3;accesscode;Join Classroom]"..
+	"button[1,3.3;3.8,1.3;coordinates;My Coordinates]"..
+	"button[5.2,3.3;3.8,1.3;marker;Place a Marker]"..
+	"button[1,5;3.8,1.3;taskstudent;View Tasks]"..
+	"button[5.2,5;3.8,1.3;report;Report]"..
+	"button_exit[3.1,6.7;3.8,1.3;exit;Exit]"
 
 local function show_student_menu(player)
 	if check_perm(player) then
@@ -492,13 +499,13 @@ function check_access_code(submitted, codes)
 end
 
 -- The student notebook for accessing the student actions
-minetest.register_tool("mc_student:notebook" , {
+minetest.register_tool(tool_name , {
 	description = "Notebook for students",
 	inventory_image = "notebook.png",
 	-- Left-click the tool activates the teacher menu
 	on_use = function (itemstack, user, pointed_thing)
         local pname = user:get_player_name()
-		-- Check for shout privileges
+		-- Check for adequate privileges
 		if check_perm(user) then
 			show_student_menu(user)
 		end
@@ -510,22 +517,27 @@ minetest.register_tool("mc_student:notebook" , {
 })
 
 -- Give the notebook and tutorialbook to any player who joins with shout privileges or take them away if they do not have shout
+
+-- Tool handling functions:
+    -- Give the notebook to any player who joins with adequate privileges or take away the notebook if they do not have them
+    -- Give the notebook to any player who is granted adequate privileges
+    -- Take the notebook away from anyone who is revoked privileges and no longer has adequate ones
 minetest.register_on_joinplayer(function(player)
 	local inv = player:get_inventory()
-	if inv:contains_item("main", ItemStack("mc_student:notebook")) then
+	if inv:contains_item("main", ItemStack(tool_name)) then
 		-- Player has the notebook
 		if check_perm(player) then
 			-- The player should have the notebook
 			return
 		else
 			-- The player should not have the notebook
-			player:get_inventory():remove_item('main', 'mc_student:notebook')
+			player:get_inventory():remove_item('main', tool_name)
 		end
 	else
 		-- Player does not have the notebook
 		if check_perm(player) then
 			-- The player should have the notebook
-			player:get_inventory():add_item('main', 'mc_student:notebook')
+			player:get_inventory():add_item('main', tool_name)
 		else
 			-- The player should not have the notebook
 			return
@@ -546,6 +558,42 @@ minetest.register_on_joinplayer(function(player)
 			return
 		end
 	end
+end)
+
+-- Give the notebook to any player who is granted adequate privileges
+minetest.register_on_priv_grant(function(name, granter, priv)
+    -- Check if priv has an effect on the privileges needed for the tool
+    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
+        return true -- skip this callback, continue to next callback
+    end
+
+    local player = minetest.get_player_by_name(name)
+    local inv = player:get_inventory()
+
+    if (not inv:contains_item("main", ItemStack(tool_name))) and check_perm_name(name) then
+        -- Give the player the tool
+        player:get_inventory():add_item('main', tool_name)
+    end
+
+    return true -- continue to next callback
+end)
+
+-- Take the notebook away from anyone who is revoked privileges and no longer has adequate ones
+minetest.register_on_priv_revoke(function(name, revoker, priv)
+    -- Check if priv has an effect on the privileges needed for the tool
+    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
+        return true -- skip this callback, continue to next callback
+    end
+
+    local player = minetest.get_player_by_name(name)
+    local inv = player:get_inventory()
+	
+    if inv:contains_item("main", ItemStack(tool_name)) and (not check_perm_name(name)) then
+        -- Take the tool away from the player
+        player:get_inventory():remove_item('main', tool_name)
+    end
+
+    return true -- continue to next callback
 end)
 
 -- Functions and variables for placing markers
