@@ -95,7 +95,8 @@ local function get_expanded_species_formspec(info, nodes, ref)
 		"box[0.4,0.4;13.2,1;#9192a3]",
 		"label[5.4,0.9;Technical Information]",
 		"label[0.4,1.9;", info.com_name or info.sci_name or "Unknown", " (", ref, ")]",
-		"image[8.8,1.7;4.8,4.8;", info.texture or "test.png", "]",
+		--"image[8.8,1.7;4.8,4.8;", info.texture or "test.png", "]",
+		"item_image[8.8,1.7;4.8,4.8;dirt]",
 		"textlist[0.4,2.8;8.1,3.7;associated_blocks;", table.concat(nodes, ","), ";1;false]",
 		"label[0.4,2.5;Associated nodes:]",
 		"button_exit[4.8,6.8;4.4,1;back;Back]"
