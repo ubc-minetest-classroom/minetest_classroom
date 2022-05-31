@@ -8,7 +8,6 @@ dofile(mc_tutorialFramework.path .. "/PopupInfoWindow.lua")
 schematicManager.registerSchematicPath("testSchematic", mc_tutorialFramework.path .. "/realmTemplates/TestSchematic")
 schematicManager.registerSchematicPath("punchABlockSchematic", mc_tutorialFramework.path .. "/realmTemplates/punchABlock")
 
-mc_realmportals.newPortal("mc_tf", "tf_testRealm", false, "testSchematic")
 mc_realmportals.newPortal("mc_tf", "tf_punchABlock", true, "punchABlockSchematic")
 
 pab.CreateBlockFromGroups({ oddly_breakable_by_hand = 3 }, "mc_tf:handBreakable", punchABlock.blockDestroyed)

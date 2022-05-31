@@ -120,6 +120,7 @@ function punchABlock.endTutorial(realm, player)
 
     punchABlock.removeHUD(player)
     mc_worldManager.GetSpawnRealm():TeleportPlayer(player)
+    -- realm:Delete() -- need to figure out how to make the portals re-create the realm when it's destroyed
 end
 
 function punchABlock.CreateHUD(player, statKey, Goal, HelpText)
