@@ -52,39 +52,43 @@ minetest.register_on_joinplayer(function(player)
 end)
 
 -- Define an initial formspec that will redirect to different formspecs depending on what the teacher wants to do
-local mc_teacher_menu =
-	"formspec_version[5]"..
-	"size[10,9]"..
-	"label[3.1,0.7;What do you want to do?]"..
-	"button[1,1.6;3.8,1.3;spawn;Go to UBC]"..
-	"button[5.2,1.6;3.8,1.3;tasks;Manage Tasks]"..
-	"button[1,3.3;3.8,1.3;lessons;Manage Lessons]"..
-	"button[5.2,3.3;3.8,1.3;players;Manage Players]"..
-	"button[1,5;3.8,1.3;classrooms;Manage Classrooms]"..
-	"button[5.2,5;3.8,1.3;mail;Teacher Mail]"..
-	"button_exit[3.1,6.7;3.8,1.3;exit;Exit]"
+local mc_teacher_menu = {
+	"formspec_version[5]",
+	"size[10,9]",
+	"label[3.2,0.7;What do you want to do?]",
+	"button[1,1.6;3.8,1.3;spawn;Go to UBC]",
+	"button[5.2,1.6;3.8,1.3;tasks;Manage Tasks]",
+	"button[1,3.3;3.8,1.3;lessons;Manage Lessons]",
+	"button[5.2,3.3;3.8,1.3;players;Manage Players]",
+	"button[1,5;3.8,1.3;classrooms;Manage Classrooms]",
+	"button[5.2,5;3.8,1.3;species;Plant Compendium]",
+	"button[1,6.7;3.8,1.3;mail;Teacher Mail]",
+	"button_exit[5.2,6.7;3.8,1.3;exit;Exit]"
+}
 
 local function show_teacher_menu(player)
     if check_perm(player) then
         local pname = player:get_player_name()
-        minetest.show_formspec(pname, "mc_teacher:menu", mc_teacher_menu)
+        minetest.show_formspec(pname, "mc_teacher:menu", table.concat(mc_teacher_menu,""))
         return true
     end
 end
 
 -- Define the Manage Tasks formspec (teacher-view)
-local mc_teacher_tasks = "formspec_version[5]" ..
-        "size[10,13]" ..
-        "field[0.375,0.75;9.25,0.8;task;Enter task below;]" ..
-        "textarea[0.375,2.5;9.25,7;instructions;Enter instructions below;]" ..
-        "field[0.375,10.5;9.25,0.8;timer;Enter timer for task in seconds (0 or blank = no timer);]" ..
-        "button[0.375,11.5;2,0.8;back;Back]" ..
-        "button_exit[2.575,11.5;2,0.8;submit;Submit]"
+local mc_teacher_tasks = {
+	"formspec_version[5]",
+	"size[10,13]",
+	"field[0.375,0.75;9.25,0.8;task;Enter task below;]",
+	"textarea[0.375,2.5;9.25,7;instructions;Enter instructions below;]",
+	"field[0.375,10.5;9.25,0.8;timer;Enter timer for task in seconds (0 or blank = no timer);]",
+	"button[0.375,11.5;2,0.8;back;Back]",
+	"button_exit[2.575,11.5;2,0.8;submit;Submit]"
+}
 
 local function show_tasks(player)
     if check_perm(player) then
         local pname = player:get_player_name()
-        minetest.show_formspec(pname, "mc_teacher:tasks", mc_teacher_tasks)
+        minetest.show_formspec(pname, "mc_teacher:tasks", table.concat(mc_teacher_tasks,""))
         return true
     end
 end
@@ -464,8 +468,8 @@ local function show_players(player)
 end
 
 -- Define the Manage Lessons formspec
-local mc_teacher_lessons = "formspec_version[5]" ..
-        ""
+-- TODO: incorporate or abandon this feature
+local mc_teacher_lessons = "formspec_version[5]"
 
 local function show_lessons(player)
     if check_perm(player) then
@@ -478,11 +482,13 @@ end
 -- Define the Manage Classrooms formspec
 local function show_classrooms(player)
     if check_perm(player) then
-        mc_teacher_classrooms = "formspec_version[5]" ..
-                "size[14,14]" ..
-                "label[0.4,0.8;Your Classrooms]" ..
-                "button[0.375,6.5;4,0.8;join;Join Selected Classroom]" ..
+        local mc_teacher_classrooms = { 
+                "formspec_version[5]",
+                "size[14,14]",
+                "label[0.4,0.8;Your Classrooms]",
+                "button[0.375,6.5;4,0.8;join;Join Selected Classroom]",
                 "button[0.375,7.5;4,0.8;delete;Delete Selected Classroom]"
+        }
 
         -- Get the stored classrooms for the teacher
         pmeta = player:get_meta()
@@ -495,10 +501,9 @@ local function show_classrooms(player)
 
         if pdata == nil then
             -- No classrooms stored, so return an empty list element
-            mc_teacher_classrooms = mc_teacher_classrooms ..
-                    "textlist[0.4,1.1;13.2,5.2;classroomlist;No Courses Found;1;false]"
+            mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "textlist[0.4,1.1;13.2,5.2;classroomlist;No Courses Found;1;false]"
         else
-            mc_teacher_classrooms = mc_teacher_classrooms .. "textlist[0.4,1.1;13.2,5.2;classroomlist;"
+            mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "textlist[0.4,1.1;13.2,5.2;classroomlist;"
             -- Some classrooms were found, so iterate the list
             pcc = pdata.course_code
             psn = pdata.section_number
@@ -512,54 +517,72 @@ local function show_classrooms(player)
             map = pdata.classroom_map
             rid = pdata.realm_id
             for i in pairs(pcc) do
-                mc_teacher_classrooms = mc_teacher_classrooms .. pcc[i] .. " " .. psn[i] .. " " .. map[i] .. " Expires " .. pem[i] .. " " .. ped[i] .. " " .. pey[i] .. " Access Code = " .. pac[i] .. ","
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = pcc[i]
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " "
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] =  psn[i]
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " "
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] =  map[i]
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " Expires "
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = pem[i] 
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " "
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = ped[i]
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " "
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = pey[i]
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " Access Code = "
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = pac[i]
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = ","
             end
-            mc_teacher_classrooms = mc_teacher_classrooms .. ";1;false]"
+            mc_teacher_classrooms[#mc_teacher_classrooms + 1] = ";1;false]"
         end
-        mc_teacher_classrooms = mc_teacher_classrooms ..
-                "field[7.1,7;2.1,0.8;coursecode;Course Code;CONS340]" ..
-                "field[9.4,7;1.2,0.8;sectionnumber;Section Number;101]" ..
-                "label[7.1,8.35;Course START Date and Time]" ..
-                "dropdown[8.1,8.6;2.3,0.8;startmonth;January,February,March,April,May,June,July,August,September,October,November,December;9;false]" ..
-                "dropdown[7.1,8.6;0.9,0.8;startday;1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31;1;false]" ..
-                "dropdown[10.5,8.6;1.4,0.8;startyear;2022,2023;1;false]" ..
-                "dropdown[12.1,8.6;1.5,0.8;starthour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;9;false]" ..
-                "label[7.1,10;Course END Date and Time]" ..
-                "dropdown[8.1,10.25;2.3,0.8;endmonth;January,February,March,April,May,June,July,August,September,October,November,December;12;false]" ..
-                "dropdown[7.1,10.25;0.9,0.8;endday;1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31;1;false]" ..
-                "dropdown[10.5,10.25;1.4,0.8;endyear;2022,2023;1;false]" ..
-                "dropdown[12.1,10.25;1.5,0.8;endhour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;21;false]" ..
-                "dropdown[12.1,10.25;1.5,0.8;endhour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;21;false]" ..
-                "label[7.1,11.75;Map Selection]" ..
 
-                -- TODO: Dynamically populate the map list
-                "dropdown[7.1,12;6.5,0.8;map;vancouver_osm,MKRF512_all,MKRF512_slope,MKRF512_aspect,MKRF512_dtm;1;false]" ..
-                "button[9.625,13;4,0.8;submit;Create New Classroom]" ..
-                "button[0.375,13;2,0.8;back;Back]" ..
-                "button[2.575,13;2,0.8;deleteall;Delete All]"
+        -- TODO: Integrate asynchronous and automatic deletion of realms based on user-entered information below
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "field[7.1,7;2.1,0.8;coursecode;Course Code;CONS340]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "field[9.4,7;1.2,0.8;sectionnumber;Section Number;101]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "label[7.1,8.35;Course START Date and Time]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[8.1,8.6;2.3,0.8;startmonth;January,February,March,April,May,June,July,August,September,October,November,December;9;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[7.1,8.6;0.9,0.8;startday;1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31;1;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[10.5,8.6;1.4,0.8;startyear;2022,2023;1;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[12.1,8.6;1.5,0.8;starthour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;9;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "label[7.1,10;Course END Date and Time]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[8.1,10.25;2.3,0.8;endmonth;January,February,March,April,May,June,July,August,September,October,November,December;12;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[7.1,10.25;0.9,0.8;endday;1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31;1;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[10.5,10.25;1.4,0.8;endyear;2022,2023;1;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[12.1,10.25;1.5,0.8;endhour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;21;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[12.1,10.25;1.5,0.8;endhour;00:00,01:00,02:00,03:00,04:00,05:00,06:00,07:00,08:00,09:00,10:00,11:00,12:00,13:00,14:00,15:00,16:00,17:00,18:00,19:00,20:00,21:00,22:00,23:00;21;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "label[7.1,11.75;Map Selection]"
 
+        -- TODO: Dynamically populate the realm/schematic list
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "dropdown[7.1,12;6.5,0.8;map;vancouver_osm,MKRF512_all,MKRF512_slope,MKRF512_aspect,MKRF512_dtm;1;false]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "button[9.625,13;4,0.8;submit;Create New Classroom]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "button[0.375,13;2,0.8;back;Back]"
+        mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "button[2.575,13;2,0.8;deleteall;Delete All]"
+        
         local pname = player:get_player_name()
-        minetest.show_formspec(pname, "mc_teacher:classrooms", mc_teacher_classrooms)
+        minetest.show_formspec(pname, "mc_teacher:classrooms", table.concat(mc_teacher_classrooms, ""))
         return true
     end
 end
 
 -- Define the Teacher Mail formspec
 local function get_reports_formspec(reports)
-    local mc_teacher_mail = "formspec_version[5]" ..
-            "size[15,10]" ..
-            "label[6.3,0.5;Reports Received]" ..
-            "textlist[0.3,1;14.4,8;;"
+    local mc_teacher_mail = {
+        "formspec_version[5]",
+        "size[15,10]",
+        "label[6.3,0.5;Reports Received]",
+        "textlist[0.3,1;14.4,8;;"
+    }
     -- Add the reports
     local reports_table = minetest_classroom.reports:to_table()["fields"]
     for k, v in pairs(reports_table) do
-        mc_teacher_mail = mc_teacher_mail .. k .. " " .. v .. ","
+        mc_teacher_mail[#mc_teacher_mail + 1] = k 
+        mc_teacher_mail[#mc_teacher_mail + 1] = " "
+        mc_teacher_mail[#mc_teacher_mail + 1] = v
+        mc_teacher_mail[#mc_teacher_mail + 1] = ","
     end
-    local mc_teacher_mail = mc_teacher_mail ..
-            ";1;false]" ..
-            "button[0.3,9.1;2,0.8;back;Back]" ..
-            "button[2.5,9.1;2.5,0.8;deleteall;Delete All]"
-    return mc_teacher_mail
+    mc_teacher_mail[#mc_teacher_mail + 1] = ";1;false]"
+    mc_teacher_mail[#mc_teacher_mail + 1] = "button[0.3,9.1;2,0.8;back;Back]"
+    mc_teacher_mail[#mc_teacher_mail + 1] = "button[2.5,9.1;2.5,0.8;deleteall;Delete All]"
+    return table.concat(mc_teacher_mail, "")
 end
 
 local function show_mail(player)
