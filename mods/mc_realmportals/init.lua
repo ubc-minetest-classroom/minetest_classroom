@@ -30,3 +30,4 @@ mc_realmportals.newPortal("mc_realmportals","realm1024", false)
 mc_realmportals.newPortal("mc_realmportals","123", false)
 mc_realmportals.newPortal("mc_realmportals","456", false)
 
+

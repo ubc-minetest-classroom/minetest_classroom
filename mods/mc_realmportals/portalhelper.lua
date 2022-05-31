@@ -19,7 +19,7 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
     portals.register_wormhole_node(modName .. ":" .. realmName .. "portal", {
         description = ("Portal"),
         color = portalColor,
-        post_effect_color = {a=50,r=portalColor.r,g=portalColor.g,b=portalColor.b}
+        post_effect_color = { a = 50, r = portalColor.r, g = portalColor.g, b = portalColor.b }
     })
 
     portals.register_portal(realmName .. "_portal", {
@@ -34,17 +34,22 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
         is_within_realm = function(pos, definition)
 
             -- We check if we're in the spawn realm, if not, we are in a realm.
-            local realm = mc_worldManager.GetSpawnRealm()
+            local spawnRealm = mc_worldManager.GetSpawnRealm()
 
-            if (pos.x > realm.StartPos.x or pos.x < realm.EndPos.x) then
-                return false
-            elseif (pos.z > realm.StartPos.z or pos.z < realm.EndPos.z) then
-                return false
-            elseif (pos.y > realm.StartPos.y or pos.y < realm.EndPos.y) then
-                return false
+            local inRealm = false
+
+            -- We assume and test that we're in spawn.
+            -- If we're in any position that indicates otherwise, we know that we're in a realm
+            if (pos.x < spawnRealm.StartPos.x or pos.x > spawnRealm.EndPos.x) then
+                inRealm = true
+            elseif (pos.z < spawnRealm.StartPos.z or pos.z > spawnRealm.EndPos.z) then
+                inRealm = true
+            elseif (pos.y < spawnRealm.StartPos.y or pos.y > spawnRealm.EndPos.y) then
+                inRealm = true
             else
-                return true
+                inRealm = false
             end
+            return inRealm
         end,
 
         find_realm_anchorPos = function(surface_anchorPos, player_name)
@@ -58,18 +63,64 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
             end
 
             local realm = mc_realmportals.CreateGetRealm(instanceRealmName, schematic)
+            local player = minetest.get_player_by_name(player_name)
 
             local pos = realm.SpawnPoint
-            pos.y = pos.y
+            pos.y = pos.y - 1
 
             return pos
         end,
 
         find_surface_anchorPos = function(realm_anchorPos, player_name)
             -- when finding our way back to spawn, we use this function
-            return mc_worldManager.GetSpawnRealm().SpawnPoint
+            local spawnRealm = mc_worldManager.GetSpawnRealm()
+            local player = minetest.get_player_by_name(player_name)
+
+            local pos = spawnRealm.SpawnPoint
+            pos.y = pos.y - 1
+
+            return pos
         end,
 
+        on_player_teleported = function(portalDef, player, oldPos, newPos)
+            local spawnRealm = mc_worldManager.GetSpawnRealm()
+
+            local isWithinRealm = portalDef.is_within_realm(newPos, portalDef)
+
+            --Since we're not running the methods that our own teleport methods normally run,
+            --we're calling them here. They run immediately after players teleport via portal
+            if (isWithinRealm ~= true) then
+                minetest.debug("Entering Spawn")
+                -- Since we're entering spawn, we already have all the references we need and this is easy.
+                local newRealmID, OldRealmID = spawnRealm:UpdatePlayerMetaData(player)
+                spawnRealm:RunTeleportInFunctions(player)
+
+                local oldRealm = Realm.realmDict[OldRealmID]
+                oldRealm:RunTeleportOutFunctions(player)
+            else
+                minetest.debug("Leaving Spawn")
+
+                --Firstly, we figure out where the player is teleporting to. This mirrors the portal pathfinding logic.
+                local instanceRealmName = realmName
+                local player_name = player:get_player_name()
+                if (playerInstanced) then
+                    instanceRealmName = instanceRealmName .. " instanced for " .. player_name
+                end
+                local realm = mc_realmportals.CreateGetRealm(instanceRealmName, schematic)
+
+                -- Next we tell the realm that the player is teleporting to, to update their metainfo
+                -- In the process, we get the OldRealmID for the realm that the player is teleporting from.
+                -- Usually this should be the spawn realm, but we have no idea; so it's good not to assume
+                local newRealmID, OldRealmID = realm:UpdatePlayerMetaData(player)
+                realm:RunTeleportInFunctions(player)
+
+                -- We get the instance for the old realm by its ID
+                local oldRealm = Realm.realmDict[OldRealmID]
+
+                -- We run the teleportOut functions (e.g., the callbacks for that realm)
+                oldRealm:RunTeleportOutFunctions(player)
+            end
+        end,
         on_ignite = function(portalDef, anchorPos, orientation)
 
             local p1, p2 = portalDef.shape:get_p1_and_p2_from_anchorPos(anchorPos, orientation)
