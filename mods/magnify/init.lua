@@ -122,18 +122,17 @@ sfinv.register_page("magnify:compendium", {
 			context.species_selected = 1
 		end
 	end,
-	on_player_receive_fields = function(self, player, context, fields)
-        if fields.species_list then
-        	local event = minetest.explode_textlist_event(fields.species_list)
-        	if event.type == "CHG" then
-        		context.species_selected = event.index
+on_player_receive_fields = function(self, player, context, fields)
+    if fields.species_list then
+        local event = minetest.explode_textlist_event(fields.species_list)
+        if event.type == "CHG" then
+        	context.species_selected = event.index
         	end
 		elseif fields.standard_view or fields.technical_view then
 			if context.species_selected then
-      			local ref = get_species_ref(context.species_selected)
+      		    local ref = get_species_ref(context.species_selected)
           		local full_info = magnify.get_species_from_ref(ref)
 				local pname = player:get_player_name()
-
 				if full_info ~= nil then
           			if fields.standard_view then -- standard
 						minetest.show_formspec(pname, "magnify:species_standard", magnify.build_formspec_from_ref(ref, true))
