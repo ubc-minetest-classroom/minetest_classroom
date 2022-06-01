@@ -26,8 +26,6 @@ local infos = {
 local tool_name = "mc_teacher:controller"
 local priv_table = {"teacher"}
 
-local magnify = dofile(minetest.get_modpath("magnify") .. "/api.lua")
-
 -- Checks for the 'teacher' privilege
 local function check_perm_name(name)
     return minetest.check_player_privs(name, {teacher = true})
@@ -61,7 +59,7 @@ local mc_teacher_menu = {
 	"button[1,3.3;3.8,1.3;lessons;Manage Lessons]",
 	"button[5.2,3.3;3.8,1.3;players;Manage Players]",
 	"button[1,5;3.8,1.3;classrooms;Manage Classrooms]",
-	"button[5.2,5;3.8,1.3;species;Plant Compendium]",
+	"button[5.2,5;3.8,1.3;rules;Manage Server Rules]",
 	"button[1,6.7;3.8,1.3;mail;Teacher Mail]",
 	"button_exit[5.2,6.7;3.8,1.3;exit;Exit]"
 }
@@ -594,6 +592,7 @@ local function show_mail(player)
 end
 
 -- TODO: add Change Server Rules to the menu
+-- Use the "rules" (Manage Server Rules) button
 
 -- Processing the form from the menu
 minetest.register_on_player_receive_fields(function(player, formname, fields)
