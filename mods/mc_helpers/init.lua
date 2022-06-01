@@ -1,6 +1,19 @@
 mc_helpers = {}
 
 ---@public
+---checkPrivs
+---Checks for specific privileges and defaults to 'teacher'.
+---Returns a boolean for all privileges and a list of 
+---@param privs_table A table of privileges to check (defaults to {teacher = true})
+---@param player Minetest player object
+---@return boolean Whether the player has all privileges provided in privs_table.
+---@return table All privileges provided in privs_table that are false.
+function mc_helpers.checkPrivs(player,privs_table)
+    privs_table = privs_table or {teacher = true}
+    return minetest.check_player_privs(player:get_player_name(), privs_table)
+end
+
+---@public
 ---stringToColor
 ---Returns a random color based on input seed.
 ---Note that this function is not guaranteed to be the same on all systems.

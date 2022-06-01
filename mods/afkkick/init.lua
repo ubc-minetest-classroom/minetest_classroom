@@ -15,10 +15,15 @@ local players = {}
 local checkTimer = 0
 
 minetest.register_on_joinplayer(function(player)
-	local playerName = player:get_player_name()
-	players[playerName] = {
-		lastAction = minetest.get_gametime()
-	}
+	if not mc_helpers.checkPrivs(player) then
+		local playerName = player:get_player_name()
+		players[playerName] = {
+			lastAction = minetest.get_gametime()
+		}
+	else 
+		-- player is teacher, do not time or kick
+		players[playerName] = nil
+	end
 end)
 
 minetest.register_on_leaveplayer(function(player)
