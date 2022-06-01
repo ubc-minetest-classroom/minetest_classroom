@@ -3,3 +3,10 @@ minetest.register_node("mc_worldmanager:temp", {
     tiles = {"mc_worldmanager_testnode.png"},
     is_ground_content = true
 })
+
+minetest.register_node("mc_worldmanager:teleporter", {
+    description = "Teleporter Node",
+    tiles = {"mc_worldmanager_testnode.png"},
+    is_ground_content = true,
+
+})

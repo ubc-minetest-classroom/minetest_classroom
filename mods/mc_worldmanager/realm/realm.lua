@@ -9,7 +9,7 @@ local realmHeight = 80 * 4
 ---@public
 ---Class that manages all realms in Minetest_Classroom.
 ---@class
-Realm = { realmDict = {}, const = { worldSize = math.floor(30000), worldGridLimit = math.floor((30927 * 2) / 80), bufferSize = 0 } }
+Realm = { realmDict = {}, const = { worldSize = math.floor(30000), worldGridLimit = math.floor((30927 * 2) / 80), bufferSize = 4 } }
 Realm.__index = Realm
 
 
@@ -67,7 +67,7 @@ function Realm:New(name, area)
 
     -- Temporary spawn point calculation
     this.SpawnPoint = { x = (this.StartPos.x + this.EndPos.x) / 2,
-                        y = ((this.StartPos.y + this.EndPos.y) / 2) + 2,
+                        y = (this.StartPos.y + 2),
                         z = (this.StartPos.z + this.EndPos.z) / 2 }
 
     setmetatable(this, self)
@@ -82,33 +82,48 @@ end
 -- When creating a new realm, we'll see if the empty space we have can contain a new realm. If it can't,
 -- We'll create the realm after the last realm position.
 
-Realm.lastRealmPosition = { x = Realm.const.bufferSize, y = Realm.const.bufferSize, z = Realm.const.bufferSize }
+Realm.lastRealmPosition = { xStart = Realm.const.bufferSize,
+                            yStart = Realm.const.bufferSize,
+                            zStart = Realm.const.bufferSize }
+
+Realm.maxRealmSize = { x = 0, y = 0, z = 0 }
 Realm.EmptyChunks = {}
 
-function Realm.CalculateStartEndPosition(thisTable, areaInBlocks)
+
+-- Online bin packing... A pretty challenging problem to solve.
+-- To simplify the problem, we'll create new bins for each new realm we make.
+-- When we need to create new realms, we'll run the bin packing algorithm
+-- If the realm doesn't fit into any of the existing bins, we'll create a new one.
+function Realm.CalculateStartEndPosition(areaInBlocks)
     -- Note that all of the coordinates used in this function are in "gridSpace"
     -- This roughly correlates to the chunk coordinates in MineTest
     -- 1 unit in gridSpace is 80 blocks in worldSpace
 
-    minetest.debug("areaInBlocks size:" .. " " .. areaInBlocks.x .. " " .. areaInBlocks.y .. " " .. areaInBlocks.z)
+    local RealmStartPos = Realm.lastRealmPosition
 
-    local StartPos = Realm.lastRealmPosition
+    Debug.log("WorldGridLimit: " .. Realm.const.worldGridLimit)
+    Debug.logCoords(RealmStartPos, "Last Realm Position")
 
-    -- Calculate our start position on the grid
-    StartPos.x = StartPos.x + Realm.const.bufferSize
+    -- Calculate our start position on the grid. We're lining realms up on the X-Pos
+    RealmStartPos.x = Realm.maxRealmSize.x + Realm.const.bufferSize
+    Debug.logCoords(RealmStartPos, "Last Realm Position")
 
-    if (StartPos.x > (Realm.const.worldGridLimit)) then
-        StartPos.z = Realm.lastRealmPosition.z + Realm.const.bufferSize
-        StartPos.x = 0
+    if (RealmStartPos.x > (Realm.const.worldGridLimit)) then
+        RealmStartPos.z = Realm.maxRealmSize.z + Realm.const.bufferSize
+        RealmStartPos.x = 0
+        Realm.maxRealmSize.x = 0
     end
 
-    if (StartPos.z > (Realm.const.worldGridLimit)) then
-        StartPos.y = Realm.lastRealmPosition.y + Realm.const.bufferSize
-        StartPos.z = 0
+    if (RealmStartPos.z > (Realm.const.worldGridLimit)) then
+        RealmStartPos.y = Realm.maxRealmSize.y + Realm.const.bufferSize
+        RealmStartPos.x = 0
+        RealmStartPos.z = 0
+        Realm.maxRealmSize.x = 0
+        Realm.maxRealmSize.z = 0
     end
 
-    if (StartPos.y > (Realm.const.worldGridLimit)) then
-        assert(StartPos.y, "Unable to create another realm; world has been completely filled. Please delete a realm and try again.")
+    if (RealmStartPos.y > (Realm.const.worldGridLimit)) then
+        assert(RealmStartPos.y, "Unable to create another realm; world has been completely filled. Please delete a realm and try again.")
     end
 
     -- calculate our realm size in grid units
@@ -116,20 +131,33 @@ function Realm.CalculateStartEndPosition(thisTable, areaInBlocks)
                         y = math.ceil(areaInBlocks.y / 80),
                         z = math.ceil(areaInBlocks.z / 80) }
 
-    minetest.debug("realmSize:" .. " " .. realmSize.x .. " " .. realmSize.y .. " " .. realmSize.z)
+    Debug.logCoords(realmSize, "realmSize")
 
 
 
 
     -- Calculate our end position on the grid
     local EndPos = { x = 0, y = 0, z = 0 }
-    EndPos = { x = StartPos.x + realmSize.x,
-               y = StartPos.y + realmSize.y,
-               z = StartPos.z + realmSize.z }
+    EndPos = { x = RealmStartPos.x + realmSize.x,
+               y = RealmStartPos.y + realmSize.y,
+               z = RealmStartPos.z + realmSize.z }
 
-    Realm.lastRealmPosition = EndPos
 
-    return StartPos, EndPos
+    -- If the realm EndPos was larger than anything before, we make sure to update it;
+    -- This ensures that we don't try to place a realm on another realm;
+    if (EndPos.x > Realm.maxRealmSize.x) then
+        Realm.maxRealmSize.x = EndPos.x
+    end
+
+    if (EndPos.y > Realm.maxRealmSize.y) then
+        Realm.maxRealmSize.y = EndPos.y
+    end
+
+    if (EndPos.z > Realm.maxRealmSize.z) then
+        Realm.maxRealmSize.z = EndPos.z
+    end
+
+    return RealmStartPos, EndPos
 end
 
 ---@public
