@@ -200,7 +200,7 @@ sfinv.register_page("magnify:compendium", {
     end,
     on_enter = function(self, player, context)
         if context.species_view == nil then
-            context.species_view = "menu"
+            context.species_view = MENU
         end
         if context.species_selected == nil then
             context.species_selected = 1
