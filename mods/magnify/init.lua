@@ -105,6 +105,13 @@ local function create_image_table(nodes, x, y, side_length)
     local x_0 = 0
     local y_0 = side_length - cell_length
 
+    -- adjustment factor based on scaling
+    cell_length = cell_length + 0.6 * (1/4)^(row_cells-1)
+    if row_cells == 1 then
+        y_0 = y_0 - 0.1
+        x_0 = x_0 + 0.2
+    end
+
     for k,v in pairs(nodes) do
         -- create formspec element
         local string_table = {
@@ -135,19 +142,30 @@ end
 --- @return formspec string, size
 local function get_expanded_species_formspec(info, nodes, ref)
     local sorted_nodes = table.sort(nodes, function(a, b) return a < b end)
-    local size = "size[14,8.2]"
+    local size = "size[12.4,6.7]"
     local formtable = {    
         "formspec_version[5]", size,
-        "box[0.4,0.4;13.2,1;#9192a3]",
-        "label[5.4,0.9;Technical Information]",
-        "label[0.4,1.9;", info.com_name or info.sci_name or "Unknown", " (", ref, ")]",
-        "textlist[0.4,2.8;8.1,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
-        "label[0.4,2.5;Associated nodes:]",
-        "button[4.8,6.8;4.4,1;back;Back]", -- button_exit
-        create_image_table(sorted_nodes or nodes, 8.8, 1.7, 4.8)
+        "box[0,0;12.2,0.8;#9192a3]",
+        "label[4.8,0.2;Technical Information]",
+        "label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]",
+        "textlist[0,2.1;7.4,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
+        "label[0,1.6;Associated nodes:]",
+        "button[4,6.2;4.4,0.6;back;Back]",
+        create_image_table(sorted_nodes or nodes, 7.6, 1.2, 4.8)
     }
     return table.concat(formtable, ""), size
 end
+
+--[[
+formspec_version[5]
+size[12.4,6.7]
+box[0,0;12.2,0.8;#9192a3]
+label[4.8,0.2;Technical Information]
+label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]
+textlist[0,2.1;7.4,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]
+label[0,1.6;Associated nodes:]
+button[4,6.2;4.4,0.6;back;Back]
+]]
 
 -- Registers the plant compendium as an inventory tab
 sfinv.register_page("magnify:compendium", {
