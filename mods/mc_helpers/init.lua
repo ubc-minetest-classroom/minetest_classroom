@@ -10,7 +10,8 @@ mc_helpers = {}
 ---@return table All privileges provided in privs_table that are false.
 function mc_helpers.checkPrivs(player,privs_table)
     privs_table = privs_table or {teacher = true}
-    return minetest.check_player_privs(player:get_player_name(), privs_table)
+    name = player:get_player_name()
+    return minetest.check_player_privs(name, privs_table)
 end
 
 ---@public
