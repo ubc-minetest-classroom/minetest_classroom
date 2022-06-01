@@ -24,15 +24,11 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.
 
 ---@public
 ---The constructor for the realm class.
----@param name string
----@param size number
----@param height number
+---@param name string The name of the realm
+---@param area table Size of the realm in {x,y,z} format
 ---@return table a new "Realm" table object / class.
-function Realm:New(name, size, height)
+function Realm:New(name, area)
     size = size or realmSize
-    height = height or realmHeight
-
-    size = { x = size, y = height, z = size }
 
     if (name == nil or name == "") then
         name = "Unnamed Realm"
@@ -52,7 +48,7 @@ function Realm:New(name, size, height)
 
     Realm.realmCount = this.ID
 
-    local gridStartPos, gridEndPos = Realm.CalculateStartEndPosition(this, size)
+    local gridStartPos, gridEndPos = Realm.CalculateStartEndPosition(this, area)
 
     -- Calculate our world position based on our location on the realm grid
     this.StartPos = {

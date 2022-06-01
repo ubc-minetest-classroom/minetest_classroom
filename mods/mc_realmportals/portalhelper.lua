@@ -153,6 +153,7 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
         end
     })
 
+    --TODO: Move to MC_WorldManager
     function mc_realmportals.CreateGetRealm(realmName, schematic)
         local realmID = mc_realmportals.RealmIDTable[realmName]
 
@@ -169,16 +170,16 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
         return realm
     end
 
+    --TODO: Move to MC_WorldManager
     function mc_realmportals.CreateRealmByName(realmName, schematic)
-        local realm = Realm:New(realmName, 80, 80)
-
+        local realm
         if (schematic == nil) then
+            realm = Realm:New(realmName, { x = 80, y = 80, z = 80 })
             realm:CreateGround("stone")
+            realm:CreateBarriers()
         else
-            realm:Load_Schematic(schematic)
+            realm = Realm:NewFromSchematic(realmName, schematic)
         end
-
-        realm:CreateBarriers()
 
         mc_realmportals.RealmIDTable[realmName] = realm.ID
         mc_realmportals.SaveDataToStorage()

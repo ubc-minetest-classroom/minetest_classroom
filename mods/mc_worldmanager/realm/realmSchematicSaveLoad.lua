@@ -42,10 +42,11 @@ end
 ---Load_Schematic
 ---@param key string the corresponding value for this schematic as registered by the schematic manager.
 ---@return boolean whether the schematic fit entirely in the realm when loading.
-function Realm:Load_Schematic(key)
-    local schematic, config = schematicManager.getSchematic(key)
+function Realm:Load_Schematic(schematic, config)
 
     self.Name = config.name
+
+    --TODO: Add code to check if the realm is large enough to support the schematic; If not, create a new realm that can;
     self.EndPos = self:LocalToWorldPosition(config.endPos)
 
     -- Read data into LVM
@@ -84,4 +85,14 @@ function Realm:Load_Schematic(key)
     self:UpdateSpawn(config.spawnPoint)
 
     return results
+end
+
+function Realm:NewFromSchematic(name, key)
+    local schematic, config = schematicManager.getSchematic(key)
+
+    local newRealm = Realm:New(name, config.endPos)
+    newRealm:Load_Schematic(schematic, config)
+    newRealm:CreateBarriers()
+
+    return newRealm
 end
