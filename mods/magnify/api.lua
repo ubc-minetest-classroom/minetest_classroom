@@ -199,3 +199,16 @@ label[0.4,6.75;", minetest.formspec_escape((info.external_link and "You can find
 textarea[0.35,6.9;11.6,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]
 button[12.4,6.1;5.4,1.2;back;Back]
 ]]
+
+---@public
+---Returns true if any of the values in the given table is equal to the value provided
+---@param table The table to check
+---@param val The value to check for
+---@return boolean whether the value exists in the table
+function magnify.table_has(table, val)
+    if not table or not val then return false end
+    for k,v in pairs(table) do
+        if v == val then return true end
+    end
+    return false
+end
