@@ -7,7 +7,7 @@ minetest.register_chatcommand("realmNew", {
     },
     func = function(name, param)
         param = param or "Unnamed Realm"
-        local testRealm = Realm:New(param, { x = 80, y = 80, z = 80 })
+        local testRealm = Realm:New(param, { x = 20, y = 20, z = 20 })
         testRealm:CreateGround()
         testRealm:CreateBarriers()
         return true, "executed command. New realm has ID: " .. testRealm.ID
