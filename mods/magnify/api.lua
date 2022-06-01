@@ -87,9 +87,9 @@ function magnify.build_formspec_from_ref(ref, is_exit)
         -- entry good, return formspec
         if info.model_obj and info.model_spec and info.texture then
             -- v2: model and image
+            local size = "size[17.4,9.3]"
             local formtable_v2 = {
-                "formspec_version[5]",
-                "size[17.4,9.3]",
+                "formspec_version[5]", size,
       
                 "box[0.4,0.4;12,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), "]",
                 "textarea[0.45,0.45;12,0.6;;;", minetest.formspec_escape(info.sci_name or "Scientific name unknown"), "]",
@@ -116,12 +116,13 @@ function magnify.build_formspec_from_ref(ref, is_exit)
                 --"textarea[0.35,7.35;12.2,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
                 "button", (is_exit and "_exit") or "", "[0.4,8;12,0.9;back;Back]"
             }
-            return table.concat(formtable_v2, "")
+            return table.concat(formtable_v2, ""), size
         else
             -- v1: image
+            local size = "size[18.2,7.7]"
             local formtable_v1 = {  
-                "formspec_version[5]",
-                "size[18.2,7.7]",
+                "formspec_version[5]", size,
+                
                 "box[0.4,0.4;11.6,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), "]",
                 "label[0.5,0.7;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
                 "label[0.5,1.2;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
@@ -145,7 +146,7 @@ function magnify.build_formspec_from_ref(ref, is_exit)
         
                 "button", (is_exit and "_exit") or "", "[12.4,6.1;5.4,1.2;back;Back]"
             }
-            return table.concat(formtable_v1, "")
+            return table.concat(formtable_v1, ""), size
         end
     else
         -- entry bad, go to fallback
