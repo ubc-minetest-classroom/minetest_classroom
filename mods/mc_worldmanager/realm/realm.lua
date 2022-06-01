@@ -51,14 +51,8 @@ function Realm:New(name, size, height)
 
     Realm.realmCount = this.ID
 
-    -- Calculate where on the realm grid we are located; based on our realm ID
-    local realmLocation = { x = 0, z = 0 }
-    realmLocation.x = this.ID % 10
-    realmLocation.z = math.ceil(this.ID / 10)
+    this.StartPos = Realm.CalculateStartPosition(this)
 
-    -- Calculate our world position based on our location on the realm grid
-    this.StartPos.x = -20000 + (realmSize * realmLocation.x) + (realmBuffer * realmLocation.x)
-    this.StartPos.z = -20000 + (realmSize * realmLocation.z) + (realmBuffer * realmLocation.z)
 
     -- Ensures that a realm size is no larger than our maximum size.
     local finalRealmSize = math.min(realmSize, size)
@@ -78,6 +72,19 @@ function Realm:New(name, size, height)
     Realm.SaveDataToStorage()
 
     return this
+end
+
+function Realm.CalculateStartPosition(thisTable)
+    -- Calculate where on the realm grid we are located; based on our realm ID
+    local realmLocation = { x = 0, z = 0 }
+    realmLocation.x = thisTable.ID % 10
+    realmLocation.z = math.ceil(thisTable.ID / 10)
+
+    local StartPos = {x=0,y=0,z=0}
+    -- Calculate our world position based on our location on the realm grid
+    StartPos.x = -20000 + (realmSize * realmLocation.x) + (realmBuffer * realmLocation.x)
+    StartPos.z = -20000 + (realmSize * realmLocation.z) + (realmBuffer * realmLocation.z)
+    return StartPos
 end
 
 ---@public
