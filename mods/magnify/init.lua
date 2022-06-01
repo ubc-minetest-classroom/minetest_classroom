@@ -175,14 +175,14 @@ sfinv.register_page("magnify:compendium", {
             -- create species/technical view
             local pname = player:get_player_name()
             local ref = get_species_ref(context.species_selected)
-            local full_info = magnify.get_species_from_ref(ref)
+            local data,nodes = magnify.get_species_from_ref(ref)
             local formtable = ""
             local size = nil
 
             if context.species_view == STANDARD_VIEW then
                 formtable,size = magnify.build_formspec_from_ref(ref, false)
             elseif context.species_view == TECH_VIEW then
-                formtable,size = get_expanded_species_formspec(full_info.data, full_info.nodes, ref)
+                formtable,size = get_expanded_species_formspec(data, nodes, ref)
             end
 
             return sfinv.make_formspec(player, context, formtable, false, size)
@@ -216,9 +216,8 @@ sfinv.register_page("magnify:compendium", {
             if context.species_selected then
                 local pname = player:get_player_name()
                 local ref = get_species_ref(context.species_selected)
-                local full_info = magnify.get_species_from_ref(ref)
                 
-                if full_info ~= nil then
+                if magnify.get_species_from_ref(ref) then
                     if fields.standard_view then -- standard
                         context.species_view = STANDARD_VIEW
                         --minetest.show_formspec(pname, "magnify:species_standard", magnify.build_formspec_from_ref(ref, true))

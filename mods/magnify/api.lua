@@ -51,26 +51,25 @@ end
 --- @public
 --- Returns information about the plant species indexed at the given reference key
 --- @param ref The reference key of the plant species
---- @return table {data, nodes}
+--- @return table, table
 function magnify.get_species_from_ref(ref)
     local storage_data = magnify_plants:to_table()
-    local output = {nodes = {}}
+    local output_nodes = {}
   
     if magnify_plants:get(ref) then
         local data = minetest.deserialize(magnify_plants:get_string(ref))
         if data then
-            output["data"] = data
             for k,v in pairs(storage_data.fields) do
                 if v == ref then
-                    table.insert(output.nodes, string.sub(k, 6))
+                    table.insert(output_nodes, string.sub(k, 6))
                 end
             end
-            return output
+            return data,output_nodes
         else
-            return nil
+            return nil,nil
         end
     else
-        return nil
+        return nil,nil
     end
 end
 
