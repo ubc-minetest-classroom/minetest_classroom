@@ -4,13 +4,12 @@
 
 -- "const" values
 local realmSize = 80 * 8 -- 8 mapchunks
-local realmBuffer = 80 * 4
 local realmHeight = 80 * 4
 
 ---@public
 ---Class that manages all realms in Minetest_Classroom.
 ---@class
-Realm = { realmDict = {} }
+Realm = { realmDict = {}, const = { worldSize = math.floor(30000), worldGridLimit = math.floor((30927 * 2) / 80), bufferSize = 1 } }
 Realm.__index = Realm
 
 
@@ -33,6 +32,8 @@ function Realm:New(name, size, height)
     size = size or realmSize
     height = height or realmHeight
 
+    size = { x = size, y = height, z = size }
+
     if (name == nil or name == "") then
         name = "Unnamed Realm"
     end
@@ -51,16 +52,20 @@ function Realm:New(name, size, height)
 
     Realm.realmCount = this.ID
 
-    this.StartPos = Realm.CalculateStartPosition(this)
+    local gridStartPos, gridEndPos = Realm.CalculateStartEndPosition(this, size)
+
+    -- Calculate our world position based on our location on the realm grid
+    this.StartPos = {
+        x = -Realm.const.worldSize + (gridStartPos.x * 80),
+        y = -Realm.const.worldSize + (gridStartPos.y * 80),
+        z = -Realm.const.worldSize + (gridStartPos.z * 80) }
+
+    this.EndPos = {
+        x = this.StartPos.x + (gridEndPos.x * 80),
+        y = this.StartPos.y + (gridEndPos.y * 80),
+        z = this.StartPos.z + (gridEndPos.z * 80) }
 
 
-    -- Ensures that a realm size is no larger than our maximum size.
-    local finalRealmSize = math.min(realmSize, size)
-    local finalRealmHeight = math.min(realmHeight, height)
-
-    this.EndPos = { x = this.StartPos.x + finalRealmSize,
-                    y = this.StartPos.y + finalRealmHeight,
-                    z = this.StartPos.z + finalRealmSize }
 
     -- Temporary spawn point calculation
     this.SpawnPoint = { x = (this.StartPos.x + this.EndPos.x) / 2,
@@ -74,17 +79,57 @@ function Realm:New(name, size, height)
     return this
 end
 
-function Realm.CalculateStartPosition(thisTable)
-    -- Calculate where on the realm grid we are located; based on our realm ID
-    local realmLocation = { x = 0, z = 0 }
-    realmLocation.x = thisTable.ID % 10
-    realmLocation.z = math.ceil(thisTable.ID / 10)
+-- We'll use a mapchunk has the smallest denominator for world delineation
+-- What we'll do is keep track of the last realm position as well as areas where realms were deleted.
+-- When creating a new realm, we'll see if the empty space we have can contain a new realm. If it can't,
+-- We'll create the realm after the last realm position.
 
-    local StartPos = {x=0,y=0,z=0}
-    -- Calculate our world position based on our location on the realm grid
-    StartPos.x = -20000 + (realmSize * realmLocation.x) + (realmBuffer * realmLocation.x)
-    StartPos.z = -20000 + (realmSize * realmLocation.z) + (realmBuffer * realmLocation.z)
-    return StartPos
+Realm.lastRealmPosition = { x = Realm.const.bufferSize, y = Realm.const.bufferSize, z = Realm.const.bufferSize }
+Realm.EmptyChunks = {}
+
+function Realm.CalculateStartEndPosition(thisTable, size)
+    -- Note that all of the coordinates used in this function are in "gridSpace"
+    -- This roughly correlates to the chunk coordinates in MineTest
+    -- 1 unit in gridSpace is 80 blocks in worldSpace
+
+
+    local realmLocation = Realm.lastRealmPosition
+    local StartPos = { x = 0, y = 0, z = 0 }
+    local EndPos = { x = 0, y = 0, z = 0 }
+
+    local realmSize = { x = math.ceil(size.x / 80),
+                        y = math.ceil(size.y / 80),
+                        z = math.ceil(size.z / 80) }
+
+    -- Calculate our start position on the grid
+    realmLocation.x = realmLocation.x + Realm.const.bufferSize + 1
+
+    if (realmLocation.x > (Realm.const.worldGridLimit)) then
+        realmLocation.z = Realm.lastRealmPosition.z + Realm.const.bufferSize + 1
+        realmLocation.x = 0
+    end
+
+    if (realmLocation.z > (Realm.const.worldGridLimit)) then
+        realmLocation.y = Realm.lastRealmPosition.y + Realm.const.bufferSize + 1
+        realmLocation.z = 0
+    end
+
+    if (realmLocation.y > (Realm.const.worldGridLimit)) then
+        assert(realmLocation.y, "Unable to create another realm; world has been completely filled. Please delete a realm and try again.")
+    end
+
+    -- calculate our realm size in grid units
+
+
+
+    -- Calculate our end position on the grid
+    EndPos = { x = StartPos.x + realmSize.x,
+               y = StartPos.y + realmSize.y,
+               z = StartPos.z + realmSize.z }
+
+    Realm.lastRealmPosition = EndPos
+
+    return StartPos, EndPos
 end
 
 ---@public

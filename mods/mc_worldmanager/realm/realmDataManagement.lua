@@ -7,10 +7,17 @@ function Realm.LoadDataFromStorage()
         Realm.realmCount = 0
     end
 
+    Realm.lastRealmPosition = minetest.deserialize(mc_worldManager.storage:get_string("realmLastPosition"))
+    if Realm.lastRealmPosition == nil then
+        Realm.lastRealmPosition = {x=0,y=0,z=0}
+    end
+
     local tmpRealmDict = minetest.deserialize(mc_worldManager.storage:get_string("realmDict"))
     if tmpRealmDict == nil then
         tmpRealmDict = {}
     end
+
+
 
     for key, realm in pairs(tmpRealmDict) do
         Realm:Restore(realm)
@@ -23,6 +30,8 @@ end
 function Realm.SaveDataToStorage ()
     mc_worldManager.storage:set_string("realmDict", minetest.serialize(Realm.realmDict))
     mc_worldManager.storage:set_string("realmCount", tostring(Realm.realmCount))
+
+    mc_worldManager.storage:set_string("realmLastPosition", minetest.serialize(Realm.lastRealmPosition))
 end
 
 ---@private
