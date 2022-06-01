@@ -9,7 +9,7 @@ local realmHeight = 80 * 4
 ---@public
 ---Class that manages all realms in Minetest_Classroom.
 ---@class
-Realm = { realmDict = {}, const = { worldSize = math.floor(30000), worldGridLimit = math.floor((30927 * 2) / 80), bufferSize = 1 } }
+Realm = { realmDict = {}, const = { worldSize = math.floor(30000), worldGridLimit = math.floor((30927 * 2) / 80), bufferSize = 0 } }
 Realm.__index = Realm
 
 
@@ -28,7 +28,10 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.
 ---@param area table Size of the realm in {x,y,z} format
 ---@return table a new "Realm" table object / class.
 function Realm:New(name, area)
-    size = size or realmSize
+
+    area.x = area.x or 80
+    area.y = area.y or 80
+    area.z = area.z or 80
 
     if (name == nil or name == "") then
         name = "Unnamed Realm"
@@ -57,9 +60,9 @@ function Realm:New(name, area)
         z = -Realm.const.worldSize + (gridStartPos.z * 80) }
 
     this.EndPos = {
-        x = this.StartPos.x + (gridEndPos.x * 80),
-        y = this.StartPos.y + (gridEndPos.y * 80),
-        z = this.StartPos.z + (gridEndPos.z * 80) }
+        x = -Realm.const.worldSize + (gridEndPos.x * 80),
+        y = -Realm.const.worldSize + (gridEndPos.y * 80),
+        z = -Realm.const.worldSize + (gridEndPos.z * 80) }
 
 
     -- Temporary spawn point calculation
@@ -87,20 +90,20 @@ function Realm.CalculateStartEndPosition(thisTable, areaInBlocks)
     -- This roughly correlates to the chunk coordinates in MineTest
     -- 1 unit in gridSpace is 80 blocks in worldSpace
 
+    minetest.debug("areaInBlocks size:" .. " " .. areaInBlocks.x .. " " .. areaInBlocks.y .. " " .. areaInBlocks.z)
 
     local StartPos = Realm.lastRealmPosition
 
-
     -- Calculate our start position on the grid
-    StartPos.x = StartPos.x + Realm.const.bufferSize + 1
+    StartPos.x = StartPos.x + Realm.const.bufferSize
 
     if (StartPos.x > (Realm.const.worldGridLimit)) then
-        StartPos.z = Realm.lastRealmPosition.z + Realm.const.bufferSize + 1
+        StartPos.z = Realm.lastRealmPosition.z + Realm.const.bufferSize
         StartPos.x = 0
     end
 
     if (StartPos.z > (Realm.const.worldGridLimit)) then
-        StartPos.y = Realm.lastRealmPosition.y + Realm.const.bufferSize + 1
+        StartPos.y = Realm.lastRealmPosition.y + Realm.const.bufferSize
         StartPos.z = 0
     end
 
@@ -112,6 +115,9 @@ function Realm.CalculateStartEndPosition(thisTable, areaInBlocks)
     local realmSize = { x = math.ceil(areaInBlocks.x / 80),
                         y = math.ceil(areaInBlocks.y / 80),
                         z = math.ceil(areaInBlocks.z / 80) }
+
+    minetest.debug("realmSize:" .. " " .. realmSize.x .. " " .. realmSize.y .. " " .. realmSize.z)
+
 
 
 

@@ -47,7 +47,12 @@ function Realm:Load_Schematic(schematic, config)
     self.Name = config.name
 
     --TODO: Add code to check if the realm is large enough to support the schematic; If not, create a new realm that can;
-    self.EndPos = self:LocalToWorldPosition(config.endPos)
+    local schematicEndPos = self:LocalToWorldPosition(config.schematicSize)
+    --  if (schematicEndPos.x > self.EndPos.x or schematicEndPos.y > self.EndPos.y or schematicEndPos.z > self.EndPos.z) then
+    --      assert(self, "Unable to fit schematic in realm.")
+    --   return false
+    -- end
+    self.EndPos = schematicEndPos
 
     -- Read data into LVM
     local vm = minetest.get_voxel_manip()
@@ -90,7 +95,8 @@ end
 function Realm:NewFromSchematic(name, key)
     local schematic, config = schematicManager.getSchematic(key)
 
-    local newRealm = Realm:New(name, config.endPos)
+    local newRealm = Realm:New(name, config.schematicSize)
+    minetest.debug("config.schematic size:" .. " " .. config.schematicSize.x .. " " .. config.schematicSize.y .. " " .. config.schematicSize.z)
     newRealm:Load_Schematic(schematic, config)
     newRealm:CreateBarriers()
 
