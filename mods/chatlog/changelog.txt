@@ -1,0 +1,7 @@
+
+v1.1
+----
+- changed license to MIT
+- timestamp format can be customized
+- chatlog is split into files by date by default
+- added setting to disable logging

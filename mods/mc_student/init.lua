@@ -16,12 +16,12 @@ local function pos_split (inputstr)
 	return tt
 end
 
--- Define an initial formspec that will redirect to different formspecs depending on what the teacher wants to do
+-- Define an initial formspec that will redirect to different formspecs depending on what the student wants to do
 local mc_student_menu = {
 	"formspec_version[5]",
 	"size[10,9]",
 	"label[3.1,0.7;What do you want to do?]",
-	"button[1,1.6;3.8,1.3;spawn;Go to UBC]",
+	"button[1,1.6;3.8,1.3;spawn;Go Home]",
 	"button[5.2,1.6;3.8,1.3;accesscode;Join Classroom]",
 	"button[1,3.3;3.8,1.3;coordinates;My Coordinates]",
 	"button[5.2,3.3;3.8,1.3;marker;Place a Marker]",
@@ -338,16 +338,19 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 			if teachers ~= "" then
 				msg = '[REPORT] ' .. msg .. " (teachers online: " .. teachers:sub(1, -3) .. ")"
-			end
-
-			-- Send report to any teacher currently connected
-			for teacher in pairs(minetest_classroom.mc_students.teachers) do
-				minetest.chat_send_player(teacher, minetest.colorize("#FF00FF", msg))
+				-- Send report to any teacher currently connected
+				for teacher in pairs(minetest_classroom.mc_students.teachers) do
+					minetest.chat_send_player(teacher, minetest.colorize("#FF00FF", msg))
+				end
 			end
 			
 			-- Archive the report in mod storage
 			local key = pname.." "..tostring(os.date("%d-%m-%Y %H:%M:%S"))
-			minetest_classroom.reports:set_string(key, minetest.write_json(fields.report))
+			minetest_classroom.reports:set_string(key,
+			minetest.write_json(fields.report))
+
+			-- Archive the report in the chatlog
+			chatlog.write_log(pname,'[REPORT] '..fields.report)
 		elseif fields.report == nil then
 			return true
 		else
