@@ -81,9 +81,9 @@ end
 
 function Realm.worldToGridSpace(coords)
     local val = { x = 0, y = 0, z = 0 }
-    val.x = (coords.x / 80) + Realm.const.worldSize
-    val.y = (coords.y / 80) + Realm.const.worldSize
-    val.z = (coords.z / 80) + Realm.const.worldSize
+    val.x = math.ceil((coords.x / 80) + Realm.const.worldSize)
+    val.y = math.ceil((coords.y / 80) + Realm.const.worldSize)
+    val.z = math.ceil((coords.z / 80) + Realm.const.worldSize)
     return val
 end
 
