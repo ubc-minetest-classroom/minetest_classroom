@@ -104,6 +104,9 @@ Realm.maxRealmSize = { x = 0, y = 0, z = 0 }
 Realm.EmptyChunks = {}
 
 function Realm.CalculateStartEndPosition(areaInBlocks)
+
+    Debug.log(minetest.serialize(Realm.EmptyChunks))
+
     -- Note that all of the coordinates used in this function are in "gridSpace"
     -- This roughly correlates to the chunk coordinates in MineTest
     -- 1 unit in gridSpace is 80 blocks in worldSpace
@@ -113,35 +116,42 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
                         y = math.ceil(areaInBlocks.y / 80),
                         z = math.ceil(areaInBlocks.z / 80) }
 
-    Debug.logCoords(realmSize, "realmSize")
+    local createNewBin = true
+    local StartPos = nil
 
-    local StartPos = Realm.lastRealmPosition
-
-    Debug.log("WorldGridLimit: " .. Realm.const.worldGridLimit)
-    Debug.logCoords(StartPos, "Last Realm Position")
-
-    -- Calculate our start position on the grid. We're lining realms up on the X-Pos
-    StartPos.x = Realm.maxRealmSize.x + Realm.const.bufferSize
-    Debug.logCoords(StartPos, "Last Realm Position")
-
-    if (StartPos.x > (Realm.const.worldGridLimit)) then
-        StartPos.z = Realm.maxRealmSize.z + Realm.const.bufferSize
-        StartPos.x = 0
-        Realm.maxRealmSize.x = 0
+    for i, v in ipairs(Realm.EmptyChunks) do
+        if (v.area.x >= realmSize.x and v.area.y >= realmSize.y and v.area.z >= realmSize.z) then
+            table.remove(Realm.EmptyChunks, i)
+            StartPos = v.startPos
+            createNewBin = false
+            break
+        end
     end
 
-    if (StartPos.z > (Realm.const.worldGridLimit)) then
-        StartPos.y = Realm.maxRealmSize.y + Realm.const.bufferSize
-        StartPos.x = 0
-        StartPos.z = 0
-        Realm.maxRealmSize.x = 0
-        Realm.maxRealmSize.z = 0
-    end
+    if (createNewBin == true) then
+        StartPos = Realm.lastRealmPosition
 
-    if (StartPos.y > (Realm.const.worldGridLimit)) then
-        assert(StartPos.y, "Unable to create another realm; world has been completely filled. Please delete a realm and try again.")
-    end
+        -- Calculate our start position on the grid. We're lining realms up on the X-Pos
+        StartPos.x = Realm.maxRealmSize.x + Realm.const.bufferSize
 
+        if (StartPos.x > (Realm.const.worldGridLimit)) then
+            StartPos.z = Realm.maxRealmSize.z + Realm.const.bufferSize
+            StartPos.x = 0
+            Realm.maxRealmSize.x = 0
+        end
+
+        if (StartPos.z > (Realm.const.worldGridLimit)) then
+            StartPos.y = Realm.maxRealmSize.y + Realm.const.bufferSize
+            StartPos.x = 0
+            StartPos.z = 0
+            Realm.maxRealmSize.x = 0
+            Realm.maxRealmSize.z = 0
+        end
+
+        if (StartPos.y > (Realm.const.worldGridLimit)) then
+            assert(StartPos.y, "Unable to create another realm; world has been completely filled. Please delete a realm and try again.")
+        end
+    end
 
 
     -- Calculate our end position on the grid
@@ -150,22 +160,34 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
                y = StartPos.y + realmSize.y,
                z = StartPos.z + realmSize.z }
 
+    if (createNewBin == true) then
+        -- If the realm EndPos was larger than anything before, we make sure to update it;
+        -- This ensures that we don't try to place a realm on another realm;
+        if (EndPos.x > Realm.maxRealmSize.x) then
+            Realm.maxRealmSize.x = EndPos.x
+        end
 
-    -- If the realm EndPos was larger than anything before, we make sure to update it;
-    -- This ensures that we don't try to place a realm on another realm;
-    if (EndPos.x > Realm.maxRealmSize.x) then
-        Realm.maxRealmSize.x = EndPos.x
-    end
+        if (EndPos.y > Realm.maxRealmSize.y) then
+            Realm.maxRealmSize.y = EndPos.y
+        end
 
-    if (EndPos.y > Realm.maxRealmSize.y) then
-        Realm.maxRealmSize.y = EndPos.y
-    end
-
-    if (EndPos.z > Realm.maxRealmSize.z) then
-        Realm.maxRealmSize.z = EndPos.z
+        if (EndPos.z > Realm.maxRealmSize.z) then
+            Realm.maxRealmSize.z = EndPos.z
+        end
     end
 
     return StartPos, EndPos
+end
+
+function Realm.markSpaceAsFree(startPos, endPos)
+
+    local entry = {}
+    entry.startPos = startPos
+    entry.area = { x = endPos.x - startPos.x,
+                   y = endPos.y - startPos.y,
+                   z = endPos.z - startPos.z }
+
+    table.insert(Realm.EmptyChunks, entry)
 end
 
 ---@public
@@ -173,11 +195,12 @@ end
 ---NOTE: remember to clear any references to the realm so that memory can be released by the GC.
 ---@return void
 function Realm:Delete()
-    self:ClearNodes()
-    table.remove(Realm.realmDict, self.ID)
-    Realm.SaveDataToStorage()
-
     self:RunFunctionFromTable(self.RealmDeleteTable)
+    self:ClearNodes()
+    Realm.markSpaceAsFree(self.StartPos, self.EndPos)
+    table.remove(Realm.realmDict, self.ID)
+
+    Realm.SaveDataToStorage()
 end
 
 ---LocalToWorldPosition

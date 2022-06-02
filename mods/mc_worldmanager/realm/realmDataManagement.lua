@@ -9,20 +9,23 @@ function Realm.LoadDataFromStorage()
 
     Realm.lastRealmPosition = minetest.deserialize(mc_worldManager.storage:get_string("realmLastPosition"))
     if Realm.lastRealmPosition == nil then
-        Realm.lastRealmPosition = {x=0,y=0,z=0}
+        Realm.lastRealmPosition = { x = 0, y = 0, z = 0 }
     end
 
     Realm.maxRealmSize = minetest.deserialize(mc_worldManager.storage:get_string("realmMaxSize"))
     if Realm.maxRealmSize == nil then
-        Realm.maxRealmSize = {x=0,y=0,z=0}
+        Realm.maxRealmSize = { x = 0, y = 0, z = 0 }
+    end
+
+    Realm.EmptyChunks = minetest.deserialize(mc_worldManager.storage:get_string("realmEmptyChunks"))
+    if Realm.EmptyChunks == nil then
+        Realm.EmptyChunks = {}
     end
 
     local tmpRealmDict = minetest.deserialize(mc_worldManager.storage:get_string("realmDict"))
     if tmpRealmDict == nil then
         tmpRealmDict = {}
     end
-
-
 
     for key, realm in pairs(tmpRealmDict) do
         Realm:Restore(realm)
@@ -38,6 +41,8 @@ function Realm.SaveDataToStorage ()
 
     mc_worldManager.storage:set_string("realmLastPosition", minetest.serialize(Realm.lastRealmPosition))
     mc_worldManager.storage:set_string("realmMaxSize", minetest.serialize(Realm.maxRealmSize))
+    mc_worldManager.storage:set_string("realmMaxSize", minetest.serialize(Realm.maxRealmSize))
+    mc_worldManager.storage:set_string("realmEmptyChunks", minetest.serialize(Realm.EmptyChunks))
 end
 
 ---@private
@@ -65,7 +70,6 @@ function Realm:Restore(template)
     table.insert(Realm.realmDict, this.ID, this)
     return this
 end
-
 
 function Realm:set_string(key, value)
     self.MetaStorage[key] = value
