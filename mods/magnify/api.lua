@@ -123,9 +123,9 @@ function magnify.build_formspec_from_ref(ref, is_exit)
     			"formspec_version[5]",
 				"size[18.2,7.7]",
 				"box[0.4,0.4;11.6,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), "]",
-				"label[0.5,0.7;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
-				"label[0.5,1.2;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
-    			"label[0.5,1.7;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
+				"textarea[0,0.4;10,0.6;;;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
+				"textarea[0,0.9;11,0.9;;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
+    			"textarea[0,2;10,0,8;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
 				"image[12.4,0.4;5.4,5.4;", info.texture or "test.png", "]",
 				--"model[12.4,0.4;5.4,5.4;test_tree;tree_test.obj;default_acacia_tree_top.png,default_dry_grass_2.png,default_dry_dirt.png^default_dry_grass_side.png,default_acacia_leaves.png,default_acacia_tree.png,default_dry_grass_1.png,default_dry_grass_3.png,default_dry_grass_4.png,default_dry_grass.png;0,180;false;true;;]",
     
@@ -133,13 +133,13 @@ function magnify.build_formspec_from_ref(ref, is_exit)
     			"label[0.4,3;-]",
 				"label[0.4,3.5;-]",
     			"label[0.4,4;-]",
-				"label[0.7,2.5;", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "]",
-    			"label[0.7,3;", minetest.formspec_escape((info.region and "Native to "..info.region) or "Native region unknown"), "]",
-				"label[0.7,3.5;", minetest.formspec_escape(info.height or "Height unknown"), "]",
-				"label[0.7,4;", minetest.formspec_escape(info.bloom or "Bloom pattern unknown"), "]",
+				"textarea[0,2.9,10,0.9;;;", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "]",
+    			"textarea[0,3.8;10,0.9;;;", minetest.formspec_escape((info.region and "Native to "..info.region) or "Native region unknown"), "]",
+				"textarea[0,5.4;10,0.5;;;", minetest.formspec_escape(info.height or "Height unknown"), "]",
+				"textarea[0,4.7;11,0.5;;;", minetest.formspec_escape(info.bloom or "Bloom pattern unknown"), "]",
 		
-    			"textarea[0.35,4.45;11.5,1.3;;;", minetest.formspec_escape(info.more_info or ""), "]",
-    			"label[0.4,6.25;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
+    			"textarea[0,6;9.3,1.7;;;", minetest.formspec_escape(info.more_info or ""), "]",
+    			"textarea[9.3,5.9;3,1.5;;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
 				--"label[0.4,6.75;", minetest.formspec_escape((info.external_link and "You can find more information at:") or ""), "]",
     			--"textarea[0.35,6.9;11.6,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
 		
@@ -180,22 +180,20 @@ button[0.4,8;12,0.9;back;Back]
 -- V1
 formspec_version[5]
 size[18.2,7.7]
-box[0.4,0.4;11.6,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), "]
-label[0.5,0.7;", minetest.formspec_escape(info.sci_name or "N/A"), "]
-label[0.5,1.2;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]
-label[0.5,1.7;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]
-image[12.4,0.4;5.4,5.4;", minetest.formspec_escape(info.texture or "test.png"), "]
+box[0.4,0.4;11.6,1.6;"\, minetest.formspec_escape(info.status_col or "#9192a3")\, "]
+textarea[0,0.4;10,0.6;;;"\, minetest.formspec_escape(info.sci_name or "N/A")\, "]
+textarea[0,0.9;11,0.9;;;"\, minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown")\, "]
+textarea[0,2;10,0.8;;;"\, minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown")\, "]
+image[12.4,0.4;5.4,5.4;"\, minetest.formspec_escape(info.texture or "test.png")\, "]
 label[0.4,2.5;-]
 label[0.4,3;-]
 label[0.4,3.5;-]
 label[0.4,4;-]
-label[0.7,2.5;", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "]
-label[0.7,3;", minetest.formspec_escape((info.region and "Native to "..info.region) or "Native region unknown"), "]
-label[0.7,3.5;", minetest.formspec_escape(info.height or "Height unknown"), "]
-label[0.7,4;", minetest.formspec_escape(info.bloom or "Bloom pattern unknown"), "]
-textarea[0.35,4.45;11.5,1.3;;;", minetest.formspec_escape(info.more_info or ""), "]
-label[0.4,6.25;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]
-label[0.4,6.75;", minetest.formspec_escape((info.external_link and "You can find more information at:") or ""), "]
-textarea[0.35,6.9;11.6,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]
+textarea[0,2.9;10,0.9;;;"\, minetest.formspec_escape(info.cons_status or "Conservation status unknown")\, "]
+textarea[0,3.8;10,0.9;;;"\, minetest.formspec_escape((info.region and "Native to "..info.region) or "Native region unknown")\, "]
+textarea[0,5.4;10,0.5;;;"\, minetest.formspec_escape(info.height or "Height unknown")\, "]
+textarea[0,4.7;11,0.5;;;"\, minetest.formspec_escape(info.bloom or "Bloom pattern unknown")\, "]
+textarea[0,6;9.3,1.7;;;"\, minetest.formspec_escape(info.more_info or "")\, "]
+textarea[9.3,5.9;3,1.5;;;"\, minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or "")\, "]
 button[12.4,6.1;5.4,1.2;back;Back]
 ]]
