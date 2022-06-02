@@ -1,8 +1,12 @@
 magnify_plants = minetest.get_mod_storage()
 dofile(minetest.get_modpath("magnify") .. "/api.lua")
 
+-- constants
 local tool_name = "magnify:magnifying_tool"
 local priv_table = {"interact"}
+local MENU = 1
+local STANDARD_VIEW = 2
+local TECH_VIEW = 3
 
 -- Checks for adequate privileges
 local function check_perm_name(name)
@@ -101,6 +105,13 @@ local function create_image_table(nodes, x, y, side_length)
     local x_0 = 0
     local y_0 = side_length - cell_length
 
+    -- adjustment factor based on scaling
+    cell_length = cell_length + 0.6 * (1/4)^(row_cells-1)
+    if row_cells == 1 then
+        y_0 = y_0 - 0.1
+        x_0 = x_0 + 0.2
+    end
+
     for k,v in pairs(nodes) do
         -- create formspec element
         local string_table = {
@@ -128,38 +139,69 @@ local function create_image_table(nodes, x, y, side_length)
 end
 
 --- Return the technical formspec for a species
---- @return formspec string
+--- @return formspec string, size
 local function get_expanded_species_formspec(info, nodes, ref)
     local sorted_nodes = table.sort(nodes, function(a, b) return a < b end)
+    local size = "size[12.4,6.7]"
     local formtable = {    
-        "formspec_version[5]",
-        "size[14,8.2]",
-        "box[0.4,0.4;13.2,1;#9192a3]",
-        "label[5.4,0.9;Technical Information]",
-        "label[0.4,1.9;", info.com_name or info.sci_name or "Unknown", " (", ref, ")]",
-        "textlist[0.4,2.8;8.1,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
-        "label[0.4,2.5;Associated nodes:]",
-        "button_exit[4.8,6.8;4.4,1;back;Back]",
-        create_image_table(sorted_nodes or nodes, 8.8, 1.7, 4.8)
+        "formspec_version[5]", size,
+        "box[0,0;12.2,0.8;#9192a3]",
+        "label[4.8,0.2;Technical Information]",
+        "label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]",
+        "textlist[0,2.1;7.4,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
+        "label[0,1.6;Associated nodes:]",
+        "button[4,6.2;4.4,0.6;back;Back]",
+        create_image_table(sorted_nodes or nodes, 7.6, 1.2, 4.8)
     }
-    return table.concat(formtable, "")
+    return table.concat(formtable, ""), size
 end
+
+--[[
+formspec_version[5]
+size[12.4,6.7]
+box[0,0;12.2,0.8;#9192a3]
+label[4.8,0.2;Technical Information]
+label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]
+textlist[0,2.1;7.4,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]
+label[0,1.6;Associated nodes:]
+button[4,6.2;4.4,0.6;back;Back]
+]]
 
 -- Registers the plant compendium as an inventory tab
 sfinv.register_page("magnify:compendium", {
     title = "Plant Compendium", -- add translations
     get = function(self, player, context)
-        -- refactor implementation from mc_teacher
-          local species = table.concat(magnify.get_all_registered_species(), ",")
-        local formtable = {
-            "bgcolor[#00FF00;true]", -- #172e1b
-            "textlist[0,0;7.8,3.75;species_list;", species, ";", context.species_selected or 1, ";false]",
-            "button[0,4.05;4,0.6;standard_view;View Species]",
-            "button[4,4.05;4,0.6;technical_view;View Technical Info]"
-        }
-        return sfinv.make_formspec(player, context, table.concat(formtable, ""), true)
+        if context.species_view == STANDARD_VIEW or context.species_view == TECH_VIEW then
+            -- create species/technical view
+            local pname = player:get_player_name()
+            local ref = get_species_ref(context.species_selected)
+            local data,nodes = magnify.get_species_from_ref(ref)
+            local formtable = ""
+            local size = nil
+
+            if context.species_view == STANDARD_VIEW then
+                formtable,size = magnify.build_formspec_from_ref(ref, false)
+            elseif context.species_view == TECH_VIEW then
+                formtable,size = get_expanded_species_formspec(data, nodes, ref)
+            end
+
+            return sfinv.make_formspec(player, context, formtable, false, size)
+        else
+            -- create menu
+            local species = table.concat(magnify.get_all_registered_species(), ",")
+            local formtable = {
+                "bgcolor[#00FF00;true]", -- #172e1b
+                "textlist[0,0;7.8,3.75;species_list;", species, ";", context.species_selected or 1, ";false]",
+                "button[0,4.05;4,0.6;standard_view;View Species]",
+                "button[4,4.05;4,0.6;technical_view;View Technical Info]"
+            }
+            return sfinv.make_formspec(player, context, table.concat(formtable, ""), true)
+        end
     end,
     on_enter = function(self, player, context)
+        if context.species_view == nil then
+            context.species_view = MENU
+        end
         if context.species_selected == nil then
             context.species_selected = 1
         end
@@ -172,23 +214,28 @@ sfinv.register_page("magnify:compendium", {
             end
         elseif fields.standard_view or fields.technical_view then
             if context.species_selected then
-                -- refresh inventory formspec
-                sfinv.set_player_inventory_formspec(player)
-
-                local ref = get_species_ref(context.species_selected)
-                local full_info = magnify.get_species_from_ref(ref)
                 local pname = player:get_player_name()
-
-                if full_info ~= nil then
+                local ref = get_species_ref(context.species_selected)
+                
+                if magnify.get_species_from_ref(ref) then
                     if fields.standard_view then -- standard
-                        minetest.show_formspec(pname, "magnify:species_standard", magnify.build_formspec_from_ref(ref, true))
+                        context.species_view = STANDARD_VIEW
+                        --minetest.show_formspec(pname, "magnify:species_standard", magnify.build_formspec_from_ref(ref, true))
                     else -- technical
-                        minetest.show_formspec(pname, "magnify:species_technical", get_expanded_species_formspec(full_info.data, full_info.nodes, ref))
+                        context.species_view = TECH_VIEW
+                        --minetest.show_formspec(pname, "magnify:species_technical", get_expanded_species_formspec(full_info.data, full_info.nodes, ref))
                     end
                 else
                     minetest.chat_send_player(pname, "An entry for this species exists, but could not be found in the plant database.\nPlease contact an administrator and ask them to check your server's plant database files to ensure all plants were registered properly.")
-                end    
+                end
+
+                -- refresh inventory formspec
+                sfinv.set_player_inventory_formspec(player)
             end
+        elseif fields.back then
+            context.species_view = MENU
+            -- refresh inventory formspec
+            sfinv.set_player_inventory_formspec(player)
         end
     end,
     is_in_nav = function(self, player, context)

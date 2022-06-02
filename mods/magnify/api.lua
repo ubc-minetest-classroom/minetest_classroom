@@ -51,26 +51,25 @@ end
 --- @public
 --- Returns information about the plant species indexed at the given reference key
 --- @param ref The reference key of the plant species
---- @return table {data, nodes}
+--- @return table, table
 function magnify.get_species_from_ref(ref)
     local storage_data = magnify_plants:to_table()
-    local output = {nodes = {}}
+    local output_nodes = {}
   
     if magnify_plants:get(ref) then
         local data = minetest.deserialize(magnify_plants:get_string(ref))
         if data then
-            output["data"] = data
             for k,v in pairs(storage_data.fields) do
                 if v == ref then
-                    table.insert(output.nodes, string.sub(k, 6))
+                    table.insert(output_nodes, string.sub(k, 6))
                 end
             end
-            return output
+            return data,output_nodes
         else
-            return nil
+            return nil,nil
         end
     else
-        return nil
+        return nil,nil
     end
 end
 
@@ -87,9 +86,9 @@ function magnify.build_formspec_from_ref(ref, is_exit)
         -- entry good, return formspec
         if info.model_obj and info.model_spec and info.texture then
             -- v2: model and image
+            local size = "size[17.4,9.3]"
             local formtable_v2 = {
-				"formspec_version[5]",
-                "size[17.4,9.3]",
+                "formspec_version[5]", size,
 
                 "box[0.4,0.4;12,1.6;", minetest.formspec_escape(info.status_col or "#9192A3"), "]",
                 "textarea[0.45,0.45;12.4,0.7;;;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
@@ -115,12 +114,13 @@ function magnify.build_formspec_from_ref(ref, is_exit)
                 --"textarea[0.35,7.35;12.2,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
                 "button", (is_exit and "_exit") or "", "[0.4,8;12,0.9;back;Back]"
             }
-            return table.concat(formtable_v2, "")
+            return table.concat(formtable_v2, ""), size
         else
             -- v1: image
+            local size = "size[18.2,7.7]"
             local formtable_v1 = {  
-                "formspec_version[5]",
-                "size[18.2,7.7]",
+                "formspec_version[5]", size,
+                
                 "box[0.4,0.4;11.6,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), "]",
                 "textarea[0.45,0.45;12,0.7;;;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
                 "textarea[0.45,0.97;12,0.7;;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
@@ -144,7 +144,7 @@ function magnify.build_formspec_from_ref(ref, is_exit)
 		
                 "button", (is_exit and "_exit") or "", "[12.4,6.1;5.4,1.2;back;Back]"
             }
-            return table.concat(formtable_v1, "")
+            return table.concat(formtable_v1, ""), size
         end
     else
         -- entry bad, go to fallback
