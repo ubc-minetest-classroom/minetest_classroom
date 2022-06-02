@@ -96,7 +96,7 @@ end
 function table.has(table, val)
     if not table or not val then return false end
     for k,v in pairs(table) do
-        if v == val then return true end
+        if v == val or k == val then return true end
     end
     return false
 end
