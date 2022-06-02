@@ -21,6 +21,7 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmNodeManipulation.
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmDataManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmSchematicSaveLoad.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCoordinateConversion.lua")
 
 ---@public
 ---The constructor for the realm class.
@@ -28,7 +29,6 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.
 ---@param area table Size of the realm in {x,y,z} format
 ---@return table a new "Realm" table object / class.
 function Realm:New(name, area)
-
     area.x = area.x or 80
     area.y = area.y or 80
     area.z = area.z or 80
@@ -55,7 +55,6 @@ function Realm:New(name, area)
 
     -- Calculate our world position based on our location on the realm grid
     this.StartPos = Realm.gridToWorldSpace(gridStartPos)
-
     this.EndPos = Realm.gridToWorldSpace(gridEndPos)
 
 
@@ -69,22 +68,6 @@ function Realm:New(name, area)
     Realm.SaveDataToStorage()
 
     return this
-end
-
-function Realm.gridToWorldSpace(coords)
-    local val = { x = 0, y = 0, z = 0 }
-    val.x = -Realm.const.worldSize + (coords.x * 80)
-    val.y = -Realm.const.worldSize + (coords.y * 80)
-    val.z = -Realm.const.worldSize + (coords.z * 80)
-    return val
-end
-
-function Realm.worldToGridSpace(coords)
-    local val = { x = 0, y = 0, z = 0 }
-    val.x = math.ceil((coords.x / 80) + Realm.const.worldSize)
-    val.y = math.ceil((coords.y / 80) + Realm.const.worldSize)
-    val.z = math.ceil((coords.z / 80) + Realm.const.worldSize)
-    return val
 end
 
 -- Online bin packing... A pretty challenging problem to solve.
@@ -105,8 +88,6 @@ Realm.EmptyChunks = {}
 
 function Realm.CalculateStartEndPosition(areaInBlocks)
 
-    Debug.log(minetest.serialize(Realm.EmptyChunks))
-
     -- Note that all of the coordinates used in this function are in "gridSpace"
     -- This roughly correlates to the chunk coordinates in MineTest
     -- 1 unit in gridSpace is 80 blocks in worldSpace
@@ -117,13 +98,13 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
                         z = math.ceil(areaInBlocks.z / 80) }
 
     local createNewBin = true
-    local StartPos = nil
+    local StartPos = { x = 0, y = 0, z = 0 }
 
     for i, v in ipairs(Realm.EmptyChunks) do
         if (v.area.x >= realmSize.x and v.area.y >= realmSize.y and v.area.z >= realmSize.z) then
-            table.remove(Realm.EmptyChunks, i)
-            StartPos = v.startPos
+            StartPos = { x = v.startPos.x, y = v.startPos.y, z = v.startPos.z }
             createNewBin = false
+            table.remove(Realm.EmptyChunks, i)
             break
         end
     end
@@ -176,6 +157,8 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
         end
     end
 
+    mc_worldManager.storage:set_string("realmEmptyChunks", minetest.serialize(Realm.EmptyChunks))
+
     return StartPos, EndPos
 end
 
@@ -197,32 +180,10 @@ end
 function Realm:Delete()
     self:RunFunctionFromTable(self.RealmDeleteTable)
     self:ClearNodes()
-    Realm.markSpaceAsFree(self.StartPos, self.EndPos)
+    Realm.markSpaceAsFree(Realm.worldToGridSpace(self.StartPos), Realm.worldToGridSpace(self.EndPos))
     table.remove(Realm.realmDict, self.ID)
 
     Realm.SaveDataToStorage()
-end
-
----LocalToWorldPosition
----@param position table coordinates
----@return table localspace coordinates.
-function Realm:LocalToWorldPosition(position)
-    local pos = position
-    pos.x = pos.x + self.StartPos.x
-    pos.y = pos.y + self.StartPos.y
-    pos.z = pos.z + self.StartPos.z
-    return pos
-end
-
----WorldToLocalPosition
----@param position table
----@return table worldspace coordinates
-function Realm:WorldToLocalPosition(position)
-    local pos = position
-    pos.x = pos.x - self.StartPos.x
-    pos.y = pos.y - self.StartPos.y
-    pos.z = pos.z - self.StartPos.z
-    return pos
 end
 
 ---@public
