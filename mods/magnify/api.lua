@@ -76,9 +76,10 @@ end
 --- @public
 --- Builds the magnifying glass info formspec for the plant species with the given reference key
 --- @param ref The reference key of the plant species
---- @param exit true if the back button should be type "button_exit", false if the back button should be type "button"
---- @return formspec string
-function magnify.build_formspec_from_ref(ref, is_exit)
+--- @param is_exit true if the back button should be type "button_exit", false if the back button should be type "button"
+--- @param is_inv true if the formspec is being used in the inventory, false otherwise
+--- @return formspec string, formspec size[] string
+function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
     local info = minetest.deserialize(magnify_plants:get(ref))
     
     -- TODO: create V1 and V2 formtables
@@ -86,20 +87,20 @@ function magnify.build_formspec_from_ref(ref, is_exit)
         -- entry good, return formspec
         if info.model_obj and info.model_spec and info.texture then
             -- v2: model and image
-            local size = "size[17.4,9.3]"
+            local size = (is_inv and "size[13.8,7.2]") or "size[17.4,9.3]"
             local formtable_v2 = {
                 "formspec_version[5]", size,
 
-                "box[0.4,0.4;12,1.6;", minetest.formspec_escape(info.status_col or "#9192A3"), "]",
-                "textarea[0.45,0.45;12.4,0.7;;;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
-                "textarea[0.45,0.97;12.4,0.7;;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
-                "textarea[0.45,1.47;12.4,0.7;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
+                "box[", (is_inv and "0,0;10,1.6") or "0.4,0.4;12,1.6", ";", minetest.formspec_escape(info.status_col or "#9192A3"), "]",
+                "textarea[", (is_inv and "0.45,0.08;10.4,0.7") or "0.45,0.45;12.4,0.7", ";;;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
+                "textarea[", (is_inv and "0.45,0.59;10.4,0.7") or "0.45,0.96;12.4,0.7", ";;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
+                "textarea[", (is_inv and "0.45,1.1;10.4,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
 
-                "image[12.8,0.4;4.2,4.2;", info.texture or "test.png", "]",
-                "box[12.8,4.7;4.2,4.2;#789cbf]",
-                "model[12.8,4.7;4.2,4.2;plant_model;", info.model_obj, ";", info.model_spec, ";0,180;false;true;;]",
+                "image[", (is_inv and "10.3,0") or "12.8,0.4", ";4.2,4.2;", info.texture or "test.png", "]",
+                "box[", (is_inv and "10.3,3.7;3.35,3.65") or "12.8,4.7;4.2,4.2", ";#789cbf]",
+                "model[", (is_inv and "10.3,3.7") or "12.8,4.7", ";4.2,4.2;plant_model;", info.model_obj, ";", info.model_spec, ";0,180;false;true;;]",
 
-                "textarea[0.35,2;12.4,5;;;", -- info area
+                "textarea[", (is_inv and "0.3,1.6;10.5,5") or "0.35,2;12.4,5", ";;;", -- info area
                 "\n",
                 "- ", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "\n",
                 "- ", minetest.formspec_escape((info.region and "Found in "..info.region) or "Location range unknown"), "\n",
@@ -109,10 +110,10 @@ function magnify.build_formspec_from_ref(ref, is_exit)
                 minetest.formspec_escape(info.bloom or "Bloom pattern unknown"),
                 "]",
 
-                "textarea[0.35,7.2;12.4,0.7;;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
+                "textarea[", (is_inv and "0.3,6;10.4,0.7") or "0.35,7.2;12.4,0.7", ";;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
                 --"label[0.4,7.15;", minetest.formspec_escape((info.external_link and "You can find more information at:") or ""), "]",
                 --"textarea[0.35,7.35;12.2,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
-                "button", (is_exit and "_exit") or "", "[0.4,8;12,0.9;back;Back]"
+                "button", (is_exit and "_exit") or "", "[", (is_inv and "0,6.75;10.2,0.6") or "0.4,8;12,0.9", ";back;Back]"
             }
             return table.concat(formtable_v2, ""), size
         else
@@ -121,11 +122,11 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             local formtable_v1 = {  
                 "formspec_version[5]", size,
                 
-                "box[0.4,0.4;11.6,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), "]",
-                "textarea[0.45,0.45;12,0.7;;;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
-                "textarea[0.45,0.97;12,0.7;;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
-                "textarea[0.45,1.47;12,0.7;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
-                "image[12.4,0.4;5.4,5.4;", info.texture or "test.png", "]",
+                "box[", (is_inv and "0,0;11.6,1.6") or "0.4,0.4;11.6,1.6", ";", minetest.formspec_escape(info.status_col or "#9192a3"), "]",
+                "textarea[", (is_inv and "0.45,0.08;12,0.7") or "0.45,0.45;12.4,0.7", ";;;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
+                "textarea[", (is_inv and "0.45,0.59;12,0.7") or "0.45,0.96;12.4,0.7", ";;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
+                "textarea[", (is_inv and "0.45,1.1;12,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
+                "image[", (is_inv and "12,0") or "12.4,0.4", ";5.4,5.4;", info.texture or "test.png", "]",
                 --"model[12.4,0.4;5.4,5.4;test_tree;tree_test.obj;default_acacia_tree_top.png,default_dry_grass_2.png,default_dry_dirt.png^default_dry_grass_side.png,default_acacia_leaves.png,default_acacia_tree.png,default_dry_grass_1.png,default_dry_grass_3.png,default_dry_grass_4.png,default_dry_grass.png;0,180;false;true;;]",
     
                 "textarea[0.35,2;12,4.7;;;", -- info area

@@ -31,7 +31,7 @@ magnify_plants:set_int("count", 1)
 -- Builds the magnifying glass info formspec for the node with the given name
 local function build_formspec(node_name)
   local ref_key = magnify_plants:get("node_" .. node_name)
-  return magnify.build_formspec_from_ref(ref_key, true)
+  return magnify.build_formspec_from_ref(ref_key, true, false)
 end
 
 -- Registers the magnifying glass tool
@@ -180,7 +180,7 @@ sfinv.register_page("magnify:compendium", {
             local size = nil
 
             if context.species_view == STANDARD_VIEW then
-                formtable,size = magnify.build_formspec_from_ref(ref, false)
+                formtable,size = magnify.build_formspec_from_ref(ref, false, true)
             elseif context.species_view == TECH_VIEW then
                 formtable,size = get_expanded_species_formspec(data, nodes, ref)
             end
