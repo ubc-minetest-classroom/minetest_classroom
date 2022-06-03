@@ -1,18 +1,28 @@
 -- EXPORTED MAGNIFY FUNCTIONS
 magnify = {}
 
+-- Instantiate unique time code for plant updates
+--local prev_date_str = magnify_plants:get_string("reg_time_old")
+--magnify_plants:set_string("reg_time_old", prev_date_str)
+local date_str = os.date("%Y%m%d%H%M%S-V1", os.time())
+magnify_plants:set_string("reg_time", date_str)
+
 --- @public
 --- Adds a plant to the magnify plant database
 --- @param def_table Definition table for the species being added
 --- @param blocks Table of stringified nodes this species corresponds to in the MineTest world
 --- @see Magnify documentation for more information on how to register a plant species
-function magnify.register_plant(def_table, blocks)
+function magnify.register_plant(def_table, blocks) 
     local ref = magnify_plants:get_int("count")
     local serial_table = minetest.serialize(def_table)
     magnify_plants:set_string("ref_"..ref, serial_table)
+
+    --local key_table = {key = "ref_"..ref, reg_time = date_str}
+    --local serial_ref = minetest.serialize(key_table)
     for k,v in pairs(blocks) do
         magnify_plants:set_string("node_"..v, "ref_"..ref)
     end
+
     magnify_plants:set_int("count", ref + 1)
 end
 
@@ -45,6 +55,43 @@ function magnify.clear_ref(ref)
         if k == ref or v == ref then
             magnify_plants:set_string(k, "")
         end
+    end
+end
+
+--- @private
+--- Removes a node key from the magnify database
+--- @param node_name Name of the node to clear
+--- @return reference key the removed node key pointed to, nil if the node did not exist
+local function clear_node_key(node_name)
+    old_ref = magnify_plants:get_string("node_"..node_name)
+    magnify_plants:set_string("node_"..node_name, "")
+    return (old_ref ~= "" and old_ref) or nil
+end
+
+--- @public
+--- Removes the keys for all nodes in the given table from the magnify database
+--- Then, removes any reference tables that are no longer being pointed to by any nodes as a result of the node key removal
+--- @param node_table Table of nodes to remove, all in the format "modname:name"
+function magnify.clear_nodes(node_table)
+    -- remove node keys
+    local changed_refs = {}
+    for _,node in pairs(node_table) do
+        table.insert(changed_refs, clear_node_key(node))
+    end
+
+    -- check affected refs to ensure that node still point to them
+    local storage_data = magnify_plants:to_table()
+    for k,v in pairs(storage_data.fields) do
+        for i,ref in pairs(changed_refs) do
+            if v == ref then
+                changed_refs[i] = nil
+            end
+        end
+    end
+
+    -- remove affected refs which no longer have nodes pointing to them
+    for _,ref in pairs(changed_refs) do
+        magnify.clear_ref(ref)
     end
 end
 
@@ -186,7 +233,7 @@ button[12.4,6.4;5.4,0.9;back;Back]
 function magnify.table_has(table, val)
     if not table or not val then return false end
     for k,v in pairs(table) do
-        if v == val then return true end
+        if k == val or v == val then return true end
     end
     return false
 end

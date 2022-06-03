@@ -283,7 +283,7 @@ local Savanna_Grass = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Pseudoroegneria%20spicata",
     img_credit = ""       
 }
-magnify.register_plant(Savanna_Grass, {"default:dry_grass", "default:dirt_with_dry_grass","default:dry_dirt","default:dry_dirt_with_dry_grass", "default:dry_grass_1", "default:dry_grass_2", "default:dry_grass_3", "default:dry_grass_4", "default:dry_grass_5"})
+magnify.register_plant(Savanna_Grass, {"default:dirt_with_dry_grass", "default:dry_dirt","default:dry_dirt_with_dry_grass", "default:dry_grass_1", "default:dry_grass_2", "default:dry_grass_3", "default:dry_grass_4", "default:dry_grass_5"})
 
 local PineBushNeedles_Stem = {
     sci_name = "Taxus brevifolia",   
@@ -316,3 +316,7 @@ local Grass = {
     img_copyright = "",
 }
 magnify.register_plant(Grass, {"default:grass_1", "default:grass_2", "default:grass_3", "default:grass_4", "default:grass_5", "default:dirt_with_grass", "default:dirt_with_grass_footsteps"})
+
+-- Clear previously registered nodes/references that should no longer be registered
+magnify.clear_nodes({"default:dry_grass"})
+magnify.clear_ref("ref_test")

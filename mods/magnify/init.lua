@@ -46,11 +46,11 @@ minetest.register_tool(tool_name, {
     wield_image = "magnifying_tool.png",
     inventory_image = "magnifying_tool.png",
     liquids_pointable = false,
-    on_use = function(itemstack, user, pointed_thing)
-        if not check_perm(user) or pointed_thing.type ~= "node" then
+    on_use = function(itemstack, player, pointed_thing)
+        if not check_perm(player) or pointed_thing.type ~= "node" then
             return nil
         else
-            local username = user:get_player_name()
+            local pname = player:get_player_name()
             local node_name = minetest.get_node(pointed_thing.under).name
             local has_node = magnify_plants:get("node_" .. node_name)
     
@@ -59,14 +59,14 @@ minetest.register_tool(tool_name, {
                 local species_formspec = build_formspec(node_name)
                 if species_formspec ~= nil then
                     -- good: open formspec
-                    minetest.show_formspec(username, "magnifying_tool:identify", species_formspec)
+                    minetest.show_formspec(pname, "magnifying_tool:identify", species_formspec)
                 else
                     -- bad: display corrupted node message in chat
-                    minetest.chat_send_player(username, "An entry for this item exists, but could not be found in the plant database.\nPlease contact an administrator and ask them to check your server's plant database files to ensure all plants were registered properly.")
+                    minetest.chat_send_player(pname, "An entry for this item exists, but could not be found in the plant database.\nPlease contact an administrator and ask them to check your server's plant database files to ensure all plants were registered properly.")
                 end
             else
                 -- bad: display failure message in chat
-                minetest.chat_send_player(username, "No entry for this item could be found.")
+                minetest.chat_send_player(pname, "No entry for this item could be found.")
             end
             return nil
         end
