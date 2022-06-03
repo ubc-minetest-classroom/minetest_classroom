@@ -333,11 +333,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			-- Append list of teachers in-game
 			local teachers = ""
 			for teacher in pairs(minetest_classroom.mc_students.teachers) do
-				teachers = teachers .. teacher .. ", "
+				local teachers = teachers .. teacher .. ", "
 			end
 
 			if teachers ~= "" then
-				msg = '[REPORT] ' .. msg .. " (teachers online: " .. teachers:sub(1, -3) .. ")"
+				local msg = '[REPORT] ' .. msg .. " (teachers online: " .. teachers:sub(1, -3) .. ")"
 				-- Send report to any teacher currently connected
 				for teacher in pairs(minetest_classroom.mc_students.teachers) do
 					minetest.chat_send_player(teacher, minetest.colorize("#FF00FF", msg))
@@ -381,7 +381,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		    	end
 		elseif fields.go then
 			local pname = player:get_player_name()
-			pmeta = player:get_meta()
+			local pmeta = player:get_meta()
 			if not context.selected then
 				context.selected = 1
 			end
@@ -405,58 +405,63 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		
 		-- Get the classrooms from modstorage
 		local temp = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
-		-- Get the classroom accesscodes
-		local loc = check_access_code(fields.accesscode,temp.access_code)
-		if loc then
-			-- Check if the student is currently registered for this course
-			local pmeta = player:get_meta()
-			local pdata = minetest.deserialize(pmeta:get_string("classrooms"))
-			-- Validate against modstorage
-			local mdata = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
-			if pdata == nil then
-				-- This is the first time the student registers for any course
-				local classroomdata = {
-					course_code = { mdata.course_code[loc] },
-					section_number = { mdata.section_number[loc] },
-					start_year = { mdata.start_year[loc] },
-					start_month = { mdata.start_month[loc] },
-					start_day = { mdata.start_day[loc] },
-					end_year = { mdata.end_year[loc] },
-					end_month = { mdata.end_month[loc] },
-					end_day = { mdata.end_day[loc] },
-				}
-				pmeta:set_string("classrooms", minetest.serialize(classroomdata))
-			else
-				-- Student has already registered for another classroom
-				table.insert(pdata.course_code, mdata.course_code[loc])
-				table.insert(pdata.section_number, mdata.section_number[loc])
-				table.insert(pdata.start_year, mdata.start_year[loc])
-				table.insert(pdata.start_month, mdata.start_month[loc])
-				table.insert(pdata.start_day, mdata.start_day[loc])
-				table.insert(pdata.end_year, mdata.end_year[loc])
-				table.insert(pdata.end_month, mdata.end_month[loc])
-				table.insert(pdata.end_day, mdata.end_day[loc])
-				local classroomdata = {
-					course_code = pdata.course_code,
-					section_number = pdata.section_number,
-					start_year = pdata.start_year,
-					start_month = pdata.start_month,
-					start_day = pdata.start_day,
-					end_year = pdata.end_year,
-					end_month = pdata.end_month,
-					end_day = pdata.end_day,
-				}
-			end
 			
-			-- Check if the access code is expired
-			if tonumber(mdata.end_year[loc]) < tonumber(os.date("%Y")) and months[mdata.end_month[loc]] < tonumber(os.date("%m")) and tonumber(mdata.end_day[loc]) < tonumber(os.date("%d")) then
-				minetest.chat_send_player(pname,pname..": The access code you entered has expired. Please contact your instructor.")
+		if temp ~= nil then
+			-- Get the classroom accesscodes
+			local loc = check_access_code(fields.accesscode,temp.access_code)
+			if loc then
+				-- Check if the student is currently registered for this course
+				local pmeta = player:get_meta()
+				local pdata = minetest.deserialize(pmeta:get_string("classrooms"))
+				-- Validate against modstorage
+				local mdata = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
+				if pdata == nil then
+					-- This is the first time the student registers for any course
+					local classroomdata = {
+						course_code = { mdata.course_code[loc] },
+						section_number = { mdata.section_number[loc] },
+						start_year = { mdata.start_year[loc] },
+						start_month = { mdata.start_month[loc] },
+						start_day = { mdata.start_day[loc] },
+						end_year = { mdata.end_year[loc] },
+						end_month = { mdata.end_month[loc] },
+						end_day = { mdata.end_day[loc] },
+					}
+					pmeta:set_string("classrooms", minetest.serialize(classroomdata))
+				else
+					-- Student has already registered for another classroom
+					table.insert(pdata.course_code, mdata.course_code[loc])
+					table.insert(pdata.section_number, mdata.section_number[loc])
+					table.insert(pdata.start_year, mdata.start_year[loc])
+					table.insert(pdata.start_month, mdata.start_month[loc])
+					table.insert(pdata.start_day, mdata.start_day[loc])
+					table.insert(pdata.end_year, mdata.end_year[loc])
+					table.insert(pdata.end_month, mdata.end_month[loc])
+					table.insert(pdata.end_day, mdata.end_day[loc])
+					local classroomdata = {
+						course_code = pdata.course_code,
+						section_number = pdata.section_number,
+						start_year = pdata.start_year,
+						start_month = pdata.start_month,
+						start_day = pdata.start_day,
+						end_year = pdata.end_year,
+						end_month = pdata.end_month,
+						end_day = pdata.end_day,
+					}
+				end
+
+				-- Check if the access code is expired
+				if tonumber(mdata.end_year[loc]) < tonumber(os.date("%Y")) and months[mdata.end_month[loc]] < tonumber(os.date("%m")) and tonumber(mdata.end_day[loc]) < tonumber(os.date("%d")) then
+					minetest.chat_send_player(pname,pname..": The access code you entered has expired. Please contact your instructor.")
+				else
+					-- Send the student to the classroom spawn pos
+					player:set_pos(mdata.spawn_pos[loc])
+				end
 			else
-				-- Send the student to the classroom spawn pos
-				player:set_pos(mdata.spawn_pos[loc])
-			end
+				show_accesscode_fail(player)
+			end		
 		else
-			show_accesscode_fail(player)
+			return	
 		end
 	end
 
