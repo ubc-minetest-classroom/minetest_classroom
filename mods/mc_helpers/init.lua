@@ -1,3 +1,5 @@
+dofile(minetest.get_modpath("mc_helpers") .. "/Debugging.lua")
+
 mc_helpers = {}
 
 ---@public

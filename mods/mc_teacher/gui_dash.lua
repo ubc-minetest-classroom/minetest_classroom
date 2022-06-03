@@ -816,9 +816,8 @@ function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
         math.randomseed(os.time())
         access_num = tostring(math.floor(math.random() * 100000))
 
-        local newRealm = Realm:New(cc..sn..map)
-        newRealm:Load_Schematic(map)
-        newRealm:CreateBarriers()
+
+        local newRealm = Realm:NewFromSchematic(cc..sn..map, map)
 
 
 
