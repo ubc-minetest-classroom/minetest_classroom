@@ -172,11 +172,10 @@ local waterlily = {
     height = "1 to 2 meters long",
     bloom = "Blooms with solitary, waxy, floating yellow flowers stemming from a rhizome",
     region = "BC, Yukon, Northwest USA and Alaska",
-    texture = "waterlily.png",
+    texture = "Nuphar_polysepala_1.jpg",
     more_info = "An aquatic perennial with long-stalked, leathery leaves. Found in ponds and slow-moving streams in lowland, steppe, and montane areas",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Nuphar%20polysepala",
-    --img_copyright = "",
-    img_credit = ""
+    img_copyright = "Marshal Hedin, licensed under CC BY 2.0"
 }
 magnify.register_plant(waterlily, {"flowers:waterlily"})
 

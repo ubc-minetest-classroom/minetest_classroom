@@ -65,6 +65,7 @@ function Realm:New(name, area)
 
     setmetatable(this, self)
     Realm.realmDict[this.ID] = this
+
     Realm.SaveDataToStorage()
 
     return this
