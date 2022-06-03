@@ -8,18 +8,18 @@ magnify = {}
 --magnify_plants:set_string("reg_time", date_str)
 
 --- @public
---- Adds a plant to the magnify plant database
---- @param def_table Definition table for the species being added
---- @param blocks Table of stringified nodes this species corresponds to in the MineTest world
---- @see Magnify documentation for more information on how to register a plant species
-function magnify.register_plant(def_table, blocks) 
+--- Registers a plant species in the `magnify` plant database
+--- @param def_table Plant species definition table
+--- @param nodes Table of stringified nodes the species corresponds to in the MineTest world
+--- @see README.md > API > Registration
+function magnify.register_plant(def_table, nodes) 
     local ref = magnify_plants:get_int("count")
     local serial_table = minetest.serialize(def_table)
     magnify_plants:set_string("ref_"..ref, serial_table)
 
     --local key_table = {key = "ref_"..ref, reg_time = date_str}
     --local serial_ref = minetest.serialize(key_table)
-    for k,v in pairs(blocks) do
+    for k,v in pairs(nodes) do
         magnify_plants:set_string("node_"..v, "ref_"..ref)
     end
 
@@ -27,7 +27,7 @@ function magnify.register_plant(def_table, blocks)
 end
 
 --- @public
---- Returns human-readable names of all species in the magnify plant database
+--- Returns a human-readable list of all species registered in the magnify plant database
 --- @return table
 function magnify.get_all_registered_species()
     local storage_data = magnify_plants:to_table()
@@ -47,8 +47,16 @@ function magnify.get_all_registered_species()
 end
 
 --- @public
---- Clears the given reference key from the magnify plant database
---- @param ref The reference key of the plant species to be cleared from the database
+--- Returns the reference key associated with `node` in the `magnify` plant database
+--- @param node Stringified node
+--- @return string or nil
+function magnify.get_ref(node)
+    return magnify_plants:get("node_"..node)
+end
+
+--- @public
+--- Clears a plant species and all its associated nodes from the `magnify` plant database
+--- @param ref Reference key of the plant species to clear
 function magnify.clear_ref(ref)
     local storage_data = magnify_plants:to_table()
     for k,v in pairs(storage_data.fields) do
@@ -59,23 +67,23 @@ function magnify.clear_ref(ref)
 end
 
 --- @private
---- Removes a node key from the magnify database
---- @param node_name Name of the node to clear
---- @return reference key the removed node key pointed to, nil if the node did not exist
-local function clear_node_key(node_name)
-    old_ref = magnify_plants:get_string("node_"..node_name)
-    magnify_plants:set_string("node_"..node_name, "")
-    return (old_ref ~= "" and old_ref) or nil
+--- Clears a node from the magnify database and returns the reference key the removed node key pointed to
+--- @param node Stringified node to clear
+--- @return string or nil
+local function clear_node_key(node)
+    old_ref = magnify.get_ref(node)
+    magnify_plants:set_string("node_"..node, "")
+    return old_ref
 end
 
 --- @public
---- Removes the keys for all nodes in the given table from the magnify database
---- Then, removes any reference tables that are no longer being pointed to by any nodes as a result of the node key removal
---- @param node_table Table of nodes to remove, all in the format "modname:name"
-function magnify.clear_nodes(node_table)
+--- Clears the nodes in `nodes` from the `magnify` plant database
+--- Then, clears any plants species that are no longer associated with any nodes as a result of clearing the nodes in `nodes`
+--- @param nodes Table of stringified nodes to clear
+function magnify.clear_nodes(nodes)
     -- remove node keys
     local changed_refs = {}
-    for _,node in pairs(node_table) do
+    for _,node in pairs(nodes) do
         table.insert(changed_refs, clear_node_key(node))
     end
 
@@ -96,9 +104,9 @@ function magnify.clear_nodes(node_table)
 end
 
 --- @public
---- Returns information about the plant species indexed at the given reference key
---- @param ref The reference key of the plant species
---- @return table, table
+--- Returns information about the species indexed at `ref` in the `magnify` plant database
+--- @param ref Reference key of the plant species
+--- @return table, table or nil
 function magnify.get_species_from_ref(ref)
     local storage_data = magnify_plants:to_table()
     local output_nodes = {}
@@ -113,19 +121,19 @@ function magnify.get_species_from_ref(ref)
             end
             return data,output_nodes
         else
-            return nil,nil
+            return nil
         end
     else
-        return nil,nil
+        return nil
     end
 end
 
 --- @public
---- Builds the magnifying glass info formspec for the plant species with the given reference key
---- @param ref The reference key of the plant species
---- @param is_exit true if the back button should be type "button_exit", false if the back button should be type "button"
---- @param is_inv true if the formspec is being used in the inventory, false otherwise
---- @return formspec string, formspec size[] string
+--- Builds the general plant information formspec for the species indexed at `ref` in the `magnify` plant database 
+--- @param ref Reference key of the plant species
+--- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
+--- @param is_inv true if the formspec is being used in the player inventory, false otherwise
+--- @return formspec string, formspec "size[]" string or nil
 function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
     local info = minetest.deserialize(magnify_plants:get(ref))
     
@@ -225,11 +233,11 @@ textarea[0.35,6.9;11.6,0.7;;;", minetest.formspec_escape((info.img_copyright and
 button[12.4,6.4;5.4,0.9;back;Back]
 ]]
 
----@public
----Returns true if any of the values in the given table is equal to the value provided
----@param table The table to check
----@param val The value to check for
----@return boolean whether the value exists in the table
+--- @public
+--- Returns true if any of the keys or values in `table` match `val`, false otherwise
+--- @param table The table to check
+--- @param val The key/value to check for
+--- @return boolean
 function magnify.table_has(table, val)
     if not table or not val then return false end
     for k,v in pairs(table) do

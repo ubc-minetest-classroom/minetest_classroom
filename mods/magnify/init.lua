@@ -28,12 +28,6 @@ end
 -- clear_table() -- find an alternative for this so that only species that have not been registered get removed
 magnify_plants:set_int("count", 1)
 
--- Builds the magnifying glass info formspec for the node with the given name
-local function build_formspec(node_name)
-    local ref_key = magnify_plants:get("node_" .. node_name)
-    return magnify.build_formspec_from_ref(ref_key, true, false)
-end
-
 -- Registers the magnifying glass tool
 minetest.register_tool(tool_name, {
     description = "Magnifying Glass",
@@ -51,13 +45,13 @@ minetest.register_tool(tool_name, {
             return nil
         else
             local pname = player:get_player_name()
-            local node_name = minetest.get_node(pointed_thing.under).name
-            local has_node = magnify_plants:get("node_" .. node_name)
+            local node = minetest.get_node(pointed_thing.under).name
+            local ref_key = magnify.get_ref(node)
     
-            if has_node ~= nil then
+            if ref_key then
                 -- try to build formspec
-                local species_formspec = build_formspec(node_name)
-                if species_formspec ~= nil then
+                local species_formspec = magnify.build_formspec_from_ref(ref_key, true, false)
+                if species_formspec then
                     -- good: open formspec
                     minetest.show_formspec(pname, "magnifying_tool:identify", species_formspec)
                 else
@@ -140,20 +134,25 @@ end
 
 --- Return the technical formspec for a species
 --- @return formspec string, size
-local function get_expanded_species_formspec(info, nodes, ref)
-    local sorted_nodes = table.sort(nodes, function(a, b) return a < b end)
-    local size = "size[12.4,6.7]"
-    local formtable = {    
-        "formspec_version[5]", size,
-        "box[0,0;12.2,0.8;#9192a3]",
-        "label[4.8,0.2;Technical Information]",
-        "label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]",
-        "textlist[0,2.1;7.4,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
-        "label[0,1.6;Associated nodes:]",
-        "button[4,6.2;4.4,0.6;back;Back]",
-        create_image_table(sorted_nodes or nodes, 7.6, 1.2, 4.8)
-    }
-    return table.concat(formtable, ""), size
+local function get_expanded_species_formspec(ref)
+    local info,nodes = magnify.get_species_from_ref(ref)
+    if info and nodes then
+        local sorted_nodes = table.sort(nodes, function(a, b) return a < b end)
+        local size = "size[12.4,6.7]"
+        local formtable = {    
+            "formspec_version[5]", size,
+            "box[0,0;12.2,0.8;#9192a3]",
+            "label[4.8,0.2;Technical Information]",
+            "label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]",
+            "textlist[0,2.1;7.4,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
+            "label[0,1.6;Associated nodes:]",
+            "button[4,6.2;4.4,0.6;back;Back]",
+            create_image_table(sorted_nodes or nodes, 7.6, 1.2, 4.8)
+        }
+        return table.concat(formtable, ""), size
+    else
+        return nil
+    end
 end
 
 --[[
@@ -175,14 +174,17 @@ sfinv.register_page("magnify:compendium", {
             -- create species/technical view
             local pname = player:get_player_name()
             local ref = get_species_ref(context.species_selected)
-            local data,nodes = magnify.get_species_from_ref(ref)
-            local formtable = ""
-            local size = nil
+            
+            local formtable, size = nil, nil
 
             if context.species_view == STANDARD_VIEW then
                 formtable,size = magnify.build_formspec_from_ref(ref, false, true)
             elseif context.species_view == TECH_VIEW then
-                formtable,size = get_expanded_species_formspec(data, nodes, ref)
+                formtable,size = get_expanded_species_formspec(ref)
+            end
+
+            if not formtable then
+                formtable = "label[0,0;Uh oh, something went wrong...]button[0,0.5;5,0.6;back;Back]" -- fallback
             end
 
             return sfinv.make_formspec(player, context, formtable, false, size)
