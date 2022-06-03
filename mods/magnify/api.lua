@@ -4,8 +4,8 @@ magnify = {}
 -- Instantiate unique time code for plant updates
 --local prev_date_str = magnify_plants:get_string("reg_time_old")
 --magnify_plants:set_string("reg_time_old", prev_date_str)
-local date_str = os.date("%Y%m%d%H%M%S-V1", os.time())
-magnify_plants:set_string("reg_time", date_str)
+--local date_str = os.date("%Y%m%d%H%M%S-V1", os.time())
+--magnify_plants:set_string("reg_time", date_str)
 
 --- @public
 --- Adds a plant to the magnify plant database
