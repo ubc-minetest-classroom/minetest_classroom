@@ -64,7 +64,7 @@ function Realm:New(name, area)
                         z = (this.StartPos.z + this.EndPos.z) / 2 }
 
     setmetatable(this, self)
-    table.insert(Realm.realmDict, this.ID, this)
+    Realm.realmDict[this.ID] = this
     Realm.SaveDataToStorage()
 
     return this
@@ -181,8 +181,7 @@ function Realm:Delete()
     self:RunFunctionFromTable(self.RealmDeleteTable)
     self:ClearNodes()
     Realm.markSpaceAsFree(Realm.worldToGridSpace(self.StartPos), Realm.worldToGridSpace(self.EndPos))
-    table.remove(Realm.realmDict, self.ID)
-
+    Realm.realmDict[self.ID] = nil
     Realm.SaveDataToStorage()
 end
 
