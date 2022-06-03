@@ -97,19 +97,21 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
                         y = math.ceil(areaInBlocks.y / 80),
                         z = math.ceil(areaInBlocks.z / 80) }
 
-    local createNewBin = true
+    local reuseBin = false
     local StartPos = { x = 0, y = 0, z = 0 }
+    local BinEndPos = { x = 0, y = 0, z = 0 }
 
     for i, v in ipairs(Realm.EmptyChunks) do
         if (v.area.x >= realmSize.x and v.area.y >= realmSize.y and v.area.z >= realmSize.z) then
-            StartPos = { x = v.startPos.x, y = v.startPos.y, z = v.startPos.z }
-            createNewBin = false
             table.remove(Realm.EmptyChunks, i)
+            StartPos = { x = v.startPos.x + Realm.const.bufferSize, y = v.startPos.y + Realm.const.bufferSize, z = v.startPos.z + Realm.const.bufferSize }
+            BinEndPos = { x = v.startPos.x + v.area.x, y = v.startPos.y + v.area.y, v.startPos.z + v.area.z }
+            reuseBin = true
             break
         end
     end
 
-    if (createNewBin == true) then
+    if (reuseBin == false) then
         StartPos = Realm.lastRealmPosition
 
         -- Calculate our start position on the grid. We're lining realms up on the X-Pos
@@ -141,7 +143,7 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
                y = StartPos.y + realmSize.y,
                z = StartPos.z + realmSize.z }
 
-    if (createNewBin == true) then
+    if (reuseBin == false) then
         -- If the realm EndPos was larger than anything before, we make sure to update it;
         -- This ensures that we don't try to place a realm on another realm;
         if (EndPos.x > Realm.maxRealmSize.x) then
@@ -155,6 +157,18 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
         if (EndPos.z > Realm.maxRealmSize.z) then
             Realm.maxRealmSize.z = EndPos.z
         end
+        BinEndPos = Realm.maxRealmSize
+    end
+
+    -- We're checking reuseBin multiple times
+    if (reuseBin == true) then
+
+        local x = {
+            y = { startPos = { x = StartPos.x, y = EndPos.y, z = StartPos.z, }, endPos = { x = EndPos.x, y = BinEndPos.y, x = EndPos.z } },
+            x = { startPos = { x = EndPos.x, y = StartPos.y, z = StartPos.z, }, endPos = { x = BinEndPos.x, y = EndPos.y, z = EndPos.z } },
+            z = { startPos = { x = StartPos.z, y = StartPos.y, z = EndPos.z, }, endPos = { x = EndPos.z, y = EndPos.y, z = BinEndPos.z } }
+        }
+
     end
 
     mc_worldManager.storage:set_string("realmEmptyChunks", minetest.serialize(Realm.EmptyChunks))
@@ -180,7 +194,10 @@ end
 function Realm:Delete()
     self:RunFunctionFromTable(self.RealmDeleteTable)
     self:ClearNodes()
-    Realm.markSpaceAsFree(Realm.worldToGridSpace(self.StartPos), Realm.worldToGridSpace(self.EndPos))
+    Realm.markSpaceAsFree(Realm.worldToGridSpace({
+        x = self.StartPos.x - Realm.const.bufferSize,
+        y = self.StartPos.y - Realm.const.bufferSize,
+        z = self.StartPos.z - Realm.const.bufferSize }), Realm.worldToGridSpace(self.EndPos))
     Realm.realmDict[self.ID] = nil
     Realm.SaveDataToStorage()
 end
