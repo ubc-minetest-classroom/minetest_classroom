@@ -36,53 +36,51 @@ end
 -- Define a formspec that will describe tutorials and give the option to teleport to selected tutorial realm
 local mc_tf_menu = {
 	"formspec_version[5]",
-	"size[13,10]", 
+	"size[13,10]",
 	"box[0.2,8.4;10.2,1.4;#505050]",
 	"box[10.7,8.4;2.1,1.4;#C0C0C0]",
-	"textarea[5,0.2;7.8,8;text;;]",
+	"textarea[5,0.2;7.8,8;;;]",
 	"button_exit[11,8.65;1.5,0.9;exit;Exit]",
-	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]", 
+	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]",
 	"textlist[0.2,0.2;4.6,8;tutorials;]"
 }
 
-local names = {}
-local descriptions = {}
+local tutorialTable = {}
 local is_first = true
-local schematics = {}
-local selectedRealm
+
+local selectedRealm = 0
 
 -- To add a tutorial to the tutorialbook, call addTutorial with the tutorial's name, description, and schematic
-local function addTutorial(name, description, schematic) 
+function mc_tutorialFramework.addTutorialEntry(name, description, schematic)
+        name = name or "Unknown Tutorial"
+        description = description or "Unknown Tutorial"
+        schematic = schematic or "shack"
+
         -- Add tutorial to the text list
 		local textlist = mc_tf_menu[#mc_tf_menu]
 
 		if not is_first then
 			textlist = textlist:sub(1, textlist:len() - 1) .. "," .. name .. "]"
-		else 
+		else
 			textlist = textlist:sub(1, textlist:len() - 1) .. name .. "]"
 			is_first = false
 		end
 
         mc_tf_menu[#mc_tf_menu] = textlist
 
-		table.insert(names, #names + 1, name)
-		table.insert(descriptions, #descriptions + 1, description)
+        table.insert(tutorialTable, { name = name, description = description, schematic = schematic})
+end
 
-		if schematic then
-			table.insert(schematics, #schematics + 1, schematic)
-		end
-end 
-
-addTutorial("Introduction", "Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.")
-addTutorial("Test", "testing", "testSchematic")
-addTutorial("Movement", "This tutorial explains how to walk in different directions, jump, and fly. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.", "movementTutorial")
+mc_tutorialFramework.addTutorialEntry("Introduction", "Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.")
+mc_tutorialFramework.addTutorialEntry("Test", "testing", "shack")
+mc_tutorialFramework.addTutorialEntry("Movement", "This tutorial explains how to walk in different directions, jump, and fly. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.", "movementTutorial")
 
 local function show_tutorial_menu(player)
 	if check_perm(player) then
 		local pname = player:get_player_name()
 
 		local formspec = ""
-		for i=1,#mc_tf_menu do 
+		for i=1,#mc_tf_menu do
 			formspec = formspec .. mc_tf_menu[i]
 		end
 
@@ -101,7 +99,7 @@ minetest.register_tool("mc_tf:tutorialbook" , {
 		-- Check for shout privileges
 		if check_perm(user) then
 			local textarea = mc_tf_menu[5]
-			textarea = "textarea[5,0.2;7.8,8;text;;" .. descriptions[1] .. "]"
+			textarea = "textarea[5,0.2;7.8,8;;;" .. tutorialTable[1].description .. "]"
 			mc_tf_menu[5] = textarea
 
 			show_tutorial_menu(user)
@@ -131,15 +129,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if fields.tutorials then
 		if event.type == "CHG" then
 			local textarea = mc_tf_menu[5]
-			textarea = "textarea[5,0.2;7.8,8;text;;" .. descriptions[event.index] .. "]"
+			textarea = "textarea[5,0.2;7.8,8;;;" .. tutorialTable[event.index].description .. "]"
+            selectedRealm = event.index
 			mc_tf_menu[5] = textarea
 			show_tutorial_menu(player)
 		end
 	end
 
 	if fields.teleport then
-		if event.index ~= 1 then
-			selectedRealm = mc_realmportals.CreateRealmByName(names[event.index + 1], schematics[event.index - 1])
+		if selectedRealm ~= 0 and selectedRealm ~= nil then
+			selectedRealm = mc_realmportals.CreateGetRealm(tutorialTable[selectedRealm].name, tutorialTable[selectedRealm].schematic)
 			selectedRealm:TeleportPlayer(player)
 		end
 	end
