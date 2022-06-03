@@ -74,7 +74,7 @@ function Realm:New(name, size, height)
                         z = (this.StartPos.z + this.EndPos.z) / 2 }
 
     setmetatable(this, self)
-    table.insert(Realm.realmDict, this.ID, this)
+    Realm.realmDict[self.ID] = this
     Realm.SaveDataToStorage()
 
     return this
@@ -86,7 +86,7 @@ end
 ---@return void
 function Realm:Delete()
     self:ClearNodes()
-    table.remove(Realm.realmDict, self.ID)
+    Realm.realmDict[self.ID] = nil
     Realm.SaveDataToStorage()
 
     self:RunFunctionFromTable(self.RealmDeleteTable)
