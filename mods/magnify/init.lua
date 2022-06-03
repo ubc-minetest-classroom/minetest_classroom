@@ -30,8 +30,8 @@ magnify_plants:set_int("count", 1)
 
 -- Builds the magnifying glass info formspec for the node with the given name
 local function build_formspec(node_name)
-  local ref_key = magnify_plants:get("node_" .. node_name)
-  return magnify.build_formspec_from_ref(ref_key, true, false)
+    local ref_key = magnify_plants:get("node_" .. node_name)
+    return magnify.build_formspec_from_ref(ref_key, true, false)
 end
 
 -- Registers the magnifying glass tool
@@ -82,10 +82,10 @@ minetest.register_tool(tool_name, {
 --- @return string
 --- @see magnify.get_all_registered_species()
 local function get_species_ref(index)
-      local list = magnify.get_all_registered_species()
+    local list = magnify.get_all_registered_species()
     local elem = list[tonumber(index)]
     local ref_num_split = string.split(elem, ":") -- "###num:rest"
-      local ref_str = ref_num_split[1]
+    local ref_str = ref_num_split[1]
     local ref_num = string.sub(ref_str, 4) -- removes "###" from "###num"
     return "ref_"..ref_num
 end
