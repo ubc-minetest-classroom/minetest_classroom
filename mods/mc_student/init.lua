@@ -404,18 +404,18 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		local pname = player:get_player_name()
 		
 		-- Get the classrooms from modstorage
-		temp = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
+		local temp = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
 		-- Get the classroom accesscodes
-		loc = check_access_code(fields.accesscode,temp.access_code)
+		local loc = check_access_code(fields.accesscode,temp.access_code)
 		if loc then
 			-- Check if the student is currently registered for this course
-			pmeta = player:get_meta()
-			pdata = minetest.deserialize(pmeta:get_string("classrooms"))
+			local pmeta = player:get_meta()
+			local pdata = minetest.deserialize(pmeta:get_string("classrooms"))
 			-- Validate against modstorage
-			mdata = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
+			local mdata = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
 			if pdata == nil then
 				-- This is the first time the student registers for any course
-				classroomdata = {
+				local classroomdata = {
 					course_code = { mdata.course_code[loc] },
 					section_number = { mdata.section_number[loc] },
 					start_year = { mdata.start_year[loc] },
@@ -436,7 +436,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				table.insert(pdata.end_year, mdata.end_year[loc])
 				table.insert(pdata.end_month, mdata.end_month[loc])
 				table.insert(pdata.end_day, mdata.end_day[loc])
-				classroomdata = {
+				local classroomdata = {
 					course_code = pdata.course_code,
 					section_number = pdata.section_number,
 					start_year = pdata.start_year,
