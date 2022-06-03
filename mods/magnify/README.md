@@ -9,7 +9,7 @@ Adds a magnifying glass tool and inventory plant compenium for viewing informati
 
 ### Registration
 
-#### `magnify.register_plant(def_table, nodes)`  -->  `nil`
+#### `magnify.register_plant(def_table, nodes)  -->  nil`
 
 Registers a plant species in the `magnify` plant database
 
@@ -43,14 +43,14 @@ Registers a plant species in the `magnify` plant database
   magnify.register_plant(def_table, {"mod:node", "mod:another_node", "other_mod:other_node"})
   ```
 
-#### `magnify.clear_nodes(nodes)`  -->  `nil`
+#### `magnify.clear_nodes(nodes)  -->  nil`
 
 Clears the nodes in `nodes` from the `magnify` plant database, then clears any plants species that are no longer associated with any nodes as a result of clearing the nodes in `nodes`
 
 - Parameters:
   - `nodes` (*`table`*): Table of stringified nodes (`mod_name:node_name`) to clear
 
-#### `magnify.clear_ref(ref)`  -->  `nil`
+#### `magnify.clear_ref(ref)  -->  nil`
 
 Clears a plant species and all its associated nodes from the `magnify` plant database
 
@@ -59,7 +59,7 @@ Clears a plant species and all its associated nodes from the `magnify` plant dat
 
 ### General
 
-#### `magnify.get_ref(node)`  -->  *`string`*
+#### `magnify.get_ref(node)  -->  string`
 
 Returns the reference key associated with `node` in the `magnify` plant database
 
@@ -70,8 +70,7 @@ Returns the reference key associated with `node` in the `magnify` plant database
   *OR*
   - `nil` if `node` is invalid or not registered in the `magnify` plant database
 
-
-#### `magnify.get_species_from_ref(ref)` --> *`table`*, *`table`*
+#### `magnify.get_species_from_ref(ref)  -->  table, table`
 
 Returns information about the species indexed at `ref` in the `magnify` plant database
 
@@ -83,14 +82,14 @@ Returns information about the species indexed at `ref` in the `magnify` plant da
   *OR*
   - `nil` if `ref` is invalid
 
-#### `magnify.get_all_registered_species()` --> *`table`*
+#### `magnify.get_all_registered_species()  -->  table`
 
 Returns a human-readable list of all species registered in the `magnify` plant database
 
 - Returns:
   - *`table`*: Names of all registered plant species, formatted as "#0: Common name (Scientific name)"
 
-#### `magnify.build_formspec_from_ref(ref, is_exit, is_inv)`  -->  *`string`*, *`string`*
+#### `magnify.build_formspec_from_ref(ref, is_exit, is_inv)  -->  string, string`
 
 Builds the general plant information formspec for the species indexed at `ref` in the `magnify` plant database  
 
@@ -106,7 +105,7 @@ Builds the general plant information formspec for the species indexed at `ref` i
 
 ### Utility
 
-#### `magnify.table_has(table, val)`  -->  *`boolean`*
+#### `magnify.table_has(table, val)  -->  boolean`
 
 Returns `true` if any of the keys or values in `table` match `val`, `false` otherwise
 
