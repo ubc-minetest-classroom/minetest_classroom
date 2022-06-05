@@ -28,7 +28,7 @@ local aspen = {
     height = "Grows up to 25 meters tall",
     bloom = "Has smooth, round to triangular-shaped leaves with a flattened stalk",
     region = "most of North America",
-    texture = "Populus_tremuloides_02.jpg",
+    texture = "Populus_tremuloides.jpg",
     model_obj = "aspen_tree.obj",
 	model_spec = "default_aspen_tree.png,default_aspen_tree_top.png,default_aspen_leaves.png,default_dirt.png",
     more_info = "Smooth-barked, randomly-branching tree. Also known as the golden aspen, due to the golden colour its leaves turn in the fall.",
@@ -46,7 +46,7 @@ local pine = {
     height = "21 to 24 meters tall",
     bloom = "Produces yellowish pollen from May to July, depending on the elevation",
     region = "BC, Western Alberta, Southern Yukon and Western USA",
-    texture = "Pinus_contorta_28266.jpg",
+    texture = "Pinus_contorta.jpg",
     model_obj = "pine_tree.obj",
     model_spec = "default_pine_needles.png,default_pine_tree_top.png,default_pine_tree.png,default_dirt.png",
     more_info = "Large, straight trunked, column-like tree with a narrow, open crown",
@@ -115,7 +115,7 @@ local blueberry = {
     status_col = "#666ae3", -- S5
     bloom = "Blooms with pinkish red flowers from April to May",
     region = "Southwest BC and West Coast USA",
-    texture = "Vacciniumovatum.jpg", 
+    texture = "Vaccinium_ovatum.jpg", 
     more_info = "Can tolerate a wide range of light conditions and is very attractive to birds. Foliage is glossy and green with new red growth",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Vaccinium%20ovatum",
     img_credit = "Gordon Leppig & Andrea J. Pickart"
@@ -131,7 +131,7 @@ local Bush = {
     height = "1 to 4 meters tall",
     bloom = "Blooms with half-rounded clusters of showy, white saucer-shaped flowers",
     region = "Southern BC and California",
-    texture = "Physocarpus_capitatus_18343.jpg",
+    texture = "Physocarpus_capitatus.jpg",
     more_info = "A shrub which attracts native bees and butterflies, and gives great cover for birds and small mammals.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Physocarpus%20capitatus",
     img_copyright = "Walter Siegmund, licensed under CC BY 2.5"
@@ -165,10 +165,10 @@ local Cactus = {
     height = "5 to 20 centimeters tall",
     bloom = "Blooms with paper-thin petals, yelllow, 3-5 centimeters across with reddish stalks",
     region = "BC to Southwest Ontario and Northern to Midwestern USA",
-    texture = "4691167139_41c8a71b20_o.jpg", 
+    --texture = "", 
     more_info = "Perennial herb from a fibrous root; mat-forming; stems prostrate, succulent, subglobose to rounded, fleshy,",
-    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Opuntia%20fragilis",
-    img_copyright = "Alexandre Dell'Olivo, licensed under CC BY-NC-SA 2.0"
+    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Opuntia%20fragilis"--,
+    --img_copyright = ""
 }
 magnify.register_plant(Cactus, {"default:cactus", "default:large_cactus_seedling"})
 
@@ -214,7 +214,7 @@ local Fern = {
     height = "Grows to 20 inches tall at maturity",         
     bloom = "No bloom pattern",           
     region = "Coastal BC, infrequent in Southeast BC",         
-    texture = "struthiopteris-spicant-1.jpg",        
+    texture = "Struthiopteris_spicant.jpg",        
     more_info = "This fern is particularly distinctive because of its two different types of fronds",      
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Blechnum%20spicant",   
     img_copyright = "Daniel Mosquin, licensed under CC BY-NC-SA 4.0"
@@ -246,7 +246,7 @@ local mannagrass = {
     height = "30 to 80 centimeters tall",
     bloom = "Blooms with slender green panicles of egg-shaped flowers in the early summer",
     region = "various parts of Canada and the USA, including BC",
-    texture = "1290859805_c0f741fe00_o.jpg",
+    texture = "Glyceria_striata.jpg",
     more_info = "A perennial with upright, hollow tufts of grass stemming from rhizomes. Typically found in bogs, lakeshores, and moist to wet meadows in lowland and subalpine zones.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Glyceria%20striata",
     img_copyright = "Jason Hollinger, licensed under CC BY 2.0" 
@@ -283,7 +283,7 @@ local Savanna_Grass = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Pseudoroegneria%20spicata",
     img_credit = ""       
 }
-magnify.register_plant(Savanna_Grass, {"default:dry_grass", "default:dirt_with_dry_grass","default:dry_dirt","default:dry_dirt_with_dry_grass", "default:dry_grass_1", "default:dry_grass_2", "default:dry_grass_3", "default:dry_grass_4", "default:dry_grass_5"})
+magnify.register_plant(Savanna_Grass, {"default:dirt_with_dry_grass", "default:dry_dirt","default:dry_dirt_with_dry_grass", "default:dry_grass_1", "default:dry_grass_2", "default:dry_grass_3", "default:dry_grass_4", "default:dry_grass_5"})
 
 local PineBushNeedles_Stem = {
     sci_name = "Taxus brevifolia",   
@@ -316,3 +316,7 @@ local Grass = {
     img_copyright = "",
 }
 magnify.register_plant(Grass, {"default:grass_1", "default:grass_2", "default:grass_3", "default:grass_4", "default:grass_5", "default:dirt_with_grass", "default:dirt_with_grass_footsteps"})
+
+-- Clear previously registered nodes/references that should no longer be registered
+magnify.clear_nodes({"default:dry_grass"})
+magnify.clear_ref("ref_test")
