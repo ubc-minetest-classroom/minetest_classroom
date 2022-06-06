@@ -38,8 +38,8 @@ end
 ---@return void
 function Realm:CreateGround(nodeType)
     nodeType = nodeType or "mc_worldmanager:temp"
-    local pos1 = { x = self.StartPos.x, y = (self.StartPos.y + self.EndPos.y) / 2, z = self.StartPos.z }
-    local pos2 = { x = self.EndPos.x, y = (self.StartPos.y + self.EndPos.y) / 2, z = self.EndPos.z }
+    local pos1 = { x = self.StartPos.x, y = self.StartPos.y + 1, z = self.StartPos.z }
+    local pos2 = { x = self.EndPos.x, y = self.StartPos.y + 1, z = self.EndPos.z }
 
     self:SetNodes(pos1, pos2, nodeType)
 end

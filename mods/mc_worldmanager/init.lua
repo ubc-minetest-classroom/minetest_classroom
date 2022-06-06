@@ -32,11 +32,9 @@ mc_worldManager.load_data()
 function mc_worldManager.GetSpawnRealm()
     local spawnRealm = Realm.realmDict[mc_worldManager.spawnRealmID]
     if (spawnRealm == nil) then
-        spawnRealm = Realm:New("Spawn Realm", 80, 80)
+        spawnRealm = Realm:NewFromSchematic("Spawn Realm", "vancouver_osm")
+
         mc_worldManager.spawnRealmID = spawnRealm.ID
-        local results = spawnRealm:Load_Schematic("vancouver_osm")
-        spawnRealm:CreateBarriers()
-        minetest.debug(tostring(results))
         mc_worldManager.save_data()
     end
     return spawnRealm

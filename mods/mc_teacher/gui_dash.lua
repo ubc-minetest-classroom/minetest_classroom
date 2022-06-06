@@ -24,15 +24,7 @@ local infos = {
     },
 }
 local tool_name = "mc_teacher:controller"
-local priv_table = {"teacher"}
-
--- Checks for the 'teacher' privilege
-local function check_perm_name(name)
-    return minetest.check_player_privs(name, {teacher = true})
-end
-local function check_perm(player)
-    return check_perm_name(player:get_player_name())
-end
+local priv_table = {teacher = true}
 
 local function get_group(context)
     if context and context.groupname then
@@ -44,7 +36,7 @@ end
 
 -- Label the teacher in red
 minetest.register_on_joinplayer(function(player)
-    if check_perm(player) then
+    if mc_helpers.checkPrivs(player,priv_table) then
         player:set_nametag_attributes({ color = { r = 255, g = 0, b = 0 } })
     end
 end)
@@ -59,13 +51,13 @@ local mc_teacher_menu = {
 	"button[1,3.3;3.8,1.3;lessons;Manage Lessons]",
 	"button[5.2,3.3;3.8,1.3;players;Manage Players]",
 	"button[1,5;3.8,1.3;classrooms;Manage Classrooms]",
-	"button[5.2,5;3.8,1.3;species;Plant Compendium]",
+	"button[5.2,5;3.8,1.3;rules;Manage Server Rules]",
 	"button[1,6.7;3.8,1.3;mail;Teacher Mail]",
 	"button_exit[5.2,6.7;3.8,1.3;exit;Exit]"
 }
 
 local function show_teacher_menu(player)
-    if check_perm(player) then
+    if mc_helpers.checkPrivs(player,priv_table) then
         local pname = player:get_player_name()
         minetest.show_formspec(pname, "mc_teacher:menu", table.concat(mc_teacher_menu,""))
         return true
@@ -84,7 +76,7 @@ local mc_teacher_tasks = {
 }
 
 local function show_tasks(player)
-    if check_perm(player) then
+    if mc_helpers.checkPrivs(player,priv_table) then
         local pname = player:get_player_name()
         minetest.show_formspec(pname, "mc_teacher:tasks", table.concat(mc_teacher_tasks,""))
         return true
@@ -137,7 +129,7 @@ end
 local DASHBOARD_HEADER = "formspec_version[5]size[13,11]"
 
 local function get_player_list_formspec(player, context)
-    if not check_perm(player) then
+    if not mc_helpers.checkPrivs(player,priv_table) then
         return "label[0,0;" .. FS "Access denied" .. "]"
     end
 
@@ -374,7 +366,7 @@ local function get_player_list_formspec(player, context)
 end
 
 local function handle_results(player, context, fields)
-    if not check_perm(player) then
+    if not mc_helpers.checkPrivs(player,priv_table) then
         return false
     end
 
@@ -456,7 +448,7 @@ end
 
 local _contexts = {}
 local function show_players(player)
-    if check_perm(player) then
+    if mc_helpers.checkPrivs(player,priv_table) then
         local pname = player:get_player_name()
         local context = _contexts[pname] or {}
         _contexts[pname] = context
@@ -470,7 +462,7 @@ end
 local mc_teacher_lessons = "formspec_version[5]"
 
 local function show_lessons(player)
-    if check_perm(player) then
+    if mc_helpers.checkPrivs(player,priv_table) then
         local pname = player:get_player_name()
         minetest.show_formspec(pname, "mc_teacher:lessons", mc_teacher_lessons)
         return true
@@ -479,7 +471,7 @@ end
 
 -- Define the Manage Classrooms formspec
 local function show_classrooms(player)
-    if check_perm(player) then
+    if mc_helpers.checkPrivs(player,priv_table) then
         local mc_teacher_classrooms = { 
                 "formspec_version[5]",
                 "size[14,14]",
@@ -584,7 +576,7 @@ local function get_reports_formspec(reports)
 end
 
 local function show_mail(player)
-    if check_perm(player) then
+    if mc_helpers.checkPrivs(player,priv_table) then
         local pname = player:get_player_name()
         minetest.show_formspec(pname, "mc_teacher:mail", get_reports_formspec(minetest_classroom.reports))
         return true
@@ -592,10 +584,11 @@ local function show_mail(player)
 end
 
 -- TODO: add Change Server Rules to the menu
+-- Use the "rules" (Manage Server Rules) button
 
 -- Processing the form from the menu
 minetest.register_on_player_receive_fields(function(player, formname, fields)
-    if string.sub(formname, 1, 10) ~= "mc_teacher" or not check_perm(player) then
+    if string.sub(formname, 1, 10) ~= "mc_teacher" or not mc_helpers.checkPrivs(player,priv_table) then
         return false
     end
 
@@ -812,7 +805,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 end)
 
 function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
-    if check_perm(player) then
+    if mc_helpers.checkPrivs(player,priv_table) then
         local pname = player:get_player_name()
         pmeta = player:get_meta()
 
@@ -823,9 +816,8 @@ function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
         math.randomseed(os.time())
         access_num = tostring(math.floor(math.random() * 100000))
 
-        local newRealm = Realm:New(cc..sn..map)
-        newRealm:Load_Schematic(map)
-        newRealm:CreateBarriers()
+
+        local newRealm = Realm:NewFromSchematic(cc..sn..map, map)
 
 
 
@@ -908,11 +900,11 @@ minetest.register_tool(tool_name, {
     description = "Controller for teachers",
     inventory_image = "controller.png",
     -- Left-click the tool activates the teacher menu
-    on_use = function(itemstack, user, pointed_thing)
-        local pname = user:get_player_name()
+    on_use = function(itemstack, player, pointed_thing)
+        local pname = player:get_player_name()
         -- Check for teacher privileges
-        if check_perm(user) then
-            show_teacher_menu(user)
+        if mc_helpers.checkPrivs(player,priv_table) then
+            show_teacher_menu(player)
         end
     end,
     -- Destroy the controller on_drop so that students cannot pick it up (i.e, disallow dropping without first revoking teacher)
@@ -931,7 +923,7 @@ minetest.register_on_joinplayer(function(player)
     local inv = player:get_inventory()
     if inv:contains_item("main", ItemStack(tool_name)) then
         -- Player has the controller
-        if check_perm(player) then
+        if mc_helpers.checkPrivs(player,priv_table) then
             -- The player should have the controller
             return
         else
@@ -940,7 +932,7 @@ minetest.register_on_joinplayer(function(player)
         end
     else
         -- Player does not have the controller
-        if check_perm(player) then
+        if mc_helpers.checkPrivs(player,priv_table) then
             -- The player should have the controller
             player:get_inventory():add_item('main', tool_name)
         else
@@ -960,7 +952,7 @@ minetest.register_on_priv_grant(function(name, granter, priv)
     local player = minetest.get_player_by_name(name)
     local inv = player:get_inventory()
 
-    if (not inv:contains_item("main", ItemStack(tool_name))) and check_perm_name(name) then
+    if (not inv:contains_item("main", ItemStack(tool_name))) and mc_helpers.checkPrivs(player,priv_table) then
         player:get_inventory():add_item('main', tool_name)
     end
 
@@ -977,7 +969,7 @@ minetest.register_on_priv_revoke(function(name, revoker, priv)
     local player = minetest.get_player_by_name(name)
     local inv = player:get_inventory()
 	
-    if inv:contains_item("main", ItemStack(tool_name)) and (not check_perm_name(name)) then
+    if inv:contains_item("main", ItemStack(tool_name)) and (not mc_helpers.checkPrivs(player,priv_table)) then
         player:get_inventory():remove_item('main', tool_name)
     end
 

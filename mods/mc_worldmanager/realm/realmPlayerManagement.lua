@@ -1,10 +1,14 @@
 function Realm:TeleportPlayer(player)
     local newRealmID, OldRealmID = self:UpdatePlayerMetaData(player)
 
-    local oldRealm = Realm.realmDict[OldRealmID]
-    oldRealm:RunTeleportOutFunctions(player)
-    self:RunTeleportInFunctions(player)
+    if (OldRealmID ~= nil) then
+        local oldRealm = Realm.realmDict[OldRealmID]
+        if (oldRealm ~= nil) then
+            oldRealm:RunTeleportOutFunctions(player)
+        end
+    end
 
+    self:RunTeleportInFunctions(player)
     local spawn = self.SpawnPoint
     player:set_pos(spawn)
 end
@@ -12,6 +16,11 @@ end
 function Realm:UpdatePlayerMetaData(player)
     local pmeta = player:get_meta()
     local oldRealmID = pmeta:get_int("realm")
+
+    if (oldRealmID == nil) then
+        oldRealmID = mc_worldManager.GetSpawnRealm()
+    end
+
     local newRealmID = self.ID
     pmeta:set_int("realm", newRealmID)
     return newRealmID, oldRealmID

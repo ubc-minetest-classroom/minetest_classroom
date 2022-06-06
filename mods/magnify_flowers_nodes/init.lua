@@ -28,7 +28,7 @@ local black_lily = {
     height = "20 to 80 centimeters tall",
     bloom = "Blooms with a single bell-like flower or with 2-5 flowers in a cluster",
     region = "Southern BC, Washington, Oregon and California",
-    texture = "fritillaria-affinis.jpg",
+    texture = "Fritillaria_affinis.jpg",
     more_info = "A small, thin, bell-like perennial herb. Also known as the checkered lily, due to the greenish-yellow patterns that appear on its purple flowers. Typically found in grassy bluffs, meadows, and open forests.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Fritillaria%20affinis",
     img_copyright = "Jackie Chambers, licensed under CC BY-NC-SA 4.0"
@@ -92,7 +92,7 @@ local poppy = {
     height = "10 to 50 centimeters tall",
     bloom = "Blooms with orange-yellow saucer-shaped flowers, either axillary or terminal",
     region = "USA and Mexico, found worldwide",
-    texture = "Eschscholzia.jpg", 
+    texture = "Eschscholzia_californica.jpg", 
     more_info = "A short-lived, upright perennial herb originating from a deep taproot. Typically found in dry areas such as roadsides, rock outcrops, and wastelands.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Eschscholzia%20californica",
     img_credit = "the UBC Botanical Garden"
@@ -172,11 +172,10 @@ local waterlily = {
     height = "1 to 2 meters long",
     bloom = "Blooms with solitary, waxy, floating yellow flowers stemming from a rhizome",
     region = "BC, Yukon, Northwest USA and Alaska",
-    texture = "waterlily.png",
+    texture = "Nuphar_polysepala.jpg",
     more_info = "An aquatic perennial with long-stalked, leathery leaves. Found in ponds and slow-moving streams in lowland, steppe, and montane areas",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Nuphar%20polysepala",
-    --img_copyright = "",
-    img_credit = ""
+    img_copyright = "Marshal Hedin, licensed under CC BY 2.0"
 }
 magnify.register_plant(waterlily, {"flowers:waterlily"})
 
