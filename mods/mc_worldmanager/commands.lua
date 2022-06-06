@@ -162,3 +162,17 @@ minetest.register_chatcommand("realmSetSpawn", {
         return true, "Updated spawnpoint for realm with ID: " .. param
     end,
 })
+
+minetest.register_chatcommand("realmCleanup", {
+    privs = {
+        interact = true,
+    },
+    func = function(name, param)
+        Realm.consolidateEmptySpace()
+        Realm.SaveDataToStorage()
+        return true, "consolidated realms"
+    end,
+})
+
+
+
