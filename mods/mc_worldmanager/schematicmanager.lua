@@ -53,6 +53,7 @@ function schematicManager.getSchematic(key)
 
     local _author = tostring(settings:get("author")) or "unknown"
     local _name = tostring(settings:get("name")) or "unknown"
+    local _format = tostring(settings:get("format")) or "old"
 
     local spawn_pos_x = tonumber(settings:get("spawn_pos_x")) or 0
     local spawn_pos_y = tonumber(settings:get("spawn_pos_y")) or 2
@@ -71,7 +72,7 @@ function schematicManager.getSchematic(key)
     local _spawnPoint = { x = spawn_pos_x, y = spawn_pos_y, z = spawn_pos_z }
     local _schematicSize = { x = schematic_size_x, y = schematic_size_y, z = schematic_size_z }
 
-    local config = { author = _author, name = _name, spawnPoint = _spawnPoint, schematicSize = _schematicSize,
+    local config = { author = _author, name = _name, format = _format, spawnPoint = _spawnPoint, schematicSize = _schematicSize,
                      tableName = schematic_table_name, onTeleportInFunction = teleport_function_in_name, onTeleportOutFunction = teleport_function_out_name,
                      onSchematicPlaceFunction = realm_create_function_name, onRealmDeleteFunction = realm_delete_function_name }
     return schematic, config
