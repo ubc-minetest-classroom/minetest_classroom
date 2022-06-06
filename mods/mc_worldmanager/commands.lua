@@ -3,7 +3,7 @@
 
 minetest.register_chatcommand("realmNew", {
     privs = {
-        interact = true,
+        teacher = true,
     },
     func = function(name, param)
         param = param or "Unnamed Realm"
@@ -17,7 +17,7 @@ minetest.register_chatcommand("realmNew", {
 minetest.register_chatcommand("realmDelete", {
     params = "Realm ID",
     privs = {
-        interact = true,
+        teacher = true,
     },
     func = function(name, param)
         local requestedRealm = Realm.realmDict[tonumber(param)]
@@ -34,7 +34,7 @@ minetest.register_chatcommand("realmDelete", {
 minetest.register_chatcommand("realmSchematic", {
     params = "Realm ID",
     privs = {
-        interact = true,
+        teacher = true,
     },
     func = function(name, param)
         local requestedRealm = Realm.realmDict[tonumber(param)]
@@ -50,7 +50,7 @@ minetest.register_chatcommand("realmSchematic", {
 
 minetest.register_chatcommand("realmList", {
     privs = {
-        interact = true,
+        teacher = true,
     },
     func = function(name, param)
 
@@ -68,7 +68,7 @@ minetest.register_chatcommand("realmList", {
 minetest.register_chatcommand("realmInfo", {
     params = "Realm ID",
     privs = {
-        interact = true,
+        teacher = true,
     },
     func = function(name, param)
         local requestedRealm = Realm.realmDict[tonumber(param)]
@@ -92,7 +92,7 @@ minetest.register_chatcommand("realmInfo", {
 minetest.register_chatcommand("realmTP", {
     params = "Realm ID",
     privs = {
-        interact = true,
+        teacher = true,
     },
     func = function(name, param)
         local requestedRealm = Realm.realmDict[tonumber(param)]
@@ -109,7 +109,7 @@ minetest.register_chatcommand("realmTP", {
 minetest.register_chatcommand("realmWalls", {
     params = "Realm ID",
     privs = {
-        interact = true,
+        teacher = true,
     },
     func = function(name, param)
         local requestedRealm = Realm.realmDict[tonumber(param)]
@@ -126,7 +126,7 @@ minetest.register_chatcommand("realmWalls", {
 minetest.register_chatcommand("localPos", {
     params = "Realm ID",
     privs = {
-        interact = true,
+        teacher = true,
     },
     func = function(name, param)
         local requestedRealm = Realm.realmDict[tonumber(param)]
@@ -146,7 +146,7 @@ minetest.register_chatcommand("localPos", {
 minetest.register_chatcommand("realmSetSpawn", {
     params = "Realm ID",
     privs = {
-        interact = true,
+        teacher = true,
     },
     func = function(name, param)
         local requestedRealm = Realm.realmDict[tonumber(param)]
@@ -165,7 +165,7 @@ minetest.register_chatcommand("realmSetSpawn", {
 
 minetest.register_chatcommand("realmCleanup", {
     privs = {
-        interact = true,
+        teacher = true,
     },
     func = function(name, param)
         Realm.consolidateEmptySpace()
