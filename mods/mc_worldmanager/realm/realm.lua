@@ -198,21 +198,23 @@ function Realm.consolidateEmptySpace()
     local pointGrid = {  }
 
     -- There is a much more elegant solution that can generate these points quicker than O(n^4);
-    -- That said, I don't remember the logic behind how it works; so I'll leave this simple code for now
-    -- When there is lots of empty space, this might use a lot of memory; but need more testing
+    -- That said, it's a bit more complex so I'll leave this simple code for now
+    -- When there is lots of empty space, this might use a lot of memory; but it needs more testing
     for k, entry in pairs(Realm.EmptyChunks) do
-        for x = entry.startPos.x, entry.area.x + entry.startPos.x do
-            for y = entry.startPos.y, entry.area.y + entry.startPos.y do
-                for z = entry.startPos.z, entry.area.z + entry.startPos.z do
-                    --table.insert(pointCloud, { x = x, y = y, z = z })
+        for x = entry.startPos.x, entry.startPos.x + entry.area.x do
+            for y = entry.startPos.y, entry.startPos.y + entry.area.y do
+                for z = entry.startPos.z, entry.startPos.z + entry.area.z do
                     ptable.store(pointGrid, { x = x, y = y, z = z }, true)
+
                 end
             end
         end
     end
 
-    -- Run a nearest neighbor search
-    --
+    -- Run a nearest neighbor search to group points up according to their neighbors
+    -- Note that this function uses GOTO statements; the alternative would be to have a boolean
+    -- Keeping track of when to break the loops.
+    -- This is necessary because of our nested loops.
     local function buildGroups(pointGrid)
 
         local groups = {}
@@ -223,38 +225,45 @@ function Realm.consolidateEmptySpace()
         local lastY = nil
         local lastZ = nil
 
-        local function isNeighbor(lastPos, currentPos)
+        local function isNeighbor(lastPos, currentPos, coord)
             if (lastPos == nil) then
                 lastPos = currentPos
             end
 
-            if (currentPos > lastPos + 1 or currentPos < lastPos - 1) then
-                return false
+            Debug.log(lastPos .. " " .. currentPos .. " " .. math.abs(currentPos - lastPos) .. " " .. coord)
+
+            local difference = math.abs(currentPos - lastPos)
+
+            if (difference == 0 or difference == 1) then
+                return true
             end
 
-            return true
+            return false
         end
 
-        for kx, x in pairs(pointGrid) do
+        :: startX ::
 
-            if (isNeighbor(lastX, kx)) then
+        for kx, x in mc_helpers.pairsByKeys(pointGrid) do
+            if (isNeighbor(lastX, kx, "x")) then
                 lastX = kx
             else
                 goto done
             end
 
-            for ky, y in pairs(x) do
-                if (isNeighbor(lastY, ky)) then
+            for ky, y in mc_helpers.pairsByKeys(x) do
+                if (isNeighbor(lastY, ky, "y")) then
+                    Debug.log("Breaking in Y Loop")
                     lastY = ky
                 else
-                    goto done
+                    break
                 end
 
-                for kz, z in pairs(y) do
-                    if (isNeighbor(lastZ, kz)) then
+                for kz, z in mc_helpers.pairsByKeys(y) do
+                    if (isNeighbor(lastZ, kz, "z")) then
                         lastZ = kz
                     else
-                        goto done
+                        Debug.log("Breaking in Z Loop")
+                        break
                     end
 
                     if (z == true) then
@@ -271,12 +280,16 @@ function Realm.consolidateEmptySpace()
             end
         end
 
-        return groups;
+        -- Necessary because of a weird lua syntax requirement with returns
+        goto ret
 
         :: done ::
+        Debug.log("Finished group: " .. groupCounter)
         groupCounter = groupCounter + 1
-
         goto start
+
+        :: ret ::
+        return groups
     end
 
     local groups = buildGroups(pointGrid)
@@ -287,14 +300,71 @@ function Realm.consolidateEmptySpace()
     local volumes = {}
 
     for k, group in pairs(groups) do
-        for k, coord in pairs(group) do
+        local smallestCoord = nil
+        local largestCoord = nil
 
+        for k, coord in pairs(group) do
+            if (smallestCoord == nil) then
+                smallestCoord = coord
+            end
+
+            if (largestCoord == nil) then
+                largestCoord = coord
+            end
+
+
+            -- We're dealing with a cube area, so we can deal with each part of the coord individually
+            --Our smallest coordinate
+            if (coord.x < smallestCoord.x) then
+                smallestCoord.x = coord.x
+            end
+
+            if (coord.y < smallestCoord.y) then
+                smallestCoord.y = coord.y
+            end
+
+            if (coord.z < smallestCoord.z) then
+                smallestCoord.z = coord.z
+            end
+
+            -- Our largest coordinate
+            if (coord.x > largestCoord.x) then
+                largestCoord.x = coord.x
+            end
+
+            if (coord.y > largestCoord.y) then
+                largestCoord.y = coord.y
+            end
+
+            if (coord.z > largestCoord.z) then
+                largestCoord.z = coord.z
+            end
 
         end
 
+        Debug.logCoords(smallestCoord, "smallest coord")
+        Debug.logCoords(largestCoord, "largest coord")
+
+        local entry = {}
+        entry.startPos = smallestCoord
+        entry.area = { x = largestCoord.x - smallestCoord.x,
+                       y = largestCoord.y - smallestCoord.y,
+                       z = largestCoord.z - smallestCoord.z }
+
+        table.insert(volumes, entry)
     end
 
 
+    -- Replace our current emptyChunks array with our consolidated one;
+    -- TODO: If remove the tail end empty chunks after they're combined, and decrease our grid end position
+    -- This will shrink our active address space and use less memory
+
+    -- for i, v in pairs(volumes) do
+    --     Debug.logCoords(v.startPos, i .. " startPos")
+    --     Debug.logCoords(v.area, i .. " area")
+    -- end
+
+    Realm.EmptyChunks = volumes
 end
 
 ---@public

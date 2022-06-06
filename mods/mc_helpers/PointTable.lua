@@ -17,7 +17,7 @@ function ptable.get(table, coords)
     return table[coords.x] and table[coords.x][coords.y] and table[coords.x][coords.y][coords.z]
 end
 function ptable.delete(table, coords)
-    if ptable.get(coords.x, coords.y, coords.z) == nil then
+    if ptable.get(table, coords) == nil then
         return
     end
     local tx = table[coords.x]
