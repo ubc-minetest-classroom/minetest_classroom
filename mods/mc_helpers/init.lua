@@ -1,4 +1,5 @@
 dofile(minetest.get_modpath("mc_helpers") .. "/Debugging.lua")
+dofile(minetest.get_modpath("mc_helpers") .. "/PointTable.lua")
 
 mc_helpers = {}
 
@@ -102,3 +103,6 @@ function table.has(table, val)
     end
     return false
 end
+
+
+

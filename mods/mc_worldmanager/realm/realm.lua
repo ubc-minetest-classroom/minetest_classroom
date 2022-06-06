@@ -103,7 +103,7 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
     local BinEndPos = { x = 0, y = 0, z = 0 }
 
     for i, v in ipairs(Realm.EmptyChunks) do
-        if (v.area.x >= realmSize.x and v.area.y >= realmSize.y and v.area.z >= realmSize.z) then
+        if (v.area.x >= realmSize.x + Realm.const.bufferSize and v.area.y >= realmSize.y + Realm.const.bufferSize and v.area.z >= realmSize.z + Realm.const.bufferSize) then
             table.remove(Realm.EmptyChunks, i)
             StartPos = { x = v.startPos.x + Realm.const.bufferSize, y = v.startPos.y + Realm.const.bufferSize, z = v.startPos.z + Realm.const.bufferSize }
             BinEndPos = { x = v.startPos.x + v.area.x, y = v.startPos.y + v.area.y, v.startPos.z + v.area.z }
@@ -164,12 +164,15 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
     -- We're checking reuseBin multiple times
     if (reuseBin == true) then
 
-        local x = {
-            y = { startPos = { x = StartPos.x, y = EndPos.y, z = StartPos.z, }, endPos = { x = EndPos.x, y = BinEndPos.y, x = EndPos.z } },
-            x = { startPos = { x = EndPos.x, y = StartPos.y, z = StartPos.z, }, endPos = { x = BinEndPos.x, y = EndPos.y, z = EndPos.z } },
-            z = { startPos = { x = StartPos.z, y = StartPos.y, z = EndPos.z, }, endPos = { x = EndPos.z, y = EndPos.y, z = BinEndPos.z } }
+        local emptySpace = {
+            top = { startPos = { x = StartPos.x, y = EndPos.y, z = StartPos.z, }, endPos = { x = EndPos.x, y = BinEndPos.y, x = EndPos.z } },
+            xAxis = { startPos = { x = EndPos.x, y = StartPos.y, z = StartPos.z, }, endPos = { x = BinEndPos.x, y = EndPos.y, z = EndPos.z } },
+            zAxis = { startPos = { x = StartPos.z, y = StartPos.y, z = EndPos.z, }, endPos = { x = EndPos.z, y = EndPos.y, z = BinEndPos.z } }
         }
 
+        Realm.markSpaceAsFree(emptySpace.top.startPos, emptySpace.top.endPos)
+        Realm.markSpaceAsFree(emptySpace.xAxis.startPos, emptySpace.xAxis.endPos)
+        Realm.markSpaceAsFree(emptySpace.zAxis.startPos, emptySpace.zAxis.endPos)
     end
 
     mc_worldManager.storage:set_string("realmEmptyChunks", minetest.serialize(Realm.EmptyChunks))
@@ -186,6 +189,112 @@ function Realm.markSpaceAsFree(startPos, endPos)
                    z = endPos.z - startPos.z }
 
     table.insert(Realm.EmptyChunks, entry)
+end
+
+function Realm.consolidateEmptySpace()
+    -- Generate a point grid from the freespace table
+    -- Generate volumes from the point data
+    -- replace the freespace table
+    local pointGrid = {  }
+
+    -- There is a much more elegant solution that can generate these points quicker than O(n^4);
+    -- That said, I don't remember the logic behind how it works; so I'll leave this simple code for now
+    -- When there is lots of empty space, this might use a lot of memory; but need more testing
+    for k, entry in pairs(Realm.EmptyChunks) do
+        for x = entry.startPos.x, entry.area.x + entry.startPos.x do
+            for y = entry.startPos.y, entry.area.y + entry.startPos.y do
+                for z = entry.startPos.z, entry.area.z + entry.startPos.z do
+                    --table.insert(pointCloud, { x = x, y = y, z = z })
+                    ptable.store(pointGrid, { x = x, y = y, z = z }, true)
+                end
+            end
+        end
+    end
+
+    -- Run a nearest neighbor search
+    --
+    local function buildGroups(pointGrid)
+
+        local groups = {}
+        local groupCounter = 0
+
+        :: start ::
+        local lastX = nil
+        local lastY = nil
+        local lastZ = nil
+
+        local function isNeighbor(lastPos, currentPos)
+            if (lastPos == nil) then
+                lastPos = currentPos
+            end
+
+            if (currentPos > lastPos + 1 or currentPos < lastPos - 1) then
+                return false
+            end
+
+            return true
+        end
+
+        for kx, x in pairs(pointGrid) do
+
+            if (isNeighbor(lastX, kx)) then
+                lastX = kx
+            else
+                goto done
+            end
+
+            for ky, y in pairs(x) do
+                if (isNeighbor(lastY, ky)) then
+                    lastY = ky
+                else
+                    goto done
+                end
+
+                for kz, z in pairs(y) do
+                    if (isNeighbor(lastZ, kz)) then
+                        lastZ = kz
+                    else
+                        goto done
+                    end
+
+                    if (z == true) then
+
+                        if (groups[groupCounter] == nil) then
+                            groups[groupCounter] = {}
+                        end
+
+                        local coords = { x = kx, y = ky, z = kz }
+                        table.insert(groups[groupCounter], coords)
+                        ptable.delete(pointGrid, coords)
+                    end
+                end
+            end
+        end
+
+        return groups;
+
+        :: done ::
+        groupCounter = groupCounter + 1
+
+        goto start
+    end
+
+    local groups = buildGroups(pointGrid)
+
+    -- To build our volumes, we just need to order the points in the group from smallest, to largest
+    -- Our volume starting position is the smallest point in the group; Our ending position is the largest
+
+    local volumes = {}
+
+    for k, group in pairs(groups) do
+        for k, coord in pairs(group) do
+
+
+        end
+
+    end
+
+
 end
 
 ---@public
@@ -226,3 +335,4 @@ function Realm:RunFunctionFromTable(table, player)
 end
 
 Realm.LoadDataFromStorage()
+Realm.consolidateEmptySpace()
