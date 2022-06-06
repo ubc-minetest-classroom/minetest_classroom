@@ -29,11 +29,9 @@ function Realm.gridToWorldSpace(coords)
 end
 
 function Realm.worldToGridSpace(coords)
-    Debug.logCoords(coords, "World Coords")
     local val = { x = 0, y = 0, z = 0 }
     val.x = math.ceil((coords.x + Realm.const.worldSize) / 80)
     val.y = math.ceil((coords.y + Realm.const.worldSize) / 80)
     val.z = math.ceil((coords.z + Realm.const.worldSize) / 80)
-    Debug.logCoords(val, "Grid Coords")
     return val
 end

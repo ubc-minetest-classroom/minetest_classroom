@@ -181,7 +181,6 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
 end
 
 function Realm.markSpaceAsFree(startPos, endPos)
-
     local entry = {}
     entry.startPos = startPos
     entry.area = { x = endPos.x - startPos.x,
@@ -205,7 +204,6 @@ function Realm.consolidateEmptySpace()
             for y = entry.startPos.y, entry.startPos.y + entry.area.y do
                 for z = entry.startPos.z, entry.startPos.z + entry.area.z do
                     ptable.store(pointGrid, { x = x, y = y, z = z }, true)
-                    Debug.logCoords({ x = x, y = y, z = z }, "Point grid value: ")
                 end
             end
         end
@@ -356,11 +354,6 @@ function Realm.consolidateEmptySpace()
     -- TODO: If remove the tail end empty chunks after they're combined, and decrease our grid end position
     -- This will shrink our active address space and use less memory
 
-    for i, v in pairs(volumes) do
-        Debug.logCoords(v.startPos, i .. " startPos")
-        Debug.logCoords(v.area, i .. " area")
-    end
-
     Realm.EmptyChunks = volumes
 end
 
@@ -371,10 +364,17 @@ end
 function Realm:Delete()
     self:RunFunctionFromTable(self.RealmDeleteTable)
     self:ClearNodes()
-    Realm.markSpaceAsFree(Realm.worldToGridSpace({
-        x = self.StartPos.x - Realm.const.bufferSize,
-        y = self.StartPos.y - Realm.const.bufferSize,
-        z = self.StartPos.z - Realm.const.bufferSize }), Realm.worldToGridSpace(self.EndPos))
+
+    local gridSpace = Realm.worldToGridSpace({
+        x = self.StartPos.x,
+        y = self.StartPos.y,
+        z = self.StartPos.z })
+
+    gridSpace.x = gridSpace.x - Realm.const.bufferSize
+    gridSpace.y = gridSpace.y - Realm.const.bufferSize
+    gridSpace.z = gridSpace.z - Realm.const.bufferSize
+
+    Realm.markSpaceAsFree(gridSpace, Realm.worldToGridSpace(self.EndPos))
     Realm.realmDict[self.ID] = nil
     Realm.SaveDataToStorage()
 end
