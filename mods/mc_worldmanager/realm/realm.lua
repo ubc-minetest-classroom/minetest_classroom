@@ -205,7 +205,7 @@ function Realm.consolidateEmptySpace()
             for y = entry.startPos.y, entry.startPos.y + entry.area.y do
                 for z = entry.startPos.z, entry.startPos.z + entry.area.z do
                     ptable.store(pointGrid, { x = x, y = y, z = z }, true)
-
+                    Debug.logCoords({ x = x, y = y, z = z }, "Point grid value: ")
                 end
             end
         end
@@ -226,11 +226,6 @@ function Realm.consolidateEmptySpace()
         local lastZ = nil
 
         local function isNeighbor(lastPos, currentPos, coord)
-            if (lastPos == nil) then
-                lastPos = currentPos
-            end
-
-            Debug.log(lastPos .. " " .. currentPos .. " " .. math.abs(currentPos - lastPos) .. " " .. coord)
 
             local difference = math.abs(currentPos - lastPos)
 
@@ -241,38 +236,54 @@ function Realm.consolidateEmptySpace()
             return false
         end
 
-        :: startX ::
+        for kx, xTable in mc_helpers.pairsByKeys(pointGrid) do
+            if (lastX == nil) then
+                lastX = kx
+            end
 
-        for kx, x in mc_helpers.pairsByKeys(pointGrid) do
+            lastY = nil
+            lastZ = nil
+
             if (isNeighbor(lastX, kx, "x")) then
                 lastX = kx
             else
-                goto done
+                groupCounter = groupCounter + 1
+
+                goto start
+                break
             end
 
-            for ky, y in mc_helpers.pairsByKeys(x) do
+            for ky, yTable in mc_helpers.pairsByKeys(xTable) do
+                if (lastY == nil) then
+                    lastY = ky
+                end
+
                 if (isNeighbor(lastY, ky, "y")) then
-                    Debug.log("Breaking in Y Loop")
                     lastY = ky
                 else
+
                     break
                 end
 
-                for kz, z in mc_helpers.pairsByKeys(y) do
+                for kz, zTable in mc_helpers.pairsByKeys(yTable) do
+                    if (lastZ == nil) then
+                        lastZ = kz
+                    end
+
                     if (isNeighbor(lastZ, kz, "z")) then
                         lastZ = kz
                     else
-                        Debug.log("Breaking in Z Loop")
+
                         break
                     end
 
-                    if (z == true) then
+                    local coords = { x = kx, y = ky, z = kz }
 
+                    if (zTable == true) then
                         if (groups[groupCounter] == nil) then
                             groups[groupCounter] = {}
                         end
 
-                        local coords = { x = kx, y = ky, z = kz }
                         table.insert(groups[groupCounter], coords)
                         ptable.delete(pointGrid, coords)
                     end
@@ -280,15 +291,6 @@ function Realm.consolidateEmptySpace()
             end
         end
 
-        -- Necessary because of a weird lua syntax requirement with returns
-        goto ret
-
-        :: done ::
-        Debug.log("Finished group: " .. groupCounter)
-        groupCounter = groupCounter + 1
-        goto start
-
-        :: ret ::
         return groups
     end
 
@@ -303,47 +305,42 @@ function Realm.consolidateEmptySpace()
         local smallestCoord = nil
         local largestCoord = nil
 
-        for k, coord in pairs(group) do
+        for i, coord in pairs(group) do
             if (smallestCoord == nil) then
-                smallestCoord = coord
+                smallestCoord = { x = coord.x, y = coord.y, z = coord.z }
             end
 
             if (largestCoord == nil) then
-                largestCoord = coord
+                largestCoord = { x = coord.x, y = coord.y, z = coord.z }
             end
+            --
 
-
-            -- We're dealing with a cube area, so we can deal with each part of the coord individually
-            --Our smallest coordinate
-            if (coord.x < smallestCoord.x) then
+            if (smallestCoord.x > coord.x) then
                 smallestCoord.x = coord.x
             end
 
-            if (coord.y < smallestCoord.y) then
+            if (smallestCoord.y > coord.y) then
                 smallestCoord.y = coord.y
             end
 
-            if (coord.z < smallestCoord.z) then
+            if (smallestCoord.z > coord.z) then
                 smallestCoord.z = coord.z
             end
+            --
 
-            -- Our largest coordinate
-            if (coord.x > largestCoord.x) then
+            if (largestCoord.x < coord.x) then
                 largestCoord.x = coord.x
             end
 
-            if (coord.y > largestCoord.y) then
+            if (largestCoord.y < coord.y) then
                 largestCoord.y = coord.y
             end
 
-            if (coord.z > largestCoord.z) then
+            if (largestCoord.z < coord.z) then
                 largestCoord.z = coord.z
             end
 
         end
-
-        Debug.logCoords(smallestCoord, "smallest coord")
-        Debug.logCoords(largestCoord, "largest coord")
 
         local entry = {}
         entry.startPos = smallestCoord
@@ -359,10 +356,10 @@ function Realm.consolidateEmptySpace()
     -- TODO: If remove the tail end empty chunks after they're combined, and decrease our grid end position
     -- This will shrink our active address space and use less memory
 
-    -- for i, v in pairs(volumes) do
-    --     Debug.logCoords(v.startPos, i .. " startPos")
-    --     Debug.logCoords(v.area, i .. " area")
-    -- end
+    for i, v in pairs(volumes) do
+        Debug.logCoords(v.startPos, i .. " startPos")
+        Debug.logCoords(v.area, i .. " area")
+    end
 
     Realm.EmptyChunks = volumes
 end
