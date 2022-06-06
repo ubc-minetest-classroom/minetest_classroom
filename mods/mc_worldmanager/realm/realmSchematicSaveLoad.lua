@@ -54,19 +54,23 @@ function Realm:Load_Schematic(schematic, config)
     -- end
     self.EndPos = schematicEndPos
 
-    -- Read data into LVM
-    local vm = minetest.get_voxel_manip()
-    local emin, emax = vm:read_from_map(self.StartPos, self.EndPos)
-    local a = VoxelArea:new {
-        MinEdge = emin,
-        MaxEdge = emax
-    }
+    if (config.format ~= "exschem") then
+        -- Read data into LVM
+        local vm = minetest.get_voxel_manip()
+        local emin, emax = vm:read_from_map(self.StartPos, self.EndPos)
+        local a = VoxelArea:new {
+            MinEdge = emin,
+            MaxEdge = emax
+        }
 
-    -- Place Schematic
-    -- local results = minetest.place_schematic(self.StartPos, schematic, 0, nil, true)
+        -- Place Schematic
+        -- local results = minetest.place_schematic(self.StartPos, schematic, 0, nil, true)
 
-    local results = minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic, 0, nil, true)
-    vm:write_to_map(true)
+        local results = minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic, 0, nil, true)
+        vm:write_to_map(true)
+    end
+
+
 
     if (config.tableName ~= nil) then
         if (config.onSchematicPlaceFunction ~= nil) then
