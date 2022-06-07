@@ -76,27 +76,27 @@ function Realm:Load_Schematic(schematic, config)
     local schematicEndPos = self:LocalToWorldPosition(config.schematicSize)
     self.EndPos = schematicEndPos
 
-    Debug.log(config.format)
-    Debug.log(config.name)
-    Debug.log(schematic)
-
 
     --exschem is having issues loading random chunks, need to debug
     if (config.format == "exschem") then
-        Debug.log(schematic)
-        exschem.load(self.StartPos, self.StartPos, 0, {}, schematic, 0,
-                function(id, time, errcode, err)
-                    Debug.log("Loading " .. id .. time)
+        exschem.emerge(self.StartPos, self.EndPos, 1, 0,
+                function(id, errcode, error)
+                    exschem.load(self.StartPos, self.StartPos, 0, {}, schematic, 0,
+                            function(id, time, errcode, err)
+                                Debug.log("Loading " .. id .. time)
 
-                    if (errcode ~= nil) then
-                        Debug.log(errcode)
-                    end
+                                if (errcode ~= nil) then
+                                    Debug.log(errcode)
+                                end
 
-                    if (err ~= nil) then
-                        Debug.log(errcode)
-                    end
+                                if (err ~= nil) then
+                                    Debug.log(errcode)
+                                end
 
+                            end)
                 end)
+
+
     elseif (config.format == "worldedit") then
         local file, err = io.open(schematic .. ".wes", 'rb')
         local data = ""

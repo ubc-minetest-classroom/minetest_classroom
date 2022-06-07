@@ -25,7 +25,6 @@ function schematicManager.registerSchematicPath(key, rootPath)
 
     if (mc_helpers.fileExists(rootPath .. ".conf") == false) then
         minetest.log("warning", "trying to register schematic " .. rootPath .. "without a config file. Default config values will be used.")
-        return false
     end
 
     schematicManager.schematics[key] = rootPath
