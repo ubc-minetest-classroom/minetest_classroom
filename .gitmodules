@@ -1,0 +1,3 @@
+[submodule "mods/ubc_map"]
+	path = mods/ubc_map
+	url = git@github.com:lukasdragon/UBC_Campus_Minetest_Map.git
