@@ -21,9 +21,7 @@ function Realm:Save_Schematic(author, mode)
 
     local filepath = folderpath .. "/" .. fileName
 
-    if (mode == "old") then
-        minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
-    elseif (mode == "exschem") then
+    if (mode == "exschem") then
         exschem.save(self.StartPos, self.EndPos, false, 40, filepath, 0,
                 function(id, errcode, error)
                     Debug.log("Finished saving")
@@ -33,13 +31,17 @@ function Realm:Save_Schematic(author, mode)
                 end)
     elseif (mode == "worldedit") then
         local data, count = worldedit.serialize(self.StartPos, self.EndPos)
-        local file, err = io.open(filepath, 'w')
+        local compressed = mc_helpers.compress(data)
+        local file, err = io.open(filepath .. ".wes", 'wb')
         if file then
-            file:write(tostring(data))
+            file:write(data)
+            file:flush()
             file:close()
         else
             Debug.log("Unable to save realm; save file wouldn't open...")
         end
+    else
+        minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
     end
 
     local settings = Settings(filepath .. ".conf")
@@ -91,6 +93,18 @@ function Realm:Load_Schematic(schematic, config)
                     end
 
                 end)
+    elseif (config.format == "worldedit") then
+        local file, err = io.open(schematic .. ".wes", 'rb')
+        local data = ""
+        if file then
+            data = file:read("*a")
+            file:close()
+        else
+            Debug.log("Unable to save realm; save file wouldn't open...")
+        end
+
+        local decompressed = mc_helpers.decompress(data)
+        worldedit.deserialize(self.StartPos, decompressed)
     else
         -- Read data into LVM
         local vm = minetest.get_voxel_manip()
