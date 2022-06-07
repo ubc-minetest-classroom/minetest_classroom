@@ -55,19 +55,22 @@ minetest.register_on_joinplayer(function(player)
         -- Return value: number of items allowed to move.
 
         allow_put = function(inv, listname, index, stack, player)
-            return 65536 -- stub
+            -- 1 if item is registered tool, 0 otherwise
+            if minetest.registered_tools[stack:get_name()] then 
+                return 1 -- allow 1 item to be put in
+            else
+                return 0 -- do not allow item to be put in
+            end
         end,
-        -- Called when a player wants to put something into the inventory.
-        -- Return value: number of items allowed to put.
-        -- Return value -1: Allow and don't modify item count in inventory.
-
         allow_take = function(inv, listname, index, stack, player)
-            return 65536 -- stub
+            -- 1 if item is registered tool, 0 and delete item otherwise
+            if minetest.registered_tools[stack:get_name()] then
+                return 1 -- allow 1 item to be taken
+            else
+                inv:remove_item(listname, stack)
+                return 0 -- do not allow item to be taken
+            end
         end,
-        -- Called when a player wants to take something out of the inventory.
-        -- Return value: number of items allowed to take.
-        -- Return value -1: Allow and don't modify item count in inventory.
-
         on_move = function(inv, from_list, from_index, to_list, to_index, count, player)
             save_full_toolbox(inv, player) -- will optimize later
         end,
@@ -80,16 +83,13 @@ minetest.register_on_joinplayer(function(player)
     }, pname)
 
     -- create a saved toolbox if it does not already exist
-    local toolbox_save = mc_toolmenu:get(pname)
-    if not toolbox_save then
+    if not mc_toolmenu:get(pname) then
         mc_toolmenu:set_string(pname, minetest.serialize({tools = {inv = {}, size = 32}}))
-        toolbox_save = mc_toolmenu:get(pname)
     end
     
     -- load the saved toolbox into MineTest
     load_saved_toolbox(toolbox, player)
 end)
-
 
 minetest.register_on_leaveplayer(function(player)
     -- player check
@@ -98,9 +98,8 @@ minetest.register_on_leaveplayer(function(player)
     local pname = player:get_player_name()
     local inv = minetest.get_inventory({type = "detached", name = "mc_toolmenu:"..pname}) 
 
-    -- save to storage for good measure
+    -- save to storage for good measure, then remove unused detached inventory to free up resources
     save_full_toolbox(inv, player)
-    -- remove unused detached inventory to free up resources
     minetest.remove_detached_inventory("mc_toolmenu:"..pname)
 end)
 
