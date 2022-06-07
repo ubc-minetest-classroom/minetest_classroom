@@ -76,6 +76,10 @@ function Realm:Load_Schematic(schematic, config)
     local schematicEndPos = self:LocalToWorldPosition(config.schematicSize)
     self.EndPos = schematicEndPos
 
+    Debug.log(config.format)
+    Debug.log(config.name)
+    Debug.log(schematic)
+
 
     --exschem is having issues loading random chunks, need to debug
     if (config.format == "exschem") then
@@ -105,6 +109,8 @@ function Realm:Load_Schematic(schematic, config)
 
         local decompressed = mc_helpers.decompress(data)
         worldedit.deserialize(self.StartPos, decompressed)
+    elseif (config.format == "procedural") then
+        -- do nothing if we're a procedural map; it will be taking care of by the onSchematicPlaceFunction
     else
         -- Read data into LVM
         local vm = minetest.get_voxel_manip()
@@ -114,7 +120,7 @@ function Realm:Load_Schematic(schematic, config)
             MaxEdge = emax
         }
 
-        minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic, 0, nil, true)
+        minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic .. ".mts", 0, nil, true)
         vm:write_to_map(true)
     end
 
