@@ -1,4 +1,5 @@
-mc_toolmenu = minetest.get_mod_storage()
+mc_toolmenu_inv = minetest.get_mod_storage()
+dofile(minetest.get_modpath("mc_toolmenu") .. "/api.lua")
 
 sfinv.register_page("mc_toolmenu:tools", {
     title = "Toolbox",
@@ -6,7 +7,7 @@ sfinv.register_page("mc_toolmenu:tools", {
         local pname = player:get_player_name()
         local formtable = {
             "box[-0.28,-0.30;8.35,4.9;#555555]",
-            "label[0,0;Soon, this will be made into a working toolbox!]",
+            "label[0,0;(WIP) Only tools can be stored here!]",
             "list[detached:mc_toolmenu:", pname, ";tools;0,0.5;8,4;0]"
         }
         return sfinv.make_formspec(player, context, table.concat(formtable, ""), true)
@@ -27,13 +28,13 @@ local function save_full_toolbox(toolbox, player)
         toolbox_table[list] = {inv = list_table, size = toolbox:get_size(list)}
     end
 
-    mc_toolmenu:set_string(pname, minetest.serialize(toolbox_table))
+    mc_toolmenu_inv:set_string(pname, minetest.serialize(toolbox_table))
 end
 
 -- Loads the saved toolbox data into MineTest
 local function load_saved_toolbox(toolbox, player)
     local pname = player:get_player_name()
-    local save = minetest.deserialize(mc_toolmenu:get_string(pname))
+    local save = minetest.deserialize(mc_toolmenu_inv:get_string(pname))
 
     for list,data in pairs(save) do
         toolbox:set_list(list, {})
@@ -83,8 +84,8 @@ minetest.register_on_joinplayer(function(player)
     }, pname)
 
     -- create a saved toolbox if it does not already exist
-    if not mc_toolmenu:get(pname) then
-        mc_toolmenu:set_string(pname, minetest.serialize({tools = {inv = {}, size = 32}}))
+    if not mc_toolmenu_inv:get(pname) then
+        mc_toolmenu_inv:set_string(pname, minetest.serialize({tools = {inv = {}, size = 32}}))
     end
     
     -- load the saved toolbox into MineTest
@@ -95,8 +96,7 @@ minetest.register_on_leaveplayer(function(player)
     -- player check
     if not player:is_player() then return end
 
-    local pname = player:get_player_name()
-    local inv = minetest.get_inventory({type = "detached", name = "mc_toolmenu:"..pname}) 
+    local inv = mc_toolmenu.get_toolbox(player)
 
     -- save to storage for good measure, then remove unused detached inventory to free up resources
     save_full_toolbox(inv, player)
