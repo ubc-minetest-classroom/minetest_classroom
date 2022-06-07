@@ -1,0 +1,1 @@
+return {["use_worldedit"] = true, ["part"] = 80, ["maxpos"] = {["y"] = 160, ["x"] = 201, ["z"] = 201}}

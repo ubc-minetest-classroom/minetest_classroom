@@ -1,3 +1,4 @@
+-- File modified from original 2022-06-06
 -- mods/exschem/init.lua
 -- =================
 -- See README.md for licensing and other information.
@@ -80,7 +81,7 @@ end
 -- @param pos2: Vector. Position 2 of area
 -- @param use_worldedit: Boolean. If true, uses worldedit.serialize(With metadata, slow). If false, uses minetest.create_schematic(Without metadata, fast).
 -- @param part: Integer, greater than 0. Defines the length, width & height of one part schematic. part * part * part = volume of one part schematic. Recommended: 10
--- @param filepath: String. Folder name in /my_world/schems/ with all part schematics in it
+-- @param filepath: String.
 -- @param delay: Float, greater than/equal 0. Time between saving part schematics. 0 = Every global step, because minetest.after uses minetest.register_globalstep internal. Recommended: 0
 -- @param (Optional) callback: Function. Called when an error occured or saving is finished
 -- 								 @param id: Integer. Returned by exschem.save
@@ -92,8 +93,7 @@ function exschem.save(pos1, pos2, use_worldedit, part, filepath, delay, callback
 		return nil, 3, "Mod WorldEdit is not installed"
 	end
 	pos1, pos2 = sort_pos(pos1, pos2)
-	minetest.mkdir(minetest.get_worldpath() .."/schems")
-	filepath = minetest.get_worldpath() .."/schems/".. filepath
+
 	minetest.mkdir(filepath)
 	local data = {maxpos = vector.subtract(pos2, pos1), part = part, use_worldedit = use_worldedit and true or nil}
 	local file, err = io.open(filepath .."/init.txt", "w")
@@ -147,7 +147,7 @@ end
 -- @param rotation: Number, multiple of 90. Rotates the schematic. Only works when use_worldedit were false at exschem.save, because WorldEdit doesn't support rotate on place. Recommended: 0
 -- @param replacements: Table. Only works when use_worldedit were false at exschem.save, because WorldEdit doesn't support replace on place. Recommended: {}
 -- 				rotation & replacements can be seen here: https://github.com/minetest/minetest/blob/0.4.15/doc/lua_api.txt#L2529
--- @param filepath: String. Folder name in /my_world/schems/ with all part schematics in it
+-- @param filepath: String.
 -- @param delay: Float, greater than/equal 0. Time between loading part schematics. 0 = Every global step, because minetest.after uses minetest.register_globalstep internal. Recommended: 0
 -- @param (Optional) callback: Function. Called when an error occured or saving is finished
 -- 								 @param id: Integer. Returned by exschem.save
@@ -155,7 +155,6 @@ end
 -- 								 @param error: String. Error message
 -- @return id: Integer. Needed to use exschem.kill & identify callback
 function exschem.load(pos1, pos_relative, rotation, replacements, filepath, delay, callback)
-	filepath = minetest.get_worldpath() .."/schems/".. filepath
 	local file, err = io.open(filepath .."/init.txt", "r")
 	if err ~= nil then
 		return nil, 1, "Read from file failed"
@@ -236,12 +235,12 @@ local function convert_time(time, str)
   local hour = 60 * minute
   local day = 24 * hour
   local year = 365 * day
-	
+
 	local function convert(unit, unitstr)
 		time = math.floor((time / unit) + 0.5)
 		return string.format("%s %s%s %s", time, unitstr, (time > 1 and "s" or ""), str or "")
 	end
-	
+
 	if type(time) ~= "number" then
 		return string.format("infinite %s", str or "")
   elseif time > year then

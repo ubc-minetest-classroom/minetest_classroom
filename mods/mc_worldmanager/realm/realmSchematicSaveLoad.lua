@@ -7,7 +7,7 @@
 function Realm:Save_Schematic(author)
     author = author or "unknown"
 
-    local folderpath = minetest.get_worldpath() .. "\\schematics\\"
+    local folderpath = minetest.get_worldpath() .. "/schematics/"
 
     minetest.mkdir(folderpath)
 
@@ -16,15 +16,17 @@ function Realm:Save_Schematic(author)
         fileName = fileName .. math.random(0, 9)
     end
 
-    fileName = fileName .. os.date(" %Y%m%d %H%M")
+    fileName = fileName .. math.random(0, 99)
 
-    local filepath = folderpath .. "\\" .. fileName
+    local filepath = folderpath .. "/" .. fileName
 
-    minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
+    exschem.save(self.StartPos, self.EndPos, true, 80, filepath, 0)
 
     local settings = Settings(filepath .. ".conf")
     settings:set("author", author)
     settings:set("name", self.Name)
+    settings:set("format", "exschem")
+
     settings:set("spawn_pos_x", self.SpawnPoint.x - self.StartPos.x)
     settings:set("spawn_pos_y", self.SpawnPoint.y - self.StartPos.y)
     settings:set("spawn_pos_z", self.SpawnPoint.z - self.StartPos.z)
@@ -46,15 +48,19 @@ function Realm:Load_Schematic(schematic, config)
 
     self.Name = config.name
 
+
+
     --TODO: Add code to check if the realm is large enough to support the schematic; If not, create a new realm that can;
     local schematicEndPos = self:LocalToWorldPosition(config.schematicSize)
-    --  if (schematicEndPos.x > self.EndPos.x or schematicEndPos.y > self.EndPos.y or schematicEndPos.z > self.EndPos.z) then
-    --      assert(self, "Unable to fit schematic in realm.")
-    --   return false
-    -- end
     self.EndPos = schematicEndPos
 
-    if (config.format ~= "exschem") then
+    if (config.format == "exschem") then
+        Debug.log(schematic)
+        exschem.load(self.StartPos, self.StartPos, 0, {}, schematic, 0,
+                function(id, time, errcode, err)
+                    Debug.log("Loading" .. id .. time .. errcode .. err)
+                end)
+    else
         -- Read data into LVM
         local vm = minetest.get_voxel_manip()
         local emin, emax = vm:read_from_map(self.StartPos, self.EndPos)
@@ -63,14 +69,9 @@ function Realm:Load_Schematic(schematic, config)
             MaxEdge = emax
         }
 
-        -- Place Schematic
-        -- local results = minetest.place_schematic(self.StartPos, schematic, 0, nil, true)
-
-        local results = minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic, 0, nil, true)
+        minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic, 0, nil, true)
         vm:write_to_map(true)
     end
-
-
 
     if (config.tableName ~= nil) then
         if (config.onSchematicPlaceFunction ~= nil) then
@@ -92,15 +93,11 @@ function Realm:Load_Schematic(schematic, config)
     end
 
     self:UpdateSpawn(config.spawnPoint)
-
-    return results
 end
 
 function Realm:NewFromSchematic(name, key)
     local schematic, config = schematicManager.getSchematic(key)
-
     local newRealm = Realm:New(name, config.schematicSize)
-    minetest.debug("config.schematic size:" .. " " .. config.schematicSize.x .. " " .. config.schematicSize.y .. " " .. config.schematicSize.z)
     newRealm:Load_Schematic(schematic, config)
     newRealm:CreateBarriers()
 
