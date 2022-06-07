@@ -4,8 +4,9 @@
 ---@public
 ---Save_Schematic
 ---@return string, boolean The filepath of the schematic; whether the settings file wrote succesfully.
-function Realm:Save_Schematic(author)
+function Realm:Save_Schematic(author, mode)
     author = author or "unknown"
+    mode = mode or "old"
 
     local folderpath = minetest.get_worldpath() .. "/schematics/"
 
@@ -20,12 +21,31 @@ function Realm:Save_Schematic(author)
 
     local filepath = folderpath .. "/" .. fileName
 
-    exschem.save(self.StartPos, self.EndPos, true, 80, filepath, 0)
+    if (mode == "old") then
+        minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
+    elseif (mode == "exschem") then
+        exschem.save(self.StartPos, self.EndPos, false, 40, filepath, 0,
+                function(id, errcode, error)
+                    Debug.log("Finished saving")
+                    if (error ~= nil) then
+                        Debug.log(error)
+                    end
+                end)
+    elseif (mode == "worldedit") then
+        local data, count = worldedit.serialize(self.StartPos, self.EndPos)
+        local file, err = io.open(filepath, 'w')
+        if file then
+            file:write(tostring(data))
+            file:close()
+        else
+            Debug.log("Unable to save realm; save file wouldn't open...")
+        end
+    end
 
     local settings = Settings(filepath .. ".conf")
     settings:set("author", author)
     settings:set("name", self.Name)
-    settings:set("format", "exschem")
+    settings:set("format", mode)
 
     settings:set("spawn_pos_x", self.SpawnPoint.x - self.StartPos.x)
     settings:set("spawn_pos_y", self.SpawnPoint.y - self.StartPos.y)
@@ -54,11 +74,22 @@ function Realm:Load_Schematic(schematic, config)
     local schematicEndPos = self:LocalToWorldPosition(config.schematicSize)
     self.EndPos = schematicEndPos
 
+
+    --exschem is having issues loading random chunks, need to debug
     if (config.format == "exschem") then
         Debug.log(schematic)
         exschem.load(self.StartPos, self.StartPos, 0, {}, schematic, 0,
                 function(id, time, errcode, err)
-                    Debug.log("Loading" .. id .. time .. errcode .. err)
+                    Debug.log("Loading " .. id .. time)
+
+                    if (errcode ~= nil) then
+                        Debug.log(errcode)
+                    end
+
+                    if (err ~= nil) then
+                        Debug.log(errcode)
+                    end
+
                 end)
     else
         -- Read data into LVM

@@ -42,7 +42,7 @@ minetest.register_chatcommand("realmSchematic", {
             return false, "Requested realm of ID:" .. param .. " does not exist."
         end
 
-        local path = requestedRealm:Save_Schematic(name)
+        local path = requestedRealm:Save_Schematic(name, "worldedit")
 
         return true, "Saved realm with ID " .. param .. " at path: " .. path
     end,
