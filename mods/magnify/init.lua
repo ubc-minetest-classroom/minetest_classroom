@@ -3,7 +3,7 @@ dofile(minetest.get_modpath("magnify") .. "/api.lua")
 
 -- constants
 local tool_name = "magnify:magnifying_tool"
-local priv_table = {fly = true}
+local priv_table = {interact = true}
 local MENU = 1
 local STANDARD_VIEW = 2
 local TECH_VIEW = 3
