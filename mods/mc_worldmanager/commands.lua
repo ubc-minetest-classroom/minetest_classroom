@@ -138,16 +138,21 @@ commands["schematic"] = function(name, params)
             realmName = "Unnamed Realm"
         end
 
-        local key = params[2]
+        local key = params[1]
+        if (key == nil) then
+            key = ""
+        end
 
         local schematic, config = schematicManager.getSchematic(key)
 
-        if (schematic == nil and config == nil) then
-            return false, "schematic key has not been registered with the system."
+        if (config == nil) then
+            return false, "schematic key: " .. tostring(key) .. " config file has not been registered with the system."
         end
 
         local newRealm = Realm:NewFromSchematic(realmName, key)
-        return true, "creat[ing][ed] new realm with name: " .. realmName .. "and ID: " .. newRealm.ID .. " from schematic with key " .. key
+        return true, "creat[ing][ed] new realm with name: " .. newRealm.Name .. "and ID: " .. newRealm.ID .. " from schematic with key " .. key
+    else
+        return false, "unknown subcommand. Try realm list | realm save | realm load"
     end
 
 
