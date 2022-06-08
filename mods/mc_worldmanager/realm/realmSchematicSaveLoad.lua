@@ -29,6 +29,16 @@ function Realm:Save_Schematic(author, mode)
                         Debug.log(error)
                     end
                 end)
+    elseif (mode == "exschemwe") then
+        mode = "exschem"
+        self:CleanNodes()
+        exschem.save(self.StartPos, self.EndPos, true, 40, filepath, 0,
+                function(id, errcode, error)
+                    Debug.log("Finished saving")
+                    if (error ~= nil) then
+                        Debug.log(error)
+                    end
+                end)
     elseif (mode == "worldedit") then
         local data, count = worldedit.serialize(self.StartPos, self.EndPos)
         local compressed = mc_helpers.compress(data)
@@ -41,6 +51,7 @@ function Realm:Save_Schematic(author, mode)
             Debug.log("Unable to save realm; save file wouldn't open...")
         end
     else
+        self:CleanNodes()
         minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
     end
 
@@ -79,21 +90,18 @@ function Realm:Load_Schematic(schematic, config)
 
     --exschem is having issues loading random chunks, need to debug
     if (config.format == "exschem") then
-        exschem.emerge(self.StartPos, self.EndPos, 1, 0,
-                function(id, errcode, error)
-                    exschem.load(self.StartPos, self.StartPos, 0, {}, schematic, 0,
-                            function(id, time, errcode, err)
-                                Debug.log("Loading " .. id .. time)
+        exschem.load(self.StartPos, self.StartPos, 0, {}, schematic, 0,
+                function(id, time, errcode, err)
+                    Debug.log("Loading " .. id .. time)
 
-                                if (errcode ~= nil) then
-                                    Debug.log(errcode)
-                                end
+                    if (errcode ~= nil) then
+                        Debug.log(errcode)
+                    end
 
-                                if (err ~= nil) then
-                                    Debug.log(errcode)
-                                end
+                    if (err ~= nil) then
+                        Debug.log(errcode)
+                    end
 
-                            end)
                 end)
 
 
