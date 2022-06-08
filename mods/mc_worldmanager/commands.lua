@@ -49,7 +49,7 @@ commands["newfs"] = function(name, params)
 
     local schematic, config = schematicManager.getSchematic(key)
 
-    if (schematic == nil & config == nil) then
+    if (schematic == nil and config == nil) then
         return false, "schematic key has not been registered with the system."
     end
 
