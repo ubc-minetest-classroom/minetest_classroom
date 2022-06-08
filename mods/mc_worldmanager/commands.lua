@@ -27,20 +27,35 @@ minetest.register_chatcommand("localPos", {
 })
 
 commands["new"] = function(name, params)
+    local realmName = params[2]
+    if (realmName == "" or realmName == nil) then
+        realmName = "Unnamed Realm"
+    end
+    local size = params[3]
+    local sizeY = params[4]
+    local newRealm = Realm:New(realmName, { x = size, y = sizeY, z = size })
+    newRealm:CreateGround()
+    newRealm:CreateBarriers()
+end
 
-    local realmID = params[1]
-    local requestedRealm = Realm.realmDict[tonumber(realmID)]
-    if (requestedRealm == nil) then
-        return false, "Requested realm of ID:" .. realmID .. " does not exist."
+commands["newfs"] = function(name, params)
+
+    local realmName = params[2]
+    if (realmName == "" or realmName == nil) then
+        realmName = "Unnamed Realm"
     end
 
-    requestedRealm:CreateBarriers()
-    local param = params[2] or "Unnamed Realm"
-    local size = param[3]
-    local sizeY = param[4]
-    local testRealm = Realm:New(param, { x = size, y = sizeY, z = size })
-    testRealm:CreateGround()
-    testRealm:CreateBarriers()
+    local key = params[3]
+
+    local schematic, config = schematicManager.getSchematic(key)
+
+    if (schematic == nil & config == nil) then
+        return false, "schematic key has not been registered with the system."
+    end
+
+    local newRealm = Realm:NewFromSchematic(realmName, key)
+    return true, "creat[ing][ed] new realm with name: " .. realmName .. "from schematic with key " .. key
+
 end
 
 commands["delete"] = function(name, params)
