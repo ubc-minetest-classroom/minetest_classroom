@@ -899,6 +899,7 @@ months = {
 minetest.register_tool(tool_name, {
     description = "Controller for teachers",
     inventory_image = "controller.png",
+    _mc_toolhandler_privs = priv_table,
     -- Left-click the tool activates the teacher menu
     on_use = function(itemstack, player, pointed_thing)
         local pname = player:get_player_name()
@@ -913,6 +914,7 @@ minetest.register_tool(tool_name, {
     end,
 })
 
+--[[
 -- Tool handling functions:
     -- Give the controller to any player who joins with adequate privileges or take away the controller if they do not have them
     -- Give the controller to any player who is granted adequate privileges
@@ -975,3 +977,4 @@ minetest.register_on_priv_revoke(function(name, revoker, priv)
 
     return true -- continue to next callback
 end)
+]]

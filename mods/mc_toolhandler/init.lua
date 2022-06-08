@@ -6,7 +6,7 @@ mc_toolhandler = {
 dofile(minetest.get_modpath("mc_toolhandler") .. "/api.lua")
 
 -- will be replaced with dynamic code later
-local register_tools_from = {--[["mc_teacher", "mc_student",]] "magnify"}
+local register_tools_from = {"mc_teacher", "mc_student", "magnify", "mc_tf"--[[, "forestry_tools"]]} 
 
 -- Registers give/take callbacks for all applicable tools
 local function register_callbacks(tool_name, data)
