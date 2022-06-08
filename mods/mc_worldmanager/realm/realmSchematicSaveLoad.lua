@@ -158,7 +158,12 @@ function Realm:NewFromSchematic(name, key)
     local schematic, config = schematicManager.getSchematic(key)
     local newRealm = Realm:New(name, config.schematicSize)
     newRealm:Load_Schematic(schematic, config)
-    newRealm:CreateBarriers()
+
+    if (config.format ~= "procedural") then
+        --TODO: temporarily disabled for UBC because it doesn't work with super large worlds;
+        -- Need to emerge chunks as we create barriers
+        newRealm:CreateBarriers()
+    end
 
     return newRealm
 end
