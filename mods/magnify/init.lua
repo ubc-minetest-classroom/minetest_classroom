@@ -66,8 +66,7 @@ minetest.register_tool(tool_name, {
         end
     end,
     -- makes the tool undroppable
-    on_drop = function (itemstack, dropper, pos)
-        minetest.set_node(pos, {name="air"})
+    on_drop = function(itemstack, dropper, pos)
     end
 })
 

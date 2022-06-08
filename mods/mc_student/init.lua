@@ -218,8 +218,7 @@ minetest.register_tool("mc_student:tutorialbook" , {
 		end
 	end,
 	-- Destroy the book on_drop to keep things tidy
-	on_drop = function (itemstack, dropper, pos)
-		minetest.set_node(pos, {name="air"})
+	on_drop = function(itemstack, dropper, pos)
 	end,
 })
 
@@ -516,8 +515,7 @@ minetest.register_tool(tool_name , {
 		end
 	end,
 	-- Destroy the controller on_drop to keep things tidy
-	on_drop = function (itemstack, dropper, pos)
-		minetest.set_node(pos, {name="air"})
+	on_drop = function(itemstack, dropper, pos)
 	end,
 })
 
