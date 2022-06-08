@@ -51,10 +51,6 @@ minetest.register_on_joinplayer(function(player)
 
     local pname = player:get_player_name()
     local toolbox = minetest.create_detached_inventory("mc_toolmenu:"..pname, {
-        --allow_move = function(inv, from_list, from_index, to_list, to_index, count, player),
-        -- Called when a player wants to move items inside the inventory.
-        -- Return value: number of items allowed to move.
-
         allow_put = function(inv, listname, index, stack, player)
             -- 1 if item is registered tool, 0 otherwise
             if minetest.registered_tools[stack:get_name()] then 
@@ -72,13 +68,16 @@ minetest.register_on_joinplayer(function(player)
                 return 0 -- do not allow item to be taken
             end
         end,
-        on_move = function(inv, from_list, from_index, to_list, to_index, count, player)
-            save_full_toolbox(inv, player) -- will optimize later
-        end,
+        --allow_move = function(inv, from_list, from_index, to_list, to_index, count, player),
+            -- Called when a player wants to move items inside the inventory.
+            -- Return value: number of items allowed to move.
         on_put = function(inv, listname, index, stack, player)
             save_full_toolbox(inv, player) -- will optimize later
         end,
         on_take = function(inv, listname, index, stack, player)
+            save_full_toolbox(inv, player) -- will optimize later
+        end,
+        on_move = function(inv, from_list, from_index, to_list, to_index, count, player)
             save_full_toolbox(inv, player) -- will optimize later
         end
     }, pname)

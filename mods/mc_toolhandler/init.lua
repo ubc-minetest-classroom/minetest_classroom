@@ -38,10 +38,9 @@ local function register_callbacks(tool_name, data)
             return true -- skip this callback, continue to next callback
         end
     
+        local stack = ItemStack(tool_name)
         local player = minetest.get_player_by_name(name)
         local location,list = mc_toolhandler.get_player_item_location(player, stack)
-        minetest.log(location)
-        minetest.log(list)
 
         if not location and mc_helpers.checkPrivs(player, data._mc_toolhandler_privs) then
             player:get_inventory():add_item("main", tool_name)
@@ -57,9 +56,9 @@ local function register_callbacks(tool_name, data)
             return true -- skip this callback, continue to next callback
         end
     
+        local stack = ItemStack(tool_name)
         local player = minetest.get_player_by_name(name)
         local location,list = mc_toolhandler.get_player_item_location(player, stack)
-        --local inv = player:get_inventory()
     
         if location and not mc_helpers.checkPrivs(player, data._mc_toolhandler_privs) then
             if location == mc_toolhandler.MAIN_INV then
