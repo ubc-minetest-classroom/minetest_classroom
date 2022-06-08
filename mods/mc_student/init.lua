@@ -568,7 +568,7 @@ end)
 -- Give the notebook to any player who is granted adequate privileges
 minetest.register_on_priv_grant(function(name, granter, priv)
     -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
+    if name == nil or not mc_helpers.tableHas(priv_table, priv) or not minetest.get_player_by_name(name) then
         return true -- skip this callback, continue to next callback
     end
 
@@ -586,7 +586,7 @@ end)
 -- Take the notebook away from anyone who is revoked privileges and no longer has adequate ones
 minetest.register_on_priv_revoke(function(name, revoker, priv)
     -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
+    if name == nil or not mc_helpers.tableHas(priv_table, priv) or not minetest.get_player_by_name(name) then
         return true -- skip this callback, continue to next callback
     end
 
