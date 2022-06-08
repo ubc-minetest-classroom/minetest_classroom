@@ -12,7 +12,7 @@ minetest.register_globalstep(function(dtime)
 		--check to see if the user has a compass, 
 		
 		local wielded_item = player:get_wielded_item():get_name()
-		if string.sub(wielded_item, 0, 12) == "compass:" then
+		if string.sub(wielded_item, 0, 12) == "forestry_tools:compass" then
 			--if the player is wielding a compass, change the wielded image
 			wielded=true
 			stackidx=player:get_wield_index()
@@ -22,7 +22,7 @@ minetest.register_globalstep(function(dtime)
 			if player:get_inventory() then
 		
 				for i,stack in ipairs(player:get_inventory():get_list("main")) do
-					if i<=activewidth and string.sub(stack:get_name(), 0, 12) == "compass:" then
+					if i<=activewidth and string.sub(stack:get_name(), 0, 12) == "forestry_tools:compass" then
 						activeinv=stack  --store the stack 
 						stackidx=i --store the index 
 						gotacompass=true
@@ -39,9 +39,9 @@ minetest.register_globalstep(function(dtime)
 
 			--update image to point 
 			if wielded then
-				player:set_wielded_item("compass:"..compass_image)
+				player:set_wielded_item("forestry_tools:compass"..compass_image)
 			elseif activeinv then
-				player:get_inventory():set_stack("main",stackidx,"compass:"..compass_image)
+				player:get_inventory():set_stack("main",stackidx,"forestry_tools:compass"..compass_image)
 			end 
 		end 
 	end 
@@ -72,7 +72,7 @@ for i,img in ipairs(images) do
 		if i == 1 then
 				inv = 0
 		end
-		minetest.register_tool("compass:"..(i-1), {
+		minetest.register_tool("forestry_tools:compass"..(i-1), {
 				description = "A live Compass",
 				inventory_image = img,
 				wield_image = img,
@@ -80,24 +80,21 @@ for i,img in ipairs(images) do
 		})
 end
 
-
-
-
   
-        minetest.register_on_joinplayer(function(player)
-            local inv = player:get_inventory()
-            if inv:contains_item("main", ItemStack("compass:")) then
-              
-                
-            else
-               
-               
-                    player:get_inventory():add_item('main', "compass:")
-                
-                    return
-                end     
-            end
-		)
+minetest.register_on_joinplayer(function(player)
+	local inv = player:get_inventory()
+	if inv:contains_item("main", ItemStack("forestry_tools:compass")) then
+		
+		
+	else
+		
+		
+			player:get_inventory():add_item('main', "forestry_tools:compass")
+		
+			return
+		end     
+	end
+)
     
     
 

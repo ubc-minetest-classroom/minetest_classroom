@@ -5,6 +5,7 @@ function check_perm(player)
 end
 
 dofile(forestry_tools.path .. "/measuring_tape.lua")
+dofile(forestry_tools.path .. "/compass.lua")
 
 --------------------------------
 --  RANGEFINDER FUNCTIONS   --
