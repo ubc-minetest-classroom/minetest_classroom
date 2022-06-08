@@ -65,9 +65,13 @@ minetest.register_tool(tool_name, {
             return nil
         end
     end,
-    -- makes the tool undroppable
-    on_drop = function (itemstack, dropper, pos)
-        minetest.set_node(pos, {name="air"})
+    -- makes the tool undroppable in MineTest Classroom
+    on_drop = function(itemstack, dropper, pos)
+        -- should eventually be replaced with a more flexible check
+        if not minetest.get_modpath("mc_core") then
+            minetest.item_drop(itemstack, dropper, pos)
+            dropper:set_wielded_item(nil) -- removes the item from inventory: does not work without this
+        end
     end
 })
 
