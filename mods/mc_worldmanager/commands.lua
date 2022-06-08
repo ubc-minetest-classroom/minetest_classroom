@@ -104,6 +104,16 @@ commands["setspawn"] = function(name, realmID, requestedRealm, params)
     return true, "Updated spawnpoint for realm with ID: " .. param
 end
 
+commands["setspawnrealm"] = function(name, realmID, requestedRealm, params)
+    local success = mc_worldManager.SetSpawnRealm(requestedRealm)
+
+    if (success) then
+        return true, "Updated the spawn realm to realm with ID: " .. realmID
+    else
+        return false, "something went wrong... could not update the spawn realm."
+    end
+end
+
 minetest.register_chatcommand("realm", {
     params = "Subcommand Realm ID Option",
     privs = {
@@ -124,10 +134,57 @@ minetest.register_chatcommand("realm", {
 
         if (commands[subcommand] ~= nil) then
             commands[subcommand](name, realmID, requestedRealm, params)
+        elseif (subcommand == "help") then
+            local helpString = ""
+            for k, v in pairs(commands) do
+                helpString = helpString .. " " .. v
+            end
+            return true, helpString
         else
             return false, "Unknown subcommand"
         end
 
+
+    end,
+})
+
+minetest.register_chatcommand("realmDefine", {
+    params = "name pos1X pos1Y pos1Z pos2X pos2Y pos2Z",
+    func = function(name, param)
+        local params = mc_helpers.split(param, " ")
+
+        -- this is really hacky, we should come up with a better way to do this...
+
+        local name = tostring(params[1])
+        local pos1X = tonumber(params[2])
+        local pos1Y = tonumber(params[3])
+        local pos1Z = tonumber(params[4])
+        local pos2X = tonumber(params[5])
+        local pos2Y = tonumber(params[6])
+        local pos2Z = tonumber(params[7])
+
+        if (name == nil or pos1X == nil or pos1Y == nil or pos1Z == nil or pos2X == nil or pos2Y == nil or pos2Z == nil) then
+            return false, "missing command parameters"
+        end
+
+        local pos1 = { x = pos1X, y = pos1Y, z = pos1Z }
+        local pos2 = { x = pos2X, y = pos2Y, z = pos2Z }
+        local spawnPos = { x = (pos1.x + pos2.x) / 2, y = pos2.y - 5, z = (pos1.z + pos2.z) / 2 }
+
+        local newRealm = {
+            Name = name,
+            ID = Realm.realmCount + 1,
+            StartPos = pos1,
+            EndPos = pos2,
+            SpawnPoint = spawnPos,
+            PlayerJoinTable = nil,
+            PlayerLeaveTable = nil,
+            RealmDeleteTable = nil,
+            MetaStorage = { }
+        }
+
+        Realm.realmCount = newRealm.ID
+        Realm:Restore(newRealm)
 
     end,
 })

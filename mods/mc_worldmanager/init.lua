@@ -32,13 +32,34 @@ mc_worldManager.load_data()
 function mc_worldManager.GetSpawnRealm()
     local spawnRealm = Realm.realmDict[mc_worldManager.spawnRealmID]
     if (spawnRealm == nil) then
-        Debug.log(mc_worldManager.spawnRealmSchematic)
-        spawnRealm = Realm:NewFromSchematic("Spawn Realm", mc_worldManager.spawnRealmSchematic)
 
+        spawnRealm = Realm:NewFromSchematic("Spawn Realm", mc_worldManager.spawnRealmSchematic)
+        Debug.log("Finished generating spawn realm...")
         mc_worldManager.spawnRealmID = spawnRealm.ID
         mc_worldManager.save_data()
     end
     return spawnRealm
+end
+
+---@public
+---Sets the world spawn realm to the realm supplied in param newSpawnRealm.
+---@param newSpawnRealm table realm to set as spawn.
+---@return boolean whether the operation succeeded or not.
+function mc_worldManager.SetSpawnRealm(newSpawnRealm)
+
+    if (newSpawnRealm ~= nil) then
+        mc_worldManager.spawnRealmID = newSpawnRealm.ID
+        mc_worldManager.save_data()
+        return true
+    end
+    return false
+end
+
+---@public
+---Returns whether or not spawn has been generated.
+---@return boolean whether or not spawn has been generated.
+function mc_worldManager.SpawnGenerated()
+    return Realm.realmDict[mc_worldManager.spawnRealmID] ~= nil
 end
 
 -- Registration
