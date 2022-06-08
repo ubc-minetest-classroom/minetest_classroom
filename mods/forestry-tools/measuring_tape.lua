@@ -5,10 +5,16 @@ local none_set, pos1_set, pos2_set = 0, 1, 2
 local distance
 local instances = {}
 
-
-
 -- Give the measuring tape to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
+	instances[player:get_player_name()] = {
+		pos1 = {x=0, y=0, z=0},
+		pos2 = {x=0, y=0, z=0},
+		node1 = {name = ""},
+		node2 = {name = ""},
+		mark_status = none_set
+	}
+
     local inv = player:get_inventory()
     if inv:contains_item("main", ItemStack("forestry_tools:measuringTape")) then
         -- Player has the measuring tape
@@ -29,14 +35,6 @@ minetest.register_on_joinplayer(function(player)
             return
         end     
     end
-
-    instances[player:get_player_name()] = {
-		pos1 = {x=0, y=0, z=0},
-		pos2 = {x=0, y=0, z=0},
-		node1 = {name = ""},
-		node2 = {name = ""},
-		mark_status = none_set
-	}
 end)
 
 
