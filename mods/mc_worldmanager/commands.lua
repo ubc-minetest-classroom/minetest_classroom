@@ -36,26 +36,8 @@ commands["new"] = function(name, params)
     local newRealm = Realm:New(realmName, { x = size, y = sizeY, z = size })
     newRealm:CreateGround()
     newRealm:CreateBarriers()
-end
 
-commands["newfs"] = function(name, params)
-
-    local realmName = params[2]
-    if (realmName == "" or realmName == nil) then
-        realmName = "Unnamed Realm"
-    end
-
-    local key = params[3]
-
-    local schematic, config = schematicManager.getSchematic(key)
-
-    if (schematic == nil and config == nil) then
-        return false, "schematic key has not been registered with the system."
-    end
-
-    local newRealm = Realm:NewFromSchematic(realmName, key)
-    return true, "creat[ing][ed] new realm with name: " .. realmName .. "from schematic with key " .. key
-
+    return true, "created new realm with ID: " .. newRealm.ID
 end
 
 commands["delete"] = function(name, params)
@@ -121,20 +103,53 @@ commands["walls"] = function(name, params)
 end
 
 commands["schematic"] = function(name, params)
-    local realmID = params[1]
-    local requestedRealm = Realm.realmDict[tonumber(realmID)]
-    if (requestedRealm == nil) then
-        return false, "Requested realm of ID:" .. realmID .. " does not exist."
+
+    if (params[1] == "list") then
+        table.remove(params, 1)
+
+        minetest.chat_send_player(name, "Key : Filepath")
+        for i, t in pairs(schematicManager.schematics) do
+            minetest.chat_send_player(name, i .. " : " .. t)
+        end
+
+        return true
+
+
+    elseif (params[1] == "save") then
+        table.remove(params, 1)
+        local realmID = params[1]
+        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        if (requestedRealm == nil) then
+            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+        end
+
+        local subparam = params[2]
+
+        if (subparam == "" or subparam == nil) then
+            subparam = "old"
+        end
+
+        local path = requestedRealm:Save_Schematic(name, subparam)
+        return true, "Saved realm with ID " .. realmID .. " at path: " .. path
+    elseif (params[1] == "load") then
+        table.remove(params, 1)
+        local realmName = params[1]
+        if (realmName == "" or realmName == nil) then
+            realmName = "Unnamed Realm"
+        end
+
+        local key = params[2]
+
+        local schematic, config = schematicManager.getSchematic(key)
+
+        if (schematic == nil and config == nil) then
+            return false, "schematic key has not been registered with the system."
+        end
+
+        local newRealm = Realm:NewFromSchematic(realmName, key)
+        return true, "creat[ing][ed] new realm with name: " .. realmName .. "and ID: " .. newRealm.ID .. " from schematic with key " .. key
     end
 
-    local subparam = params[2]
-
-    if (subparam == "" or subparam == nil) then
-        subparam = "old"
-    end
-
-    local path = requestedRealm:Save_Schematic(name, subparam)
-    return true, "Saved realm with ID " .. realmID .. " at path: " .. path
 
 end
 
@@ -217,18 +232,16 @@ minetest.register_chatcommand("realm", {
         table.remove(params, 1)
 
         if (commands[subcommand] ~= nil) then
-            commands[subcommand](name, params)
+            return commands[subcommand](name, params)
         elseif (subcommand == "help") then
             local helpString = ""
             for k, v in pairs(commands) do
-                helpString = helpString .. " " .. v
+                helpString = helpString .. k .. " | "
             end
             return true, helpString
         else
-            return false, "Unknown subcommand"
+            return false, "Unknown subcommand. Use 'realm help' for a list of sub-commands."
         end
-
-
     end,
 })
 
