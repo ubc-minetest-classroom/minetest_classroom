@@ -103,7 +103,7 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
     local BinEndPos = { x = 0, y = 0, z = 0 }
 
     for i, v in ipairs(Realm.EmptyChunks) do
-        if (v.area.x >= realmSize.x and v.area.y >= realmSize.y and v.area.z >= realmSize.z) then
+        if (v.area.x >= realmSize.x + Realm.const.bufferSize and v.area.y >= realmSize.y + Realm.const.bufferSize and v.area.z >= realmSize.z + Realm.const.bufferSize) then
             table.remove(Realm.EmptyChunks, i)
             StartPos = { x = v.startPos.x + Realm.const.bufferSize, y = v.startPos.y + Realm.const.bufferSize, z = v.startPos.z + Realm.const.bufferSize }
             BinEndPos = { x = v.startPos.x + v.area.x, y = v.startPos.y + v.area.y, v.startPos.z + v.area.z }
@@ -164,12 +164,15 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
     -- We're checking reuseBin multiple times
     if (reuseBin == true) then
 
-        local x = {
-            y = { startPos = { x = StartPos.x, y = EndPos.y, z = StartPos.z, }, endPos = { x = EndPos.x, y = BinEndPos.y, x = EndPos.z } },
-            x = { startPos = { x = EndPos.x, y = StartPos.y, z = StartPos.z, }, endPos = { x = BinEndPos.x, y = EndPos.y, z = EndPos.z } },
-            z = { startPos = { x = StartPos.z, y = StartPos.y, z = EndPos.z, }, endPos = { x = EndPos.z, y = EndPos.y, z = BinEndPos.z } }
+        local emptySpace = {
+            top = { startPos = { x = StartPos.x, y = EndPos.y, z = StartPos.z, }, endPos = { x = EndPos.x, y = BinEndPos.y, x = EndPos.z } },
+            xAxis = { startPos = { x = EndPos.x, y = StartPos.y, z = StartPos.z, }, endPos = { x = BinEndPos.x, y = EndPos.y, z = EndPos.z } },
+            zAxis = { startPos = { x = StartPos.z, y = StartPos.y, z = EndPos.z, }, endPos = { x = EndPos.z, y = EndPos.y, z = BinEndPos.z } }
         }
 
+        Realm.markSpaceAsFree(emptySpace.top.startPos, emptySpace.top.endPos)
+        Realm.markSpaceAsFree(emptySpace.xAxis.startPos, emptySpace.xAxis.endPos)
+        Realm.markSpaceAsFree(emptySpace.zAxis.startPos, emptySpace.zAxis.endPos)
     end
 
     mc_worldManager.storage:set_string("realmEmptyChunks", minetest.serialize(Realm.EmptyChunks))
@@ -178,7 +181,6 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
 end
 
 function Realm.markSpaceAsFree(startPos, endPos)
-
     local entry = {}
     entry.startPos = startPos
     entry.area = { x = endPos.x - startPos.x,
@@ -188,6 +190,173 @@ function Realm.markSpaceAsFree(startPos, endPos)
     table.insert(Realm.EmptyChunks, entry)
 end
 
+function Realm.consolidateEmptySpace()
+    -- Generate a point grid from the freespace table
+    -- Generate volumes from the point data
+    -- replace the freespace table
+    local pointGrid = {  }
+
+    -- There is a much more elegant solution that can generate these points quicker than O(n^4);
+    -- That said, it's a bit more complex so I'll leave this simple code for now
+    -- When there is lots of empty space, this might use a lot of memory; but it needs more testing
+    for k, entry in pairs(Realm.EmptyChunks) do
+        for x = entry.startPos.x, entry.startPos.x + entry.area.x do
+            for y = entry.startPos.y, entry.startPos.y + entry.area.y do
+                for z = entry.startPos.z, entry.startPos.z + entry.area.z do
+                    ptable.store(pointGrid, { x = x, y = y, z = z }, true)
+                end
+            end
+        end
+    end
+
+    -- Run a nearest neighbor search to group points up according to their neighbors
+    -- Note that this function uses GOTO statements; the alternative would be to have a boolean
+    -- Keeping track of when to break the loops.
+    -- This is necessary because of our nested loops.
+    local function buildGroups(pointGrid)
+
+        local groups = {}
+        local groupCounter = 0
+
+        :: start ::
+        local lastX = nil
+        local lastY = nil
+        local lastZ = nil
+
+        local function isNeighbor(lastPos, currentPos, coord)
+
+            local difference = math.abs(currentPos - lastPos)
+
+            if (difference == 0 or difference == 1) then
+                return true
+            end
+
+            return false
+        end
+
+        for kx, xTable in mc_helpers.pairsByKeys(pointGrid) do
+            if (lastX == nil) then
+                lastX = kx
+            end
+
+            lastY = nil
+            lastZ = nil
+
+            if (isNeighbor(lastX, kx, "x")) then
+                lastX = kx
+            else
+                groupCounter = groupCounter + 1
+
+                goto start
+                break
+            end
+
+            for ky, yTable in mc_helpers.pairsByKeys(xTable) do
+                if (lastY == nil) then
+                    lastY = ky
+                end
+
+                if (isNeighbor(lastY, ky, "y")) then
+                    lastY = ky
+                else
+
+                    break
+                end
+
+                for kz, zTable in mc_helpers.pairsByKeys(yTable) do
+                    if (lastZ == nil) then
+                        lastZ = kz
+                    end
+
+                    if (isNeighbor(lastZ, kz, "z")) then
+                        lastZ = kz
+                    else
+
+                        break
+                    end
+
+                    local coords = { x = kx, y = ky, z = kz }
+
+                    if (zTable == true) then
+                        if (groups[groupCounter] == nil) then
+                            groups[groupCounter] = {}
+                        end
+
+                        table.insert(groups[groupCounter], coords)
+                        ptable.delete(pointGrid, coords)
+                    end
+                end
+            end
+        end
+
+        return groups
+    end
+
+    local groups = buildGroups(pointGrid)
+
+    -- To build our volumes, we just need to order the points in the group from smallest, to largest
+    -- Our volume starting position is the smallest point in the group; Our ending position is the largest
+
+    local volumes = {}
+
+    for k, group in pairs(groups) do
+        local smallestCoord = nil
+        local largestCoord = nil
+
+        for i, coord in pairs(group) do
+            if (smallestCoord == nil) then
+                smallestCoord = { x = coord.x, y = coord.y, z = coord.z }
+            end
+
+            if (largestCoord == nil) then
+                largestCoord = { x = coord.x, y = coord.y, z = coord.z }
+            end
+            --
+
+            if (smallestCoord.x > coord.x) then
+                smallestCoord.x = coord.x
+            end
+
+            if (smallestCoord.y > coord.y) then
+                smallestCoord.y = coord.y
+            end
+
+            if (smallestCoord.z > coord.z) then
+                smallestCoord.z = coord.z
+            end
+            --
+
+            if (largestCoord.x < coord.x) then
+                largestCoord.x = coord.x
+            end
+
+            if (largestCoord.y < coord.y) then
+                largestCoord.y = coord.y
+            end
+
+            if (largestCoord.z < coord.z) then
+                largestCoord.z = coord.z
+            end
+
+        end
+
+        local entry = {}
+        entry.startPos = smallestCoord
+        entry.area = { x = largestCoord.x - smallestCoord.x,
+                       y = largestCoord.y - smallestCoord.y,
+                       z = largestCoord.z - smallestCoord.z }
+
+        table.insert(volumes, entry)
+    end
+
+
+    -- Replace our current emptyChunks array with our consolidated one;
+    -- TODO: If remove the tail end empty chunks after they're combined, and decrease our grid end position
+    -- This will shrink our active address space and use less memory
+
+    Realm.EmptyChunks = volumes
+end
+
 ---@public
 ---Deletes the realm based on class instance.
 ---NOTE: remember to clear any references to the realm so that memory can be released by the GC.
@@ -195,10 +364,17 @@ end
 function Realm:Delete()
     self:RunFunctionFromTable(self.RealmDeleteTable)
     self:ClearNodes()
-    Realm.markSpaceAsFree(Realm.worldToGridSpace({
-        x = self.StartPos.x - Realm.const.bufferSize,
-        y = self.StartPos.y - Realm.const.bufferSize,
-        z = self.StartPos.z - Realm.const.bufferSize }), Realm.worldToGridSpace(self.EndPos))
+
+    local gridSpace = Realm.worldToGridSpace({
+        x = self.StartPos.x,
+        y = self.StartPos.y,
+        z = self.StartPos.z })
+
+    gridSpace.x = gridSpace.x - Realm.const.bufferSize
+    gridSpace.y = gridSpace.y - Realm.const.bufferSize
+    gridSpace.z = gridSpace.z - Realm.const.bufferSize
+
+    Realm.markSpaceAsFree(gridSpace, Realm.worldToGridSpace(self.EndPos))
     Realm.realmDict[self.ID] = nil
     Realm.SaveDataToStorage()
 end
@@ -226,3 +402,4 @@ function Realm:RunFunctionFromTable(table, player)
 end
 
 Realm.LoadDataFromStorage()
+Realm.consolidateEmptySpace()
