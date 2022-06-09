@@ -4,7 +4,6 @@ local none_set, pos1_set, pos2_set = 0, 1, 2
 
 local distance
 local instances = {}
-tape_range = 30
 
 -- Give the measuring tape to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
@@ -43,7 +42,6 @@ end)
 minetest.register_node("forestry_tools:measure_pos1", {
 	description = "Measure Pos1",
 	tiles = {"measure_pos1.png"},
-	paramtype2 = "facedir",
 	is_ground_content = false,
 	light_source = minetest.LIGHT_MAX,
 	groups = {not_in_creative_inventory, immortal}	
@@ -53,7 +51,6 @@ minetest.register_node("forestry_tools:measure_pos1", {
 minetest.register_node("forestry_tools:measure_pos2", {
 	description = "Measure Pos2",
 	tiles = {"measure_pos2.png"},
-	paramtype2 = "facedir",
 	is_ground_content = false,
 	light_source = minetest.LIGHT_MAX,
 	groups = {not_in_creative_inventory, immortal}
@@ -70,7 +67,7 @@ function mark_pos1(player, pos)
 end
 
 -- Marks pos2 and performs calculations
-function mark_pos2(player, pos, facedir_param2, range)
+function mark_pos2(player, pos)
 	instances[player].pos2 = pos
 	instances[player].node2 = minetest.get_node(pos)
 	minetest.swap_node(pos, {name = "forestry_tools:measure_pos2"})
@@ -148,7 +145,7 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 	liquids_pointable = true,
 
 	-- On left-click
-    on_use = function(itemstack, placer, pointed_thing, pos)
+    on_use = function(itemstack, placer, pointed_thing)
 	
 		placer = placer:get_player_name()
 		if pointed_thing.type == "node" then
@@ -166,7 +163,7 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 			-- If pos1 marked, mark pos2 perform calculations, and trigger auto-reset
 			elseif instances[placer].mark_status == pos1_set then
 				local node = minetest.get_node(pointed_thing.under)
-				mark_pos2(placer, pointed_thing.under, node.param2, tape_range)
+				mark_pos2(placer, pointed_thing.under)
 				
 			end
 		end
