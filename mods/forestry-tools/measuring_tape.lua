@@ -127,7 +127,7 @@ function reset(player)
 		minetest.swap_node(instances[player].pos1, instances[player].node1)
 		minetest.swap_node(instances[player].pos2, instances[player].node2)
 
-		for i = 1, distance do
+		for i = 1, distance - 1 do
 			minetest.swap_node(instances[player].tape_nodes[i], instances[player].orig_nodes[i])
 		end
 	end
