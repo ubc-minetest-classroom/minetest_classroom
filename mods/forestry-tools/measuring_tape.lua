@@ -12,6 +12,8 @@ minetest.register_on_joinplayer(function(player)
 		pos2 = {x=0, y=0, z=0},
 		node1 = {name = ""},
 		node2 = {name = ""},
+		tape_nodes = {},
+		orig_nodes = {},
 		mark_status = none_set
 	}
 
@@ -77,24 +79,25 @@ function mark_pos2(player, pos)
 	-- Calculate the distance and display output
 	distance = math.floor(vector.distance(instances[player].pos1, instances[player].pos2) + 0.5)
 
+	local newPos
 	for i = 1, distance do
 		if pos.z == instances[player].pos1.z then
 			if pos.x < instances[player].pos1.x then
-				local newPos = {x = pos.x + i, y = pos.y, z = pos.z}
-				minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+				newPos = {x = pos.x + i, y = pos.y, z = pos.z}
 			else 
-				local newPos = {x = pos.x - i, y = pos.y, z = pos.z}
-				minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+				newPos = {x = pos.x - i, y = pos.y, z = pos.z}
 			end
 		elseif pos.x == instances[player].pos1.x then
 			if pos.z < instances[player].pos1.z then
-				local newPos = {x = pos.x, y = pos.y, z = pos.z + i}
-				minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+				newPos = {x = pos.x, y = pos.y, z = pos.z + i}
 			else 
-				local newPos = {x = pos.x, y = pos.y, z = pos.z - i}
-				minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+				newPos = {x = pos.x, y = pos.y, z = pos.z - i}
 			end
 		end
+
+		instances[player].tape_nodes[i] = newPos
+		instances[player].orig_nodes[i] = minetest.get_node(newPos)
+		minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
 	end
 
 	tell_player(player, "Distance: " .. minetest.colorize("#FFFF00", distance) .. "m")
@@ -123,6 +126,10 @@ function reset(player)
 	elseif instances[player].mark_status == pos2_set then
 		minetest.swap_node(instances[player].pos1, instances[player].node1)
 		minetest.swap_node(instances[player].pos2, instances[player].node2)
+
+		for i = 1, distance do
+			minetest.swap_node(instances[player].tape_nodes[i], instances[player].orig_nodes[i])
+		end
 	end
 		
 	instances[player].mark_status = none_set
