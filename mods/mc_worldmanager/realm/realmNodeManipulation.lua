@@ -38,8 +38,8 @@ end
 ---@return void
 function Realm:CreateGround(nodeType)
     nodeType = nodeType or "mc_worldmanager:temp"
-    local pos1 = { x = self.StartPos.x, y = (self.StartPos.y + self.EndPos.y) / 2, z = self.StartPos.z }
-    local pos2 = { x = self.EndPos.x, y = (self.StartPos.y + self.EndPos.y) / 2, z = self.EndPos.z }
+    local pos1 = { x = self.StartPos.x, y = self.StartPos.y + 1, z = self.StartPos.z }
+    local pos2 = { x = self.EndPos.x, y = self.StartPos.y + 1, z = self.EndPos.z }
 
     self:SetNodes(pos1, pos2, nodeType)
 end
@@ -102,4 +102,29 @@ function Realm:SetNodes(pos1, pos2, node)
     -- Write data to world
     vm:set_data(data)
     vm:write_to_map(true)
+end
+
+function Realm:CleanNodes()
+    local count = 0
+    local vm = minetest.get_voxel_manip()
+    local emin, emax = vm:read_from_map(self.StartPos, self.EndPos)
+    local a = VoxelArea:new {
+        MinEdge = emin,
+        MaxEdge = emax
+    }
+    local data = vm:get_data()
+
+    -- Modify data
+    for i in a:iterp(self.StartPos, self.EndPos) do
+        local currentNode = minetest.get_name_from_content_id(data[i])
+        if not minetest.registered_nodes[currentNode] then
+            data[i] = minetest.get_content_id("air") -- replace unknown with air
+            count = count + 1
+        end
+    end
+
+    -- write changes to map
+    vm:set_data(data)
+    vm:write_to_map()
+    return count
 end

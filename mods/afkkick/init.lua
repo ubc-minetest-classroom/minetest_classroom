@@ -15,65 +15,72 @@ local players = {}
 local checkTimer = 0
 
 minetest.register_on_joinplayer(function(player)
-	local playerName = player:get_player_name()
-	if mc_helpers.checkPrivs(player) then
-		-- player is teacher, do not time or kick
-		players[playerName] = nil
-	else
-		players[playerName] = {
-			lastAction = minetest.get_gametime()
-		}
-	end
+    local playerName = player:get_player_name()
+    if mc_helpers.checkPrivs(player) then
+        -- player is teacher, do not time or kick
+        players[playerName] = nil
+    else
+        players[playerName] = {
+            lastAction = minetest.get_gametime()
+        }
+    end
 end)
 
 minetest.register_on_leaveplayer(function(player)
-	local playerName = player:get_player_name()
-	players[playerName] = nil
+    local playerName = player:get_player_name()
+    players[playerName] = nil
 end)
 
 minetest.register_on_chat_message(function(playerName, message)
-	players[playerName]["lastAction"] = minetest.get_gametime()
+    players[playerName]["lastAction"] = minetest.get_gametime()
 end)
 
 minetest.register_globalstep(function(dtime)
-	local currGameTime = minetest.get_gametime()
 
-	--Check for inactivity once every CHECK_INTERVAL seconds
-	checkTimer = checkTimer + dtime
 
-	local checkNow = checkTimer >= CHECK_INTERVAL
-	if checkNow then
-		checkTimer = checkTimer - CHECK_INTERVAL
-	end
+    -- Optional dependency on mc_worldManager so we don't kick players while spawn is generating
+    if (mc_worldManager ~= nil and mc_worldManager.SpawnGenerated() ~= nil) then
+        return
+    end
 
-	--Loop through each player in players
-	for playerName, info in pairs(players) do
-		local player = minetest.get_player_by_name(playerName)
-		if player then
-			--Check if this player is doing an action
-			for _, keyPressed in pairs(player:get_player_control()) do
-				if keyPressed then
-					info["lastAction"] = currGameTime
-				end
-			end
+    local currGameTime = minetest.get_gametime()
 
-			if checkNow then
-				--Kick player if he/she has been inactive for longer than MAX_INACTIVE_TIME seconds
-				if info["lastAction"] + MAX_INACTIVE_TIME < currGameTime then
-					minetest.kick_player(playerName, "Kicked for inactivity")
-				end
+    --Check for inactivity once every CHECK_INTERVAL seconds
+    checkTimer = checkTimer + dtime
 
-				--Warn player if he/she has less than WARN_TIME seconds to move or be kicked
-				if info["lastAction"] + MAX_INACTIVE_TIME - WARN_TIME < currGameTime then
-					minetest.chat_send_player(playerName,
-						minetest.colorize("#FF8C00", "Warning, you have " ..
-						tostring(info["lastAction"] + MAX_INACTIVE_TIME - currGameTime + 1) ..
-						" seconds to move or be kicked from the server"))
-				end
-			end
-		else
-			-- Clean up garbage
-			players[playerName] = nil
-		end
-	end
+    local checkNow = checkTimer >= CHECK_INTERVAL
+    if checkNow then
+        checkTimer = checkTimer - CHECK_INTERVAL
+    end
+
+    --Loop through each player in players
+    for playerName, info in pairs(players) do
+        local player = minetest.get_player_by_name(playerName)
+        if player then
+            --Check if this player is doing an action
+            for _, keyPressed in pairs(player:get_player_control()) do
+                if keyPressed then
+                    info["lastAction"] = currGameTime
+                end
+            end
+
+            if checkNow then
+                --Kick player if he/she has been inactive for longer than MAX_INACTIVE_TIME seconds
+                if info["lastAction"] + MAX_INACTIVE_TIME < currGameTime then
+                    minetest.kick_player(playerName, "Kicked for inactivity")
+                end
+
+                --Warn player if he/she has less than WARN_TIME seconds to move or be kicked
+                if info["lastAction"] + MAX_INACTIVE_TIME - WARN_TIME < currGameTime then
+                    minetest.chat_send_player(playerName,
+                            minetest.colorize("#FF8C00", "Warning, you have " ..
+                                    tostring(info["lastAction"] + MAX_INACTIVE_TIME - currGameTime + 1) ..
+                                    " seconds to move or be kicked from the server"))
+                end
+            end
+        else
+            -- Clean up garbage
+            players[playerName] = nil
+        end
+    end
 end)
