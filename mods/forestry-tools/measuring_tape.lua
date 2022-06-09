@@ -4,6 +4,7 @@ local none_set, pos1_set, pos2_set = 0, 1, 2
 
 local distance
 local instances = {}
+tape_range = 30
 
 -- Give the measuring tape to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
@@ -42,6 +43,7 @@ end)
 minetest.register_node("forestry_tools:measure_pos1", {
 	description = "Measure Pos1",
 	tiles = {"measure_pos1.png"},
+	paramtype2 = "facedir",
 	is_ground_content = false,
 	light_source = minetest.LIGHT_MAX,
 	groups = {not_in_creative_inventory, immortal}	
@@ -51,6 +53,7 @@ minetest.register_node("forestry_tools:measure_pos1", {
 minetest.register_node("forestry_tools:measure_pos2", {
 	description = "Measure Pos2",
 	tiles = {"measure_pos2.png"},
+	paramtype2 = "facedir",
 	is_ground_content = false,
 	light_source = minetest.LIGHT_MAX,
 	groups = {not_in_creative_inventory, immortal}
@@ -67,7 +70,7 @@ function mark_pos1(player, pos)
 end
 
 -- Marks pos2 and performs calculations
-function mark_pos2(player, pos)
+function mark_pos2(player, pos, facedir_param2, range)
 	instances[player].pos2 = pos
 	instances[player].node2 = minetest.get_node(pos)
 	minetest.swap_node(pos, {name = "forestry_tools:measure_pos2"})
@@ -76,16 +79,28 @@ function mark_pos2(player, pos)
 	
 	-- Calculate the distance and display output
 	distance = math.floor(vector.distance(instances[player].pos1, instances[player].pos2) + 0.5)
-	tell_player(player, "Distance: " .. minetest.colorize("#FFFF00", distance))
-				
-	-- -- Calculate mid-point and display output
-	-- instances[player].pos_mid = vector.new((instances[player].pos1.x + instances[player].pos2.x)/2,
-	-- 										(instances[player].pos1.y + instances[player].pos2.y)/2,
-	-- 										(instances[player].pos1.z + instances[player].pos2.z)/2)
-	-- instances[player].node_mid = minetest.get_node(instances[player].pos_mid)
-	-- minetest.swap_node(instances[player].pos_mid, {name = "mid_measure:midpoint"})
-	-- tell_player(player, "Mid-point at " .. minetest.colorize("#FFFF00", minetest.pos_to_string(instances[player].pos_mid)))
-	-- instances[player].mark_status = midpoint_set
+
+	for i = 1, distance do
+		if pos.z == instances[player].pos1.z then
+			if pos.x < instances[player].pos1.x then
+				local newPos = {x = pos.x + i, y = pos.y, z = pos.z}
+				minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+			else 
+				local newPos = {x = pos.x - i, y = pos.y, z = pos.z}
+				minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+			end
+		elseif pos.x == instances[player].pos1.x then
+			if pos.z < instances[player].pos1.z then
+				local newPos = {x = pos.x, y = pos.y, z = pos.z + i}
+				minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+			else 
+				local newPos = {x = pos.x, y = pos.y, z = pos.z - i}
+				minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+			end
+		end
+	end
+
+	tell_player(player, "Distance: " .. minetest.colorize("#FFFF00", distance) .. "m")
 
 	-- Reads auto-reset duration from conf, defaults to 20 seconds if setting non-existent
 	local auto_reset = tonumber(minetest.settings:get("forestry_tools.auto_reset"))
@@ -123,7 +138,7 @@ end
 
 -- Convenience method which just calls minetest.chat_send_player() after prefixing msg with " -!- Measuring Tape: "
 function tell_player(player_name, msg)
-	minetest.chat_send_player(player_name, " -!- Measuring Tape: " .. msg)	
+	minetest.chat_send_player(player_name, "Measuring Tape - " .. msg)	
 end
 
 minetest.register_tool("forestry_tools:measuringTape" , {
@@ -133,7 +148,7 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 	liquids_pointable = true,
 
 	-- On left-click
-    on_use = function(itemstack, placer, pointed_thing)
+    on_use = function(itemstack, placer, pointed_thing, pos)
 	
 		placer = placer:get_player_name()
 		if pointed_thing.type == "node" then
@@ -150,7 +165,8 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 			
 			-- If pos1 marked, mark pos2 perform calculations, and trigger auto-reset
 			elseif instances[placer].mark_status == pos1_set then
-				mark_pos2(placer, pointed_thing.under)
+				local node = minetest.get_node(pointed_thing.under)
+				mark_pos2(placer, pointed_thing.under, node.param2, tape_range)
 				
 			end
 		end
@@ -166,6 +182,9 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 
 minetest.register_alias("measuringTape", "forestry_tools:measuringTape")
 measuringTape = minetest.registered_aliases[measuringTape] or measuringTape
+
+
+
 
 
 -- -- TODO: might want each block to be less than a meter
