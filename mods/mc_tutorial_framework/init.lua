@@ -107,8 +107,7 @@ minetest.register_tool("mc_tf:tutorialbook" , {
 		end
 	end,
 	-- Destroy the book on_drop to keep things tidy
-	on_drop = function (itemstack, dropper, pos)
-		minetest.set_node(pos, {name="air"})
+	on_drop = function(itemstack, dropper, pos)
 	end,
 })
 

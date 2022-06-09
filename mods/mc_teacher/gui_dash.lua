@@ -910,7 +910,6 @@ minetest.register_tool(tool_name, {
     end,
     -- Destroy the controller on_drop so that students cannot pick it up (i.e, disallow dropping without first revoking teacher)
     on_drop = function(itemstack, dropper, pos)
-        minetest.set_node(pos, { name = "air" })
     end,
 })
 
