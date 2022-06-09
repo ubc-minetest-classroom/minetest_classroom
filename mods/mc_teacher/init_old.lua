@@ -295,8 +295,7 @@ minetest.register_tool("mc_teacher:controller" , {
 		end
 	end,
 	-- Destroy the controller on drop so that students cannot pick it up
-	on_drop = function (itemstack, dropper, pos)
-		minetest.set_node(pos, {name="air"})
+	on_drop = function(itemstack, dropper, pos)
 	end,
 })
 
