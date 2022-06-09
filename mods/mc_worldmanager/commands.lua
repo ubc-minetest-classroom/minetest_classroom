@@ -1,11 +1,13 @@
 -- All the functionality from these commands will added to a realm book.
 -- These commands are currently just for testing
 
+
 local commands = {}
+
 
 minetest.register_chatcommand("localPos", {
     privs = {
-        interact = true,
+        teacher = true,
     },
     func = function(name, param)
 
@@ -17,6 +19,7 @@ minetest.register_chatcommand("localPos", {
 
         local requestedRealm = Realm.realmDict[realmID]
 
+
         if (requestedRealm == nil) then
             return false, "Player is not listed in a realm OR current realm has been deleted; Try teleporting to a different realm and then back..."
         end
@@ -25,6 +28,7 @@ minetest.register_chatcommand("localPos", {
         return true, "Your position in the local space of realm " .. param .. " is x: " .. position.x .. " y: " .. position.y .. " z: " .. position.z
     end,
 })
+
 
 commands["new"] = function(name, params)
     local realmName = params[2]
@@ -110,20 +114,24 @@ commands["schematic"] = function(name, params)
         minetest.chat_send_player(name, "Key : Filepath")
         for i, t in pairs(schematicManager.schematics) do
             minetest.chat_send_player(name, i .. " : " .. t)
+
         end
 
         return true
+
 
 
     elseif (params[1] == "save") then
         table.remove(params, 1)
         local realmID = params[1]
         local requestedRealm = Realm.realmDict[tonumber(realmID)]
+
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
 
         local subparam = params[2]
+
 
         if (subparam == "" or subparam == nil) then
             subparam = "old"
@@ -250,3 +258,15 @@ minetest.register_chatcommand("realm", {
     end,
 })
 
+
+
+minetest.register_chatcommand("realmCleanup", {
+    privs = {
+        teacher = true,
+    },
+    func = function(name, param)
+        Realm.consolidateEmptySpace()
+        Realm.SaveDataToStorage()
+        return true, "consolidated realms"
+    end,
+})

@@ -125,3 +125,23 @@ function mc_helpers.split(s, delimiter)
     end
     return result;
 end
+
+---@public
+---First sorts the keys into an array, and then iterates on the array. At each step, it returns the key and value from the original table
+---https://www.lua.org/pil/19.3.html
+---@param t table
+---@param f Optional order
+---@return function iterator
+function mc_helpers.pairsByKeys (t, f)
+    local a = {}
+    for n in pairs(t) do table.insert(a, n) end
+    table.sort(a, f)
+    local i = 0      -- iterator variable
+    local iter = function ()   -- iterator function
+        i = i + 1
+        if a[i] == nil then return nil
+        else return a[i], t[a[i]]
+        end
+    end
+    return iter
+end
