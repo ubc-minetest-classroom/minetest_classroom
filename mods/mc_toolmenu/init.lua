@@ -30,28 +30,33 @@ minetest.register_on_joinplayer(function(player)
 end)
 
 minetest.register_allow_player_inventory_action(function(player, action, inventory, inv_info)
-    local list_info = inv_info.listname or inv_info.to_list
+    -- initial check
+    list_info = inv_info.listname or (inv_info.to_list == "mc_toolmenu:tools" and inv_info.to_list or inv_info.from_list)
     if list_info ~= "mc_toolmenu:tools" then
-        return -- handle normally
-    else
-        if action == "put" or action == "take" then
-            if minetest.registered_tools[inv_info.stack:get_name()] then 
-                return 1 -- allow 1 item to be handled
+        return -- toolbox not affected, ignore
+    end
+
+    minetest.log("Inventory action with toolbox: "..action)
+    if action == "move" then
+        if inv_info.to_list == "mc_toolmenu:tools" then
+            -- putting item into toolbox, run checks
+            local moving_stack = inventory:get_stack(inv_info.from_list, inv_info.from_index)
+            if minetest.registered_tools[moving_stack:get_name()] then 
+                return 1 -- allow 1 item (tool) to be put in
             else
-                inventory:remove_item(inv_info.listname, inv_info.stack)
-                return 0 -- do not allow item to be handled
+                return 0 -- do not allow item to be put in
             end
-        elseif action == "move" then
-            --[[
-            if minetest.registered_tools[inv_info.stack:get_name()] then 
-                return 1 -- allow 1 item to be handled
-            else
-                inventory:remove_item(inv_info.listname, inv_info.stack)
-                return 0 -- do not allow item to be handled
-            end
-            ]]
-            return -- temp
+        else
+            return -- no items going into toolbox, ignore
         end
+    elseif action == "put" and inv_info.listname == "mc_toolmenu:tools" then
+        if minetest.registered_tools[inv_info.stack:get_name()] then 
+            return 1 -- allow 1 item (tool) to be put in
+        else
+            return 0 -- do not allow item to be put in
+        end
+    else
+        return -- ignore
     end
 end)
 
