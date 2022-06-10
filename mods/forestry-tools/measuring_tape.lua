@@ -81,17 +81,23 @@ function mark_pos2(player, pos)
 
 	local newPos
 	for i = 1, distance do
-		if pos.z == instances[player].pos1.z then
+		if pos.z == instances[player].pos1.z and pos.y == instances[player].pos1.y then
 			if pos.x < instances[player].pos1.x then
 				newPos = {x = pos.x + i, y = pos.y, z = pos.z}
 			else 
 				newPos = {x = pos.x - i, y = pos.y, z = pos.z}
 			end
-		elseif pos.x == instances[player].pos1.x then
+		elseif pos.x == instances[player].pos1.x and pos.y == instances[player].pos1.y then
 			if pos.z < instances[player].pos1.z then
 				newPos = {x = pos.x, y = pos.y, z = pos.z + i}
 			else 
 				newPos = {x = pos.x, y = pos.y, z = pos.z - i}
+			end
+		else 
+			if pos.y < instances[player].pos1.y then
+				newPos = {x = pos.x, y = pos.y + i, z = pos.z}
+			else 
+				newPos = {x = pos.x, y = pos.y - i, z = pos.z}
 			end
 		end
 
