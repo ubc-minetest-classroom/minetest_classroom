@@ -1,6 +1,3 @@
--- EXPORTED FUNCTIONS
-mc_toolmenu = {}
-
 --- @public
 --- Gets the detached toolbox inventory for player
 --- @param player Player object
