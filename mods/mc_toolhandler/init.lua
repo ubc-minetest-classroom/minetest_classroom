@@ -1,24 +1,33 @@
-mc_toolhandler = {}
-dofile(minetest.get_modpath("mc_toolhandler") .. "/api.lua")
-
 -- will be replaced with dynamic code later
 local register_tools_from = {"mc_teacher", "mc_student", "magnify", "mc_tf"--[[, "forestry_tools"]]} 
+
+-- Returns name of list item is in, if it is in player's inventory (or toolbox)
+local function get_player_item_location(player, itemstack)
+    local inv = player:get_inventory()
+    for list,_ in pairs(inv:get_lists()) do
+        if inv:contains_item(list, itemstack) then
+            return list
+        end
+    end
+    return nil
+end
 
 -- Registers give/take callbacks for all applicable tools
 local function register_callbacks(tool_name, data)
     -- Give the tool to any player who joins with adequate privileges or take it away if they do not have them
     minetest.register_on_joinplayer(function(player)
         local stack = ItemStack(tool_name)
-        local list = mc_toolhandler.get_player_item_location(player, stack)
+        local list = get_player_item_location(player, stack)
 
-        if list then
-            -- Player has the tool
-            if not mc_helpers.checkPrivs(player, data._mc_toolhandler_privs) then
-                player:get_inventory():remove_item(list, tool_name)
-            end
-        elseif mc_helpers.checkPrivs(player, data._mc_toolhandler_privs) then
-            -- The player should have the tool; give it
+        if not list and mc_helpers.checkPrivs(player, data._mc_toolhandler_privs) then
+            -- Player should have the tool but does not: give one copy
             player:get_inventory():add_item("main", tool_name)
+        elseif not mc_helpers.checkPrivs(player, data._mc_toolhandler_privs) then
+            -- Player has the tool but should not: remove all copies
+            while list do
+                player:get_inventory():remove_item(list, tool_name)
+                list = get_player_item_location(player, stack)
+            end
         end
     end)
 
@@ -31,12 +40,13 @@ local function register_callbacks(tool_name, data)
     
         local stack = ItemStack(tool_name)
         local player = minetest.get_player_by_name(name)
-        local list = mc_toolhandler.get_player_item_location(player, stack)
+        local list = get_player_item_location(player, stack)
 
         if not list and mc_helpers.checkPrivs(player, data._mc_toolhandler_privs) then
+            -- Player should have the tool but does not: give one copy
             player:get_inventory():add_item("main", tool_name)
         end
-    
+
         return true -- continue to next callback
     end)
     
@@ -49,10 +59,14 @@ local function register_callbacks(tool_name, data)
     
         local stack = ItemStack(tool_name)
         local player = minetest.get_player_by_name(name)
-        local list = mc_toolhandler.get_player_item_location(player, stack)
+        local list = get_player_item_location(player, stack)
     
         if list and not mc_helpers.checkPrivs(player, data._mc_toolhandler_privs) then
-            player:get_inventory():remove_item(list, tool_name)
+            -- Player has the tool but should not: remove all copies
+            while list do
+                player:get_inventory():remove_item(list, tool_name)
+                list = get_player_item_location(player, stack)
+            end
         end
     
         return true -- continue to next callback
