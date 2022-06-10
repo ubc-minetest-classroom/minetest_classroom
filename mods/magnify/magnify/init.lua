@@ -168,7 +168,8 @@ local function get_expanded_species_formspec(ref)
             "label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]",
             "textlist[0,2.1;7.4,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
             "label[0,1.6;Associated nodes:]",
-            "button[4,6.2;4.4,0.6;back;Back]",
+            "button[6.2,6.2;6.2,0.6;back;Back]",
+            "button[0,6.2;6.2,0.6;locate;Locate nearest node]",
             create_image_table(sorted_nodes or nodes, 7.6, 1.2, 4.8)
         }
         return table.concat(formtable, ""), size
@@ -185,7 +186,8 @@ label[4.8,0.2;Technical Information]
 label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]
 textlist[0,2.1;7.4,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]
 label[0,1.6;Associated nodes:]
-button[4,6.2;4.4,0.6;back;Back]
+button[6.2,6.2;6.2,0.6;back;Back]
+button_exit[0,6.2;6.2,0.6;locate;Locate nearest node]
 ]]
 
 -- Registers the plant compendium as an inventory tab
@@ -260,6 +262,27 @@ sfinv.register_page("magnify:compendium", {
             context.species_view = MENU
             -- refresh inventory formspec
             sfinv.set_player_inventory_formspec(player)
+        elseif fields.locate then
+            local ref = get_species_ref(context.species_selected)
+            local info,nodes = magnify.get_species_from_ref(ref)
+            local player_pos = player:get_pos()
+
+            --minetest.log(tostring(context.search_in_progress))
+            if not context.search_in_progress then
+                --context.search_in_progress = true
+                minetest.chat_send_player(player:get_player_name(), "Searching for nodes, please wait...")
+                local node_pos = minetest.find_node_near(player_pos, 200, nodes, true)
+                if node_pos then
+                    local node = minetest.get_node(node_pos)
+                    minetest.chat_send_player(player:get_player_name(), "Found species node \""..node.name.."\" at (X = "..node_pos.x..", Y = "..node_pos.y..", Z = "..node_pos.z..")")
+                    -- add particles?
+                else
+                    minetest.chat_send_player(player:get_player_name(), "No nodes for this species were found within 200 blocks of your current position.")
+                end
+                --context.search_in_progress = false
+            else
+                minetest.chat_send_player(player:get_player_name(), "There is already a node search in progress! Please wait for your current search to finish before starting another.")
+            end
         end
     end,
     is_in_nav = function(self, player, context)
