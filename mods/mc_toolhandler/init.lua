@@ -70,12 +70,20 @@ local function register_callbacks(tool_name, data)
     end)
 end
 
-local register_tools_from = {"mc_teacher", "mc_student", "magnify", "mc_tf", "forestry_tools"} 
--- Open and read mod.conf file
+-- Open and read mod.conf file from iterator
+local register_tools_from = {} 
 local conf_reader = io.lines(minetest.get_modpath("mc_toolhandler") .. "/mod.conf")
 elem = conf_reader()
 while elem do
-    -- ...
+    -- Manage tools for all optional dependencies 
+    local match = string.match(elem, "^optional_depends = (.*)")
+    if match then
+        local mods = string.split(match, ",")
+        for _,mod in pairs(mods) do
+            table.insert(register_tools_from, string.trim(mod))
+        end
+    end
+    -- get next element
     elem = conf_reader()
     if not elem then break end
 end
