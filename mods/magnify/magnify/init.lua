@@ -31,7 +31,7 @@ minetest.register_tool(tool_name, {
     _doc_items_longdesc = "This tool can be used to quickly learn more about about one's closer environment. It identifies and analyzes plant-type blocks and it shows extensive information about the thing on which it is used.",
     _doc_items_usagehelp = "Punch any block resembling a plant you wish to learn more about. This will open up the appropriate help entry.",
     _doc_items_hidden = false,
-    _mc_toolhandler_privs = priv_table,
+    _mc_privs = priv_table,
     tool_capabilities = {},
     range = 10,
     groups = { disable_repair = 1 }, 

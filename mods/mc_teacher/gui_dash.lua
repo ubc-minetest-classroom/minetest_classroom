@@ -899,7 +899,7 @@ months = {
 minetest.register_tool(tool_name, {
     description = "Controller for teachers",
     inventory_image = "controller.png",
-    _mc_toolhandler_privs = priv_table,
+    _mc_privs = priv_table,
     -- Left-click the tool activates the teacher menu
     on_use = function(itemstack, player, pointed_thing)
         local pname = player:get_player_name()
