@@ -4,6 +4,7 @@ local none_set, pos1_set, pos2_set = 0, 1, 2
 
 local distance
 local instances = {}
+local range = 30
 
 -- Give the measuring tape to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
@@ -79,34 +80,38 @@ function mark_pos2(player, pos)
 	-- Calculate the distance and display output
 	distance = math.floor(vector.distance(instances[player].pos1, instances[player].pos2) + 0.5)
 
-	local newPos
-	for i = 1, distance do
-		if pos.z == instances[player].pos1.z and pos.y == instances[player].pos1.y then
-			if pos.x < instances[player].pos1.x then
-				newPos = {x = pos.x + i, y = pos.y, z = pos.z}
+	if distance > range then
+		tell_player(player, "Out of range! Maximum distance is 30m")
+	else
+		local newPos
+		for i = 1, distance - 1 do
+			if pos.z == instances[player].pos1.z and pos.y == instances[player].pos1.y then
+				if pos.x < instances[player].pos1.x then
+					newPos = {x = pos.x + i, y = pos.y, z = pos.z}
+				else 
+					newPos = {x = pos.x - i, y = pos.y, z = pos.z}
+				end
+			elseif pos.x == instances[player].pos1.x and pos.y == instances[player].pos1.y then
+				if pos.z < instances[player].pos1.z then
+					newPos = {x = pos.x, y = pos.y, z = pos.z + i}
+				else 
+					newPos = {x = pos.x, y = pos.y, z = pos.z - i}
+				end
 			else 
-				newPos = {x = pos.x - i, y = pos.y, z = pos.z}
+				if pos.y < instances[player].pos1.y then
+					newPos = {x = pos.x, y = pos.y + i, z = pos.z}
+				else 
+					newPos = {x = pos.x, y = pos.y - i, z = pos.z}
+				end
 			end
-		elseif pos.x == instances[player].pos1.x and pos.y == instances[player].pos1.y then
-			if pos.z < instances[player].pos1.z then
-				newPos = {x = pos.x, y = pos.y, z = pos.z + i}
-			else 
-				newPos = {x = pos.x, y = pos.y, z = pos.z - i}
-			end
-		else 
-			if pos.y < instances[player].pos1.y then
-				newPos = {x = pos.x, y = pos.y + i, z = pos.z}
-			else 
-				newPos = {x = pos.x, y = pos.y - i, z = pos.z}
-			end
+
+			instances[player].tape_nodes[i] = newPos
+			instances[player].orig_nodes[i] = minetest.get_node(newPos)
+			minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
 		end
 
-		instances[player].tape_nodes[i] = newPos
-		instances[player].orig_nodes[i] = minetest.get_node(newPos)
-		minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+		tell_player(player, "Distance: " .. minetest.colorize("#FFFF00", distance) .. "m")
 	end
-
-	tell_player(player, "Distance: " .. minetest.colorize("#FFFF00", distance) .. "m")
 
 	-- Reads auto-reset duration from conf, defaults to 20 seconds if setting non-existent
 	local auto_reset = tonumber(minetest.settings:get("forestry_tools.auto_reset"))
@@ -133,8 +138,10 @@ function reset(player)
 		minetest.swap_node(instances[player].pos1, instances[player].node1)
 		minetest.swap_node(instances[player].pos2, instances[player].node2)
 
-		for i = 1, distance - 1 do
-			minetest.swap_node(instances[player].tape_nodes[i], instances[player].orig_nodes[i])
+		if instances[player].tape_nodes[2] ~= nil and instances[player].orig_nodes[2] ~= nil then
+			for i = 1, distance - 1 do
+				minetest.swap_node(instances[player].tape_nodes[i], instances[player].orig_nodes[i])
+			end
 		end
 	end
 		
