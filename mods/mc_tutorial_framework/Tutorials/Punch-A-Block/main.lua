@@ -135,7 +135,7 @@ function punchABlock.CreateHUD(player, statKey, Goal, HelpText)
     punchABlock.hud:add(player, "pab:title", {
         hud_elem_type = "text",
         position = { x = 1, y = 0 },
-        offset = { x = -6, y = 0 },
+        offset = { x = -16, y = 24 },
         alignment = { x = "left", y = "down" },
         text = "Punch-A-Block Tutorial",
         color = 0x00FF00,
@@ -144,7 +144,7 @@ function punchABlock.CreateHUD(player, statKey, Goal, HelpText)
     punchABlock.hud:add(player, "pab:stat", {
         hud_elem_type = "text",
         position = { x = 1, y = 0 },
-        offset = { x = -6, y = 18 },
+        offset = { x = -16, y = 42 },
         alignment = { x = "left", y = "down" },
         text = blocksBroken_text,
         color = 0x00FF00,
@@ -164,7 +164,7 @@ function punchABlock.updateHud(player, statKey, Goal, HelpText)
     punchABlock.hud:change(player, "pab:stat", {
         hud_elem_type = "text",
         position = { x = 1, y = 0 },
-        offset = { x = -6, y = 18 },
+        offset = { x = -16, y = 42 },
         alignment = { x = "left", y = "down" },
         text = blocksBroken_text,
         color = 0x00FF00,
