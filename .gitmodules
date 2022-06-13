@@ -1,4 +1,3 @@
-[submodule "mods/ubc_map"]
-	path = mods/ubc_map
-	url = git@github.com:lukasdragon/UBC_Campus_Minetest_Map.git
-	fetchrecursesubmodules = true
+[submodule "mods/ubcmap"]
+	path = mods/ubcmap
+	url = git@github.com:pauldpickell/UBC_Campus_Minetest_Map.git
