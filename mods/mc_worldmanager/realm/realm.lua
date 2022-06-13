@@ -22,6 +22,9 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmDataManagement.lu
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmSchematicSaveLoad.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCoordinateConversion.lua")
+if (areas) then
+    dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmAreasIntegration.lua")
+end
 
 ---@public
 ---The constructor for the realm class.
@@ -372,7 +375,7 @@ function Realm:Delete()
     self:ClearNodes()
 
     if (areas) then
-        local protectionID = tonumber(self:get_string("protectionID"))
+        local protectionID = self:get_string("protectionID")
         if (protectionID ~= nil) then
             areas:remove(protectionID, true)
             areas:save()
