@@ -49,6 +49,18 @@ function Realm:Save_Schematic(author, mode)
         minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
     end
 
+    fileName = fileName .. os.date(" %Y%m%d %H%M")
+
+    local filepath = folderpath .. "\\" .. fileName
+    
+    --minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
+
+    local file, err = io.open(filepath .. ".mts", "wb")
+    if err then return 0 end
+    local schematic, count = worldedit.serialize(self.StartPos, self.EndPos)
+    file:write(schematic)
+    file:close()
+
     local settings = Settings(filepath .. ".conf")
     settings:set("author", author)
     settings:set("name", self.Name)

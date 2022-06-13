@@ -74,6 +74,7 @@ end
 mc_tutorialFramework.addTutorialEntry("Introduction", "Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.")
 mc_tutorialFramework.addTutorialEntry("Test", "testing", "shack")
 mc_tutorialFramework.addTutorialEntry("Movement", "This tutorial explains how to walk in different directions, jump, and fly. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.", "movementTutorial")
+mc_tutorialFramework.addTutorialEntry("Punch a Block", "This tutorial explains how to punch/destroy/mine blocks using various tools. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.", "punchABlock")
 
 local function show_tutorial_menu(player)
 	if check_perm(player) then
