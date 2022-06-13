@@ -1,5 +1,4 @@
 -- Realms are up-to 8 mapchunk areas seperated by a 4 mapchunk border of void (in each dimension);
--- TODO: add helper functions to do stuff like teleport players into the maps
 -- TODO: assign realm ID based on first available ID rather than realm count
 
 -- "const" values
@@ -188,6 +187,7 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
 
     return StartPos, EndPos
 end
+
 
 function Realm.markSpaceAsFree(startPos, endPos)
     local entry = {}

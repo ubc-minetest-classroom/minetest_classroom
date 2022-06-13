@@ -3,17 +3,14 @@ dofile(minetest.get_modpath("magnify") .. "/api.lua")
 
 -- constants
 local tool_name = "magnify:magnifying_tool"
-local priv_table = {"interact"}
+local priv_table = {interact = true}
 local MENU = 1
 local STANDARD_VIEW = 2
 local TECH_VIEW = 3
 
 -- Checks for adequate privileges
-local function check_perm_name(name)
-    return minetest.check_player_privs(name, {interact = true})
-end
 local function check_perm(player)
-    return check_perm_name(player:get_player_name())
+    return minetest.check_player_privs(player:get_player_name(), priv_table)
 end
 
 -- Clears the plant database
@@ -34,6 +31,7 @@ minetest.register_tool(tool_name, {
     _doc_items_longdesc = "This tool can be used to quickly learn more about about one's closer environment. It identifies and analyzes plant-type blocks and it shows extensive information about the thing on which it is used.",
     _doc_items_usagehelp = "Punch any block resembling a plant you wish to learn more about. This will open up the appropriate help entry.",
     _doc_items_hidden = false,
+    _mc_privs = priv_table,
     tool_capabilities = {},
     range = 10,
     groups = { disable_repair = 1 }, 
@@ -166,9 +164,10 @@ local function get_expanded_species_formspec(ref)
             "box[0,0;12.2,0.8;#9192a3]",
             "label[4.8,0.2;Technical Information]",
             "label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]",
-            "textlist[0,2.1;7.4,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
+            "textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
             "label[0,1.6;Associated nodes:]",
-            "button[4,6.2;4.4,0.6;back;Back]",
+            "button[6.2,6.2;6.2,0.6;back;Back]",
+            "button[0,6.2;6.2,0.6;locate;Locate nearest node]",
             create_image_table(sorted_nodes or nodes, 7.6, 1.2, 4.8)
         }
         return table.concat(formtable, ""), size
@@ -177,15 +176,57 @@ local function get_expanded_species_formspec(ref)
     end
 end
 
+--- Create particles from start_pos to end_pos to help player locate end_pos
+--- @param player Player who can view particles
+--- @param start_pos Position to spart particle line from
+--- @param end_pos Position to end particles at
+local function create_locator_particles(player, start_pos, end_pos)
+    local diff = {time = 0.08, dist = 1, expire = 0.15}
+    local shift = {x = end_pos.x - start_pos.x, y = end_pos.y - start_pos.y, z = end_pos.z - start_pos.z}
+    local line_length = math.hypot(math.hypot(shift.x, shift.y), shift.z)
+    local pname = player:get_player_name()
+
+    -- create particle line
+    for i=1,math.floor(line_length / diff.dist)-1 do
+        minetest.after(i * diff.time, minetest.add_particle, {
+            pos = {x = start_pos.x + i * (shift.x * diff.dist / line_length), y = start_pos.y + i * (shift.y * diff.dist / line_length), z = start_pos.z + i * (shift.z * diff.dist / line_length)},
+            expirationtime = 4 + i * diff.expire,
+            glow = 5,
+            size = 1.4,
+            playername = pname,
+            texture = "magnify_locator_particle.png"
+        })
+    end
+    -- create particle spawner at end_pos
+    minetest.add_particlespawner({
+        time = 45,
+        amount = 600,
+        playername = pname,
+        glow = 7,
+        --collisiondetection = true,
+        --collision_removal = true,
+        minpos = {x = end_pos.x - 2.5, y = end_pos.y - 2.5, z = end_pos.z - 2.5},
+        maxpos = {x = end_pos.x + 2.5, y = end_pos.y + 2.5, z = end_pos.z + 2.5},
+        minvel = {x = -0.4, y = -0.4, z = -0.4},
+        maxvel = {x = 0.4, y = 0.4, z = 0.4},
+        minexptime = 1,
+        maxexptime = 3,
+        minsize = 0.3,
+        maxsize = 1.8,
+        texture = "magnify_locator_particle.png"
+    })
+end
+
 --[[
 formspec_version[5]
 size[12.4,6.7]
 box[0,0;12.2,0.8;#9192a3]
 label[4.8,0.2;Technical Information]
 label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]
-textlist[0,2.1;7.4,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]
+textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]
 label[0,1.6;Associated nodes:]
-button[4,6.2;4.4,0.6;back;Back]
+button[6.2,6.2;6.2,0.6;back;Back]
+button[0,6.2;6.2,0.6;locate;Locate nearest node]
 ]]
 
 -- Registers the plant compendium as an inventory tab
@@ -244,10 +285,8 @@ sfinv.register_page("magnify:compendium", {
                 if magnify.get_species_from_ref(ref) then
                     if fields.standard_view then -- standard
                         context.species_view = STANDARD_VIEW
-                        --minetest.show_formspec(pname, "magnify:species_standard", magnify.build_formspec_from_ref(ref, true))
                     else -- technical
                         context.species_view = TECH_VIEW
-                        --minetest.show_formspec(pname, "magnify:species_technical", get_expanded_species_formspec(full_info.data, full_info.nodes, ref))
                     end
                 else
                     minetest.chat_send_player(pname, "An entry for this species exists, but could not be found in the plant database.\nPlease contact an administrator and ask them to check your server's plant database files to ensure all plants were registered properly.")
@@ -260,6 +299,28 @@ sfinv.register_page("magnify:compendium", {
             context.species_view = MENU
             -- refresh inventory formspec
             sfinv.set_player_inventory_formspec(player)
+        elseif fields.locate then
+            local ref = get_species_ref(context.species_selected)
+            local info,nodes = magnify.get_species_from_ref(ref)
+            local player_pos = player:get_pos()
+
+            --minetest.log(tostring(context.search_in_progress))
+            if not context.search_in_progress then
+                --context.search_in_progress = true
+                minetest.chat_send_player(player:get_player_name(), "Searching for nearby nodes, please wait...")
+                local node_pos = minetest.find_node_near(player_pos, 120, nodes, true)
+                if node_pos then
+                    -- send location + create locator particles
+                    local node = minetest.get_node(node_pos)
+                    minetest.chat_send_player(player:get_player_name(), "Found species node \""..node.name.."\" at ("..node_pos.x..", "..node_pos.y..", "..node_pos.z..")")
+                    create_locator_particles(player, {x = player_pos.x, y = player_pos.y + 1.3, z = player_pos.z}, node_pos)
+                else
+                    minetest.chat_send_player(player:get_player_name(), "No nodes for this species were found within 120 blocks of your current position.")
+                end
+                --context.search_in_progress = false
+            else
+                minetest.chat_send_player(player:get_player_name(), "There is already a node search in progress! Please wait for your current search to finish before starting another.")
+            end
         end
     end,
     is_in_nav = function(self, player, context)
@@ -267,66 +328,3 @@ sfinv.register_page("magnify:compendium", {
         return check_perm(player)
     end
 })
-
--- Tool handling functions:
-    -- Give the magnifying tool to any player who joins with adequate privileges or take it away if they do not have them
-    -- Give the magnifying tool to any player who is granted adequate privileges
-    -- Take the magnifying tool away from anyone who is revoked privileges and no longer has adequate ones
-
--- Give the magnifying tool to any player who joins with adequate privileges or take it away if they do not have them
-minetest.register_on_joinplayer(function(player)
-    local inv = player:get_inventory()
-    if inv:contains_item("main", ItemStack(tool_name)) then
-        -- Player has the magnifying glass 
-        if check_perm(player) then
-            -- The player should have the magnifying glass
-            return
-        else
-            -- The player should not have the magnifying glass
-            player:get_inventory():remove_item('main', tool_name)
-        end
-    else
-        -- Player does not have the magnifying glass
-        if check_perm(player) then
-            -- The player should have the magnifying glass
-            player:get_inventory():add_item('main', tool_name)
-        else
-            -- The player should not have the magnifying glass
-            return
-        end
-    end
-end)
-
--- Give the magnifying tool to any player who is granted adequate privileges
-minetest.register_on_priv_grant(function(name, granter, priv)
-    -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not magnify.table_has(priv_table, priv) or not minetest.get_player_by_name(name) then
-        return true -- skip this callback, continue to next callback
-    end
-
-    local player = minetest.get_player_by_name(name)
-    local inv = player:get_inventory()
-    
-    if not inv:contains_item("main", ItemStack(tool_name)) and check_perm_name(name) then
-        player:get_inventory():add_item('main', tool_name)
-    end
-
-    return true -- continue to next callback
-end)
-
--- Take the magnifying tool away from anyone who is revoked privileges and no longer has adequate ones
-minetest.register_on_priv_revoke(function(name, revoker, priv)
-    -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not magnify.table_has(priv_table, priv) or not minetest.get_player_by_name(name) then
-        return true -- skip this callback, continue to next callback
-    end
-
-    local player = minetest.get_player_by_name(name)
-    local inv = player:get_inventory()
-
-    if inv:contains_item("main", ItemStack(tool_name)) and not check_perm_name(name) then
-        player:get_inventory():remove_item('main', tool_name)
-    end
-
-    return true -- continue to next callback
-end)

@@ -207,8 +207,9 @@ end
 
 -- The tutorial book for accessing tutorials
 minetest.register_tool("mc_student:tutorialbook" , {
-	description = "Tutorial book",
+	description = "Tutorial book @ mc_student",
 	inventory_image = "tutorial_book.png",
+	_mc_privs = priv_table,
 	-- Left-click the tool activates the tutorial menu
 	on_use = function (itemstack, user, pointed_thing)
         local pname = user:get_player_name()
@@ -282,19 +283,19 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 	-- Menu
 	if formname == "mc_student:menu" then 
-                if fields.spawn then
-                        -- TODO: dynamically extract the static spawn point from the minetest.conf file
-                        -- local cmeta = Settings(minetest.get_modpath("mc_teacher").."/maps/"..map..".conf")
-                        -- local spawn_pos_x = tonumber(cmeta:get("spawn_pos_x"))
-                        -- local spawn_pos_y = tonumber(cmeta:get("spawn_pos_y"))
-                        -- local spawn_pos_z = tonumber(cmeta:get("spawn_pos_z"))
-                        local spawn_pos = {
-                                x = 1426,
-                                y = 92,
-                                z = 1083,
-                        }
-                        player:set_pos(spawn_pos)
-                elseif fields.report then
+        if fields.spawn then
+            -- TODO: dynamically extract the static spawn point from the minetest.conf file
+            -- local cmeta = Settings(minetest.get_modpath("mc_teacher").."/maps/"..map..".conf")
+            -- local spawn_pos_x = tonumber(cmeta:get("spawn_pos_x"))
+            -- local spawn_pos_y = tonumber(cmeta:get("spawn_pos_y"))
+            -- local spawn_pos_z = tonumber(cmeta:get("spawn_pos_z"))
+            local spawn_pos = {
+                x = 1426,
+                y = 92,
+                z = 1083,
+            }
+            player:set_pos(spawn_pos)
+        elseif fields.report then
 			show_report(player)
 		elseif fields.coordinates then
 			show_coordinates(player)
@@ -506,6 +507,7 @@ end
 minetest.register_tool(tool_name , {
 	description = "Notebook for students",
 	inventory_image = "notebook.png",
+	_mc_privs = priv_table,
 	-- Left-click the tool activates the teacher menu
 	on_use = function (itemstack, player, pointed_thing)
         local pname = player:get_player_name()
@@ -519,6 +521,7 @@ minetest.register_tool(tool_name , {
 	end,
 })
 
+--[[
 -- Give the notebook and tutorialbook to any player who joins with shout privileges or take them away if they do not have shout
 
 -- Tool handling functions:
@@ -566,7 +569,7 @@ end)
 -- Give the notebook to any player who is granted adequate privileges
 minetest.register_on_priv_grant(function(name, granter, priv)
     -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
+    if name == nil or not mc_helpers.tableHas(priv_table, priv) or not minetest.get_player_by_name(name) then
         return true -- skip this callback, continue to next callback
     end
 
@@ -584,7 +587,7 @@ end)
 -- Take the notebook away from anyone who is revoked privileges and no longer has adequate ones
 minetest.register_on_priv_revoke(function(name, revoker, priv)
     -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
+    if name == nil or not mc_helpers.tableHas(priv_table, priv) or not minetest.get_player_by_name(name) then
         return true -- skip this callback, continue to next callback
     end
 
@@ -598,6 +601,7 @@ minetest.register_on_priv_revoke(function(name, revoker, priv)
 
     return true -- continue to next callback
 end)
+]]
 
 -- Functions and variables for placing markers
 hud = mhud.init()
