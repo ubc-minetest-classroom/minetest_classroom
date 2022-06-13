@@ -1,7 +1,7 @@
-mc_helpers = {}
-
 dofile(minetest.get_modpath("mc_helpers") .. "/Debugging.lua")
-dofile(minetest.get_modpath("mc_helpers") .. "/lualzw.lua")
+dofile(minetest.get_modpath("mc_helpers") .. "/PointTable.lua")
+
+mc_helpers = {}
 
 ---@public
 ---checkPrivs
@@ -11,9 +11,9 @@ dofile(minetest.get_modpath("mc_helpers") .. "/lualzw.lua")
 ---@param player Minetest player object
 ---@return boolean Whether the player has all privileges provided in privs_table.
 ---@return table All privileges provided in privs_table that are false.
-function mc_helpers.checkPrivs(player, privs_table)
-    privs_table = privs_table or { teacher = true }
-    local name = player:get_player_name()
+function mc_helpers.checkPrivs(player,privs_table)
+    privs_table = privs_table or {teacher = true}
+    name = player:get_player_name()
     return minetest.check_player_privs(name, privs_table)
 end
 
@@ -63,13 +63,8 @@ function mc_helpers.fileExists(path)
     else
         return false
     end
-    local f = io.open(path, "r")
-    if f ~= nil then
-        io.close(f)
-        return true
-    else
-        return false
-    end
+    local f=io.open(path,"r")
+    if f~=nil then io.close(f) return true else return false end
 end
 
 ---@public
@@ -108,18 +103,6 @@ function mc_helpers.tableHas(table, val)
     return false
 end
 
----@public
----Returns a table where s has been split into multiple parts according to param delimiter
----@param string s string to split
----@param string delimiter the character(s) to split s by
----@return table with split entries
-function mc_helpers.split(s, delimiter)
-    result = {};
-    for match in (s .. delimiter):gmatch("(.-)" .. delimiter) do
-        table.insert(result, match);
-    end
-    return result;
-end
 
 ---@public
 ---First sorts the keys into an array, and then iterates on the array. At each step, it returns the key and value from the original table
@@ -140,3 +123,6 @@ function mc_helpers.pairsByKeys (t, f)
     end
     return iter
 end
+
+
+
