@@ -1,4 +1,4 @@
-mc_worldManager = { storage = minetest.get_mod_storage(), path = minetest.get_modpath("mc_worldmanager"), spawnRealmSchematic = "vancouver_osm" }
+mc_worldManager = { storage = minetest.get_mod_storage(), path = minetest.get_modpath("mc_worldmanager") }
 
 -- Include our source files
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realm.lua")
@@ -32,34 +32,12 @@ mc_worldManager.load_data()
 function mc_worldManager.GetSpawnRealm()
     local spawnRealm = Realm.realmDict[mc_worldManager.spawnRealmID]
     if (spawnRealm == nil) then
+        spawnRealm = Realm:NewFromSchematic("Spawn Realm", "vancouver_osm")
 
-        spawnRealm = Realm:NewFromSchematic("Spawn Realm", mc_worldManager.spawnRealmSchematic)
         mc_worldManager.spawnRealmID = spawnRealm.ID
         mc_worldManager.save_data()
-        Debug.log("Saving spawn realm information")
     end
     return spawnRealm
-end
-
----@public
----Sets the world spawn realm to the realm supplied in param newSpawnRealm.
----@param newSpawnRealm table realm to set as spawn.
----@return boolean whether the operation succeeded or not.
-function mc_worldManager.SetSpawnRealm(newSpawnRealm)
-
-    if (newSpawnRealm ~= nil) then
-        mc_worldManager.spawnRealmID = newSpawnRealm.ID
-        mc_worldManager.save_data()
-        return true
-    end
-    return false
-end
-
----@public
----Returns whether or not spawn has been generated.
----@return boolean whether or not spawn has been generated.
-function mc_worldManager.SpawnGenerated()
-    return Realm.realmDict[mc_worldManager.spawnRealmID] ~= nil
 end
 
 -- Registration

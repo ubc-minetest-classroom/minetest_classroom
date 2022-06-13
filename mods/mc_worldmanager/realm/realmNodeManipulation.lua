@@ -103,28 +103,3 @@ function Realm:SetNodes(pos1, pos2, node)
     vm:set_data(data)
     vm:write_to_map(true)
 end
-
-function Realm:CleanNodes()
-    local count = 0
-    local vm = minetest.get_voxel_manip()
-    local emin, emax = vm:read_from_map(self.StartPos, self.EndPos)
-    local a = VoxelArea:new {
-        MinEdge = emin,
-        MaxEdge = emax
-    }
-    local data = vm:get_data()
-
-    -- Modify data
-    for i in a:iterp(self.StartPos, self.EndPos) do
-        local currentNode = minetest.get_name_from_content_id(data[i])
-        if not minetest.registered_nodes[currentNode] then
-            data[i] = minetest.get_content_id("air") -- replace unknown with air
-            count = count + 1
-        end
-    end
-
-    -- write changes to map
-    vm:set_data(data)
-    vm:write_to_map()
-    return count
-end
