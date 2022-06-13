@@ -12,13 +12,7 @@ function Realm:Save_Schematic(author, mode)
 
     minetest.mkdir(folderpath)
 
-    local fileName = "Realm " .. self.ID .. " "
-    for i = 1, 4 do
-        fileName = fileName .. math.random(0, 9)
-    end
-
-    fileName = fileName .. math.random(0, 99)
-
+    local fileName = "Realm " .. self.ID .. " " .. math.random(0, 9999) .. os.date(" %Y%m%d %H%M%S")
     local filepath = folderpath .. "/" .. fileName
 
     if (mode == "exschem") then
