@@ -187,7 +187,7 @@ local function create_locator_particles(player, start_pos, end_pos)
     local pname = player:get_player_name()
 
     -- create particle line
-    for i=1,math.round(line_length / diff.dist)-1 do
+    for i=1,math.floor(line_length / diff.dist)-1 do
         minetest.after(i * diff.time, minetest.add_particle, {
             pos = {x = start_pos.x + i * (shift.x * diff.dist / line_length), y = start_pos.y + i * (shift.y * diff.dist / line_length), z = start_pos.z + i * (shift.z * diff.dist / line_length)},
             expirationtime = 4 + i * diff.expire,
