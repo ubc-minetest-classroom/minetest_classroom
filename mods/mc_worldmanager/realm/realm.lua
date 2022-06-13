@@ -180,7 +180,6 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
     return StartPos, EndPos
 end
 
-
 function Realm.markSpaceAsFree(startPos, endPos)
     local entry = {}
     entry.startPos = startPos

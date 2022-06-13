@@ -10,7 +10,7 @@ function Realm:LocalToWorldPosition(position)
 end
 
 ---WorldToLocalPosition
----@param position table coordinates in worldspace
+---@param position table
 ---@return table worldspace coordinates
 function Realm:WorldToLocalPosition(position)
     local pos = position
@@ -20,9 +20,6 @@ function Realm:WorldToLocalPosition(position)
     return pos
 end
 
----gridToWorldSpace
----@param coords table coordinates in gridspace
----@return table coordinates in worldspace
 function Realm.gridToWorldSpace(coords)
     local val = { x = 0, y = 0, z = 0 }
     val.x = (coords.x * 80) - Realm.const.worldSize
@@ -31,9 +28,6 @@ function Realm.gridToWorldSpace(coords)
     return val
 end
 
----worldToGridSpace
----@param coords table coordinates in worldspace
----@return table coordinates in gridspace.
 function Realm.worldToGridSpace(coords)
     local val = { x = 0, y = 0, z = 0 }
     val.x = math.ceil((coords.x + Realm.const.worldSize) / 80)
