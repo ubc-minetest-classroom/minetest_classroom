@@ -63,7 +63,7 @@ function punchABlock.progress(player)
         if (level == nil) then
             mc_tutorialFramework.infoWindow.show_to(player, "Congratulations! You finished the tutorial")
             minetest.chat_send_player(player:get_player_name(), "Congratulations! You finished the tutorial")
-            punchABlock.endTutorial(nil, player)
+            punchABlock.endTutorial(Realm.realmDict[pmeta:get_int("realm")], player)
         else
             if (level.welcomeText ~= nil) then
                 mc_tutorialFramework.infoWindow.show_to(player, level.welcomeText)
@@ -84,7 +84,7 @@ function punchABlock.startTutorial(realm, player)
     local pmeta = player:get_meta()
 
     if (areas) then
-       realm:AddPlayerArea(player)
+        realm:AddPlayerArea(player)
     end
 
     mc_tutorialFramework.infoWindow.show_to(player, "Welcome to the punch-a-block tutorial." ..

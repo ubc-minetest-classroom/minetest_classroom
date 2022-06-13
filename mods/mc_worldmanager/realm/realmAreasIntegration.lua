@@ -1,5 +1,6 @@
 function Realm:AddPlayerArea(player)
     local playerName = player:get_player_name()
+    local realmArea = self:get_string("protectionID")
 
     if (self.MetaStorage.areas == nil) then
         self.MetaStorage.areas = {}
@@ -7,7 +8,8 @@ function Realm:AddPlayerArea(player)
     local playerArea = self.MetaStorage.areas[playerName]
 
     if (playerArea == nil) then
-        self.MetaStorage.areas[player:get_player_name()] = areas:add(playerName, playerName .. " Zone in " .. self.Name)
+        Debug.log(realmArea)
+        self.MetaStorage.areas[player:get_player_name()] = areas:add(playerName, playerName .. " Zone in " .. self.Name, self.StartPos, self.EndPos, realmArea)
         areas:save()
     end
 end
