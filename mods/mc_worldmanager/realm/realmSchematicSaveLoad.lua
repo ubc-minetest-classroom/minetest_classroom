@@ -44,8 +44,6 @@ end
 ---@return boolean whether the schematic fit entirely in the realm when loading.
 function Realm:Load_Schematic(schematic, config)
 
-    self.Name = config.name
-
     --TODO: Add code to check if the realm is large enough to support the schematic; If not, create a new realm that can;
     local schematicEndPos = self:LocalToWorldPosition(config.schematicSize)
     --  if (schematicEndPos.x > self.EndPos.x or schematicEndPos.y > self.EndPos.y or schematicEndPos.z > self.EndPos.z) then
@@ -94,6 +92,10 @@ end
 
 function Realm:NewFromSchematic(name, key)
     local schematic, config = schematicManager.getSchematic(key)
+
+    if (name == "" or name == nil) then
+        name = config.name
+    end
 
     local newRealm = Realm:New(name, config.schematicSize)
     minetest.debug("config.schematic size:" .. " " .. config.schematicSize.x .. " " .. config.schematicSize.y .. " " .. config.schematicSize.z)

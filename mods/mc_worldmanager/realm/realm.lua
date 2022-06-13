@@ -49,6 +49,9 @@ function Realm:New(name, area)
         MetaStorage = {}
     }
 
+    setmetatable(this, self)
+    Realm.realmDict[this.ID] = this
+
     Realm.realmCount = this.ID
 
     local gridStartPos, gridEndPos = Realm.CalculateStartEndPosition(area)
@@ -63,8 +66,10 @@ function Realm:New(name, area)
                         y = (this.StartPos.y + 2),
                         z = (this.StartPos.z + this.EndPos.z) / 2 }
 
-    setmetatable(this, self)
-    Realm.realmDict[this.ID] = this
+    if (areas) then
+        local protectionID = areas:add("server", this.ID .. this.Name, this.StartPos, this.EndPos)
+        self:set_string("protectionID", protectionID)
+    end
 
     Realm.SaveDataToStorage()
 
@@ -364,6 +369,13 @@ end
 function Realm:Delete()
     self:RunFunctionFromTable(self.RealmDeleteTable)
     self:ClearNodes()
+
+    if (areas) then
+        local protectionID = self:get_string("protectionID")
+        if (protectionID ~= nil) then
+            areas:remove(protectionID, true)
+        end
+    end
 
     local gridSpace = Realm.worldToGridSpace({
         x = self.StartPos.x,
