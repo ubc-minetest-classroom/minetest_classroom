@@ -97,7 +97,6 @@ end
 
 ---@public
 ---Returns true if any of the values in the given table is equal to the value provided
----This function is not defined by Lua, so this should not overwrite a default function
 ---@param table The table to check
 ---@param val The value to check for
 ---@return boolean whether the value exists in the table
