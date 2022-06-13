@@ -166,7 +166,7 @@ local function get_expanded_species_formspec(ref)
             "box[0,0;12.2,0.8;#9192a3]",
             "label[4.8,0.2;Technical Information]",
             "label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]",
-            "textlist[0,2.1;7.4,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
+            "textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
             "label[0,1.6;Associated nodes:]",
             "button[6.2,6.2;6.2,0.6;back;Back]",
             "button[0,6.2;6.2,0.6;locate;Locate nearest node]",
@@ -178,16 +178,57 @@ local function get_expanded_species_formspec(ref)
     end
 end
 
+--- Create particles from start_pos to end_pos to help player locate end_pos
+--- @param player Player who can view particles
+--- @param start_pos Position to spart particle line from
+--- @param end_pos Position to end particles at
+local function create_locator_particles(player, start_pos, end_pos)
+    local diff = {time = 0.08, dist = 1, expire = 0.15}
+    local shift = {x = end_pos.x - start_pos.x, y = end_pos.y - start_pos.y, z = end_pos.z - start_pos.z}
+    local line_length = math.hypot(math.hypot(shift.x, shift.y), shift.z)
+    local pname = player:get_player_name()
+
+    -- create particle line
+    for i=1,math.round(line_length / diff.dist)-1 do
+        minetest.after(i * diff.time, minetest.add_particle, {
+            pos = {x = start_pos.x + i * (shift.x * diff.dist / line_length), y = start_pos.y + i * (shift.y * diff.dist / line_length), z = start_pos.z + i * (shift.z * diff.dist / line_length)},
+            expirationtime = 4 + i * diff.expire,
+            glow = 5,
+            size = 1.4,
+            playername = pname,
+            texture = "magnify_locator_particle.png"
+        })
+    end
+    -- create particle spawner at end_pos
+    minetest.add_particlespawner({
+        time = 45,
+        amount = 600,
+        playername = pname,
+        glow = 7,
+        --collisiondetection = true,
+        --collision_removal = true,
+        minpos = {x = end_pos.x - 2.5, y = end_pos.y - 2.5, z = end_pos.z - 2.5},
+        maxpos = {x = end_pos.x + 2.5, y = end_pos.y + 2.5, z = end_pos.z + 2.5},
+        minvel = {x = -0.4, y = -0.4, z = -0.4},
+        maxvel = {x = 0.4, y = 0.4, z = 0.4},
+        minexptime = 1,
+        maxexptime = 3,
+        minsize = 0.3,
+        maxsize = 1.8,
+        texture = "magnify_locator_particle.png"
+    })
+end
+
 --[[
 formspec_version[5]
 size[12.4,6.7]
 box[0,0;12.2,0.8;#9192a3]
 label[4.8,0.2;Technical Information]
 label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]
-textlist[0,2.1;7.4,3.7;associated_blocks;", table.concat(sorted_nodes or nodes, ","), ";1;false]
+textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]
 label[0,1.6;Associated nodes:]
 button[6.2,6.2;6.2,0.6;back;Back]
-button_exit[0,6.2;6.2,0.6;locate;Locate nearest node]
+button[0,6.2;6.2,0.6;locate;Locate nearest node]
 ]]
 
 -- Registers the plant compendium as an inventory tab
@@ -246,10 +287,8 @@ sfinv.register_page("magnify:compendium", {
                 if magnify.get_species_from_ref(ref) then
                     if fields.standard_view then -- standard
                         context.species_view = STANDARD_VIEW
-                        --minetest.show_formspec(pname, "magnify:species_standard", magnify.build_formspec_from_ref(ref, true))
                     else -- technical
                         context.species_view = TECH_VIEW
-                        --minetest.show_formspec(pname, "magnify:species_technical", get_expanded_species_formspec(full_info.data, full_info.nodes, ref))
                     end
                 else
                     minetest.chat_send_player(pname, "An entry for this species exists, but could not be found in the plant database.\nPlease contact an administrator and ask them to check your server's plant database files to ensure all plants were registered properly.")
@@ -270,14 +309,15 @@ sfinv.register_page("magnify:compendium", {
             --minetest.log(tostring(context.search_in_progress))
             if not context.search_in_progress then
                 --context.search_in_progress = true
-                minetest.chat_send_player(player:get_player_name(), "Searching for nodes, please wait...")
-                local node_pos = minetest.find_node_near(player_pos, 200, nodes, true)
+                minetest.chat_send_player(player:get_player_name(), "Searching for nearby nodes, please wait...")
+                local node_pos = minetest.find_node_near(player_pos, 120, nodes, true)
                 if node_pos then
+                    -- send location + create locator particles
                     local node = minetest.get_node(node_pos)
-                    minetest.chat_send_player(player:get_player_name(), "Found species node \""..node.name.."\" at (X = "..node_pos.x..", Y = "..node_pos.y..", Z = "..node_pos.z..")")
-                    -- add particles?
+                    minetest.chat_send_player(player:get_player_name(), "Found species node \""..node.name.."\" at ("..node_pos.x..", "..node_pos.y..", "..node_pos.z..")")
+                    create_locator_particles(player, {x = player_pos.x, y = player_pos.y + 1.3, z = player_pos.z}, node_pos)
                 else
-                    minetest.chat_send_player(player:get_player_name(), "No nodes for this species were found within 200 blocks of your current position.")
+                    minetest.chat_send_player(player:get_player_name(), "No nodes for this species were found within 120 blocks of your current position.")
                 end
                 --context.search_in_progress = false
             else
