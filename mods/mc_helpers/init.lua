@@ -1,5 +1,6 @@
 dofile(minetest.get_modpath("mc_helpers") .. "/Debugging.lua")
 dofile(minetest.get_modpath("mc_helpers") .. "/PointTable.lua")
+dofile(minetest.get_modpath("mc_helpers") .. "/Hooks.lua")
 
 mc_helpers = {}
 
