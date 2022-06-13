@@ -4,6 +4,10 @@ punchABlock = { hud = mhud.init() }
 
 punchABlock.tutorialStage = {}
 
+if (areas) then
+    punchABlock.playerProtectionAreas = {}
+end
+
 function punchABlock.blockDestroyed(pos, oldnode, oldmetadata, player)
     local pmeta = player:get_meta()
 
@@ -83,6 +87,17 @@ function punchABlock.startTutorial(realm, player)
     punchABlock.removeHUD(player)
     local pmeta = player:get_meta()
 
+    if (areas) then
+        local protectionID = tonumber(realm:get_string("protectionID"))
+        if (protectionID ~= nil and protectionID ~= "") then
+            local id = areas:add(player:get_player_name(), player:get_player_name() .. " zone in " .. realm.Name, realm.StartPos, realm.EndPos, protectionID)
+            areas:save()
+
+            punchABlock.playerProtectionAreas[player:get_player_name()] = {}
+            table.insert(punchABlock.playerProtectionAreas[player:get_player_name()], id)
+        end
+    end
+
     mc_tutorialFramework.infoWindow.show_to(player, "Welcome to the punch-a-block tutorial." ..
             "This tutorial aims to teach you how to destroy blocks (called nodes)." ..
             "To destroy a node, press and hold the left mouse button while" ..
@@ -106,6 +121,19 @@ function punchABlock.startTutorial(realm, player)
 end
 
 function punchABlock.endTutorial(realm, player)
+
+    if (areas) then
+        local protectionID = tonumber(realm:get_string("protectionID"))
+        if (protectionID ~= nil and protectionID ~= "") then
+
+            for k, v in pairs(punchABlock.playerProtectionAreas[player:get_player_name()]) do
+                areas:remove(v, true)
+            end
+            areas:save()
+            punchABlock.playerProtectionAreas[player:get_player_name()] = nil
+        end
+    end
+
     local pmeta = player:get_meta()
 
     -- Clear that we're in a tutorial

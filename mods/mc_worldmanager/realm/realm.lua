@@ -372,7 +372,7 @@ function Realm:Delete()
     self:ClearNodes()
 
     if (areas) then
-        local protectionID = self:get_string("protectionID")
+        local protectionID = tonumber(self:get_string("protectionID"))
         if (protectionID ~= nil) then
             areas:remove(protectionID, true)
             areas:save()
