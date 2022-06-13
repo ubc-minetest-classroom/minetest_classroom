@@ -100,7 +100,7 @@ end
 ---@param table The table to check
 ---@param val The value to check for
 ---@return boolean whether the value exists in the table
-function table.has(table, val)
+function mc_helpers.tableHas(table, val)
     if not table or not val then
         return false
     end
