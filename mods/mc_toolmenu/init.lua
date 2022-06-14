@@ -22,7 +22,8 @@ sfinv.register_page("mc_toolmenu:tools", {
         local formtable = {
             "box[-0.28,-0.30;8.35,4.9;#555555]",
             "label[0,0;(WIP) Only tools can be stored here!]",
-            "list[current_player;mc_toolmenu:tools;0,0.5;8,4;0]"
+            "list[current_player;mc_toolmenu:tools;0,0.5;8,4;0]",
+            "listring[]"
         }
         return sfinv.make_formspec(player, context, table.concat(formtable, ""), true)
     end

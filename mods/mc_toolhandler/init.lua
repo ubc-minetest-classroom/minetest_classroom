@@ -16,10 +16,10 @@ local function register_callbacks(tool_name, data)
         local stack = ItemStack(tool_name)
         local list = get_player_item_location(player, stack)
 
-        if not list and mc_helpers.checkPrivs(player, data._mc_privs) then
+        if not list and mc_helpers.checkPrivs(player, data._mc_tool_privs) then
             -- Player should have the tool but does not: give one copy
             player:get_inventory():add_item("main", tool_name)
-        elseif not mc_helpers.checkPrivs(player, data._mc_privs) then
+        elseif not mc_helpers.checkPrivs(player, data._mc_tool_privs) then
             -- Player has the tool but should not: remove all copies
             while list do
                 player:get_inventory():remove_item(list, tool_name)
@@ -31,7 +31,7 @@ local function register_callbacks(tool_name, data)
     -- Give the tool to any player who is granted adequate privileges
     minetest.register_on_priv_grant(function(name, granter, priv)
         -- Check if priv has an effect on the privileges needed for the tool
-        if name == nil or not mc_helpers.tableHas(data._mc_privs, priv) or not minetest.get_player_by_name(name) then
+        if name == nil or not mc_helpers.tableHas(data._mc_tool_privs, priv) or not minetest.get_player_by_name(name) then
             return true -- skip this callback, continue to next callback
         end
     
@@ -39,7 +39,7 @@ local function register_callbacks(tool_name, data)
         local player = minetest.get_player_by_name(name)
         local list = get_player_item_location(player, stack)
 
-        if not list and mc_helpers.checkPrivs(player, data._mc_privs) then
+        if not list and mc_helpers.checkPrivs(player, data._mc_tool_privs) then
             -- Player should have the tool but does not: give one copy
             player:get_inventory():add_item("main", tool_name)
         end
@@ -50,7 +50,7 @@ local function register_callbacks(tool_name, data)
     -- Take the tool away from anyone who is revoked privileges and no longer has adequate ones
     minetest.register_on_priv_revoke(function(name, revoker, priv)
         -- Check if priv has an effect on the privileges needed for the tool
-        if name == nil or not mc_helpers.tableHas(data._mc_privs, priv) or not minetest.get_player_by_name(name) then
+        if name == nil or not mc_helpers.tableHas(data._mc_tool_privs, priv) or not minetest.get_player_by_name(name) then
             return true -- skip this callback, continue to next callback
         end
     
@@ -58,7 +58,7 @@ local function register_callbacks(tool_name, data)
         local player = minetest.get_player_by_name(name)
         local list = get_player_item_location(player, stack)
     
-        if list and not mc_helpers.checkPrivs(player, data._mc_privs) then
+        if list and not mc_helpers.checkPrivs(player, data._mc_tool_privs) then
             -- Player has the tool but should not: remove all copies
             while list do
                 player:get_inventory():remove_item(list, tool_name)
@@ -83,7 +83,7 @@ while elem do
             table.insert(register_tools_from, string.trim(mod))
         end
     end
-    -- get next element
+    -- get next element, break from loop if none
     elem = conf_reader()
     if not elem then break end
 end
@@ -91,7 +91,7 @@ end
 -- Register give/take callbacks for all MineTest classroom tools
 for name,data in pairs(minetest.registered_tools) do
     for _,mod in pairs(register_tools_from) do
-        if not data._mc_toolhandler_ignore and (data.mod_origin == mod or string.match(name, "^"..mod..":.*")) then
+        if data._mc_tool_include or data._mc_tool_privs and (data.mod_origin == mod or string.match(name, "^"..mod..":.*")) then
             -- register give/take callbacks for tool
             register_callbacks(name, data)
         end

@@ -94,7 +94,7 @@ end
 minetest.register_tool("mc_tf:tutorialbook" , {
 	description = "Tutorial book",
 	inventory_image = "tutorial_book.png",
-	_mc_privs = { shout = true },
+	_mc_tool_privs = { shout = true },
 	-- Left-click the tool activates the tutorial menu
 	on_use = function (itemstack, user, pointed_thing)
         local pname = user:get_player_name()

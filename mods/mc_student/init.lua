@@ -209,7 +209,7 @@ end
 minetest.register_tool("mc_student:tutorialbook" , {
 	description = "Tutorial book @ mc_student",
 	inventory_image = "tutorial_book.png",
-	_mc_privs = priv_table,
+	_mc_tool_privs = priv_table,
 	-- Left-click the tool activates the tutorial menu
 	on_use = function (itemstack, user, pointed_thing)
         local pname = user:get_player_name()
@@ -507,7 +507,7 @@ end
 minetest.register_tool(tool_name , {
 	description = "Notebook for students",
 	inventory_image = "notebook.png",
-	_mc_privs = priv_table,
+	_mc_tool_privs = priv_table,
 	-- Left-click the tool activates the teacher menu
 	on_use = function (itemstack, player, pointed_thing)
         local pname = player:get_player_name()
