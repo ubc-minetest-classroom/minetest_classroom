@@ -6,6 +6,7 @@ local none_set, pos1_set, pos2_set = 0, 1, 2
 local distance
 local instances = {}
 local range = 30
+local timer_count = 0
 
 -- Give the measuring tape to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
@@ -143,7 +144,19 @@ function mark_pos2(player, pos)
 			
 	-- Auto-reset is disabled if auto_reset == 0
 	if auto_reset ~= 0 then
-		minetest.after(auto_reset, reset, player)
+		timer_count = timer_count + 1
+		minetest.after(auto_reset, reset_check, player)
+	end
+end
+
+-- Prevents premature auto-reset
+function reset_check(player) 
+	if timer_count > 0 then
+		timer_count = timer_count - 1
+	end
+
+	if timer_count == 0 then
+		reset(player)
 	end
 end
 
