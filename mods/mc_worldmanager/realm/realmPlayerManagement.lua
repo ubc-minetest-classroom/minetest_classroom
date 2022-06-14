@@ -11,6 +11,8 @@ function Realm:TeleportPlayer(player)
     self:RunTeleportInFunctions(player)
     local spawn = self.SpawnPoint
     player:set_pos(spawn)
+
+    mc_worldManager.updateHud(player)
 end
 
 function Realm:UpdatePlayerMetaData(player)

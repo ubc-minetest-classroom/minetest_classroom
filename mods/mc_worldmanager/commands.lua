@@ -196,6 +196,13 @@ commands["setspawnrealm"] = function(name, params)
     end
 end
 
+
+commands["cleanup"] = function(name,params)
+    Realm.consolidateEmptySpace()
+    Realm.SaveDataToStorage()
+    return true, "consolidated realms"
+end
+
 commands["define"] = function(name, params)
     local params = mc_helpers.split(param, " ")
 
@@ -255,18 +262,5 @@ minetest.register_chatcommand("realm", {
         else
             return false, "Unknown subcommand. Use 'realm help' for a list of sub-commands."
         end
-    end,
-})
-
-
-
-minetest.register_chatcommand("realmCleanup", {
-    privs = {
-        teacher = true,
-    },
-    func = function(name, param)
-        Realm.consolidateEmptySpace()
-        Realm.SaveDataToStorage()
-        return true, "consolidated realms"
     end,
 })

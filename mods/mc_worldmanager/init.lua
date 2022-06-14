@@ -1,4 +1,4 @@
-mc_worldManager = { storage = minetest.get_mod_storage(), path = minetest.get_modpath("mc_worldmanager"), spawnRealmSchematic = "vancouver_osm" }
+mc_worldManager = { storage = minetest.get_mod_storage(), path = minetest.get_modpath("mc_worldmanager"), spawnRealmSchematic = "vancouver_osm", hud = mhud.init()  }
 
 -- Include our source files
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realm.lua")
@@ -6,6 +6,7 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/nodes.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/commands.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/schematicmanager.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/hooks.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/hud.lua")
 
 ---@private
 ---Loads the persistent mod data for mc_worldManager.

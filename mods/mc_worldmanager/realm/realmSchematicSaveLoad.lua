@@ -12,13 +12,7 @@ function Realm:Save_Schematic(author, mode)
 
     minetest.mkdir(folderpath)
 
-    local fileName = "Realm " .. self.ID .. " "
-    for i = 1, 4 do
-        fileName = fileName .. math.random(0, 9)
-    end
-
-    fileName = fileName .. math.random(0, 99)
-
+    local fileName = "Realm " .. self.ID .. " " .. math.random(0, 9999) .. os.date(" %Y%m%d %H%M%S")
     local filepath = folderpath .. "/" .. fileName
 
     if (mode == "exschem") then
@@ -55,6 +49,18 @@ function Realm:Save_Schematic(author, mode)
         minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
     end
 
+    fileName = fileName .. os.date(" %Y%m%d %H%M")
+
+    local filepath = folderpath .. "\\" .. fileName
+    
+    --minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
+
+    local file, err = io.open(filepath .. ".mts", "wb")
+    if err then return 0 end
+    local schematic, count = worldedit.serialize(self.StartPos, self.EndPos)
+    file:write(schematic)
+    file:close()
+
     local settings = Settings(filepath .. ".conf")
     settings:set("author", author)
     settings:set("name", self.Name)
@@ -78,10 +84,6 @@ end
 ---@param key string the corresponding value for this schematic as registered by the schematic manager.
 ---@return boolean whether the schematic fit entirely in the realm when loading.
 function Realm:Load_Schematic(schematic, config)
-
-    self.Name = config.name
-
-
 
     --TODO: Add code to check if the realm is large enough to support the schematic; If not, create a new realm that can;
     local schematicEndPos = self:LocalToWorldPosition(config.schematicSize)
@@ -156,6 +158,11 @@ end
 
 function Realm:NewFromSchematic(name, key)
     local schematic, config = schematicManager.getSchematic(key)
+
+    if (name == "" or name == nil) then
+        name = config.name
+    end
+
     local newRealm = Realm:New(name, config.schematicSize)
     newRealm:Load_Schematic(schematic, config)
 

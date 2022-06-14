@@ -74,6 +74,7 @@ end
 mc_tutorialFramework.addTutorialEntry("Introduction", "Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.")
 mc_tutorialFramework.addTutorialEntry("Test", "testing", "shack")
 mc_tutorialFramework.addTutorialEntry("Movement", "This tutorial explains how to walk in different directions, jump, and fly. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.", "movementTutorial")
+mc_tutorialFramework.addTutorialEntry("Punch a Block", "This tutorial explains how to punch/destroy/mine blocks using various tools. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.", "punchABlock")
 
 local function show_tutorial_menu(player)
 	if check_perm(player) then
@@ -93,6 +94,7 @@ end
 minetest.register_tool("mc_tf:tutorialbook" , {
 	description = "Tutorial book",
 	inventory_image = "tutorial_book.png",
+	_mc_privs = { shout = true },
 	-- Left-click the tool activates the tutorial menu
 	on_use = function (itemstack, user, pointed_thing)
         local pname = user:get_player_name()
@@ -143,6 +145,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 end)
 
+--[[ handled in mc_toolhandler
 -- Give the tutorialbook to any player who joins with shout privileges or take them away if they do not have shout
 minetest.register_on_joinplayer(function(player)
 	local inv = player:get_inventory()
@@ -160,6 +163,7 @@ minetest.register_on_joinplayer(function(player)
 		end
 	end
 end)
+]]
 
 --    END TUTORIAL FUNCTIONS    --
 ----------------------------------

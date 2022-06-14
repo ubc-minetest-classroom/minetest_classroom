@@ -1,0 +1,1 @@
+forestry_tools.auto_reset (Auto-reset duration) int 30 0 3600

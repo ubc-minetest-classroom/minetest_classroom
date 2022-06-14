@@ -899,6 +899,7 @@ months = {
 minetest.register_tool(tool_name, {
     description = "Controller for teachers",
     inventory_image = "controller.png",
+    _mc_privs = priv_table,
     -- Left-click the tool activates the teacher menu
     on_use = function(itemstack, player, pointed_thing)
         local pname = player:get_player_name()
@@ -912,6 +913,7 @@ minetest.register_tool(tool_name, {
     end,
 })
 
+--[[
 -- Tool handling functions:
     -- Give the controller to any player who joins with adequate privileges or take away the controller if they do not have them
     -- Give the controller to any player who is granted adequate privileges
@@ -944,7 +946,7 @@ end)
 -- Give the controller to any player who is granted adequate privileges
 minetest.register_on_priv_grant(function(name, granter, priv)
     -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
+    if name == nil or not mc_helpers.tableHas(priv_table, priv) or not minetest.get_player_by_name(name) then
         return true -- skip this callback, continue to next callback
     end
 
@@ -961,7 +963,7 @@ end)
 -- Take the controller away from anyone who is revoked privileges and no longer has adequate ones
 minetest.register_on_priv_revoke(function(name, revoker, priv)
     -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
+    if name == nil or not mc_helpers.tableHas(priv_table, priv) or not minetest.get_player_by_name(name) then
         return true -- skip this callback, continue to next callback
     end
 
@@ -974,3 +976,4 @@ minetest.register_on_priv_revoke(function(name, revoker, priv)
 
     return true -- continue to next callback
 end)
+]]

@@ -2,6 +2,8 @@ mc_helpers = {}
 
 dofile(minetest.get_modpath("mc_helpers") .. "/Debugging.lua")
 dofile(minetest.get_modpath("mc_helpers") .. "/lualzw.lua")
+dofile(minetest.get_modpath("mc_helpers") .. "/PointTable.lua")
+dofile(minetest.get_modpath("mc_helpers") .. "/Hooks.lua")
 
 ---@public
 ---checkPrivs
@@ -97,11 +99,10 @@ end
 
 ---@public
 ---Returns true if any of the values in the given table is equal to the value provided
----This function is not defined by Lua, so this should not overwrite a default function
 ---@param table The table to check
 ---@param val The value to check for
 ---@return boolean whether the value exists in the table
-function table.has(table, val)
+function mc_helpers.tableHas(table, val)
     if not table or not val then
         return false
     end

@@ -63,7 +63,7 @@ function punchABlock.progress(player)
         if (level == nil) then
             mc_tutorialFramework.infoWindow.show_to(player, "Congratulations! You finished the tutorial")
             minetest.chat_send_player(player:get_player_name(), "Congratulations! You finished the tutorial")
-            punchABlock.endTutorial(nil, player)
+            punchABlock.endTutorial(Realm.realmDict[pmeta:get_int("realm")], player)
         else
             if (level.welcomeText ~= nil) then
                 mc_tutorialFramework.infoWindow.show_to(player, level.welcomeText)
@@ -82,6 +82,10 @@ end
 function punchABlock.startTutorial(realm, player)
     punchABlock.removeHUD(player)
     local pmeta = player:get_meta()
+
+    if (areas) then
+        realm:AddPlayerArea(player)
+    end
 
     mc_tutorialFramework.infoWindow.show_to(player, "Welcome to the punch-a-block tutorial." ..
             "This tutorial aims to teach you how to destroy blocks (called nodes)." ..
@@ -106,6 +110,11 @@ function punchABlock.startTutorial(realm, player)
 end
 
 function punchABlock.endTutorial(realm, player)
+
+    if (areas) then
+        realm:RemovePlayerArea(player)
+    end
+
     local pmeta = player:get_meta()
 
     -- Clear that we're in a tutorial
@@ -135,7 +144,7 @@ function punchABlock.CreateHUD(player, statKey, Goal, HelpText)
     punchABlock.hud:add(player, "pab:title", {
         hud_elem_type = "text",
         position = { x = 1, y = 0 },
-        offset = { x = -6, y = 0 },
+        offset = { x = -16, y = 24 },
         alignment = { x = "left", y = "down" },
         text = "Punch-A-Block Tutorial",
         color = 0x00FF00,
@@ -144,7 +153,7 @@ function punchABlock.CreateHUD(player, statKey, Goal, HelpText)
     punchABlock.hud:add(player, "pab:stat", {
         hud_elem_type = "text",
         position = { x = 1, y = 0 },
-        offset = { x = -6, y = 18 },
+        offset = { x = -16, y = 42 },
         alignment = { x = "left", y = "down" },
         text = blocksBroken_text,
         color = 0x00FF00,
@@ -164,7 +173,7 @@ function punchABlock.updateHud(player, statKey, Goal, HelpText)
     punchABlock.hud:change(player, "pab:stat", {
         hud_elem_type = "text",
         position = { x = 1, y = 0 },
-        offset = { x = -6, y = 18 },
+        offset = { x = -16, y = 42 },
         alignment = { x = "left", y = "down" },
         text = blocksBroken_text,
         color = 0x00FF00,

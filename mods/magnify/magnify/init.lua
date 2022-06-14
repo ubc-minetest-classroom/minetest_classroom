@@ -3,17 +3,14 @@ dofile(minetest.get_modpath("magnify") .. "/api.lua")
 
 -- constants
 local tool_name = "magnify:magnifying_tool"
-local priv_table = {"interact"}
+local priv_table = {interact = true}
 local MENU = 1
 local STANDARD_VIEW = 2
 local TECH_VIEW = 3
 
 -- Checks for adequate privileges
-local function check_perm_name(name)
-    return minetest.check_player_privs(name, {interact = true})
-end
 local function check_perm(player)
-    return check_perm_name(player:get_player_name())
+    return minetest.check_player_privs(player:get_player_name(), priv_table)
 end
 
 -- Clears the plant database
@@ -34,6 +31,7 @@ minetest.register_tool(tool_name, {
     _doc_items_longdesc = "This tool can be used to quickly learn more about about one's closer environment. It identifies and analyzes plant-type blocks and it shows extensive information about the thing on which it is used.",
     _doc_items_usagehelp = "Punch any block resembling a plant you wish to learn more about. This will open up the appropriate help entry.",
     _doc_items_hidden = false,
+    _mc_privs = priv_table,
     tool_capabilities = {},
     range = 10,
     groups = { disable_repair = 1 }, 
@@ -189,7 +187,7 @@ local function create_locator_particles(player, start_pos, end_pos)
     local pname = player:get_player_name()
 
     -- create particle line
-    for i=1,math.round(line_length / diff.dist)-1 do
+    for i=1,math.floor(line_length / diff.dist)-1 do
         minetest.after(i * diff.time, minetest.add_particle, {
             pos = {x = start_pos.x + i * (shift.x * diff.dist / line_length), y = start_pos.y + i * (shift.y * diff.dist / line_length), z = start_pos.z + i * (shift.z * diff.dist / line_length)},
             expirationtime = 4 + i * diff.expire,
@@ -330,66 +328,3 @@ sfinv.register_page("magnify:compendium", {
         return check_perm(player)
     end
 })
-
--- Tool handling functions:
-    -- Give the magnifying tool to any player who joins with adequate privileges or take it away if they do not have them
-    -- Give the magnifying tool to any player who is granted adequate privileges
-    -- Take the magnifying tool away from anyone who is revoked privileges and no longer has adequate ones
-
--- Give the magnifying tool to any player who joins with adequate privileges or take it away if they do not have them
-minetest.register_on_joinplayer(function(player)
-    local inv = player:get_inventory()
-    if inv:contains_item("main", ItemStack(tool_name)) then
-        -- Player has the magnifying glass 
-        if check_perm(player) then
-            -- The player should have the magnifying glass
-            return
-        else
-            -- The player should not have the magnifying glass
-            player:get_inventory():remove_item('main', tool_name)
-        end
-    else
-        -- Player does not have the magnifying glass
-        if check_perm(player) then
-            -- The player should have the magnifying glass
-            player:get_inventory():add_item('main', tool_name)
-        else
-            -- The player should not have the magnifying glass
-            return
-        end
-    end
-end)
-
--- Give the magnifying tool to any player who is granted adequate privileges
-minetest.register_on_priv_grant(function(name, granter, priv)
-    -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not magnify.table_has(priv_table, priv) or not minetest.get_player_by_name(name) then
-        return true -- skip this callback, continue to next callback
-    end
-
-    local player = minetest.get_player_by_name(name)
-    local inv = player:get_inventory()
-    
-    if not inv:contains_item("main", ItemStack(tool_name)) and check_perm_name(name) then
-        player:get_inventory():add_item('main', tool_name)
-    end
-
-    return true -- continue to next callback
-end)
-
--- Take the magnifying tool away from anyone who is revoked privileges and no longer has adequate ones
-minetest.register_on_priv_revoke(function(name, revoker, priv)
-    -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not magnify.table_has(priv_table, priv) or not minetest.get_player_by_name(name) then
-        return true -- skip this callback, continue to next callback
-    end
-
-    local player = minetest.get_player_by_name(name)
-    local inv = player:get_inventory()
-
-    if inv:contains_item("main", ItemStack(tool_name)) and not check_perm_name(name) then
-        player:get_inventory():remove_item('main', tool_name)
-    end
-
-    return true -- continue to next callback
-end)
