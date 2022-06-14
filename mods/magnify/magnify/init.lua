@@ -176,6 +176,18 @@ local function get_expanded_species_formspec(ref)
     end
 end
 
+--[[
+formspec_version[5]
+size[12.4,6.7]
+box[0,0;12.2,0.8;#9192a3]
+label[4.8,0.2;Technical Information]
+label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]
+textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]
+label[0,1.6;Associated nodes:]
+button[6.2,6.2;6.2,0.6;back;Back]
+button[0,6.2;6.2,0.6;locate;Locate nearest node]
+]]
+
 --- Create particles from start_pos to end_pos to help player locate end_pos
 --- @param player Player who can view particles
 --- @param start_pos Position to spart particle line from
@@ -217,17 +229,19 @@ local function create_locator_particles(player, start_pos, end_pos)
     })
 end
 
---[[
-formspec_version[5]
-size[12.4,6.7]
-box[0,0;12.2,0.8;#9192a3]
-label[4.8,0.2;Technical Information]
-label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]
-textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]
-label[0,1.6;Associated nodes:]
-button[6.2,6.2;6.2,0.6;back;Back]
-button[0,6.2;6.2,0.6;locate;Locate nearest node]
-]]
+local function search_for_nearby_node(player, context, nodes)
+    local player_pos = player:get_pos()
+    local node_pos = minetest.find_node_near(player_pos, 120, nodes, true)
+    if node_pos then
+        -- send location + create locator particles
+        local node = minetest.get_node(node_pos)
+        minetest.chat_send_player(player:get_player_name(), "Found species node \""..node.name.."\" at ("..node_pos.x..", "..node_pos.y..", "..node_pos.z..")")
+        create_locator_particles(player, {x = player_pos.x, y = player_pos.y + 1.3, z = player_pos.z}, node_pos)
+    else
+        minetest.chat_send_player(player:get_player_name(), "No nodes for this species were found within 120 blocks of your current position.")
+    end
+    context.search_in_progress = false
+end
 
 -- Registers the plant compendium as an inventory tab
 sfinv.register_page("magnify:compendium", {
@@ -302,22 +316,11 @@ sfinv.register_page("magnify:compendium", {
         elseif fields.locate then
             local ref = get_species_ref(context.species_selected)
             local info,nodes = magnify.get_species_from_ref(ref)
-            local player_pos = player:get_pos()
 
-            --minetest.log(tostring(context.search_in_progress))
             if not context.search_in_progress then
-                --context.search_in_progress = true
+                context.search_in_progress = true
                 minetest.chat_send_player(player:get_player_name(), "Searching for nearby nodes, please wait...")
-                local node_pos = minetest.find_node_near(player_pos, 120, nodes, true)
-                if node_pos then
-                    -- send location + create locator particles
-                    local node = minetest.get_node(node_pos)
-                    minetest.chat_send_player(player:get_player_name(), "Found species node \""..node.name.."\" at ("..node_pos.x..", "..node_pos.y..", "..node_pos.z..")")
-                    create_locator_particles(player, {x = player_pos.x, y = player_pos.y + 1.3, z = player_pos.z}, node_pos)
-                else
-                    minetest.chat_send_player(player:get_player_name(), "No nodes for this species were found within 120 blocks of your current position.")
-                end
-                --context.search_in_progress = false
+                search_for_nearby_node(player, context, nodes)
             else
                 minetest.chat_send_player(player:get_player_name(), "There is already a node search in progress! Please wait for your current search to finish before starting another.")
             end
