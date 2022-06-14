@@ -4,7 +4,6 @@
 
 local commands = {}
 
-
 minetest.register_chatcommand("localPos", {
     privs = {
         teacher = true,
@@ -19,7 +18,6 @@ minetest.register_chatcommand("localPos", {
 
         local requestedRealm = Realm.realmDict[realmID]
 
-
         if (requestedRealm == nil) then
             return false, "Player is not listed in a realm OR current realm has been deleted; Try teleporting to a different realm and then back..."
         end
@@ -28,7 +26,6 @@ minetest.register_chatcommand("localPos", {
         return true, "Your position in the local space of realm " .. param .. " is x: " .. position.x .. " y: " .. position.y .. " z: " .. position.z
     end,
 })
-
 
 commands["new"] = function(name, params)
     local realmName = params[2]
@@ -67,7 +64,7 @@ commands["info"] = function(name, params)
     local realmID = params[1]
     local requestedRealm = Realm.realmDict[tonumber(realmID)]
     if (requestedRealm == nil) then
-        return false, "Requested realm of ID:" .. realmID .. " does not exist."
+        return false, "Requested realm does not exist."
     end
 
     local spawn = requestedRealm.SpawnPoint
@@ -120,7 +117,6 @@ commands["schematic"] = function(name, params)
         return true
 
 
-
     elseif (params[1] == "save") then
         table.remove(params, 1)
         local realmID = params[1]
@@ -131,7 +127,6 @@ commands["schematic"] = function(name, params)
         end
 
         local subparam = params[2]
-
 
         if (subparam == "" or subparam == nil) then
             subparam = "old"
@@ -160,24 +155,24 @@ commands["schematic"] = function(name, params)
         local newRealm = Realm:NewFromSchematic(realmName, key)
         return true, "creat[ing][ed] new realm with name: " .. newRealm.Name .. "and ID: " .. newRealm.ID .. " from schematic with key " .. key
     else
-        return false, "unknown subcommand. Try realm list | realm save | realm load"
+        return false, "unknown subcommand. Try realm schematic list | realm schematic save | realm schematic load"
     end
 
 
 end
 
 commands["setspawn"] = function(name, params)
-    local realmID = params[1]
-    local requestedRealm = Realm.realmDict[tonumber(realmID)]
-    if (requestedRealm == nil) then
-        return false, "Requested realm of ID:" .. realmID .. " does not exist."
-    end
+
     local player = minetest.get_player_by_name(name)
+    local pmeta = player:get_meta()
+    local realmID = pmeta:get_int("realm")
+    local requestedRealm = Realm.realmDict[realmID]
+
     local position = requestedRealm:WorldToLocalPosition(player:get_pos())
 
     requestedRealm:UpdateSpawn(position)
 
-    return true, "Updated spawnpoint for realm with ID: " .. param
+    return true, "Updated spawnpoint for realm with ID: " .. realmID
 end
 
 commands["setspawnrealm"] = function(name, params)
@@ -196,8 +191,7 @@ commands["setspawnrealm"] = function(name, params)
     end
 end
 
-
-commands["cleanup"] = function(name,params)
+commands["cleanup"] = function(name, params)
     Realm.consolidateEmptySpace()
     Realm.SaveDataToStorage()
     return true, "consolidated realms"
