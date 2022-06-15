@@ -191,7 +191,7 @@ commands["setspawnrealm"] = {
         end
     end }
 
-commands["cleanup"] = {
+commands["consolidate"] = {
     func = function(name, params)
         Realm.consolidateEmptySpace()
         Realm.SaveDataToStorage()
