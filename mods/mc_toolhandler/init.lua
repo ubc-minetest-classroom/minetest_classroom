@@ -233,16 +233,18 @@ end
 -- Register give/take callbacks for all MineTest classroom tools
 for name,data in pairs(minetest.registered_tools) do
     for _,mod in pairs(reg_tools_from) do
-        if data._mc_tool_include or data._mc_tool_privs and (data.mod_origin == mod or string.match(name, "^"..mod..":.*")) then
-            -- register give/take callbacks for tool, if not part of a tool group
-            if not data._mc_tool_group then
-                -- standard registration
-                register_callbacks(name, data)
-                table.insert(mc_toolhandler.reg_tools, name)
-            elseif not mc_helpers.tableHas(mc_toolhandler.reg_tools, "group:"..data._mc_tool_group) then
-                -- tool group registration
-                register_group_callbacks(name, data)
-                table.insert(mc_toolhandler.reg_tools, "group:"..data._mc_tool_group)
+        if data._mc_tool_include ~= false then
+            if data._mc_tool_include or data._mc_tool_privs and (data.mod_origin == mod or string.match(name, "^"..mod..":.*")) then
+                -- register give/take callbacks for tool, if not part of a tool group
+                if not data._mc_tool_group then
+                    -- standard registration
+                    register_callbacks(name, data)
+                    table.insert(mc_toolhandler.reg_tools, name)
+                elseif not mc_helpers.tableHas(mc_toolhandler.reg_tools, "group:"..data._mc_tool_group) then
+                    -- tool group registration
+                    register_group_callbacks(name, data)
+                    table.insert(mc_toolhandler.reg_tools, "group:"..data._mc_tool_group)
+                end
             end
         end
     end
