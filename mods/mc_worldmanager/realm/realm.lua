@@ -21,6 +21,7 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmDataManagement.lu
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmSchematicSaveLoad.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCoordinateConversion.lua")
+
 if (areas) then
     dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmAreasIntegration.lua")
 end
@@ -48,7 +49,7 @@ function Realm:New(name, area)
         PlayerJoinTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
         PlayerLeaveTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
         RealmDeleteTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
-        MetaStorage = {}
+        MetaStorage = { Perms = {} }
     }
 
     setmetatable(this, self)
@@ -65,13 +66,13 @@ function Realm:New(name, area)
 
     -- Temporary spawn point calculation
     this.SpawnPoint = { x = (this.StartPos.x + this.EndPos.x) / 2,
-                        y = (this.StartPos.y + 2),
-                        z = (this.StartPos.z + this.EndPos.z) / 2 }
+    y = (this.StartPos.y + 2),
+    z = (this.StartPos.z + this.EndPos.z) / 2 }
 
     if (areas) then
-        local protectionID = areas:add("Server", this.ID .. this.Name, this.StartPos, this.EndPos)
-        this:set_string("protectionID", protectionID)
-        areas:save()
+    local protectionID = areas:add("Server", this.ID .. this.Name, this.StartPos, this.EndPos)
+    this:set_data("protectionID", protectionID)
+    areas:save()
     end
 
     Realm.SaveDataToStorage()

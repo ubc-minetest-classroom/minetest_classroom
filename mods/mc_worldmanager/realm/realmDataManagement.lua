@@ -71,18 +71,10 @@ function Realm:Restore(template)
     return this
 end
 
-function Realm:set_string(key, value)
+function Realm:set_data(key, value)
     self.MetaStorage[key] = value
 end
 
-function Realm:get_string(key)
+function Realm:get_data(key)
     return self.MetaStorage[key]
-end
-
-function Realm:set_int(key, value)
-    self.MetaStorage[key] = tostring(value)
-end
-
-function Realm:get_int(key)
-    return tonumber(self.MetaStorage[key])
 end

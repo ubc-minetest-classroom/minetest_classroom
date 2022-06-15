@@ -13,6 +13,7 @@ function Realm:TeleportPlayer(player)
     player:set_pos(spawn)
 
     mc_worldManager.updateHud(player)
+    self:ApplyPermissions(player)
 end
 
 function Realm:UpdatePlayerMetaData(player)
@@ -34,4 +35,33 @@ end
 
 function Realm:RunTeleportOutFunctions(player)
     self:RunFunctionFromTable(self.PlayerLeaveTable, player)
+end
+
+function Realm:ApplyPermissions(player)
+    local name = player:get_player_name()
+    local pmeta = player:get_meta()
+
+    local privs = minetest.get_player_privs(name)
+
+    Debug.log(minetest.serialize(privs))
+
+    for k, v in pairs(privs) do
+        privs[k] = false
+    end
+
+    -- local defaultPerms = minetest.deserialize(pmeta:get_string("defaultPerms"))
+    -- for k, v in pairs(defaultPerms) do
+    --     privs[k] = v
+    -- end
+
+    -- local realmPermissions = self:get_data("perms")
+    -- if (realmPermissions ~= nil) then
+    --   for k, v in pairs(realmPermissions) do
+    --     privs[k] = v
+    -- end
+    -- end
+
+    Debug.log(minetest.serialize(privs))
+
+    minetest.set_player_privs(name, privs)
 end

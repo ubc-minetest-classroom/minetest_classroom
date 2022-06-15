@@ -8,6 +8,8 @@ minetest.register_on_newplayer(function(player)
     pmeta:set_int("realm", spawnRealm.ID)
 
     player:set_pos(spawnRealm.SpawnPoint)
+
+    pmeta:set_string("defaultPerms", minetest.serialize(minetest.get_player_privs(player:get_player_name())))
 end)
 
 -- When players respawn, we teleport them to the spawnpoint of the realm they belong to
