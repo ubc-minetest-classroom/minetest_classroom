@@ -74,6 +74,18 @@ local function remove_item_copies_except(player, itemstack, i_0, list_0)
     end
 end
 
+-- Removes all items in group from player's inventory, except the one at i_0 in list_0
+local function remove_item_group_copies_except(player, mc_tool_group, i_0, list_0)
+    local inv = player:get_inventory()
+    for list,data in pairs(inv:get_lists()) do
+        for i,item in pairs(data) do
+            if item:get_definition()._mc_tool_group == mc_tool_group and (i ~= i_0 or list ~= list_0) then
+                inv:set_stack(list, i, ItemStack(nil))
+            end
+        end
+    end
+end
+
 --- Registers give/take callbacks for a tool
 --- @param tool_name Name of the tool
 --- @param data Tool definition table
@@ -236,28 +248,26 @@ for name,data in pairs(minetest.registered_tools) do
     end
 end
 
+-- Removes duplicate copies of registered items
+local function remove_reg_duplications(player, stack, i, list)
+    if mc_helpers.tableHas(mc_toolhandler.reg_tools, stack:get_name()) and player_has_multiple_copies(player, stack) then
+        remove_item_copies_except(player, stack, i, list)
+    else
+        local mc_tool_group = stack:get_definition()._mc_tool_group
+        if mc_tool_group and mc_helpers.tableHas(mc_toolhandler.reg_tools, "group:"..mc_tool_group) and player_has_multiple_group_copies(player, mc_tool_group) then
+            remove_item_group_copies_except(player, mc_tool_group, i, list)
+        end
+    end
+end
+
 -- Register callback for removing duplicate tools
 minetest.register_on_player_inventory_action(function(player, action, inventory, inv_info)
     if action == "put" or action == "take" then
-        if mc_helpers.tableHas(mc_toolhandler.reg_tools, inv_info.stack:get_name()) and player_has_multiple_copies(player, inv_info.stack) then 
-            remove_item_copies_except(player, inv_info.stack, inv_info.index, inv_info.listname)
-        elseif mc_helpers.tableHas(mc_toolhandler.reg_tools, inv_info.stack:get_definition()._mc_tool_group) and player_has_multiple_group_copies(player, inv_info.stack:get_definition()._mc_tool_group) then
-            -- stub
-        end
+        remove_reg_duplications(player, inv_info.stack, inv_info.index, inv_info.listname)
     elseif action == "move" then
         local stack_1 = inventory:get_stack(inv_info.to_list, inv_info.to_index)
+        remove_reg_duplications(player, stack_1, inv_info.to_index, inv_info.to_list)
         local stack_2 = inventory:get_stack(inv_info.from_list, inv_info.from_index)
-
-        if mc_helpers.tableHas(mc_toolhandler.reg_tools, stack_1:get_name()) and player_has_multiple_copies(player, stack_1) then
-            remove_item_copies_except(player, stack_1, inv_info.to_index, inv_info.to_list)
-        elseif mc_helpers.tableHas(mc_toolhandler.reg_tools, stack_1:get_definition()._mc_tool_group) and player_has_multiple_group_copies(player, stack_1:get_definition()._mc_tool_group) then
-            -- stub
-        end
-
-        if mc_helpers.tableHas(mc_toolhandler.reg_tools, stack_2:get_name()) and player_has_multiple_copies(player, stack_2) then
-            remove_item_copies_except(player, stack_2, inv_info.to_index, inv_info.to_list)
-        elseif mc_helpers.tableHas(mc_toolhandler.reg_tools, stack_2:get_definition()._mc_tool_group) and player_has_multiple_group_copies(player, stack_2:get_definition()._mc_tool_group) then
-            -- stub
-        end
+        remove_reg_duplications(player, stack_2, inv_info.from_index, inv_info.from_list)
     end
 end)
