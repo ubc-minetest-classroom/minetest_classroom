@@ -43,26 +43,24 @@ function Realm:ApplyPermissions(player)
 
     local privs = minetest.get_player_privs(name)
 
-    Debug.log(minetest.serialize(privs))
 
-    -- Revoke all privs
+    -- Revoke all privileges
     for k, v in pairs(privs) do
         privs[k] = nil
     end
 
-    local defaultPerms = minetest.deserialize(pmeta:get_string("defaultPerms"))
+    -- Add the universal privileges that a player has access to.
+    local defaultPerms = minetest.deserialize(pmeta:get_string("universalPrivs"))
     for k, v in pairs(defaultPerms) do
         privs[k] = v
     end
 
-    local realmPermissions = self:get_data("perms")
-    if (realmPermissions ~= nil) then
-        for k, v in pairs(realmPermissions) do
+    -- Add the realm privileges for any given realm.
+    if (self.Permissions ~= nil) then
+        for k, v in pairs(self.Permissions) do
             privs[k] = v
         end
     end
-
-    Debug.log(minetest.serialize(privs))
 
     minetest.set_player_privs(name, privs)
 end

@@ -245,6 +245,43 @@ commands["define"] = {
         Realm:Restore(newRealm)
     end }
 
+commands["privs"] = {
+    func = function(name, params)
+        local operation = params[1]
+        local realmID = params[2]
+        local privilege = params[3]
+
+        if (operation == nil or operation == "") then
+            return false, "Incorrect parameter... Missing realm privilege operation"
+        end
+
+        if (realmID == nil or realmID == "") then
+            return false, "Incorrect parameter... Missing realm ID."
+        end
+
+        if (privilege == nil or privilege == "") then
+            return false, "Incorrect parameter... Missing realm privilege to add or revoke"
+        end
+
+        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        if (requestedRealm == nil) then
+            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+        end
+
+        if (requestedRealm.Permissions == nil) then
+            requestedRealm.Permissions = {}
+        end
+
+        if (operation == "add") then
+            requestedRealm.Permissions[tostring(privilege)] = true
+        elseif (operation == "revoke") then
+            requestedRealm.Permissions[tostring(privilege)] = nil
+        end
+
+        return true, "Added permission: " .. privilege .. " to realm " .. realmID
+    end
+}
+
 minetest.register_chatcommand("realm", {
     params = "Subcommand Realm ID Option",
     func = function(name, param)
@@ -272,3 +309,43 @@ minetest.register_chatcommand("realm", {
         end
     end,
 })
+
+-- Gets called when a command is called, before it is handles.
+minetest.register_on_chatcommand(function(name, command, params)
+
+    -- Gets called when grant is called. We're using this to add permissions that are granted onto the universalPrivs table.
+    if (command == "grant") then
+        local paramTable = mc_helpers.split(params, " ")
+
+        if (paramTable[2] == nil) then
+            return false
+        end
+
+        local player = minetest.get_player_by_name(name)
+        local pmeta = player:get_meta()
+
+        local defaultPerms = minetest.deserialize(pmeta:get_string("universalPrivs"))
+        defaultPerms[paramTable[2]] = true
+
+        pmeta:set_string("universalPrivs", minetest.serialize(defaultPerms))
+    end
+
+    -- Gets called when revoke is called. We're using this to add permissions that are granted onto the universalPrivs table.
+    if (command == "revoke") then
+        local paramTable = mc_helpers.split(params, " ")
+
+        if (paramTable[2] == nil) then
+            return false
+        end
+
+        local player = minetest.get_player_by_name(name)
+        local pmeta = player:get_meta()
+
+        local defaultPerms = minetest.deserialize(pmeta:get_string("universalPrivs"))
+        defaultPerms[paramTable[2]] = nil
+
+        pmeta:set_string("universalPrivs", minetest.serialize(defaultPerms))
+    end
+
+    return false
+end)

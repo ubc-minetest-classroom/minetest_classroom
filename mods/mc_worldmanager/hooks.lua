@@ -9,7 +9,7 @@ minetest.register_on_newplayer(function(player)
 
     player:set_pos(spawnRealm.SpawnPoint)
 
-    pmeta:set_string("defaultPerms", minetest.serialize(minetest.get_player_privs(player:get_player_name())))
+    pmeta:set_string("universalPrivs", minetest.serialize(minetest.get_player_privs(player:get_player_name())))
 end)
 
 -- When players respawn, we teleport them to the spawnpoint of the realm they belong to
@@ -30,8 +30,17 @@ minetest.register_on_respawnplayer(function(player)
     return true
 end)
 
--- When player joins the game, we create their hud
+-- When player joins the game, we make sure all pmeta is set correctly, create their hud, etc.,
 minetest.register_on_joinplayer(function(player, last_login)
+    local pmeta = player:get_meta()
+    if (pmeta:get_int("realm") == nil) then
+        pmeta:set_int("realm", mc_worldManager.GetSpawnRealm().ID)
+    end
+
+    if (pmeta:get_string("universalPrivs") == nil) then
+        pmeta:set_string("universalPrivs", minetest.serialize(minetest.get_player_privs(player:get_player_name())))
+    end
+
     mc_worldManager.CreateHud(player)
 end)
 
