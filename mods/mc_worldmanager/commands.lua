@@ -67,7 +67,7 @@ commands["info"] = {
         local realmID = params[1]
         local requestedRealm = Realm.realmDict[tonumber(realmID)]
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+            return false, "Requested realm does not exist."
         end
 
         local spawn = requestedRealm.SpawnPoint
@@ -156,23 +156,22 @@ commands["schematic"] = {
             local newRealm = Realm:NewFromSchematic(realmName, key)
             return true, "creat[ing][ed] new realm with name: " .. newRealm.Name .. "and ID: " .. newRealm.ID .. " from schematic with key " .. key
         else
-            return false, "unknown subcommand. Try realm list | realm save | realm load"
+            return false, "unknown subcommand. Try realm schematic list | realm schematic save | realm schematic load"
         end
     end }
 
 commands["setspawn"] = {
     func = function(name, params)
-        local realmID = params[1]
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
-        if (requestedRealm == nil) then
-            return false, "Requested realm of ID:" .. realmID .. " does not exist."
-        end
         local player = minetest.get_player_by_name(name)
+        local pmeta = player:get_meta()
+        local realmID = pmeta:get_int("realm")
+        local requestedRealm = Realm.realmDict[realmID]
+
         local position = requestedRealm:WorldToLocalPosition(player:get_pos())
 
         requestedRealm:UpdateSpawn(position)
 
-        return true, "Updated spawnpoint for realm with ID: " .. param
+        return true, "Updated spawnpoint for realm with ID: " .. realmID
     end }
 
 commands["setspawnrealm"] = {
