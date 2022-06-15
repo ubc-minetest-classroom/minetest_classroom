@@ -1,3 +1,5 @@
+mc_toolhandler = {reg_tools = {}}
+
 -- Returns name of list item is in, if it is in player's inventory
 local function get_player_item_location(player, itemstack)
     local inv = player:get_inventory()
@@ -22,6 +24,56 @@ local function get_player_item_group_location(player, mc_tool_group)
     return nil
 end
 
+-- Returns true if player has 2 of more of itemstack, false otherwise
+local function player_has_multiple_copies(player, itemstack)
+    local inv = player:get_inventory()
+    local stack_2 = ItemStack(itemstack)
+    stack_2:set_count(2)
+    local count = 0
+    for list,data in pairs(inv:get_lists()) do
+        if inv:contains_item(list, stack_2) then
+            return true
+        elseif inv:contains_item(list, itemstack) then
+            count = count + 1
+            if count >= 2 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- Returns true if player has 2 of more items with mc_tool_group, false otherwise
+local function player_has_multiple_group_copies(player, mc_tool_group)
+    local inv = player:get_inventory()
+    local count = 0
+    for list,data in pairs(inv:get_lists()) do
+        for i,item in pairs(data) do
+            if item:get_definition()._mc_tool_group == mc_tool_group then
+                count = count + 1
+                if count >= 2 then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+-- Removes all copies of itemstack from player's inventory, except the one at i_0 in list_0
+local function remove_item_copies_except(player, itemstack, i_0, list_0)
+    local inv = player:get_inventory()
+    for list,data in pairs(inv:get_lists()) do
+        if inv:contains_item(list, itemstack) then
+            for i,_ in pairs(data) do
+                if inv:get_stack(list, i):get_name() == itemstack:get_name() and (i ~= i_0 or list ~= list_0) then
+                    inv:set_stack(list, i, ItemStack(nil))
+                end
+            end
+        end
+    end
+end
+
 --- Registers give/take callbacks for a tool
 --- @param tool_name Name of the tool
 --- @param data Tool definition table
@@ -39,6 +91,13 @@ local function register_callbacks(tool_name, data)
             while list do
                 player:get_inventory():remove_item(list, tool_name)
                 list = get_player_item_location(player, stack)
+            end
+        else
+            -- Make sure player only has one copy of the tool
+            for i,item in pairs(player:get_inventory():get_list(list)) do
+                if item:get_name() == tool_name then
+                    remove_item_copies_except(player, stack, i, list)
+                end
             end
         end
     end)
@@ -141,10 +200,8 @@ local function register_group_callbacks(tool_name, data)
     end)
 end
 
-
 -- Open and read mod.conf file from iterator
-local register_tools_from = {}
-local registered_tools = {}
+local reg_tools_from = {}
 local conf_reader = io.lines(minetest.get_modpath("mc_toolhandler") .. "/mod.conf")
 elem = conf_reader()
 while elem do
@@ -153,7 +210,7 @@ while elem do
     if match then
         local mods = string.split(match, ",")
         for _,mod in pairs(mods) do
-            table.insert(register_tools_from, string.trim(mod))
+            table.insert(reg_tools_from, string.trim(mod))
         end
     end
     -- get next element, break from loop if none
@@ -163,18 +220,44 @@ end
 
 -- Register give/take callbacks for all MineTest classroom tools
 for name,data in pairs(minetest.registered_tools) do
-    for _,mod in pairs(register_tools_from) do
+    for _,mod in pairs(reg_tools_from) do
         if data._mc_tool_include or data._mc_tool_privs and (data.mod_origin == mod or string.match(name, "^"..mod..":.*")) then
             -- register give/take callbacks for tool, if not part of a tool group
             if not data._mc_tool_group then
                 -- standard registration
                 register_callbacks(name, data)
-                table.insert(registered_tools, name)
-            elseif not mc_helpers.tableHas(registered_tools, "group:"..data._mc_tool_group) then
+                table.insert(mc_toolhandler.reg_tools, name)
+            elseif not mc_helpers.tableHas(mc_toolhandler.reg_tools, "group:"..data._mc_tool_group) then
                 -- tool group registration
                 register_group_callbacks(name, data)
-                table.insert(registered_tools, "group:"..data._mc_tool_group)
+                table.insert(mc_toolhandler.reg_tools, "group:"..data._mc_tool_group)
             end
         end
     end
 end
+
+-- Register callback for removing duplicate tools
+minetest.register_on_player_inventory_action(function(player, action, inventory, inv_info)
+    if action == "put" or action == "take" then
+        if mc_helpers.tableHas(mc_toolhandler.reg_tools, inv_info.stack:get_name()) and player_has_multiple_copies(player, inv_info.stack) then 
+            remove_item_copies_except(player, inv_info.stack, inv_info.index, inv_info.listname)
+        elseif mc_helpers.tableHas(mc_toolhandler.reg_tools, inv_info.stack:get_definition()._mc_tool_group) and player_has_multiple_group_copies(player, inv_info.stack:get_definition()._mc_tool_group) then
+            -- stub
+        end
+    elseif action == "move" then
+        local stack_1 = inventory:get_stack(inv_info.to_list, inv_info.to_index)
+        local stack_2 = inventory:get_stack(inv_info.from_list, inv_info.from_index)
+
+        if mc_helpers.tableHas(mc_toolhandler.reg_tools, stack_1:get_name()) and player_has_multiple_copies(player, stack_1) then
+            remove_item_copies_except(player, stack_1, inv_info.to_index, inv_info.to_list)
+        elseif mc_helpers.tableHas(mc_toolhandler.reg_tools, stack_1:get_definition()._mc_tool_group) and player_has_multiple_group_copies(player, stack_1:get_definition()._mc_tool_group) then
+            -- stub
+        end
+
+        if mc_helpers.tableHas(mc_toolhandler.reg_tools, stack_2:get_name()) and player_has_multiple_copies(player, stack_2) then
+            remove_item_copies_except(player, stack_2, inv_info.to_index, inv_info.to_list)
+        elseif mc_helpers.tableHas(mc_toolhandler.reg_tools, stack_2:get_definition()._mc_tool_group) and player_has_multiple_group_copies(player, stack_2:get_definition()._mc_tool_group) then
+            -- stub
+        end
+    end
+end)

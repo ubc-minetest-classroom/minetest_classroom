@@ -1,20 +1,6 @@
 mc_toolmenu = {}
 mc_toolmenu.inv_storage = minetest.get_mod_storage()
 
--- Removes all copies of itemstack from player's inventory, except the one at i_0 in list_0
-local function remove_item_copies_except(player, itemstack, i_0, list_0)
-    local inv = player:get_inventory()
-    for list,data in pairs(inv:get_lists()) do
-        if inv:contains_item(list, itemstack) then
-            for i,_ in pairs(data) do
-                if get_stack(list, i):get_name() == itemstack:get_name() and i ~= i_0 and list ~= list_0 then
-                    set_stack(list, i, ItemStack(nil))
-                end
-            end
-        end
-    end
-end
-
 sfinv.register_page("mc_toolmenu:tools", {
     title = "Toolbox",
     get = function(self, player, context)
@@ -72,4 +58,3 @@ minetest.register_allow_player_inventory_action(function(player, action, invento
         return -- ignore
     end
 end)
-
