@@ -84,6 +84,20 @@ function mark_pos1(player, pos)
 	end
 end
 
+
+-- Hud displaying distance between player and pos1
+local hud = mhud.init()
+local function create_hud(player, pos)
+	hud:add(player, "measuring_tape:current_distance", {
+		hud_elem_type = "waypoint",
+		name = "Distance: ",
+		text = "m",
+		world_pos = instances[player].pos1,
+		color = 0x000000
+	})
+end
+
+
 -- Helper for laying tape between pos1 and pos2
 local function changePos(pos, plane, change, player)
 	local newPos
@@ -108,6 +122,7 @@ function mark_pos2(player, pos)
 	minetest.swap_node(pos, {name = "forestry_tools:measure_pos2"})
 	tell_player(player, "End position marked")
 	instances[player].mark_status = pos2_set
+	hud:remove_all()
 	
 	-- Calculate the distance and display output
 	distance = math.floor(vector.distance(instances[player].pos1, instances[player].pos2) + 0.5)
@@ -213,6 +228,7 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 			-- If pos1 not marked, mark pos1
 			if instances[placer].mark_status == none_set then
 				mark_pos1(placer, pointed_thing.under)
+				create_hud(placer, pointed_thing.under)
 			
 			-- If pos1 marked, mark pos2 perform calculations, and trigger auto-reset
 			elseif instances[placer].mark_status == pos1_set then
@@ -231,5 +247,8 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 
 minetest.register_alias("measuringTape", "forestry_tools:measuringTape")
 measuringTape = minetest.registered_aliases[measuringTape] or measuringTape
+
+
+
 
 
