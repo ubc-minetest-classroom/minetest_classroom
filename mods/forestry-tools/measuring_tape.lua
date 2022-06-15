@@ -6,6 +6,7 @@ local none_set, pos1_set, pos2_set = 0, 1, 2
 local distance
 local instances = {}
 local range = 30
+local timer_count = 0
 
 -- Give the measuring tape to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
@@ -60,7 +61,7 @@ minetest.register_node("forestry_tools:measure_pos2", {
 	groups = {not_in_creative_inventory, immortal}
 })
 
--- Marks pos1
+-- Marks pos1 and starts auto-reset counter
 function mark_pos1(player, pos)
 	instances[player].pos1 = pos
 	instances[player].node1 = minetest.get_node(pos)
@@ -68,6 +69,19 @@ function mark_pos1(player, pos)
 	minetest.swap_node(pos, {name = "forestry_tools:measure_pos1"})
 	tell_player(player, "Start position marked")
 	instances[player].mark_status = pos1_set
+
+	-- Reads auto-reset duration from conf, defaults to 20 seconds if setting non-existent
+	local auto_reset = tonumber(minetest.settings:get("forestry_tools.auto_reset"))
+	if not auto_reset then
+		auto_reset = 20
+		minetest.settings:set("forestry_tools.auto_reset", auto_reset)
+	end
+			
+	-- Auto-reset is disabled if auto_reset == 0
+	if auto_reset ~= 0 then
+		timer_count = timer_count + 1
+		minetest.after(auto_reset, reset_check, player)
+	end
 end
 
 -- Helper for laying tape between pos1 and pos2
@@ -133,17 +147,16 @@ function mark_pos2(player, pos)
 
 		tell_player(player, "Distance: " .. minetest.colorize("#FFFF00", distance) .. "m")
 	end
+end
 
-	-- Reads auto-reset duration from conf, defaults to 20 seconds if setting non-existent
-	local auto_reset = tonumber(minetest.settings:get("forestry_tools.auto_reset"))
-	if not auto_reset then
-		auto_reset = 20
-		minetest.settings:set("forestry_tools.auto_reset", auto_reset)
+-- Prevents premature auto-reset
+function reset_check(player) 
+	if timer_count > 0 then
+		timer_count = timer_count - 1
 	end
-			
-	-- Auto-reset is disabled if auto_reset == 0
-	if auto_reset ~= 0 then
-		minetest.after(auto_reset, reset, player)
+
+	if timer_count == 0 then
+		reset(player)
 	end
 end
 

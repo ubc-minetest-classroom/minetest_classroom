@@ -205,27 +205,6 @@ local function show_tutorial_menu(player)
 	end
 end
 
--- The tutorial book for accessing tutorials
-minetest.register_tool("mc_student:tutorialbook" , {
-	description = "Tutorial book @ mc_student",
-	inventory_image = "tutorial_book.png",
-	_mc_tool_privs = priv_table,
-	-- Left-click the tool activates the tutorial menu
-	on_use = function (itemstack, user, pointed_thing)
-        local pname = user:get_player_name()
-		-- Check for shout privileges
-		if mc_helpers.checkPrivs(user,priv_table) then
-			show_tutorial_menu(user)
-		end
-	end,
-	-- Destroy the book on_drop to keep things tidy
-	on_drop = function(itemstack, dropper, pos)
-	end,
-})
-
-minetest.register_alias("tutorialbook", "mc_student:tutorialbook")
-tutorialbook = minetest.registered_aliases[tutorialbook] or tutorialbook
-
 mc_student_mov = {
 	"formspec_version[5]",
 	"size[13,10]",

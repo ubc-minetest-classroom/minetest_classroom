@@ -2,6 +2,8 @@ mc_helpers = {}
 
 dofile(minetest.get_modpath("mc_helpers") .. "/Debugging.lua")
 dofile(minetest.get_modpath("mc_helpers") .. "/lualzw.lua")
+dofile(minetest.get_modpath("mc_helpers") .. "/PointTable.lua")
+dofile(minetest.get_modpath("mc_helpers") .. "/Hooks.lua")
 
 ---@public
 ---checkPrivs

@@ -109,18 +109,10 @@ end
 
 minetest.register_on_joinplayer(function(player)
 	local inv = player:get_inventory()
-	if inv:contains_item("main", ItemStack("forestry_tools:compass")) then
-		
-		
-	else
-		
-		
-			player:get_inventory():add_item('main', "forestry_tools:compass")
-		
-			return
-		end     
+	if not inv:contains_item("main", ItemStack("forestry_tools:compass")) then
+		player:get_inventory():add_item("main", "forestry_tools:compass")   
 	end
-)
+end)
     
     
 
