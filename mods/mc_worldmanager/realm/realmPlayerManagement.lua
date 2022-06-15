@@ -55,12 +55,12 @@ function Realm:ApplyPermissions(player)
         privs[k] = v
     end
 
-    -- local realmPermissions = self:get_data("perms")
-    -- if (realmPermissions ~= nil) then
-    --   for k, v in pairs(realmPermissions) do
-    --     privs[k] = v
-    -- end
-    -- end
+    local realmPermissions = self:get_data("perms")
+    if (realmPermissions ~= nil) then
+        for k, v in pairs(realmPermissions) do
+            privs[k] = v
+        end
+    end
 
     Debug.log(minetest.serialize(privs))
 
