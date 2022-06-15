@@ -5,13 +5,12 @@ sfinv.register_page("mc_toolmenu:tools", {
     title = "Toolbox",
     get = function(self, player, context)
         local pname = player:get_player_name()
-        local tsize = player:get_inventory():get_size("mc_toolmenu:tools")
-        local box_height = math.ceil(tsize/8) - 4
-        local scroll_const = 23/20 -- = 1.15
+        local box_height = math.ceil(player:get_inventory():get_size("mc_toolmenu:tools")/8) - 4
+        local scroll_const = 23/20 -- 23/20 = 1.15
         local formtable = {
             "box[-0.28,-0.30;8.35,4.5;#555555]",
         }
-        if box_height >= 0 then
+        if box_height > 0 then
             table.insert_all(formtable, {
                 "scrollbaroptions[min=0;max=", scroll_const * box_height, ";smallstep=", scroll_const, ";largestep=", scroll_const * 4, ";thumbsize=", scroll_const, "]",
                 "scrollbar[7.85,0;0.2,3.9;vertical;toolbox_scroll;0]",
@@ -20,7 +19,7 @@ sfinv.register_page("mc_toolmenu:tools", {
             box_height = 0
         end
         table.insert_all(formtable, {
-            "scroll_container[0,0;10.15,4.88;toolbox_scroll;vertical;1.15]",
+            "scroll_container[0,0;10.15,4.88;toolbox_scroll;vertical;", scroll_const, "]",
             "list[current_player;mc_toolmenu:tools;0,0;8,", box_height + 4, ";0]",
             "listring[]",
             "scroll_container_end[]"
