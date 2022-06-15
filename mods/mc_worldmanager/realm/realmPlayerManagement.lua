@@ -45,14 +45,15 @@ function Realm:ApplyPermissions(player)
 
     Debug.log(minetest.serialize(privs))
 
+    -- Revoke all privs
     for k, v in pairs(privs) do
-        privs[k] = false
+        privs[k] = nil
     end
 
-    -- local defaultPerms = minetest.deserialize(pmeta:get_string("defaultPerms"))
-    -- for k, v in pairs(defaultPerms) do
-    --     privs[k] = v
-    -- end
+    local defaultPerms = minetest.deserialize(pmeta:get_string("defaultPerms"))
+    for k, v in pairs(defaultPerms) do
+        privs[k] = v
+    end
 
     -- local realmPermissions = self:get_data("perms")
     -- if (realmPermissions ~= nil) then
