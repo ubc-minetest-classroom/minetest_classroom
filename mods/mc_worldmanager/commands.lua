@@ -42,6 +42,77 @@ commands["new"] = {
         return true, "created new realm with ID: " .. newRealm.ID
     end }
 
+commands["delete"] = function(name, params)
+    local realmID = params[1]
+    local requestedRealm = Realm.realmDict[tonumber(realmID)]
+    if (requestedRealm == nil) then
+        return false, "Requested realm of ID:" .. realmID .. " does not exist."
+    end
+    requestedRealm:Delete()
+end
+
+commands["list"] = function(name, params)
+    minetest.chat_send_player(name, "Realm Name : Realm ID")
+    for i, t in pairs(Realm.realmDict) do
+        minetest.chat_send_player(name, t.Name .. " : " .. t.ID)
+    end
+
+    return true
+end
+
+commands["info"] = function(name, params)
+
+    local realmID = params[1]
+    local requestedRealm = Realm.realmDict[tonumber(realmID)]
+    if (requestedRealm == nil) then
+        return false, "Requested realm does not exist."
+    end
+
+    local spawn = requestedRealm.SpawnPoint
+    local startPos = requestedRealm.StartPos
+    local endPos = requestedRealm.EndPos
+
+    return true, "Realm " .. realmID .. " has a spawn point of "
+            .. "x:" .. tostring(spawn.x) .. " y:" .. tostring(spawn.y) .. " z:" .. tostring(spawn.z)
+            .. "; startPos of "
+            .. "x:" .. tostring(startPos.x) .. " y:" .. tostring(startPos.y) .. " z:" .. tostring(startPos.z)
+            .. "; endPos of "
+            .. "x:" .. tostring(endPos.x) .. " y:" .. tostring(endPos.y) .. " z:" .. tostring(endPos.z)
+end
+
+commands["tp"] = function(name, params)
+
+    local realmID = params[1]
+    local requestedRealm = Realm.realmDict[tonumber(realmID)]
+    if (requestedRealm == nil) then
+        return false, "Requested realm of ID:" .. realmID .. " does not exist."
+    end
+
+    player = minetest.get_player_by_name(name)
+    requestedRealm:TeleportPlayer(player)
+
+    return true, "teleported to: " .. realmID
+end
+
+commands["walls"] = function(name, params)
+    local realmID = params[1]
+    local requestedRealm = Realm.realmDict[tonumber(realmID)]
+    if (requestedRealm == nil) then
+        return false, "Requested realm of ID:" .. realmID .. " does not exist."
+    end
+
+    requestedRealm:CreateBarriers()
+end
+
+commands["schematic"] = function(name, params)
+
+    if (params[1] == "list") then
+        table.remove(params, 1)
+
+        minetest.chat_send_player(name, "Key : Filepath")
+        for i, t in pairs(schematicManager.schematics) do
+            minetest.chat_send_player(name, i .. " : " .. t)
+
 commands["delete"] = {
     func = function(name, params)
         local realmID = params[1]
