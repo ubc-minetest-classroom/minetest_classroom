@@ -112,6 +112,9 @@ commands["schematic"] = function(name, params)
         minetest.chat_send_player(name, "Key : Filepath")
         for i, t in pairs(schematicManager.schematics) do
             minetest.chat_send_player(name, i .. " : " .. t)
+        end
+    end
+end
 
 commands["delete"] = {
     func = function(name, params)
