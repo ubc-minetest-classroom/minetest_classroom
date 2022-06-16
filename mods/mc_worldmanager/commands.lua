@@ -317,36 +317,68 @@ minetest.register_chatcommand("realm", {
 -- Gets called when a command is called, before it is handles.
 minetest.register_on_chatcommand(function(name, command, params)
 
-    -- Gets called when grant is called. We're using this to add permissions that are granted onto the universalPrivs table.
-    if (command == "grant") then
-        local paramTable = mc_helpers.split(params, " ")
-        if (paramTable[2] == nil) then
-            return false
-        end
 
-        local player = minetest.get_player_by_name(name)
+    local function grantUniversalPriv(username, priv)
+        local player = minetest.get_player_by_name(username)
         local pmeta = player:get_meta()
 
         local defaultPerms = minetest.deserialize(pmeta:get_string("universalPrivs"))
-        defaultPerms[paramTable[2]] = true
+
+        if (priv == "all") then
+            for k, v in pairs(minetest.registered_privileges) do
+                defaultPerms[k] = true
+            end
+        else
+            defaultPerms[priv] = true
+        end
 
         pmeta:set_string("universalPrivs", minetest.serialize(defaultPerms))
     end
 
-    -- Gets called when revoke is called. We're using this to add permissions that are granted onto the universalPrivs table.
-    if (command == "revoke") then
-        local paramTable = mc_helpers.split(params, " ")
-        if (paramTable[2] == nil) then
-            return false
-        end
-
-        local player = minetest.get_player_by_name(name)
+    local function revokeUniversalPriv(username, priv)
+        local player = minetest.get_player_by_name(username)
         local pmeta = player:get_meta()
 
         local defaultPerms = minetest.deserialize(pmeta:get_string("universalPrivs"))
-        defaultPerms[paramTable[2]] = nil
+        if (priv == "all") then
+            for k, v in pairs(minetest.registered_privileges) do
+                defaultPerms[k] = nil
+            end
+        else
+            defaultPerms[priv] = nil
+        end
 
         pmeta:set_string("universalPrivs", minetest.serialize(defaultPerms))
+    end
+
+    if (command == "grant") then
+        -- Gets called when grant is called. We're using this to add permissions that are granted onto the universalPrivs table.
+
+        local paramTable = mc_helpers.split(params, " ")
+        local name = paramTable[1]
+        local priv = paramTable[2]
+
+        if (name == nil or name == "" or priv == nil or priv == "") then
+            return false
+        end
+
+        grantUniversalPriv(name, priv)
+    elseif (command == "grantme") then
+        grantUniversalPriv(name, params)
+    elseif (command == "revoke") then
+        -- Gets called when revoke is called. We're using this to remove permissions that are granted onto the universalPrivs table.
+
+        local paramTable = mc_helpers.split(params, " ")
+        local name = paramTable[1]
+        local priv = paramTable[2]
+
+        if (name == nil or name == "" or priv == nil or priv == "") then
+            return false
+        end
+
+        revokeUniversalPriv(name, priv)
+    elseif (command == "revokeme") then
+        revokeUniversalPriv(name, params)
     end
 
     return false
