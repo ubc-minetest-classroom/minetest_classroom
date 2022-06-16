@@ -318,21 +318,24 @@ minetest.register_chatcommand("realm", {
 minetest.register_on_chatcommand(function(name, command, params)
 
 
-    local function grantUniversalPriv(username, priv)
+    local function grantUniversalPriv(username, privs)
         local player = minetest.get_player_by_name(username)
         local pmeta = player:get_meta()
 
-        local defaultPerms = minetest.deserialize(pmeta:get_string("universalPrivs"))
+        local playerPrivileges = minetest.deserialize(pmeta:get_string("universalPrivs"))
 
-        if (priv == "all") then
-            for k, v in pairs(minetest.registered_privileges) do
-                defaultPerms[k] = true
+        for index, privilege in pairs(privs) do
+            if (privilege == "all") then
+                for k, v in pairs(minetest.registered_privileges) do
+                    playerPrivileges[k] = true
+                end
+                break
+            else
+                playerPrivileges[privilege] = true
             end
-        else
-            defaultPerms[priv] = true
         end
 
-        pmeta:set_string("universalPrivs", minetest.serialize(defaultPerms))
+        pmeta:set_string("universalPrivs", minetest.serialize(playerPrivileges))
     end
 
     local function revokeUniversalPriv(username, priv)
@@ -354,17 +357,21 @@ minetest.register_on_chatcommand(function(name, command, params)
     if (command == "grant") then
         -- Gets called when grant is called. We're using this to add permissions that are granted onto the universalPrivs table.
 
-        local paramTable = mc_helpers.split(params, " ")
-        local name = paramTable[1]
-        local priv = paramTable[2]
+        local privsTable = mc_helpers.split(params, ", ")
+        local tmpTable = mc_helpers.split(table.remove(privsTable, 1), " ")
 
-        if (name == nil or name == "" or priv == nil or priv == "") then
+        local name = tmpTable[1]
+        table.insert(privsTable, tmpTable[2])
+        tmpTable = nil
+
+        if (name == nil or name == "" or privsTable == nil) then
             return false
         end
 
-        grantUniversalPriv(name, priv)
+        grantUniversalPriv(name, privsTable)
     elseif (command == "grantme") then
-        grantUniversalPriv(name, params)
+        local privTable = mc_helpers.split(params, ", ")
+        grantUniversalPriv(name, privTable)
     elseif (command == "revoke") then
         -- Gets called when revoke is called. We're using this to remove permissions that are granted onto the universalPrivs table.
 
