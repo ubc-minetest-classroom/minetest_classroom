@@ -256,20 +256,33 @@ commands["privs"] = {
         end
 
         if (operation == "help") then
-            return true, "Usage: 'realm privs <grant | revoke> <realmID> <privilege>'; 'realm privs help' for help."
+            return true, "Usage: 'realm privs [grant | list | revoke] <realmID> <privilege>'; 'realm privs help' for help."
         end
 
         if (realmID == nil or realmID == "") then
-            return false, "Incorrect parameter... Missing realm ID. Usage: realm privs [<grant> | <revoke>] <realmID> <privilege>"
-        end
-
-        if (privilege == nil or privilege == "") then
-            return false, "Incorrect parameter... Missing realm privilege to add or revoke. Usage: realm privs [<grant> | <revoke>] <realmID> <privilege>"
+            return false, "Incorrect parameter... Missing realm ID. Usage: realm privs [grant | list | revoke] <realmID> <privilege>"
         end
 
         local requestedRealm = Realm.realmDict[realmID]
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
+        end
+
+        if (operation == "list") then
+
+            if (requestedRealm.Permissions ~= nil) then
+                for i, t in pairs(requestedRealm.Permissions) do
+                    minetest.chat_send_player(name, "- " .. i)
+                end
+            else
+                minetest.chat_send_player(name, "No realm privileges have been set.")
+            end
+
+            return true, "command executed succesfully"
+        end
+
+        if (privilege == nil or privilege == "") then
+            return false, "Incorrect parameter... Missing realm privilege to add or revoke. Usage: realm privs [grant | list | revoke] <realmID> <privilege>"
         end
 
         if (requestedRealm.Permissions == nil) then
@@ -278,11 +291,11 @@ commands["privs"] = {
 
         if (operation == "grant") then
             requestedRealm.Permissions[tostring(privilege)] = true
+            return true, "Added permission: " .. privilege .. " to realm " .. realmID
         elseif (operation == "revoke") then
             requestedRealm.Permissions[tostring(privilege)] = nil
+            return true, "Removed permission: " .. privilege .. " from realm " .. realmID
         end
-
-        return true, "Added permission: " .. privilege .. " to realm " .. realmID
     end
 }
 
