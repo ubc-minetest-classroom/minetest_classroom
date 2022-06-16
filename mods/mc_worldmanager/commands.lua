@@ -342,16 +342,20 @@ minetest.register_on_chatcommand(function(name, command, params)
         local player = minetest.get_player_by_name(username)
         local pmeta = player:get_meta()
 
-        local defaultPerms = minetest.deserialize(pmeta:get_string("universalPrivs"))
-        if (priv == "all") then
-            for k, v in pairs(minetest.registered_privileges) do
-                defaultPerms[k] = nil
+        local playerPrivileges = minetest.deserialize(pmeta:get_string("universalPrivs"))
+
+        for index, privilege in pairs(privs) do
+            if (privilege == "all") then
+                for k, v in pairs(minetest.registered_privileges) do
+                    playerPrivileges[k] = nil
+                end
+                break
+            else
+                playerPrivileges[privilege] = nil
             end
-        else
-            defaultPerms[priv] = nil
         end
 
-        pmeta:set_string("universalPrivs", minetest.serialize(defaultPerms))
+        pmeta:set_string("universalPrivs", minetest.serialize(playerPrivileges))
     end
 
     if (command == "grant") then
