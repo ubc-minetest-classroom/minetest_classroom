@@ -367,7 +367,6 @@ minetest.register_on_chatcommand(function(name, command, params)
         if (name == nil or name == "" or privsTable == nil) then
             return false
         end
-
         grantUniversalPriv(name, privsTable)
     elseif (command == "grantme") then
         local privTable = mc_helpers.split(params, ", ")
@@ -375,17 +374,20 @@ minetest.register_on_chatcommand(function(name, command, params)
     elseif (command == "revoke") then
         -- Gets called when revoke is called. We're using this to remove permissions that are granted onto the universalPrivs table.
 
-        local paramTable = mc_helpers.split(params, " ")
-        local name = paramTable[1]
-        local priv = paramTable[2]
+        local privsTable = mc_helpers.split(params, ", ")
+        local tmpTable = mc_helpers.split(table.remove(privsTable, 1), " ")
 
-        if (name == nil or name == "" or priv == nil or priv == "") then
+        local name = tmpTable[1]
+        table.insert(privsTable, tmpTable[2])
+        tmpTable = nil
+
+        if (name == nil or name == "" or privsTable == nil) then
             return false
         end
-
-        revokeUniversalPriv(name, priv)
+        revokeUniversalPriv(name, privsTable)
     elseif (command == "revokeme") then
-        revokeUniversalPriv(name, params)
+        local privTable = mc_helpers.split(params, ", ")
+        revokeUniversalPriv(name, privTable)
     end
 
     return false
