@@ -127,41 +127,94 @@ function mark_pos2(player, pos)
 	-- Calculate the distance and display output
 	distance = math.floor(vector.distance(instances[player].pos1, instances[player].pos2) + 0.5)
 
-	-- If the distance is within range, lay the tape between the start and end points
 	if distance > range then
 		tell_player(player, "Out of range! Maximum distance is 30m")
-	else
-		local newPos
-		for i = 1, distance - 1 do
-			if pos.x == instances[player].pos1.x then
-				if pos.y == instances[player].pos1.y then
-					newPos = changePos(pos, "z", i, player)
-				elseif pos.z == instances[player].pos1.z then
-					newPos = changePos(pos, "y", i, player)
-				else
-					newPos = changePos(pos, "y", i, player)
-					newPos = changePos(newPos, "z", i, player)
-				end
-			elseif pos.y == instances[player].pos1.y then
-				if pos.z == instances[player].pos1.z then
-					newPos = changePos(pos, "x", i, player)
-				else
-					newPos = changePos(pos, "x", i, player)
-					newPos = changePos(newPos, "z", i, player)
-				end
-			else 
-				newPos = changePos(pos, "x", i, player)
-				newPos = changePos(newPos, "y", i, player)
-			end
+		return
+	end
+	
+	local newPos
+	local direction_change
 
+	if pos.x == instances[player].pos1.x then
+		if pos.y == instances[player].pos1.y then
+			direction_change = "z"
+		elseif pos.z == instances[player].pos1.z then
+			direction_change = "y"
+		else
+			direction_change = "yz"
+		end
+	elseif pos.y == instances[player].pos1.y then
+		if pos.z == instances[player].pos1.z then
+			direction_change = "x"
+		else
+			direction_change = "xz"
+		end
+	else
+		direction_change = "xy"
+	end
+
+	if #direction_change == 1 then
+		for i = 1, distance - 1 do
+			if direction_change == "x" then
+				newPos = changePos(pos, "x", i, player)
+			elseif direction_change == "y" then
+				newPos = changePos(pos, "y", i, player)
+			else
+				newPos = changePos(pos, "z", i, player)
+			end
 
 			instances[player].tape_nodes[i] = newPos
 			instances[player].orig_nodes[i] = minetest.get_node(newPos)
 			minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
 		end
+	else 
+		for i = 1, distance - 2 do
+			if direction_change == "xy" then
+				newPos = changePos(pos, "x", i, player)
+				newPos = changePos(newPos, "y", i, player)
+			elseif direction_change == "yz" then
+				newPos = changePos(pos, "y", i, player)
+				newPos = changePos(newPos, "z", i, player)
+			else
+				newPos = changePos(pos, "x", i, player)
+				newPos = changePos(newPos, "z", i, player)
+			end
 
-		tell_player(player, "Distance: " .. minetest.colorize("#FFFF00", distance) .. "m")
+			instances[player].tape_nodes[i] = newPos
+			instances[player].orig_nodes[i] = minetest.get_node(newPos)
+			minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+		end
 	end
+
+	-- for i = 1, distance - 1 do
+	-- 	if pos.x == instances[player].pos1.x then
+	-- 		if pos.y == instances[player].pos1.y then
+	-- 			newPos = changePos(pos, "z", i, player)
+	-- 		elseif pos.z == instances[player].pos1.z then
+	-- 			newPos = changePos(pos, "y", i, player)
+	-- 		else
+	-- 			newPos = changePos(pos, "y", i, player)
+	-- 			newPos = changePos(newPos, "z", i, player)
+	-- 		end
+	-- 	elseif pos.y == instances[player].pos1.y then
+	-- 		if pos.z == instances[player].pos1.z then
+	-- 			newPos = changePos(pos, "x", i, player)
+	-- 		else
+	-- 			newPos = changePos(pos, "x", i, player)
+	-- 			newPos = changePos(newPos, "z", i, player)
+	-- 		end
+	-- 	else 
+	-- 		newPos = changePos(pos, "x", i, player)
+	-- 		newPos = changePos(newPos, "y", i, player)
+	-- 	end
+
+
+	-- 	instances[player].tape_nodes[i] = newPos
+	-- 	instances[player].orig_nodes[i] = minetest.get_node(newPos)
+	-- 	minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+	-- end
+
+	tell_player(player, "Distance: " .. minetest.colorize("#FFFF00", distance) .. "m")
 end
 
 -- Prevents premature auto-reset
@@ -187,9 +240,11 @@ function reset(player)
 		minetest.swap_node(instances[player].pos1, instances[player].node1)
 		minetest.swap_node(instances[player].pos2, instances[player].node2)
 
-		if instances[player].tape_nodes[2] ~= nil and instances[player].orig_nodes[2] ~= nil then
+		if instances[player].tape_nodes[1] ~= nil and instances[player].orig_nodes[1] ~= nil then
 			for i = 1, distance - 1 do
-				minetest.swap_node(instances[player].tape_nodes[i], instances[player].orig_nodes[i])
+				if instances[player].tape_nodes[i] then
+					minetest.swap_node(instances[player].tape_nodes[i], instances[player].orig_nodes[i])
+				end
 			end
 		end
 	end
