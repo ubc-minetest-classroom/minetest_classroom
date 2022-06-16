@@ -60,6 +60,7 @@ function Realm:Restore(template)
         PlayerJoinTable = template.PlayerJoinTable,
         PlayerLeaveTable = template.PlayerLeaveTable,
         RealmDeleteTable = template.RealmDeleteTable,
+        Permissions = template.Permissions,
         MetaStorage = template.MetaStorage
     }
 
