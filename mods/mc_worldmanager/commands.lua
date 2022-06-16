@@ -247,23 +247,27 @@ commands["define"] = {
 
 commands["privs"] = {
     func = function(name, params)
-        local operation = params[1]
-        local realmID = params[2]
-        local privilege = params[3]
+        local operation = tostring(params[1])
+        local realmID = tonumber(params[2])
+        local privilege = tostring(params[3])
 
         if (operation == nil or operation == "") then
-            return false, "Incorrect parameter... Missing realm privilege operation"
+            return false, "Incorrect parameter... Missing realm privilege operation. Usage: realm privs [<grant> | <revoke>] <realmID> <privilege>"
+        end
+
+        if (operation == "help") then
+            return true, "Usage: 'realm privs <grant | revoke> <realmID> <privilege>'; 'realm privs help' for help."
         end
 
         if (realmID == nil or realmID == "") then
-            return false, "Incorrect parameter... Missing realm ID."
+            return false, "Incorrect parameter... Missing realm ID. Usage: realm privs [<grant> | <revoke>] <realmID> <privilege>"
         end
 
         if (privilege == nil or privilege == "") then
-            return false, "Incorrect parameter... Missing realm privilege to add or revoke"
+            return false, "Incorrect parameter... Missing realm privilege to add or revoke. Usage: realm privs [<grant> | <revoke>] <realmID> <privilege>"
         end
 
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        local requestedRealm = Realm.realmDict[realmID]
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
@@ -272,7 +276,7 @@ commands["privs"] = {
             requestedRealm.Permissions = {}
         end
 
-        if (operation == "add") then
+        if (operation == "grant") then
             requestedRealm.Permissions[tostring(privilege)] = true
         elseif (operation == "revoke") then
             requestedRealm.Permissions[tostring(privilege)] = nil
@@ -316,7 +320,6 @@ minetest.register_on_chatcommand(function(name, command, params)
     -- Gets called when grant is called. We're using this to add permissions that are granted onto the universalPrivs table.
     if (command == "grant") then
         local paramTable = mc_helpers.split(params, " ")
-
         if (paramTable[2] == nil) then
             return false
         end
@@ -333,7 +336,6 @@ minetest.register_on_chatcommand(function(name, command, params)
     -- Gets called when revoke is called. We're using this to add permissions that are granted onto the universalPrivs table.
     if (command == "revoke") then
         local paramTable = mc_helpers.split(params, " ")
-
         if (paramTable[2] == nil) then
             return false
         end
