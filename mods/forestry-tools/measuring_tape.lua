@@ -228,7 +228,7 @@ function reset_check(player)
 	end
 end
 
--- Resets pos1 and pos2; replaces marker nodes with the old nodes
+-- Resets tape; replaces marker nodes with the old nodes
 function reset(player)
 	if instances[player].mark_status == none_set then
 		return
@@ -251,13 +251,16 @@ function reset(player)
 		
 	instances[player].mark_status = none_set
 	
+	if hud then
+		hud:remove_all()
+	end
 	
 	if minetest.get_player_by_name(player) then
 		tell_player(player, "Tape has been reset")
 	end
 end
 
--- Convenience method which just calls minetest.chat_send_player() after prefixing msg with " -!- Measuring Tape: "
+-- Convenience method which just calls minetest.chat_send_player() after prefixing msg with "Measuring Tape - "
 function tell_player(player_name, msg)
 	minetest.chat_send_player(player_name, "Measuring Tape - " .. msg)	
 end
