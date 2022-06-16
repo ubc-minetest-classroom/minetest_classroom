@@ -1,12 +1,6 @@
 -- EXPORTED MAGNIFY FUNCTIONS
 magnify = {}
 
--- Instantiate unique time code for plant updates
---local prev_date_str = magnify_plants:get_string("reg_time_old")
---magnify_plants:set_string("reg_time_old", prev_date_str)
---local date_str = os.date("%Y%m%d%H%M%S-V1", os.time())
---magnify_plants:set_string("reg_time", date_str)
-
 --- @public
 --- Registers a plant species in the `magnify` plant database
 --- @param def_table Plant species definition table
@@ -26,6 +20,29 @@ function magnify.register_plant(def_table, nodes)
     magnify_plants:set_int("count", ref + 1)
 end
 
+---@public
+---Sorting comparison function for strings with numerals within them
+---Returns true if the first detected numeral in a is less than the first detected numeral in b
+---Fallbacks:
+---If only one string contains a numeral, returns true if a contains the numeral, false if b contains the numeral
+---If neither string has a numeral, returns the result of a < b (default sort)
+---@param a The first string to be sorted
+---@param b The second string to be sorted
+---@return boolean
+local function numSubstringCompare(a, b)
+    local pattern = "^%D-(%d+)"
+    local a_num = string.match(a, pattern)
+    local b_num = string.match(b, pattern)
+
+    if a_num and b_num then
+        return tonumber(a_num) < tonumber(b_num)
+    elseif not b_num and not a_num then
+        return a < b
+    else
+        return a_num or false
+    end
+end
+
 --- @public
 --- Returns a human-readable list of all species registered in the magnify plant database
 --- @return table
@@ -42,7 +59,7 @@ function magnify.get_all_registered_species()
             end
         end
     end
-    table.sort(output, mc_helpers.numSubstringCompare)
+    table.sort(output, numSubstringCompare)
     return output
 end
 
