@@ -314,7 +314,7 @@ minetest.register_chatcommand("realm", {
     end,
 })
 
--- Gets called when a command is called, before it is handles.
+-- Gets called when a command is called, before it is handled by the engine / lua runtime.
 minetest.register_on_chatcommand(function(name, command, params)
 
 
@@ -331,14 +331,16 @@ minetest.register_on_chatcommand(function(name, command, params)
                 end
                 break
             else
-                playerPrivileges[privilege] = true
+                if (minetest.registered_privileges[privilege] ~= nil) then
+                    playerPrivileges[privilege] = true
+                end
             end
         end
 
         pmeta:set_string("universalPrivs", minetest.serialize(playerPrivileges))
     end
 
-    local function revokeUniversalPriv(username, priv)
+    local function revokeUniversalPriv(username, privs)
         local player = minetest.get_player_by_name(username)
         local pmeta = player:get_meta()
 
@@ -346,9 +348,7 @@ minetest.register_on_chatcommand(function(name, command, params)
 
         for index, privilege in pairs(privs) do
             if (privilege == "all") then
-                for k, v in pairs(minetest.registered_privileges) do
-                    playerPrivileges[k] = nil
-                end
+                playerPrivileges = {}
                 break
             else
                 playerPrivileges[privilege] = nil
