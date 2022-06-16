@@ -1,4 +1,7 @@
+-- Clear + reinitialize database to remove any unregistered plant species
 magnify_plants = minetest.get_mod_storage()
+magnify_plants:from_table(nil)
+
 dofile(minetest.get_modpath("magnify") .. "/api.lua")
 
 -- constants
@@ -13,17 +16,6 @@ local function check_perm(player)
     return minetest.check_player_privs(player:get_player_name(), priv_table)
 end
 
--- Clears the plant database
-local function clear_table()
-    local storage_data = magnify_plants:to_table()
-    for k,v in pairs(storage_data.fields) do
-        magnify_plants:set_string(k, "")
-    end
-end
-
--- reset: ensure count is initialized at 1
--- clear_table() -- find an alternative for this so that only species that have not been registered get removed
-magnify_plants:set_int("count", 1)
 
 -- Registers the magnifying glass tool
 minetest.register_tool(tool_name, {
@@ -92,16 +84,12 @@ minetest.register_craft({
 })
 
 --- Return the reference key of the species at the given index in the species list
+--- @param i_to_ref Table matching indices to reference key numbers
 --- @param index The position in the species list to get the reference key for
 --- @return string
 --- @see magnify.get_all_registered_species()
-local function get_species_ref(index)
-    local list = magnify.get_all_registered_species()
-    local elem = list[tonumber(index)]
-    local ref_num_split = string.split(elem, ":") -- "###num:rest"
-    local ref_str = ref_num_split[1]
-    local ref_num = string.sub(ref_str, 4) -- removes "###" from "###num"
-    return "ref_"..ref_num
+local function get_species_ref(i_to_ref, index)
+    return "ref_"..i_to_ref[index]
 end
 
 --- Dynamically creates a square table of node images
@@ -250,7 +238,7 @@ sfinv.register_page("magnify:compendium", {
         if context.species_view == STANDARD_VIEW or context.species_view == TECH_VIEW then
             -- create species/technical view
             local pname = player:get_player_name()
-            local ref = get_species_ref(context.species_selected)
+            local ref = get_species_ref(context.species_i_to_ref, context.species_selected)
             
             local formtable, size = nil, nil
 
@@ -267,13 +255,18 @@ sfinv.register_page("magnify:compendium", {
             return sfinv.make_formspec(player, context, formtable, false, size)
         else
             -- create menu
-            local species = table.concat(magnify.get_all_registered_species(), ",")
+            local species_list, ref_list = magnify.get_all_registered_species()
             local formtable = {
                 "bgcolor[#00FF00;true]", -- #172e1b
-                "textlist[0,0;7.8,3.75;species_list;", species, ";", context.species_selected or 1, ";false]",
+                "textlist[0,0;7.8,3.75;species_list;", table.concat(species_list, ","), ";", context.species_selected or 1, ";false]",
                 "button[0,4.05;4,0.6;standard_view;View Species]",
                 "button[4,4.05;4,0.6;technical_view;View Technical Info]"
             }
+            -- log which species are present in the menu
+            context.species_i_to_ref = {}
+            for i,ref in pairs(ref_list) do
+                context.species_i_to_ref[i] = tonumber(string.sub(ref, 5))
+            end
             return sfinv.make_formspec(player, context, table.concat(formtable, ""), true)
         end
     end,
@@ -294,7 +287,7 @@ sfinv.register_page("magnify:compendium", {
         elseif fields.standard_view or fields.technical_view then
             if context.species_selected then
                 local pname = player:get_player_name()
-                local ref = get_species_ref(context.species_selected)
+                local ref = get_species_ref(context.species_i_to_ref, context.species_selected)
                 
                 if magnify.get_species_from_ref(ref) then
                     if fields.standard_view then -- standard
@@ -314,7 +307,7 @@ sfinv.register_page("magnify:compendium", {
             -- refresh inventory formspec
             sfinv.set_player_inventory_formspec(player)
         elseif fields.locate then
-            local ref = get_species_ref(context.species_selected)
+            local ref = get_species_ref(context.species_i_to_ref, context.species_selected)
             local info,nodes = magnify.get_species_from_ref(ref)
 
             if not context.search_in_progress then
