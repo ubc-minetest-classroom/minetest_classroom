@@ -18,29 +18,6 @@ function magnify.register_plant(def_table, nodes)
     magnify_plants:set_int("count", ref + 1)
 end
 
----@public
----Sorting comparison function for strings with numerals within them
----Returns true if the first detected numeral in a is less than the first detected numeral in b
----Fallbacks:
----If only one string contains a numeral, returns true if a contains the numeral, false if b contains the numeral
----If neither string has a numeral, returns the result of a < b (default sort)
----@param a The first string to be sorted
----@param b The second string to be sorted
----@return boolean
-local function numSubstringCompare(a, b)
-    local pattern = "^%D-(%d+)"
-    local a_num = string.match(a, pattern)
-    local b_num = string.match(b, pattern)
-
-    if a_num and b_num then
-        return tonumber(a_num) < tonumber(b_num)
-    elseif not b_num and not a_num then
-        return a < b
-    else
-        return a_num or false
-    end
-end
-
 --- @public
 --- Returns the reference key associated with `node` in the `magnify` plant database
 --- @param node Stringified node
