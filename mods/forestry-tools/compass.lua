@@ -1,29 +1,7 @@
-
 local HUD_showing = false
 
--- Give the compass to any player who joins with adequate privileges or take it away if they do not have them
-minetest.register_on_joinplayer(function(player)
-    local inv = player:get_inventory()
-    if inv:contains_item("main", ItemStack("forestry_tools:compass")) then
-        -- Player has the compass
-        if check_perm(player) then
-            -- The player should have the compass
-            return
-        else   
-            -- The player should not have the compass
-            player:get_inventory():remove_item('main', "forestry_tools:compass")
-        end
-    else
-        -- Player does not have the compass
-        if check_perm(player) then
-            -- The player should have the compass
-            player:get_inventory():add_item('main', "forestry_tools:compass")
-        else
-            -- The player should not have the compass
-            return
-        end     
-    end
-end)
+local priv_table = { shout = true }
+-- use forestry_tools.check_perm instead of check_perm
 
 minetest.register_node("forestry_tools:compass", {
 	description = "Compass",
@@ -69,6 +47,7 @@ minetest.register_tool("forestry_tools:compass" , {
 	inventory_image = "compass_0.png",
     stack_max = 1,
 	liquids_pointable = true,
+	_mc_tool_privs = priv_table,
 
 	-- On left-click
     on_use = function(itemstack, player, pointed_thing)
@@ -81,7 +60,6 @@ minetest.register_tool("forestry_tools:compass" , {
 
 	-- Destroy the item on_drop to keep things tidy
 	on_drop = function (itemstack, dropper, pos)
-		minetest.set_node(pos, {name="air"})
 	end,
 })
 
