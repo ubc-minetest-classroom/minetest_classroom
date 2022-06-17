@@ -59,11 +59,16 @@ minetest.register_tool(tool_name, {
     on_drop = function(itemstack, dropper, pos)
         -- should eventually be replaced with a more flexible check
         if not minetest.get_modpath("mc_core") then
-            minetest.item_drop(itemstack, dropper, pos)
-            dropper:set_wielded_item(nil) -- removes the item from inventory: does not work without this
+            return minetest.item_drop(itemstack, dropper, pos)
         end
     end
 })
+
+-- Register tool aliases for convenience
+minetest.register_alias("magnify:magnifying_glass", tool_name)
+minetest.register_alias("magnifying_tool", tool_name)
+minetest.register_alias("magnifying_glass", tool_name)
+minetest.register_alias("magnify_tool", tool_name)
 
 -- Register crafting recipes for magnifying glass tool
 minetest.register_craft({
