@@ -149,42 +149,6 @@ local function create_image_table(nodes, x, y, side_length)
     return table.concat(output, "")
 end
 
---- Return the technical formspec for a species
---- @return formspec string, size
-local function get_expanded_species_formspec(ref)
-    local info,nodes = magnify.get_species_from_ref(ref)
-    if info and nodes then
-        local sorted_nodes = table.sort(nodes)
-        local size = "size[12.4,6.7]"
-        local formtable = {    
-            "formspec_version[5]", size,
-            "box[0,0;12.2,0.8;#9192a3]",
-            "label[4.8,0.2;Technical Information]",
-            "label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]",
-            "textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
-            "label[0,1.6;Associated nodes:]",
-            "button[6.2,6.2;6.2,0.6;back;Back]",
-            "button[0,6.2;6.2,0.6;locate;Locate nearest node]",
-            create_image_table(sorted_nodes or nodes, 7.6, 1.2, 4.8)
-        }
-        return table.concat(formtable, ""), size
-    else
-        return nil
-    end
-end
-
---[[
-formspec_version[5]
-size[12.4,6.7]
-box[0,0;12.2,0.8;#9192a3]
-label[4.8,0.2;Technical Information]
-label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]
-textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]
-label[0,1.6;Associated nodes:]
-button[6.2,6.2;6.2,0.6;back;Back]
-button[0,6.2;6.2,0.6;locate;Locate nearest node]
-]]
-
 --- Create particles from start_pos to end_pos to help player locate end_pos
 --- @param player Player who can view particles
 --- @param start_pos Position to spart particle line from
@@ -194,7 +158,7 @@ local function create_locator_particles(player, start_pos, end_pos)
     local shift = {x = end_pos.x - start_pos.x, y = end_pos.y - start_pos.y, z = end_pos.z - start_pos.z}
     local line_length = math.hypot(math.hypot(shift.x, shift.y), shift.z)
     local pname = player:get_player_name()
-
+    
     -- create particle line
     for i=1,math.floor(line_length / diff.dist)-1 do
         minetest.after(i * diff.time, minetest.add_particle, {
@@ -240,6 +204,82 @@ local function search_for_nearby_node(player, context, nodes)
     context.search_in_progress = false
 end
 
+--- Return the technical formspec for a species
+--- @param ref Reference key of plant species
+--- @return formspec string, size
+local function get_expanded_species_formspec(ref)
+    local info,nodes = magnify.get_species_from_ref(ref)
+    if info and nodes then
+        local sorted_nodes = table.sort(nodes)
+        local size = "size[12.4,6.7]"
+        local formtable = {    
+            "formspec_version[5]", size,
+            "box[0,0;12.2,0.8;#9192a3]",
+            "label[4.8,0.2;Technical Information]",
+            "label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]",
+            "textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
+            "label[0,1.6;Associated nodes:]",
+            "button[6.2,6.2;6.2,0.6;back;Back]",
+            "button[0,6.2;6.2,0.6;locate;Locate nearest node]",
+            create_image_table(sorted_nodes or nodes, 7.6, 1.2, 4.8)
+        }
+        return table.concat(formtable, ""), size
+    else
+        return nil
+    end
+end
+
+--[[
+formspec_version[5]
+size[12.4,6.7]
+box[0,0;12.2,0.8;#9192a3]
+label[4.8,0.2;Technical Information]
+label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]
+textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]
+label[0,1.6;Associated nodes:]
+button[6.2,6.2;6.2,0.6;back;Back]
+button[0,6.2;6.2,0.6;locate;Locate nearest node]
+]]
+
+--- Return the plant compendium formspec, built from the given list of species
+--- @return formspec string, size
+local function get_compendium_formspec(species_list, context)
+    local formtable = {
+        "bgcolor[#00FF00;true]", -- #172e1b
+        "set_focus[species_list]",
+        "textlist[0,0;7.8,3.75;species_list;", table.concat(species_list, ","), ";", context.species_selected or 1, ";false]",
+        "button[0,4.05;4,0.6;standard_view;View Species]",
+        "button[4,4.05;4,0.6;technical_view;View Technical Info]",
+        -- Search bar test
+        "field_close_on_enter[search;false]",
+        "field[0.3,5.72;5.56,1;search;Search for a species;]",
+        "button[5.5,5.4;1.3,1;search_search;Search]",
+        "button[6.7,5.4;1.3,1;search_clear;Clear]"
+    }
+    return table.concat(formtable, "")
+end
+
+--- Filters lists of all species down to species whose reference keys, common names, scientific names or family names contain the substring `query`
+--- @param query Substring to search for
+--- @param species_list List of species name to filter
+--- @param ref_list List of reference keys to filter
+--- @return table, table
+local function species_search_filter(query, species_list, ref_list)
+    local filtered_lists = {species = {}, ref = {}}
+    for i,ref in ipairs(ref_list) do
+        local species = magnify.get_species_from_ref(ref)
+        local match = string.find(string.lower(species.com_name), string.lower(query), 1, true)
+            or string.find(string.lower(species.sci_name), string.lower(query), 1, true)
+            or string.find(string.lower(species.fam_name), string.lower(query), 1, true)
+            or string.find(string.lower(ref), string.lower(query), 1, true)
+        if match then
+            table.insert(filtered_lists.species, species_list[i])
+            table.insert(filtered_lists.ref, ref_list[i])
+        end
+    end
+    return filtered_lists.species, filtered_lists.ref
+end
+
 -- Registers the plant compendium as an inventory tab
 sfinv.register_page("magnify:compendium", {
     title = "Plant Compendium", -- add translations
@@ -263,32 +303,39 @@ sfinv.register_page("magnify:compendium", {
 
             return sfinv.make_formspec(player, context, formtable, false, size)
         else
-            -- create menu
             local species_list, ref_list = magnify.get_all_registered_species()
-            local formtable = {
-                "bgcolor[#00FF00;true]", -- #172e1b
-                "textlist[0,0;7.8,3.75;species_list;", table.concat(species_list, ","), ";", context.species_selected or 1, ";false]",
-                "button[0,4.05;4,0.6;standard_view;View Species]",
-                "button[4,4.05;4,0.6;technical_view;View Technical Info]"
-            }
+            if context.species_search then
+                -- filter species by search results
+                species_list, ref_list = species_search_filter(context.species_search, species_list, ref_list)
+            end
+
             -- log which species are present in the menu
             context.species_i_to_ref = {}
             for i,ref in pairs(ref_list) do
                 context.species_i_to_ref[i] = tonumber(string.sub(ref, 5))
             end
-            return sfinv.make_formspec(player, context, table.concat(formtable, ""), true)
+            -- create menu
+            return sfinv.make_formspec(player, context, get_compendium_formspec(species_list, context), false)
         end
     end,
     on_enter = function(self, player, context)
-        if context.species_view == nil then
-            context.species_view = MENU
-        end
-        if context.species_selected == nil then
-            context.species_selected = 1
-        end
+        context.species_view = context.species_view or MENU
+        context.species_selected = context.species_selected or 1
     end,
     on_player_receive_fields = function(self, player, context, fields)
-        if fields.species_list then
+        if fields.key_enter_field == "search" or fields.search_search then
+            -- note search query + reset selection
+            context.species_search = fields.search
+            context.species_selected = 1
+            -- refresh inventory formspec
+            sfinv.set_player_inventory_formspec(player)
+        elseif fields.search_clear then
+            -- clear search + reset selection
+            context.species_search = nil
+            context.species_selected = 1
+            -- refresh inventory formspec
+            sfinv.set_player_inventory_formspec(player)
+        elseif fields.species_list then
             local event = minetest.explode_textlist_event(fields.species_list)
             if event.type == "CHG" then
                 context.species_selected = event.index
