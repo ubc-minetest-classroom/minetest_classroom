@@ -106,9 +106,12 @@ local function register_callbacks(tool_name, data)
             end
         else
             -- Make sure player only has one copy of the tool
-            for i,item in pairs(player:get_inventory():get_list(list)) do
-                if item:get_name() == tool_name then
-                    remove_item_copies_except(player, stack, i, list)
+            if player_has_multiple_copies(player, ItemStack(tool_name)) then
+                for i,item in pairs(player:get_inventory():get_list(list)) do
+                    if item:get_name() == tool_name then
+                        remove_item_copies_except(player, stack, i, list)
+                        break
+                    end
                 end
             end
         end
@@ -125,9 +128,19 @@ local function register_callbacks(tool_name, data)
         local player = minetest.get_player_by_name(name)
         local list = get_player_item_location(player, stack)
 
-        if not list and mc_helpers.checkPrivs(player, data._mc_tool_privs) then
-            -- Player should have the tool but does not: give one copy
-            player:get_inventory():add_item("main", tool_name)
+        if mc_helpers.checkPrivs(player, data._mc_tool_privs) then
+            if not list then
+                -- Player should have the tool but does not: give one copy
+                player:get_inventory():add_item("main", tool_name)
+            elseif player_has_multiple_copies(player, ItemStack(tool_name)) then
+                -- Player has multiple copies of the tool already: remove all but one
+                for i,item in pairs(player:get_inventory():get_list(list)) do
+                    if item:get_name() == tool_name then
+                        remove_item_copies_except(player, stack, i, list)
+                        break
+                    end
+                end
+            end
         end
         return true -- continue to next callback
     end)
@@ -171,6 +184,11 @@ local function register_group_callbacks(tool_name, data)
                 player:get_inventory():set_stack(list, i, ItemStack(nil))
                 list,i = get_player_item_group_location(player, data._mc_tool_group)
             end
+        else
+            -- Make sure player only has one copy of the tool
+            if player_has_multiple_group_copies(player, data._mc_tool_group) then
+                remove_item_group_copies_except(player, stack, i, list)
+            end
         end
     end)
 
@@ -184,10 +202,16 @@ local function register_group_callbacks(tool_name, data)
         local player = minetest.get_player_by_name(name)
         local list,i = get_player_item_group_location(player, data._mc_tool_group)
 
-        if not list and mc_helpers.checkPrivs(player, data._mc_tool_privs) then
-            -- Player should have the tool but does not: give one copy
-            player:get_inventory():add_item("main", tool_name)
+        if mc_helpers.checkPrivs(player, data._mc_tool_privs) then
+            if not list then
+                -- Player should have the tool but does not: give one copy
+                player:get_inventory():add_item("main", tool_name)
+            elseif player_has_multiple_group_copies(player, data._mc_tool_group) then
+                -- Player has multiple copies of the tool already: remove all but one
+                remove_item_group_copies_except(player, stack, i, list)
+            end
         end
+
         return true -- continue to next callback
     end)
     
