@@ -52,6 +52,10 @@ minetest.register_tool(tool_name, {
                 -- bad: display failure message in chat
                 minetest.chat_send_player(pname, "No entry for this item could be found.")
             end
+
+            -- Register a node punch
+            minetest.node_punch(pointed_thing.under, minetest.get_node(pointed_thing.under), player, pointed_thing)
+
             return nil
         end
     end,
@@ -150,7 +154,7 @@ end
 local function get_expanded_species_formspec(ref)
     local info,nodes = magnify.get_species_from_ref(ref)
     if info and nodes then
-        local sorted_nodes = table.sort(nodes, function(a, b) return a < b end)
+        local sorted_nodes = table.sort(nodes)
         local size = "size[12.4,6.7]"
         local formtable = {    
             "formspec_version[5]", size,
