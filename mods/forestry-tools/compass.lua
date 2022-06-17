@@ -86,7 +86,7 @@ minetest.register_tool("forestry_tools:compass" , {
 })
 
 minetest.register_alias("compass", "forestry_tools:compass")
-measuringTape = minetest.registered_aliases[compass] or compass
+compass = minetest.registered_aliases[compass] or compass
 
 
 
