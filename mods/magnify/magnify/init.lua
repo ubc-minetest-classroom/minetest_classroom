@@ -216,7 +216,7 @@ local function get_expanded_species_formspec(ref)
             "formspec_version[5]", size,
             "box[0,0;12.2,0.8;#9192a3]",
             "label[4.8,0.2;Technical Information]",
-            "label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]",
+            "label[0,1;", minetest.formspec_escape(info.com_name) or minetest.formspec_escape(info.sci_name) or "Unknown", " @ ", minetest.formspec_escape(ref), "]",
             "textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
             "label[0,1.6;Associated nodes:]",
             "button[6.2,6.2;6.2,0.6;back;Back]",
@@ -250,9 +250,8 @@ local function get_compendium_formspec(species_list, context)
         "textlist[0,0;7.8,3.75;species_list;", table.concat(species_list, ","), ";", context.species_selected or 1, ";false]",
         "button[0,4.05;4,0.6;standard_view;View Species]",
         "button[4,4.05;4,0.6;technical_view;View Technical Info]",
-        -- Search bar test
         "field_close_on_enter[search;false]",
-        "field[0.3,5.72;5.56,1;search;Search for a species;]",
+        "field[0.3,5.72;5.56,1;search;Search for a species", (context.species_search and " (current: \""..minetest.formspec_escape(context.species_search).."\")") or "", ";]",
         "button[5.5,5.4;1.3,1;search_search;Search]",
         "button[6.7,5.4;1.3,1;search_clear;Clear]"
     }
@@ -266,12 +265,13 @@ end
 --- @return table, table
 local function species_search_filter(query, species_list, ref_list)
     local filtered_lists = {species = {}, ref = {}}
+    local function match_query(str)
+        return string.find(string.lower(str), string.lower(query:trim()), 1, true)
+    end
+
     for i,ref in ipairs(ref_list) do
         local species = magnify.get_species_from_ref(ref)
-        local match = string.find(string.lower(species.com_name), string.lower(query), 1, true)
-            or string.find(string.lower(species.sci_name), string.lower(query), 1, true)
-            or string.find(string.lower(species.fam_name), string.lower(query), 1, true)
-            or string.find(string.lower(ref), string.lower(query), 1, true)
+        local match = match_query(species.com_name) or match_query(species.sci_name) or match_query(species.fam_name) or match_query(ref)
         if match then
             table.insert(filtered_lists.species, species_list[i])
             table.insert(filtered_lists.ref, ref_list[i])
