@@ -1,29 +1,29 @@
 mc_toolmenu = {}
 mc_toolmenu.inv_storage = minetest.get_mod_storage()
 
--- Removes all copies of itemstack from player's inventory, except the one at i_0 in list_0
-local function remove_item_copies_except(player, itemstack, i_0, list_0)
-    local inv = player:get_inventory()
-    for list,data in pairs(inv:get_lists()) do
-        if inv:contains_item(list, itemstack) then
-            for i,_ in pairs(data) do
-                if get_stack(list, i):get_name() == itemstack:get_name() and i ~= i_0 and list ~= list_0 then
-                    set_stack(list, i, ItemStack(nil))
-                end
-            end
-        end
-    end
-end
-
 sfinv.register_page("mc_toolmenu:tools", {
     title = "Toolbox",
     get = function(self, player, context)
         local pname = player:get_player_name()
+        local box_height = math.ceil(player:get_inventory():get_size("mc_toolmenu:tools")/8) - 4
+        local scroll_const = 23/20 -- 23/20 = 1.15
         local formtable = {
-            "box[-0.28,-0.30;8.35,4.9;#555555]",
-            "label[0,0;(WIP) Only tools can be stored here!]",
-            "list[current_player;mc_toolmenu:tools;0,0.5;8,4;0]"
+            "box[-0.28,-0.30;8.35,4.5;#555555]",
         }
+        if box_height > 0 then
+            table.insert_all(formtable, {
+                "scrollbaroptions[min=0;max=", scroll_const * box_height, ";smallstep=", scroll_const, ";largestep=", scroll_const * 4, ";thumbsize=", scroll_const, "]",
+                "scrollbar[7.85,0;0.2,3.9;vertical;toolbox_scroll;0]",
+            })
+        else
+            box_height = 0
+        end
+        table.insert_all(formtable, {
+            "scroll_container[0,0;10.15,4.88;toolbox_scroll;vertical;", scroll_const, "]",
+            "list[current_player;mc_toolmenu:tools;0,0;8,", box_height + 4, ";0]",
+            "listring[]",
+            "scroll_container_end[]"
+        })
         return sfinv.make_formspec(player, context, table.concat(formtable, ""), true)
     end
 })
@@ -35,7 +35,7 @@ minetest.register_on_joinplayer(function(player)
     local pname = player:get_player_name()
     local inv = player:get_inventory()
 
-    -- register inventory, if not created
+    -- register toolbox if not already created
     if not inv:get_list("mc_toolmenu:tools") then
         inv:set_list("mc_toolmenu:tools", {})
         inv:set_size("mc_toolmenu:tools", 32)
@@ -72,3 +72,20 @@ minetest.register_allow_player_inventory_action(function(player, action, invento
     end
 end)
 
+minetest.register_on_player_inventory_action(function(player, action, inventory, inv_info)
+    -- initial check
+    list_info = inv_info.listname or (inv_info.to_list == "mc_toolmenu:tools" and inv_info.to_list or inv_info.from_list)
+    if list_info ~= "mc_toolmenu:tools" then
+        return -- toolbox not affected, ignore
+    end
+
+    if not inventory:room_for_item("mc_toolmenu:tools", ItemStack("default:pick_bronze")) then
+        -- Increase size of toolbox if it gets full
+        local current_size = inventory:get_size("mc_toolmenu:tools")
+        --local width = inventory:get_width("mc_toolmenu:tools")
+        inventory:set_size("mc_toolmenu:tools", current_size + 8)
+
+        -- refresh inventory formspec
+        sfinv.set_player_inventory_formspec(player)
+    end
+end)
