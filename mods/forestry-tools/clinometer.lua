@@ -55,7 +55,7 @@ clinometer = minetest.registered_aliases[clinometer] or clinometer
 
 
 
-
+--
 
 local yaw = 360 - player:get_look_horizontal()*toDegrees
 local pitch = player:get_look_vertical()*toDegrees
