@@ -1,4 +1,4 @@
--- IN-PROGRESS: show yaw (horizontal angle) and It shows you your pitch (vertical viewing angle) in degrees.
+-- IN-PROGRESS: show yaw (horizontal angle) and pitch (vertical viewing angle) in degrees.
 
 local clin_hud = {}
 clin_hud.playerhuds = {}
