@@ -25,19 +25,11 @@ minetest.register_on_joinplayer(function(player)
     end
 end)
 
-minetest.register_node("forestry_tools:compass", {
-	description = "Compass",
-	tiles = {"compass_0.png"},
-	is_ground_content = false,
-	light_source = minetest.LIGHT_MAX,
-	groups = {not_in_creative_inventory, immortal}	
-})
-
 local hud = mhud.init()
 local function show_compass_hud(player)
 	hud:add(player, "compass", {
 		hud_elem_type = "image",
-		text = "compass_0.png",
+		text = "compass_0.png^[transformR90",
 		position={x = 1, y = 0}, 
 		scale={x = 8, y = 8}, 
 		alignment={x = -1, y = 1}, 
@@ -86,13 +78,45 @@ minetest.register_tool("forestry_tools:compass" , {
 })
 
 minetest.register_alias("compass", "forestry_tools:compass")
-measuringTape = minetest.registered_aliases[compass] or compass
+compass = minetest.registered_aliases[compass] or compass
+
+local images = {
+		"compass_0.png",
+		"compass_1.png",
+		"compass_2.png",
+		"compass_3.png",
+		"compass_4.png",
+		"compass_5.png",
+		"compass_6.png",
+		"compass_7.png",
+		"compass_8.png",
+		"compass_9.png",
+		"compass_10.png",
+		"compass_11.png",
+		"compass_12.png",
+		"compass_13.png",
+		"compass_14.png",
+		"compass_15.png",
+}
 
 
+minetest.register_globalstep(function(dtime)
+	local players  = minetest.get_connected_players()
+	for i,player in ipairs(players) do
 
-
-
-
+		if HUD_showing then
+			local dir = player:get_look_horizontal()
+			local angle_relative = math.deg(dir)
+			local compass_image = math.floor((angle_relative/22.5) + 0.5)%16
+			
+		-- update HUD image (use helper for rotation, e.g. if >90 pick the right image of the 11 and then call helper)
+			local img = "compass_" .. compass_image .. ".png"
+			hud:change(player, "compass", {
+				text = img
+			})
+		end
+	end
+end)
 
 
 
