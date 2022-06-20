@@ -1,8 +1,5 @@
 local HUD_showing = false
 
-local priv_table = { shout = true }
--- use forestry_tools.check_perm instead of check_perm
-
 local hud = mhud.init()
 local function show_compass_hud(player)
 	hud:add(player, "compass", {
@@ -39,7 +36,7 @@ minetest.register_tool("forestry_tools:compass" , {
 	inventory_image = "compass_0.png",
     stack_max = 1,
 	liquids_pointable = true,
-	_mc_tool_privs = priv_table,
+	_mc_tool_privs = forestry_tools.priv_table,
 
 	-- On left-click
     on_use = function(itemstack, player, pointed_thing)
@@ -204,18 +201,6 @@ end)
 -- 		})
 -- end
 
-  
-
-
--- minetest.register_on_joinplayer(function(player)
--- 	local inv = player:get_inventory()
--- 	if inv:contains_item("main", ItemStack("forestry_tools:compass")) then
--- 	else
--- 		player:get_inventory():add_item('main', "forestry_tools:compass")
--- 		return
--- 	end     
--- end
--- )
     
     
 

@@ -8,8 +8,7 @@ local instances = {}
 local range = 30
 local timer_count = 0
 
-local priv_table = { shout = true }
--- use forestry_tools.check_perm instead of check_perm
+
 
 -- Give the measuring tape to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
@@ -252,7 +251,7 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 	inventory_image = "measuring_tape.png",
     stack_max = 1,
 	liquids_pointable = true,
-	_mc_tool_privs = priv_table,
+	_mc_tool_privs = forestry_tools.priv_table,
 
 	-- On left-click
     on_use = function(itemstack, placer, pointed_thing)

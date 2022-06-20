@@ -1,8 +1,12 @@
-forestry_tools = { path = minetest.get_modpath("forestry_tools") }
+forestry_tools = {
+	path = minetest.get_modpath("forestry_tools"),
+	S = minetest.get_translator("forestry_tools"),
+	priv_table = { shout = true },
+}
 
-local priv_table = { shout = true }
+-- use this function instead of check_perm()
 function forestry_tools.check_perm(player)
-	return minetest.check_player_privs(player:get_player_name(), priv_table)
+	return minetest.check_player_privs(player:get_player_name(), forestry_tools.priv_table)
 end
 
 dofile(forestry_tools.path .. "/measuring_tape.lua")

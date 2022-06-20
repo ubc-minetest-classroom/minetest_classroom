@@ -26,6 +26,7 @@ end
 
 local lines = 4 -- # of HUD Lines
 
+local S = forestry_tools.S
 
 -- DIsplay player horizontal and vertical It shows you your pitch (vertical viewing angle) in degrees.
 
@@ -38,11 +39,10 @@ minetest.register_tool("forestry_tools:clinometer", {
 	wield_image = "clinometer.png",
 	inventory_image = "clinometer.png",
 	groups = { disable_repair = 1 },
+	_mc_tool_privs = forestry_tools.priv_table,
 
-
-    	-- Destroy the item on_drop to keep things tidy
+    -- Destroy the item on_drop to keep things tidy
 	on_drop = function (itemstack, dropper, pos)
-		minetest.set_node(pos, {name="air"})
 	end
 })
 
@@ -55,11 +55,11 @@ clinometer = minetest.registered_aliases[clinometer] or clinometer
 
 
 
---
+--[[
 
 local yaw = 360 - player:get_look_horizontal()*toDegrees
 local pitch = player:get_look_vertical()*toDegrees
 
 if (clinometer) then 
     str_angles = S("Yaw: @1°, pitch: @2°", string.format("%.1f", yaw), string.format("%.1f", pitch))
-
+]]
