@@ -59,7 +59,7 @@ minetest.register_globalstep(function(deltaTime)
     end
 
     mc_worldManager.tick = mc_worldManager.tick + deltaTime
-    if (mc_worldManager.tick > 8) then
+    if (mc_worldManager.tick > 10) then
         mc_worldManager.tick = 0
 
         for id, player in ipairs(minetest.get_connected_players()) do
