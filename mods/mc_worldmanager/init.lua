@@ -8,6 +8,7 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/schematicmanager.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/hooks.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/hud.lua")
 
+
 ---@private
 ---Loads the persistent mod data for mc_worldManager.
 ---@return void

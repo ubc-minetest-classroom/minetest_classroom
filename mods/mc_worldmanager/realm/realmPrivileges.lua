@@ -1,0 +1,1 @@
+Realm.whitelistedPrivs = {fly = true, fast = true, noclip = true, give = true, interact = true, }

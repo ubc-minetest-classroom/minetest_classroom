@@ -265,7 +265,7 @@ commands["privs"] = {
 
         local requestedRealm = Realm.realmDict[realmID]
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+            return false, "Requested realm of ID:" .. tostring(realmID) .. " does not exist."
         end
 
         if (operation == "list") then
@@ -292,14 +292,19 @@ commands["privs"] = {
         if (operation == "grant") then
 
             if (minetest.check_player_privs(name, privilege) == false) then
-                return false, "Unable to add privilege: " .. privilege .. " to realm" .. realmID .. " as you do not hold this privilege."
+                return false, "Unable to add privilege: " .. privilege .. " to realm" .. tostring(realmID) .. " as you do not hold this privilege."
             end
 
+            if (Realm.whitelistedPrivs[privilege] ~= true) then
+                return false, "Unable to add privilege: " .. privilege .. " to realm" .. tostring(realmID) .. " as it has not been whitelisted."
+            end
+
+
             requestedRealm.Permissions[privilege] = true
-            return true, "Added permission: " .. privilege .. " to realm " .. realmID
+            return true, "Added permission: " .. privilege .. " to realm " .. tostring(realmID)
         elseif (operation == "revoke") then
             requestedRealm.Permissions[privilege] = nil
-            return true, "Removed permission: " .. privilege .. " from realm " .. realmID
+            return true, "Removed permission: " .. privilege .. " from realm " .. tostring(realmID)
         end
     end
 }
