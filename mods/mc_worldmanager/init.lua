@@ -7,6 +7,7 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/commands.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/schematicmanager.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/hooks.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/hud.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/universalPrivilege.lua")
 
 
 ---@private

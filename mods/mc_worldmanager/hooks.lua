@@ -44,7 +44,7 @@ minetest.register_on_joinplayer(function(player, last_login)
     mc_worldManager.CreateHud(player)
 end)
 
--- When player leave the game, we create their hud
+-- When player leave the game, we remove their hud
 minetest.register_on_leaveplayer(function(player, timed_out)
     mc_worldManager.RemoveHud(player)
 end)

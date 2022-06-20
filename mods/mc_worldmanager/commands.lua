@@ -345,80 +345,40 @@ minetest.register_chatcommand("realm", {
 minetest.register_on_chatcommand(function(name, command, params)
 
 
-    local function grantUniversalPriv(username, privs)
-        local player = minetest.get_player_by_name(username)
-        local pmeta = player:get_meta()
-
-        local playerPrivileges = minetest.deserialize(pmeta:get_string("universalPrivs"))
-
-        for index, privilege in pairs(privs) do
-            if (privilege == "all") then
-                for k, v in pairs(minetest.registered_privileges) do
-                    playerPrivileges[k] = true
-                end
-                break
-            else
-                if (minetest.registered_privileges[privilege] ~= nil) then
-                    playerPrivileges[privilege] = true
-                end
-            end
-        end
-
-        pmeta:set_string("universalPrivs", minetest.serialize(playerPrivileges))
-    end
-
-    local function revokeUniversalPriv(username, privs)
-        local player = minetest.get_player_by_name(username)
-        local pmeta = player:get_meta()
-
-        local playerPrivileges = minetest.deserialize(pmeta:get_string("universalPrivs"))
-
-        for index, privilege in pairs(privs) do
-            if (privilege == "all") then
-                playerPrivileges = {}
-                break
-            else
-                playerPrivileges[privilege] = nil
-            end
-        end
-
-        pmeta:set_string("universalPrivs", minetest.serialize(playerPrivileges))
-    end
-
-    if (command == "grant") then
-        -- Gets called when grant is called. We're using this to add permissions that are granted onto the universalPrivs table.
-
-        local privsTable = mc_helpers.split(params, ", ")
-        local tmpTable = mc_helpers.split(table.remove(privsTable, 1), " ")
-
-        local name = tmpTable[1]
-        table.insert(privsTable, tmpTable[2])
-        tmpTable = nil
-
-        if (name == nil or name == "" or privsTable == nil) then
-            return false
-        end
-        grantUniversalPriv(name, privsTable)
-    elseif (command == "grantme") then
+    if (command == "grantme") then
         local privTable = mc_helpers.split(params, ", ")
-        grantUniversalPriv(name, privTable)
-    elseif (command == "revoke") then
-        -- Gets called when revoke is called. We're using this to remove permissions that are granted onto the universalPrivs table.
-
-        local privsTable = mc_helpers.split(params, ", ")
-        local tmpTable = mc_helpers.split(table.remove(privsTable, 1), " ")
-
-        local name = tmpTable[1]
-        table.insert(privsTable, tmpTable[2])
-        tmpTable = nil
-
-        if (name == nil or name == "" or privsTable == nil) then
-            return false
-        end
-        revokeUniversalPriv(name, privsTable)
+        mc_worldManager.grantUniversalPriv(minetest.get_player_by_name(name), privTable)
+        return false -- we must return false so that the regular grant command proceeds.
     elseif (command == "revokeme") then
         local privTable = mc_helpers.split(params, ", ")
-        revokeUniversalPriv(name, privTable)
+        mc_worldManager.revokeUniversalPriv(minetest.get_player_by_name(name), privTable)
+        return false -- we must return false so that the regular grant command proceeds.
+    end
+
+
+    -- Gets called when grant / revoke is called. We're using this to add permissions that are granted onto the universalPrivs table.
+
+    if (command == "grant" or command == "revoke") then
+        local privsTable = mc_helpers.split(params, ", ")
+        local tmpTable = mc_helpers.split(table.remove(privsTable, 1), " ")
+
+        local name = tmpTable[1]
+        table.insert(privsTable, tmpTable[2])
+        tmpTable = nil
+
+        if (not minetest.player_exists(name)) then
+            return false -- we must return false so that the regular grant command proceeds. Error text is handled there.
+        end
+
+        if (name == nil or name == "" or privsTable == nil) then
+            return false -- we must return false so that the regular grant command proceeds. Error text is handled there.
+        end
+
+        if (command == "grant") then
+            mc_worldManager.grantUniversalPriv(minetest.get_player_by_name(name), privsTable)
+        else
+            mc_worldManager.revokeUniversalPriv(minetest.get_player_by_name(name), privsTable)
+        end
     end
 
     return false
