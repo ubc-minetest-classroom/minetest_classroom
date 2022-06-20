@@ -290,10 +290,15 @@ commands["privs"] = {
         end
 
         if (operation == "grant") then
-            requestedRealm.Permissions[tostring(privilege)] = true
+
+            if (minetest.check_player_privs(name, privilege) == false) then
+                return false, "Unable to add privilege: " .. privilege .. " to realm" .. realmID .. " as you do not hold this privilege."
+            end
+
+            requestedRealm.Permissions[privilege] = true
             return true, "Added permission: " .. privilege .. " to realm " .. realmID
         elseif (operation == "revoke") then
-            requestedRealm.Permissions[tostring(privilege)] = nil
+            requestedRealm.Permissions[privilege] = nil
             return true, "Removed permission: " .. privilege .. " from realm " .. realmID
         end
     end
