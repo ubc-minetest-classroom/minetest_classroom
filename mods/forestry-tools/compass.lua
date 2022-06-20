@@ -30,10 +30,8 @@ local function show_compass_hud(player)
 	hud:add(player, "compass", {
 		hud_elem_type = "image",
 		text = "compass_0.png^[transformR90",
-		position={x = 1, y = 0}, 
-		scale={x = 8, y = 8}, 
-		alignment={x = -1, y = 1}, 
-		offset={x = -8, y = 4}
+		position={x = 0.5, y = 0.5}, 
+		scale={x = 15, y = 15}
 	})
 
 	HUD_showing = true
