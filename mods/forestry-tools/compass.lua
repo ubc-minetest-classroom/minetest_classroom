@@ -31,7 +31,7 @@ local function show_compass_hud(player)
 		hud_elem_type = "image",
 		text = "compass_0.png^[transformR90",
 		position={x = 0.5, y = 0.5}, 
-		scale={x = 15, y = 15}
+		scale={x = 10, y = 10}
 	})
 
 	HUD_showing = true
@@ -47,8 +47,10 @@ local adjustments_menu = {
 }
 
 local function show_adjustments_menu(player) 
-	hud:remove_all()
-	HUD_showing = false
+	if HUD_showing then
+		hud:remove_all()
+		HUD_showing = false
+	end
 
 	local pname = player:get_player_name()
 	minetest.show_formspec(pname, "compass:adjustments_menu", table.concat(adjustments_menu, ""))
@@ -62,11 +64,11 @@ minetest.register_tool("forestry_tools:compass" , {
 
 	-- On left-click
     on_use = function(itemstack, player, pointed_thing)
-		if HUD_showing then
-			show_adjustments_menu(player)
-		else
-			show_compass_hud(player)
-		end
+		show_compass_hud(player)
+	end,
+
+	on_place = function(itemstack, player, pointed_thing)
+		show_adjustments_menu(player)
 	end,
 
 	-- Destroy the item on_drop to keep things tidy
@@ -103,15 +105,20 @@ minetest.register_globalstep(function(dtime)
 	for i,player in ipairs(players) do
 
 		if HUD_showing then
-			local dir = player:get_look_horizontal()
-			local angle_relative = math.deg(dir)
-			local compass_image = math.floor((angle_relative/22.5) + 0.5)%16
-			
-		-- update HUD image (use helper for rotation, e.g. if >90 pick the right image of the 11 and then call helper)
-			local img = "compass_" .. compass_image .. ".png"
-			hud:change(player, "compass", {
-				text = img
-			})
+			if player:get_wielded_item():get_name() ~= "forestry_tools:compass" then
+				hud:remove_all()
+				HUD_showing = false
+			else
+				local dir = player:get_look_horizontal()
+				local angle_relative = math.deg(dir)
+				local compass_image = math.floor((angle_relative/22.5) + 0.5)%16
+				
+			-- update HUD image (use helper for rotation, e.g. if >90 pick the right image of the 11 and then call helper)
+				local img = "compass_" .. compass_image .. ".png"
+				hud:change(player, "compass", {
+					text = img
+				})
+			end
 		end
 	end
 end)
