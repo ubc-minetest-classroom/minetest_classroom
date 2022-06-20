@@ -236,22 +236,12 @@ local function register_group_callbacks(tool_name, data)
     end)
 end
 
--- Open and read mod.conf file from iterator
+-- Open and read mod.conf settings file
 local reg_tools_from = {}
-local conf_reader = io.lines(minetest.get_modpath("mc_toolhandler") .. "/mod.conf")
-elem = conf_reader()
-while elem do
-    -- Manage tools for all optional dependencies 
-    local match = string.match(elem, "^optional_depends = (.*)")
-    if match then
-        local mods = string.split(match, ",")
-        for _,mod in pairs(mods) do
-            table.insert(reg_tools_from, string.trim(mod))
-        end
-    end
-    -- get next element, break from loop if none
-    elem = conf_reader()
-    if not elem then break end
+local settings = Settings(minetest.get_modpath("mc_toolhandler") .. "/mod.conf")
+local mods = string.split(settings:get("optional_depends"), ",")
+for _,mod in pairs(mods) do
+    table.insert(reg_tools_from, string.trim(mod))
 end
 
 -- Register give/take callbacks for all MineTest classroom tools
