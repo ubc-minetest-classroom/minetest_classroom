@@ -87,7 +87,7 @@ minetest.register_globalstep(function(deltaTime)
 
     -- Run the code to damage players out of bounds more frequently to give that "void" damage effect from Minecraft.
     mc_worldManager.voidTick = mc_worldManager.voidTick + deltaTime
-    if (mc_worldManager.voidTick > 1) then
+    if (mc_worldManager.voidTick > 0.5) then
         mc_worldManager.voidTick = 0
 
         for id, playerName in ipairs(mc_worldManager.outOfBoundPlayers) do
