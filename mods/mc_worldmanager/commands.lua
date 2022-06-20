@@ -87,6 +87,11 @@ commands["tp"] = {
     func = function(name, params)
         local realmID = params[1]
         local requestedRealm = Realm.realmDict[tonumber(realmID)]
+
+        if (not minetest.player_exists(name)) then
+            return false, "Player: " .. tostring(name) .. " could not be found"
+        end
+
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
@@ -94,7 +99,7 @@ commands["tp"] = {
         player = minetest.get_player_by_name(name)
         requestedRealm:TeleportPlayer(player)
 
-        return true, "teleported to: " .. realmID
+        return true, "teleported to realm: " .. tostring(realmID)
     end }
 
 commands["walls"] = {
@@ -299,7 +304,6 @@ commands["privs"] = {
                 return false, "Unable to add privilege: " .. privilege .. " to realm" .. tostring(realmID) .. " as it has not been whitelisted."
             end
 
-
             requestedRealm.Permissions[privilege] = true
             return true, "Added permission: " .. privilege .. " to realm " .. tostring(realmID)
         elseif (operation == "revoke") then
@@ -419,3 +423,61 @@ minetest.register_on_chatcommand(function(name, command, params)
 
     return false
 end)
+
+
+-- We could have also done minetest.override_chatcommand; but I want complete control
+minetest.unregister_chatcommand("teleport")
+
+minetest.register_chatcommand("teleport", {
+    privs = {
+        teleport = true,
+    },
+    description = "Teleport yourself or a specified player to a realm or another player.",
+    params = "<realm ID> | <target player> | (<player name> <realm ID>) | (<player name> <target player name>)",
+    func = function(name, param)
+
+        local function teleport(name, othername)
+
+            if (not minetest.player_exists(name)) then
+                return false, "Player " .. tostring(name) .. " could not be found..."
+            end
+
+            if (not minetest.player_exists(othername)) then
+                return false, "Player " .. tostring(othername) .. " could not be found..."
+            end
+
+            local player = minetest.get_player_by_name(name)
+            local otherPlayer = minetest.get_player_by_name(othername)
+            local pmeta = otherPlayer:get_meta()
+            local realmID = pmeta:get_int("realm")
+
+            local requestedRealm = Realm.realmDict[realmID]
+
+            if (requestedRealm == nil) then
+                return false, "Player " .. tostring(othername) .. " is not listed in a realm OR current realm has been deleted; Try teleporting to a different realm and then back..."
+            end
+
+            requestedRealm:TeleportPlayer(player)
+            local pos = otherPlayer:get_pos()
+            player:set_pos(pos)
+            return true, "Teleported to " .. tostring(othername) .. " in realm " .. tostring(realmID)
+        end
+
+        local paramTable = mc_helpers.split(param, " ")
+        if (paramTable == nil) then
+            paramTable = { param }
+        end
+
+        if (mc_helpers.isNumber(paramTable[1]) and paramTable[2] == nil) then
+            return commands["tp"].func(name, paramTable)
+        elseif (paramTable[1] ~= nil and paramTable[2] == nil) then
+            return teleport(name, paramTable[1])
+        elseif (paramTable[1] ~= nil and mc_helpers.isNumber(paramTable[2])) then
+            return commands["tp"].func(paramTable[1], { paramTable[2] })
+        elseif (paramTable[1] ~= nil and paramTable[2] ~= nil) then
+            return teleport(paramTable[1], paramTable[2])
+        end
+
+        return false, "unable to parse parameters: " .. tostring(param)
+    end,
+})
