@@ -422,5 +422,21 @@ function Realm:RunFunctionFromTable(table, player)
     end
 end
 
+function Realm:ContainsCoordinate(coordinate)
+    if (coordinate.x < self.StartPos.x or coordinate.x > self.EndPos.x) then
+        return false
+    end
+
+    if (coordinate.z < self.StartPos.z or coordinate.z > self.EndPos.z) then
+        return false
+    end
+
+    if (coordinate.y < self.StartPos.y or coordinate.y > self.EndPos.y) then
+        return false
+    end
+
+    return true
+end
+
 Realm.LoadDataFromStorage()
 Realm.consolidateEmptySpace()
