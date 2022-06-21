@@ -290,24 +290,27 @@ commands["privs"] = {
             return false, "Incorrect parameter... Missing realm privilege to add or revoke. Usage: realm privs [grant | list | revoke] <realmID> <privilege>"
         end
 
-        if (requestedRealm.Permissions == nil) then
-            requestedRealm.Permissions = {}
-        end
-
         if (operation == "grant") then
 
             if (minetest.check_player_privs(name, privilege) == false) then
                 return false, "Unable to add privilege: " .. privilege .. " to realm" .. tostring(realmID) .. " as you do not hold this privilege."
             end
+            local privsTable = {}
+            privsTable[privilege] = true
 
-            if (Realm.whitelistedPrivs[privilege] ~= true) then
+            local success, invalidPrivs = requestedRealm:UpdateRealmPrivilege(privsTable)
+
+            if (not success) then
                 return false, "Unable to add privilege: " .. privilege .. " to realm" .. tostring(realmID) .. " as it has not been whitelisted."
             end
 
-            requestedRealm.Permissions[privilege] = true
             return true, "Added permission: " .. privilege .. " to realm " .. tostring(realmID)
         elseif (operation == "revoke") then
-            requestedRealm.Permissions[privilege] = nil
+
+            local privsTable = {}
+            privsTable[privilege] = false
+
+            requestedRealm:UpdateRealmPrivilege()
             return true, "Removed permission: " .. privilege .. " from realm " .. tostring(realmID)
         end
     end

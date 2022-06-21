@@ -31,6 +31,33 @@ function Realm.LoadPrivModDefaults()
     Realm.SetPrivWhitelist(worldRealmPrivWhitelist)
 end
 
+function Realm:UpdateRealmPrivilege(privilegeTable)
+    local invalidPrivs = {}
+
+    if (self.Permissions == nil) then
+        self.Permissions = {}
+    end
+
+    for k, v in pairs(privilegeTable) do
+        if (v == true or v == "true") then
+            if (Realm.whitelistedPrivs[k] ~= true) then
+                table.insert(invalidPrivs, k)
+                Debug.log(tostring(k))
+            else
+                self.Permissions[k] = true
+            end
+        else
+            self.Permissions[k] = nil
+        end
+    end
+
+    if (#invalidPrivs > 0) then
+        return false, invalidPrivs
+    end
+
+    return true, invalidPrivs
+end
+
 if (mc_helpers.fileExists(worldRealmPrivWhitelist)) then
     Realm.GetPrivWhitelist(worldRealmPrivWhitelist)
 else
