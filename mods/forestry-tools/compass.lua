@@ -31,7 +31,20 @@ local function show_compass_hud(player)
 		hud_elem_type = "image",
 		text = "compass_0.png^[transformR90",
 		position={x = 0.5, y = 0.5}, 
-		scale={x = 10, y = 10}
+		scale={x = 10.2, y = 10.2}
+	})
+
+	HUD_showing = true
+end
+
+local bezelHud = mhud.init()
+local function show_bezel_hud(player)
+	bezelHud:add(player, "bezel", {
+		hud_elem_type = "image",
+		text = "bezel_0.png",
+		position={x = 0.5, y = 0.5}, 
+		scale={x = 10, y = 10},
+		offset = {x = -5.8, y = -3}
 	})
 
 	HUD_showing = true
@@ -49,6 +62,7 @@ local adjustments_menu = {
 local function show_adjustments_menu(player) 
 	if HUD_showing then
 		hud:remove_all()
+		bezelHud:remove_all()
 		HUD_showing = false
 	end
 
@@ -65,6 +79,7 @@ minetest.register_tool("forestry_tools:compass" , {
 	-- On left-click
     on_use = function(itemstack, player, pointed_thing)
 		show_compass_hud(player)
+		show_bezel_hud(player)
 	end,
 
 	on_place = function(itemstack, player, pointed_thing)
@@ -107,6 +122,7 @@ minetest.register_globalstep(function(dtime)
 		if HUD_showing then
 			if player:get_wielded_item():get_name() ~= "forestry_tools:compass" then
 				hud:remove_all()
+				bezelHud:remove_all()
 				HUD_showing = false
 			else
 				local dir = player:get_look_horizontal()
