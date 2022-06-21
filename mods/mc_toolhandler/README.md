@@ -11,7 +11,7 @@ All tools handled by `mc_toolhandler` will automatically be given to players wit
 - `_mc_tool_privs`: A table of privileges required to use the tool, or an empty table if no priviliges are required to use the tool.
   - Usage: ```_mc_tool_privs = {interact = true, fly = true}```
 - `_mc_tool_include`: Boolean flag indicating whether `mc_toolhandler` should manage the tool.
-  - If `_mc_tool_include = true` and no `_mc_tool_privs` are set, tool usage privileges default to `{teacher = true}`.
+  - If `_mc_tool_include = true` and `_mc_tool_privs` is unspecified, tool usage privileges default to `{teacher = true}`.
   - If `_mc_tool_include = false`, `mc_toolhander` will not manage the tool.
 
 Additional properties need to be set for groups of similar tools (ex. a tool with changing textures registered as multiple tools):
