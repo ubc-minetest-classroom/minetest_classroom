@@ -1,4 +1,5 @@
 mc_toolhandler = {reg_tools = {}}
+dofile(minetest.get_modpath("mc_toolhandler") .. "/api.lua")
 
 -- Returns name of list item is in, if it is in player's inventory
 local function get_player_item_location(player, itemstack)
@@ -272,9 +273,22 @@ end
 --- @param player Player to check
 --- @param stack Tool to check for
 --- @param abstract Function table defining functions to call for various check results
+--- Standard tool branch:
+---  - Initial check:
+---    - t_np(t_np_p): player does not have privileges
+---    - t_pm(t_pm_p): player has privileges and multiple copies of tool
+---    - t_else(t_else_p): player has privileges and 0-1 copies of tool
+---  - t_final(t_final_p): final call on branch regardless of outcome
+--- Tool group branch:
+---  - Initial check:
+---    - g_np(g_np_p): player does not have privileges
+---    - g_pm(g_pm_p): player has privileges and multiple copies of tool
+---    - g_else(g_else_p): player has privileges and 0-1 copies of tool
+---  - g_final(g_final_p): final call on branch regardless of outcome
+--- @return first return from called functions
 local function tool_perm_check_abstract(player, stack, abstract)
     local func_return = nil
-    if mc_helpers.tableHas(mc_toolhandler.reg_tools, stack:get_name()) then
+    if mc_helpers.tableHas(mc_toolhandler.reg_tools, stack:get_name()) then 
         if not mc_helpers.checkPrivs(player, stack:get_definition()._mc_tool_privs) then
             func_return = abstract.t_np and abstract.t_np(unpack(abstract.t_np_p or {})) or func_return
         elseif player_has_multiple_copies(player, stack) then
@@ -355,36 +369,40 @@ minetest.register_on_chatcommand(function(name, command, params)
         local stack_name = (command == "giveme" and p_table[1]) or p_table[2]
         local stack = ItemStack(stack_name)
 
+        local function fail_and_send_item_privs(name, stack)
+            local stack_privs = stack:get_definition()._mc_tool_privs or {teacher = true}
+            local keys = {}
+            for k,v in pairs(stack_privs) do
+                table.insert(keys, k)
+            end
+            minetest.chat_send_player(name, "Target player is missing privileges required for item use: "..table.concat(keys, ", ")..".")
+            return true
+        end
+
         return tool_perm_check_abstract(player, stack, {
-            t_np = function(name)
-                minetest.chat_send_player(name, "Target player is missing privileges required for item use: TBD")
-                return true
-            end,
-            t_np_p = {name},
+            t_np = fail_and_send_item_privs,
+            t_np_p = {name, stack},
 
             t_pm = remove_prohibited_items,
             t_pm_p = {player, stack},
 
             t_final = function(player, stack_name, name)
                 if get_player_item_location(player, stack_name) then
-                    minetest.chat_send_player(name, "Target player already has the requested item")
+                    minetest.chat_send_player(name, "Target player already has the specified item.")
                     return true
                 end
             end,
             t_final_p = {player, stack_name, name},
 
-            g_np = function(name)
-                minetest.chat_send_player(name, "Target player is missing privileges required for item use: TBD")
-                return true
-            end,
-            g_np_p = {name},
+            g_np = fail_and_send_item_privs,
+            g_np_p = {name, stack},
 
             g_pm = remove_prohibited_items,
             g_pm_p = {player, stack},
 
             g_final = function(player, stack, name)
                 if get_player_item_group_location(player, stack:get_definition()._mc_tool_group) then
-                    minetest.chat_send_player(name, "Target player already has the requested item")
+                    minetest.chat_send_player(name, "Target player already has the specified item.")
                     return true
                 end
             end,

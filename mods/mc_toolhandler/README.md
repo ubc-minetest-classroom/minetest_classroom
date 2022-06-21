@@ -4,7 +4,9 @@ Provides functionality for giving/taking classroom tools from players.
 
 All tools handled by `mc_toolhandler` will automatically be given to players with adequate usage privileges for them, and automatically be taken away from players who lose the privileges necessary to use them.
 
-## Tool definition fields used by `mc_toolhandler`
+## Tool management
+
+### Tool definition fields used by `mc_toolhandler`
 
 `mc_toolhandler` manages tools for all mods specified in the `optional_depends` of its `mod.conf` file. A tool will be managed by `mc_toolhandler` if it contains at least one of the following properties in its tool definition:
 
@@ -19,7 +21,7 @@ Additional properties need to be set for groups of similar tools (ex. a tool wit
 - `_mc_tool_group`: A group name for the tool, used to detect the presence of the tool instead of the tool name.
   - Usage: ```_mc_tool_group = "modname:generic_tool_name"```
 
-## Managing tools using `mc_toolhandler`
+### Managing tools using `mc_toolhandler`
 
 To add tools to the list of tools handled by `mc_toolhandler`, follow the steps below:
 
@@ -27,3 +29,9 @@ To add tools to the list of tools handled by `mc_toolhandler`, follow the steps 
   - `optional_depends` is a comma-separated list, so ensure that each mod in the list is separated by a comma
 - Define the `_mc_tool_privs` and/or `_mc_tool_include` fields in the tool definition for each tool you want `mc_toolhandler` to manage, as specified above
 - If applicable, define `_mc_tool_group` as specified above
+
+## API
+
+### `mc_toolhandler.create_tool_store(player)  -->  InvRef`
+
+TBD
