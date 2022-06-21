@@ -58,7 +58,7 @@ function Realm:UpdateRealmPrivilege(privilegeTable)
     return true, invalidPrivs
 end
 
-function Realm:ApplyPermissions(player)
+function Realm:ApplyPrivileges(player)
     local name = player:get_player_name()
     local pmeta = player:get_meta()
 

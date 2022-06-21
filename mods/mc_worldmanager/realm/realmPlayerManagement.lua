@@ -13,7 +13,7 @@ function Realm:TeleportPlayer(player)
     player:set_pos(spawn)
 
     mc_worldManager.updateHud(player)
-    self:ApplyPermissions(player)
+    self:ApplyPrivileges(player)
 end
 
 function Realm:UpdatePlayerMetaData(player)
