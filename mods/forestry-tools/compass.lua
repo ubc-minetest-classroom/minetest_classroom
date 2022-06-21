@@ -1,5 +1,6 @@
 
 local HUD_showing = false
+local mag_declination, azimuth = 0, 0
 
 -- Give the compass to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
@@ -54,10 +55,39 @@ local adjustments_menu = {
 	"formspec_version[5]",
 	"size[6,7]",
 	"textarea[1.7,0.2;3,0.5;;;Compass Settings]",
-	"textarea[0.5,1.3;5,1;declination;Set Magnetic Declination;]",
-	"textarea[0.5,3;5,1;azimuth;Set Azimuth;]",
-	"button_exit[4.2,5.9;1.5,0.8;exit;Exit]"
+	"textarea[0.5,1.3;5,1;declination;Set Magnetic Declination;" .. mag_declination .. "]",
+	"textarea[0.5,3;5,1;azimuth;Set Azimuth;" .. azimuth .. "]",
+	"button_exit[0.1,0.1;0.5,0.5;exit;X]",
+	"button[4,5.8;1.5,0.8;save;Save]"
 }
+
+minetest.register_on_player_receive_fields(function(player, formname, fields)
+	local pname = player:get_player_name()
+
+	if formname == "compass:adjustments_menu" then
+
+		if fields.save then
+			if fields.declination then
+				local declination_entered = tonumber(fields.declination)
+				if declination_entered > 360 or declination_entered < 0 then
+					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - magnetic declination must be between 0 and 360"))
+				else
+					mag_declination = declination_entered
+				end
+				tell_player(pname, "fields.declination: " .. fields.declination)
+				tell_player(pname, "mag_declination: " .. mag_declination)
+			elseif fields.azimuth then
+				local azimuth_entered = tonumber(fields.azimuth)
+				if azimuth_entered > 360 or azimuth_entered < 0 then
+					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - azimuth must be between 0 and 360"))
+				else
+					azimuth = azimuth_entered
+				end
+			end
+		end
+
+	end
+end)
 
 local function show_adjustments_menu(player) 
 	if HUD_showing then
@@ -69,6 +99,7 @@ local function show_adjustments_menu(player)
 	local pname = player:get_player_name()
 	minetest.show_formspec(pname, "compass:adjustments_menu", table.concat(adjustments_menu, ""))
 end
+
 
 minetest.register_tool("forestry_tools:compass" , {
 	description = "Compass",
@@ -95,25 +126,6 @@ minetest.register_tool("forestry_tools:compass" , {
 minetest.register_alias("compass", "forestry_tools:compass")
 compass = minetest.registered_aliases[compass] or compass
 
-local images = {
-		"compass_0.png",
-		"compass_1.png",
-		"compass_2.png",
-		"compass_3.png",
-		"compass_4.png",
-		"compass_5.png",
-		"compass_6.png",
-		"compass_7.png",
-		"compass_8.png",
-		"compass_9.png",
-		"compass_10.png",
-		"compass_11.png",
-		"compass_12.png",
-		"compass_13.png",
-		"compass_14.png",
-		"compass_15.png",
-}
-
 
 minetest.register_globalstep(function(dtime)
 	local players  = minetest.get_connected_players()
@@ -127,6 +139,16 @@ minetest.register_globalstep(function(dtime)
 			else
 				local dir = player:get_look_horizontal()
 				local angle_relative = math.deg(dir)
+
+				-- if angle_relative >= math.abs(mag_declination) then
+				-- 	if (360 - angle_relative) >= math.abs(mag_declination) then
+				-- 		angle_relative = math.deg(dir) + mag_declination
+				-- 	else
+				-- 		local remainder = mag_declination - (360 - angle_relative)
+				-- 		angle_relative = math.deg(dir) + remainder
+				-- 	end
+				-- else 
+					
 				local compass_image
 				local adjustment, transformation
 
@@ -158,4 +180,5 @@ minetest.register_globalstep(function(dtime)
 		end
 	end
 end)
+
 
