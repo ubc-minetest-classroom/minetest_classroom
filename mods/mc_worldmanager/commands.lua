@@ -10,11 +10,7 @@ minetest.register_chatcommand("localPos", {
     },
     func = function(name, param)
         local player = minetest.get_player_by_name(name)
-
-        local pmeta = player:get_meta()
-        local realmID = pmeta:get_int("realm")
-
-        local requestedRealm = Realm.realmDict[realmID]
+        local requestedRealm = Realm.GetRealmFromPlayer(player)
 
         if (requestedRealm == nil) then
             return false, "Player is not listed in a realm OR current realm has been deleted; Try teleporting to a different realm and then back..."
@@ -161,15 +157,14 @@ commands["schematic"] = {
 commands["setspawn"] = {
     func = function(name, params)
         local player = minetest.get_player_by_name(name)
-        local pmeta = player:get_meta()
-        local realmID = pmeta:get_int("realm")
-        local requestedRealm = Realm.realmDict[realmID]
+
+        local requestedRealm = Realm.GetRealmFromPlayer(player)
 
         local position = requestedRealm:WorldToLocalPosition(player:get_pos())
 
         requestedRealm:UpdateSpawn(position)
 
-        return true, "Updated spawnpoint for realm with ID: " .. realmID
+        return true, "Updated spawnpoint for realm with ID: " .. requestedRealm.ID
     end }
 
 commands["setspawnrealm"] = {
