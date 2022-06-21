@@ -1,3 +1,6 @@
+Realm.tempData = {}
+
+
 ---@private
 ---Loads the persistant global data for the realm class
 ---@return void
@@ -35,7 +38,7 @@ end
 ---@private
 ---Saves the persistant global data for the realm class
 ---@return void
-function Realm.SaveDataToStorage ()
+function Realm.SaveDataToStorage()
     mc_worldManager.storage:set_string("realmDict", minetest.serialize(Realm.realmDict))
     mc_worldManager.storage:set_string("realmCount", tostring(Realm.realmCount))
 
@@ -71,18 +74,34 @@ function Realm:Restore(template)
     return this
 end
 
-function Realm:set_string(key, value)
+function Realm:set_data(key, value)
+    if (self.MetaStorage == nil) then
+        self.MetaStorage = {}
+    end
+
     self.MetaStorage[key] = value
 end
 
-function Realm:get_string(key)
+function Realm:get_data(key)
+    if (self.MetaStorage == nil) then
+        self.MetaStorage = {}
+    end
+
     return self.MetaStorage[key]
 end
 
-function Realm:set_int(key, value)
-    self.MetaStorage[key] = tostring(value)
+function Realm:set_tmpData(key, value)
+    if (Realm.tempData[self] == nil) then
+        Realm.tempData[self] = {}
+    end
+
+    Realm.tempData[self][key] = value
 end
 
-function Realm:get_int(key)
-    return tonumber(self.MetaStorage[key])
+function Realm:get_tmpData(key)
+    if (Realm.tempData[self] == nil) then
+        Realm.tempData[self] = {}
+    end
+
+    return Realm.tempData[self][key]
 end

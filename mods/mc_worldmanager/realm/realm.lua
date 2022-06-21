@@ -70,7 +70,7 @@ function Realm:New(name, area)
 
     if (areas) then
         local protectionID = areas:add("Server", this.ID .. this.Name, this.StartPos, this.EndPos)
-        this:set_string("protectionID", protectionID)
+        this:set_data("protectionID", protectionID)
         areas:save()
     end
 
@@ -376,7 +376,7 @@ function Realm:Delete()
     self:ClearNodes()
 
     if (areas) then
-        local protectionID = self:get_string("protectionID")
+        local protectionID = self:get_data("protectionID")
         if (protectionID ~= nil) then
             areas:remove(protectionID, true)
             areas:save()
