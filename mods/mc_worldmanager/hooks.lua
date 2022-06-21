@@ -98,6 +98,8 @@ minetest.register_globalstep(function(deltaTime)
             local realm = Realm.realmDict[pmeta:get_int("realm")]
 
             if (realm == nil) then
+                -- If the player doesn't have a realm, this is a good place to move them to spawn.
+                mc_worldManager.GetSpawnRealm():TeleportPlayer(player)
                 return
             end
 
@@ -112,6 +114,7 @@ minetest.register_globalstep(function(deltaTime)
             if (hp <= 0) then
                 hp = 0
                 table.remove(mc_worldManager.outOfBoundPlayers, id)
+                realm:TeleportPlayer(player)
             end
 
             player:set_hp(hp, "void")
