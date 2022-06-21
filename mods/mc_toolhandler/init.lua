@@ -366,7 +366,11 @@ end)
 minetest.register_on_chatcommand(function(name, command, params)
     if command == "give" or command == "giveme" then
         local p_table = string.split(params, " ")
+        if not p_table[1] or (command == "give" and not p_table[2]) then return end -- missing params, skip
+
         local player = (command == "giveme" and minetest.get_player_by_name(name)) or minetest.get_player_by_name(p_table[1])
+        if not player then return end -- player not found, skip
+
         local stack_name = (command == "giveme" and p_table[1]) or p_table[2]
         local stack = ItemStack(stack_name)
 

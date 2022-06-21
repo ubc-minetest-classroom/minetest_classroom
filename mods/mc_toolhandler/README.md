@@ -32,7 +32,7 @@ To add tools to the list of tools handled by `mc_toolhandler`, follow the steps 
 
 ## API
 
-### `mc_toolhandler.create_tool_inventory(player)  -->  InvRef`
+### `mc_toolhandler.create_tool_inventory(player)  -->  InvRef, string, string`
 
 Returns a detached inventory containing all tools `player` has the privileges to use, which `player` can freely take copies of as desired.  
 It is recommended to call this every time access to the detached inventory is needed in case player privileges change between uses
@@ -41,3 +41,5 @@ It is recommended to call this every time access to the detached inventory is ne
   - `player` (*`ObjectRef`*): Player to generate the detached inventory for
 - Returns:
   - *`InvRef`*: Detached inventory containing all tools `player` has the privileges to use
+  - *`string`*: Name of detached inventory
+  - *`string`*: Name of list containing the tools
