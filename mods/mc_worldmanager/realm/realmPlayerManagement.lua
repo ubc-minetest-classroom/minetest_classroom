@@ -1,3 +1,7 @@
+---@public
+---TeleportPlayer
+---Teleports a player to this realm.
+---@param player objectRef
 function Realm:TeleportPlayer(player)
     local newRealmID, OldRealmID = self:UpdatePlayerMetaData(player)
 
@@ -5,7 +9,7 @@ function Realm:TeleportPlayer(player)
         local oldRealm = Realm.realmDict[OldRealmID]
         if (oldRealm ~= nil) then
             oldRealm:RunTeleportOutFunctions(player)
-            oldRealm:RemovePlayer(player)
+            oldRealm:DeregisterPlayer(player)
         end
     end
 
@@ -13,10 +17,11 @@ function Realm:TeleportPlayer(player)
     local spawn = self.SpawnPoint
     player:set_pos(spawn)
 
-    self:AddPlayer(player)
+    self:RegisterPlayer(player)
     mc_worldManager.updateHud(player)
 end
 
+---@private
 function Realm:UpdatePlayerMetaData(player)
     local pmeta = player:get_meta()
     local oldRealmID = pmeta:get_int("realm")
@@ -30,15 +35,18 @@ function Realm:UpdatePlayerMetaData(player)
     return newRealmID, oldRealmID
 end
 
+---@private
 function Realm:RunTeleportInFunctions(player)
     self:RunFunctionFromTable(self.PlayerJoinTable, player)
 end
 
+---@private
 function Realm:RunTeleportOutFunctions(player)
     self:RunFunctionFromTable(self.PlayerLeaveTable, player)
 end
 
-function Realm:AddPlayer(player)
+---@private
+function Realm:RegisterPlayer(player)
     local table = self:get_tmpData("Inhabitants")
     if (table == nil) then
         table = {}
@@ -47,7 +55,8 @@ function Realm:AddPlayer(player)
     self:set_tmpData("Inhabitants", table)
 end
 
-function Realm:RemovePlayer(player)
+---@private
+function Realm:DeregisterPlayer(player)
     local table = self:get_tmpData("Inhabitants")
     if (table == nil) then
         table = {}
@@ -56,11 +65,25 @@ function Realm:RemovePlayer(player)
     self:set_tmpData("Inhabitants", table)
 end
 
-function Realm.ScanForPlayers()
+---@public
+---Loops through all currently connected players and updates the realm inhabitant data.
+---This should not be necessary, but is useful for testing to see if the realm list has become out-of-sync.
+function Realm.ScanForPlayerRealms()
+    for k, realm in ipairs(Realm.realmDict) do
+        realm:set_tmpData("Inhabitants", {})
+    end
+
+    local connectedPlayers = minetest.get_connected_players()
+
+    for id, player in ipairs(connectedPlayers) do
+        local realm = Realm.GetRealmFromPlayer(player)
+        realm:RegisterPlayer(player)
+    end
 
 end
 
-
+---@public
+---GetRealmFromPlayer retrieves the realm that a player is currently in.
 function Realm.GetRealmFromPlayer(player)
     local pmeta = player:get_meta()
     local playerRealmID = pmeta:get_int("realm")

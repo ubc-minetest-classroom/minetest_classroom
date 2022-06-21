@@ -24,7 +24,7 @@ minetest.register_on_joinplayer(function(player, last_login)
 
     local realm = Realm.GetRealmFromPlayer(player)
     if (realm ~= nil) then
-        realm:AddPlayer(player)
+        realm:RegisterPlayer(player)
     end
 
 end)
@@ -35,7 +35,7 @@ minetest.register_on_leaveplayer(function(player, timed_out)
 
     local realm = Realm.GetRealmFromPlayer(player)
     if (realm ~= nil) then
-        realm:RemovePlayer(player)
+        realm:DeregisterPlayer(player)
     end
 
 end)

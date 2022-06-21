@@ -110,7 +110,7 @@ function Realm:set_tmpData(key, value)
         Realm.tempData[self] = {}
     end
 
-    Realm.tempData[self][key] = value
+    Realm.tempData[self][string.lower(key)] = value
 end
 
 ---@public
@@ -123,5 +123,5 @@ function Realm:get_tmpData(key)
         Realm.tempData[self] = {}
     end
 
-    return Realm.tempData[self][key]
+    return Realm.tempData[self][string.lower(key)]
 end

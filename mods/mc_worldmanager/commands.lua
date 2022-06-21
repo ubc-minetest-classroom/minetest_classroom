@@ -238,13 +238,15 @@ commands["define"] = {
 
 commands["players"] = {
     func = function(name, params)
-        local realmID = params[2]
-        local requestedRealm = Realm.GetRealm(tonumber(realmID))
-        if (requestedRealm == nil) then
-            return false, "Requested realm of ID:" .. realmID .. " does not exist."
-        end
+
 
         if (params[1] == "list") then
+            local realmID = params[2]
+            local requestedRealm = Realm.GetRealm(tonumber(realmID))
+            if (requestedRealm == nil) then
+                return false, "Requested realm of ID:" .. realmID .. " does not exist."
+            end
+
             local realmPlayerList = requestedRealm:get_tmpData("Inhabitants")
 
             if (realmPlayerList == nil) then
@@ -253,12 +255,15 @@ commands["players"] = {
 
             Debug.log(minetest.serialize(realmPlayerList))
 
-
             for k, v in pairs(realmPlayerList) do
                 minetest.chat_send_player(name, k)
             end
 
             return true, "listed all players in realm."
+        elseif (params[1] == "scan") then
+            Realm.ScanForPlayerRealms()
+            return true, "re-associated players with realms."
+
         end
 
         return false, "unknown sub-command."
