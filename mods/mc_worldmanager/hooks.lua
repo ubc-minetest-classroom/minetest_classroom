@@ -3,11 +3,7 @@
 minetest.register_on_newplayer(function(player)
 
     local spawnRealm = mc_worldManager.GetSpawnRealm()
-
-    local pmeta = player:get_meta()
-    pmeta:set_int("realm", spawnRealm.ID)
-
-    player:set_pos(spawnRealm.SpawnPoint)
+    spawnRealm:TeleportPlayer(player)
 end)
 
 -- When players respawn, we teleport them to the spawnpoint of the realm they belong to
