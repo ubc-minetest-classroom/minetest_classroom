@@ -9,8 +9,6 @@ minetest.register_chatcommand("localPos", {
         teacher = true,
     },
     func = function(name, param)
-
-
         local player = minetest.get_player_by_name(name)
 
         local pmeta = player:get_meta()
@@ -91,7 +89,7 @@ commands["tp"] = {
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
 
-        player = minetest.get_player_by_name(name)
+        local player = minetest.get_player_by_name(name)
         requestedRealm:TeleportPlayer(player)
 
         return true, "teleported to: " .. realmID
@@ -209,8 +207,6 @@ commands["help"] = {
 
 commands["define"] = {
     func = function(name, params)
-        local params = mc_helpers.split(param, " ")
-
         -- this is really hacky, we should come up with a better way to do this...
 
         local name = tostring(params[1])
@@ -244,6 +240,35 @@ commands["define"] = {
         Realm.realmCount = newRealm.ID
         Realm:Restore(newRealm)
     end }
+
+commands["players"] = {
+    func = function(name, params)
+        local realmID = params[2]
+        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        if (requestedRealm == nil) then
+            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+        end
+
+        if (params[1] == "list") then
+            local realmPlayerList = requestedRealm:get_tmpData("Inhabitants")
+
+            if (realmPlayerList == nil) then
+                return false, "no players found in realm player list."
+            end
+
+            Debug.log(minetest.serialize(realmPlayerList))
+
+
+            for k, v in pairs(realmPlayerList) do
+                minetest.chat_send_player(name, k)
+            end
+
+            return true, "listed all players in realm."
+        end
+
+        return false, "unknown sub-command."
+    end
+}
 
 minetest.register_chatcommand("realm", {
     params = "Subcommand Realm ID Option",
