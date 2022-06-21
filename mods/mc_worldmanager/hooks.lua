@@ -1,7 +1,6 @@
 -- on first player spawn, we assign them to the world spawn realm
 -- and set their position to that spawnpoint .
 minetest.register_on_newplayer(function(player)
-
     local spawnRealm = mc_worldManager.GetSpawnRealm()
     spawnRealm:TeleportPlayer(player)
 end)
@@ -12,7 +11,7 @@ minetest.register_on_respawnplayer(function(player)
     local pmeta = player:get_meta()
     local playerRealmID = pmeta:get_int("realm")
 
-    local spawnRealm
+    local spawnRealm = nil
 
     if (playerRealmID ~= nil) then
         spawnRealm = Realm.realmDict[playerRealmID]
