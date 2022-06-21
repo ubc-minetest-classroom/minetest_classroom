@@ -91,3 +91,10 @@ function Realm.GetRealmFromPlayer(player)
     local realm = Realm.realmDict[playerRealmID]
     return realm
 end
+
+---@public
+---GetPlayerNames retrieves a table of the current inhabitants of this realm.
+---@return table containing the names of players currently in this realm.
+function Realm:GetPlayerNames()
+    return self:get_tmpData("Inhabitants")
+end
