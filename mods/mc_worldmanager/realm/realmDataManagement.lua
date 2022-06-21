@@ -74,6 +74,11 @@ function Realm:Restore(template)
     return this
 end
 
+---@public
+---set_data
+---Saves data into the realms metadata. This data will be serialized and saved with the realm.
+---@param key any
+---@param value any
 function Realm:set_data(key, value)
     if (self.MetaStorage == nil) then
         self.MetaStorage = {}
@@ -82,6 +87,11 @@ function Realm:set_data(key, value)
     self.MetaStorage[key] = value
 end
 
+---@public
+---get_data
+---Retrieves data from the realms metadata.
+---@param key any
+---@return any
 function Realm:get_data(key)
     if (self.MetaStorage == nil) then
         self.MetaStorage = {}
@@ -90,6 +100,11 @@ function Realm:get_data(key)
     return self.MetaStorage[key]
 end
 
+---@public
+---set_tmpData
+---Saves data into temporary realm metadata. This data is not saved with the realm.
+---@param key any
+---@param value any
 function Realm:set_tmpData(key, value)
     if (Realm.tempData[self] == nil) then
         Realm.tempData[self] = {}
@@ -98,6 +113,11 @@ function Realm:set_tmpData(key, value)
     Realm.tempData[self][key] = value
 end
 
+---@public
+---get_data
+---Retrieves data from the realms temporary metadata.
+---@param key any
+---@return any
 function Realm:get_tmpData(key)
     if (Realm.tempData[self] == nil) then
         Realm.tempData[self] = {}
