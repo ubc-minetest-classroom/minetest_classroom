@@ -96,7 +96,7 @@ commands["tp"] = {
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
 
-        player = minetest.get_player_by_name(name)
+        local player = minetest.get_player_by_name(name)
         requestedRealm:TeleportPlayer(player)
 
         return true, "teleported to realm: " .. tostring(realmID)
@@ -393,7 +393,7 @@ minetest.register_chatcommand("teleport", {
         teleport = true,
     },
     description = "Teleport yourself or a specified player to a realm or another player.",
-    params = "<realm ID> | <target player> | (<player name> <realm ID>) | (<player name> <target player name>)",
+    params = "<realm ID> | <target player> | (<player name> <realm ID>) | (<player name> <target player name>) | (<realm ID> <local x pos> <local y pos> <local z pos>)",
     func = function(name, param)
 
         local function teleport(name, othername)
@@ -428,7 +428,30 @@ minetest.register_chatcommand("teleport", {
             paramTable = { param }
         end
 
-        if (mc_helpers.isNumber(paramTable[1]) and paramTable[2] == nil) then
+        if (mc_helpers.isNumber(paramTable[1]) and mc_helpers.isNumber(paramTable[2]) and mc_helpers.isNumber(paramTable[3]) and mc_helpers.isNumber(paramTable[4])) then
+            local realmID = paramTable[1]
+            local requestedRealm = Realm.realmDict[tonumber(realmID)]
+
+            if (not minetest.player_exists(name)) then
+                return false, "Player: " .. tostring(name) .. " could not be found"
+            end
+
+            if (requestedRealm == nil) then
+                return false, "Requested realm of ID:" .. realmID .. " does not exist."
+            end
+
+            local player = minetest.get_player_by_name(name)
+
+            local position = { x = paramTable[2], y = paramTable[3], z = paramTable[4] }
+            local worldPosition = requestedRealm:LocalToWorldPosition(position)
+
+            if (not requestedRealm:ContainsCoordinate(worldPosition)) then
+                return false, "requested position does not exist in realm " .. tostring(realmID)
+            end
+
+            requestedRealm:TeleportPlayer(player)
+            player:set_pos(worldPosition)
+        elseif (mc_helpers.isNumber(paramTable[1]) and paramTable[2] == nil) then
             return commands["tp"].func(name, paramTable)
         elseif (paramTable[1] ~= nil and paramTable[2] == nil) then
             return teleport(name, paramTable[1])
