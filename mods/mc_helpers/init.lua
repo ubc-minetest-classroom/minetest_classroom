@@ -153,5 +153,8 @@ function mc_helpers.pairsByKeys (t, f)
 end
 
 function mc_helpers.isNumber(str)
+    if (str == nil) then
+        return false
+    end
     return not (str == "" or str:match("%D"))
 end
