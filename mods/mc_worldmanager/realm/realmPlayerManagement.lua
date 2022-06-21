@@ -98,3 +98,10 @@ end
 function Realm:GetPlayerNames()
     return self:get_tmpData("Inhabitants")
 end
+
+---@public
+---GetPlayerCount retrieves the number of players currently in this realm.
+---@return number of players currently in this realm.
+function Realm:GetPlayerCount()
+    return #self:get_tmpData("Inhabitants")
+end
