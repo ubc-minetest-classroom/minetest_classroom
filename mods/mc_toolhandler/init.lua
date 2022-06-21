@@ -1,4 +1,4 @@
-mc_toolhandler = {reg_tools = {}}
+mc_toolhandler = {reg_tools = {}, reg_group_tools = {}}
 dofile(minetest.get_modpath("mc_toolhandler") .. "/api.lua")
 
 -- Returns name of list item is in, if it is in player's inventory
@@ -263,6 +263,7 @@ for name,data in pairs(minetest.registered_tools) do
                     -- tool group registration
                     register_group_callbacks(name, data)
                     table.insert(mc_toolhandler.reg_tools, "group:"..data._mc_tool_group)
+                    table.insert(mc_toolhandler.reg_group_tools, name)
                 end
             end
         end
