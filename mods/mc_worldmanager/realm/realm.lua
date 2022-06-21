@@ -79,6 +79,13 @@ function Realm:New(name, area)
     return this
 end
 
+---GetRealm
+---@param ID number
+---Returns the realm corresponding to the ID parameter.
+function Realm.GetRealm(ID)
+    return Realm.realmDict[ID]
+end
+
 -- Online bin packing... A pretty challenging problem to solve.
 -- To simplify the problem, we'll create new bins for each new realm we make.
 -- When we need to create new realms, we'll run the bin packing algorithm

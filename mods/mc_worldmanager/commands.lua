@@ -39,7 +39,7 @@ commands["new"] = {
 commands["delete"] = {
     func = function(name, params)
         local realmID = params[1]
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
@@ -59,7 +59,7 @@ commands["list"] = {
 commands["info"] = {
     func = function(name, params)
         local realmID = params[1]
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
             return false, "Requested realm does not exist."
         end
@@ -80,7 +80,7 @@ commands["tp"] = {
     privs = { teleport = true },
     func = function(name, params)
         local realmID = params[1]
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
@@ -94,7 +94,7 @@ commands["tp"] = {
 commands["walls"] = {
     func = function(name, params)
         local realmID = params[1]
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
@@ -115,7 +115,7 @@ commands["schematic"] = {
         elseif (params[1] == "save") then
             table.remove(params, 1)
             local realmID = params[1]
-            local requestedRealm = Realm.realmDict[tonumber(realmID)]
+            local requestedRealm = Realm.GetRealm(tonumber(realmID))
 
             if (requestedRealm == nil) then
                 return false, "Requested realm of ID:" .. realmID .. " does not exist."
@@ -170,7 +170,7 @@ commands["setspawn"] = {
 commands["setspawnrealm"] = {
     func = function(name, params)
         local realmID = params[1]
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
@@ -239,7 +239,7 @@ commands["define"] = {
 commands["players"] = {
     func = function(name, params)
         local realmID = params[2]
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
