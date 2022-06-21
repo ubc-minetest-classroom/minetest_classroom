@@ -73,15 +73,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - magnetic declination must be between 0 and 360"))
 				else
 					mag_declination = declination_entered
+					minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - magnetic declination set to " .. fields.declination .. "°"))
 				end
-				tell_player(pname, "fields.declination: " .. fields.declination)
-				tell_player(pname, "mag_declination: " .. mag_declination)
 			elseif fields.azimuth then
 				local azimuth_entered = tonumber(fields.azimuth)
 				if azimuth_entered > 360 or azimuth_entered < 0 then
 					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - azimuth must be between 0 and 360"))
 				else
 					azimuth = azimuth_entered
+					minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - azimuth set to " .. fields.azimuth .. "°"))
 				end
 			end
 		end
@@ -90,11 +90,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 end)
 
 local function show_adjustments_menu(player) 
-	if HUD_showing then
-		hud:remove_all()
-		bezelHud:remove_all()
-		HUD_showing = false
-	end
+	-- if HUD_showing then
+	-- 	hud:remove_all()
+	-- 	bezelHud:remove_all()
+	-- 	HUD_showing = false
+	-- end
 
 	local pname = player:get_player_name()
 	minetest.show_formspec(pname, "compass:adjustments_menu", table.concat(adjustments_menu, ""))
@@ -109,8 +109,14 @@ minetest.register_tool("forestry_tools:compass" , {
 
 	-- On left-click
     on_use = function(itemstack, player, pointed_thing)
-		show_compass_hud(player)
-		show_bezel_hud(player)
+		if HUD_showing then
+			hud:remove_all()
+			bezelHud:remove_all()
+			HUD_showing = false
+		else
+			show_compass_hud(player)
+			show_bezel_hud(player)
+		end
 	end,
 
 	on_place = function(itemstack, player, pointed_thing)
@@ -180,5 +186,4 @@ minetest.register_globalstep(function(dtime)
 		end
 	end
 end)
-
 
