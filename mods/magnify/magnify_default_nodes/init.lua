@@ -10,9 +10,6 @@ local template = {
     region = "",          -- Native region of plant (displayed as "Native to [region]")
     texture = "",         -- Image of plant (in `mod/textures`)
     model_obj = "",       -- Model file (in `mod/models`)
-    model_spec = {        -- Model texture list, as a list of strings (format subject to change)
-        ""
-    },      
     more_info = "",       -- Description of plant
     external_link = "",   -- Link to page with more plant information
     img_copyright = "",   -- Copyright owner of plant image (displayed as "Image (c) [img_copyright]")
@@ -34,12 +31,6 @@ local aspen = {
     region = "most of North America",
     texture = "Populus_tremuloides.jpg",
     model_obj = "aspen_tree.obj",
-	model_spec = {
-        "default_aspen_tree.png",
-        "default_aspen_tree_top.png",
-        "default_aspen_leaves.png",
-        "default_dirt.png"
-    },
     more_info = "Smooth-barked, randomly-branching tree. Also known as the golden aspen, due to the golden colour its leaves turn in the fall.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Populus%20tremuloides",
     img_copyright = "Tewy, licensed under CC BY-SA 3.0"
@@ -57,12 +48,6 @@ local pine = {
     region = "BC, Western Alberta, Southern Yukon and Western USA",
     texture = "Pinus_contorta.jpg",
     model_obj = "pine_tree.obj",
-    model_spec = {
-        "default_pine_needles.png",
-        "default_pine_tree_top.png",
-        "default_pine_tree.png",
-        "default_dirt.png"
-    },
     more_info = "Large, straight trunked, column-like tree with a narrow, open crown",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Pinus%20contorta", 
     img_copyright = "Walter Siegmund, licensed under CC BY-SA 3.0"
@@ -80,18 +65,11 @@ local AppleTree = {
     region = "BC, Alaska, Washington, Oregon and California",
     texture = "Malus_fusca.jpg",
     model_obj = "apple_tree.obj",
-    model_spec = {
-        "default_tree_top.png",
-        "default_leaves.png",
-        "default_tree.png",
-        "default_apple.png",
-        "default_dirt.png"
-    },
     more_info = "Bears very crisp, medium-sized, semi-sweet fruit with a thin, red-striped skin that is very aromatic",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Malus%20fusca",
     img_copyright = "Ross Mounce, licensed under CC BY 4.0"
 }
-magnify.register_plant(AppleTree, {"default:tree", "default:apple", "default:apple_mark", "default:leaves", "default:sapling"})
+magnify.register_plant(AppleTree, {"default:tree", "default:apple", "default:apple_mark", "default:leaves", "default:sapling", "default:wood"})
 
 local JungleTree = {
     sci_name = "Alnus rubra",
@@ -104,12 +82,6 @@ local JungleTree = {
     region = "Coastal BC, Washington, Oregon, California and Southeast Alaska",
     texture = "jungle_tree.jpg",
     model_obj = "jungle_tree.obj",
-    model_spec = {
-        "default_jungleleaves.png",
-        "default_jungletree_top.png",
-        "default_jungletree.png",
-        "default_dirt.png"
-    },
     more_info = "Trees growing in the forest develop a slightly tapered trunk extending up to a narrow, rounded crown.",
     external_link = "https://www.for.gov.bc.ca/hfd/library/documents/treebook/redalder.htm"--,
     --img_copyright or img_credit = ""
@@ -127,10 +99,6 @@ local Kelp = {
     region = "the waters of the Northern Hemisphere", -- bodies of water across the globe
     texture = "kelp.jpg",
     model_obj = "sand_with_kelp.obj",
-    model_spec = {
-        "default_sand.png",
-        "default_kelp.png"
-    },
     more_info = "",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Desmarestia%20ligulata"--,
     --img_copyright or img_credit = ""
@@ -147,9 +115,6 @@ local blueberry = {
     region = "Southwest BC and West Coast USA",
     texture = "Vaccinium_ovatum.jpg",
     model_obj = "blueberry_bush.obj",
-    model_spec = {
-        "default_blueberry_bush_leaves.png^default_blueberry_overlay.png"
-    },
     more_info = "Can tolerate a wide range of light conditions and is very attractive to birds. Foliage is glossy and green with new red growth",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Vaccinium%20ovatum",
     img_credit = "Gordon Leppig & Andrea J. Pickart"
@@ -167,10 +132,6 @@ local Bush = {
     region = "Southern BC and California",
     texture = "Physocarpus_capitatus.jpg",
     model_obj = "bush.obj",
-    model_spec = {
-        "default_bush_stem.png",
-        "default_leaves_simple.png"
-    },
     more_info = "A shrub which attracts native bees and butterflies, and gives great cover for birds and small mammals.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Physocarpus%20capitatus",
     img_copyright = "Walter Siegmund, licensed under CC BY 2.5"
@@ -188,11 +149,6 @@ local Acacia = {
     region = "Southeastern Vancouver Island and Gulf Islands",
     texture = "acacia.png", 
     model_obj = "acacia_tree.obj",
-    model_spec = {
-        "default_acacia_tree.png",
-        "default_acacia_tree_top.png",
-        "default_acacia_leaves.png"
-    },
     more_info = "Deciduous tree with heavy, craggy branches, up to 25 m tall but often small, shrubby and as short as 1 m in dry, rocky habitats",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Quercus%20garryana"
     --img_copyright or img_credit = ""
@@ -210,10 +166,6 @@ local Cactus = {
     region = "BC to Southwest Ontario and Northern to Midwestern USA",
     --texture = "",
     model_obj = "cactus.obj",
-    model_spec = {
-        "default_cactus_top.png",
-        "default_cactus_side.png"
-    },
     more_info = "Perennial herb from a fibrous root; mat-forming; stems prostrate, succulent, subglobose to rounded, fleshy,",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Opuntia%20fragilis"--,
     --img_copyright = ""
@@ -231,9 +183,6 @@ local Papyrus = {
 	region = "Coastal BC, rare east of the Coast-Cascade Mountains",
 	texture = "horsetail.jpeg",
     model_obj = "papyrus.obj",
-    model_spec = {
-        "default_papyrus.png"
-    },
 	more_info = "An evergreen perennial. It has vertical green stems with horizontal bands similar to bamboo",
 	external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Equisetum%20telmateia"--,
   	--img_copyright or img_credit = ""
@@ -251,9 +200,6 @@ local Fern = {
     region = "Coastal BC, infrequent in Southeast BC",
     texture = "Struthiopteris_spicant.jpg",
     model_obj = "fern_3.obj",
-    model_spec = {
-        "default_fern_3.png"
-    },
     more_info = "This fern is particularly distinctive because of its two different types of fronds",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Blechnum%20spicant",
     img_copyright = "Daniel Mosquin, licensed under CC BY-NC-SA 4.0"
@@ -271,10 +217,6 @@ local arbutus = {
     region = "Southwest BC and West Coast USA",
     texture = "arbutus.jpg",
     model_obj = "acacia_bush.obj",
-    model_spec = {
-        "default_acacia_leaves_simple.png",
-        "default_acacia_bush_stem.png"
-    },
     more_info = "A broadleaf, shrublike tree with peeling brownish-red bark. Typically found in dry open forests and shallow-soiled rocky slopes",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Arbutus%20menziesii",
     img_copyright = ""
@@ -292,9 +234,6 @@ local mannagrass = {
     region = "various parts of Canada and the USA, including BC",
     texture = "Glyceria_striata.jpg",
     model_obj = "junglegrass.obj",
-    model_spec = {
-        "default_junglegrass.png"
-    },
     more_info = "A perennial with upright, hollow tufts of grass stemming from rhizomes. Typically found in bogs, lakeshores, and moist to wet meadows in lowland and subalpine zones.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Glyceria%20striata",
     img_copyright = "Jason Hollinger, licensed under CC BY 2.0" 
@@ -312,9 +251,6 @@ local Marram_Grass = {
     region = "Western North America, east of the Cascades, from Southern BC to Northern Mexico",
     texture = "marram_grass.png",
     model_obj = "marram_grass_3.obj",
-    model_spec = {
-        "default_marram_grass_3.png"
-    },
     more_info = "This tough grass is known for its ability to reseed and establish itself on sites damaged by fire or overgrazing.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Achnatherum%20hymenoides",
     img_credit = ""      
@@ -332,9 +268,6 @@ local Savanna_Grass = {
     region = "SC and Southeast BC, rare elsewhere in BC",
     texture = "savanna.png",
     model_obj = "dry_grass_5.obj",
-    model_spec = {
-        "default_dry_grass_5.png"
-    },
     more_info = "Can be used for native hay production and will make nutritious feed, but is bettersuited to grazing use",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Pseudoroegneria%20spicata",
     img_credit = ""       
@@ -352,10 +285,6 @@ local PineBushNeedles_Stem = {
     region = "Coastal and Southeast BC, and West Coast USA", 
     texture = "pinebush.png",
     model_obj = "pine_bush.obj",
-    model_spec = {
-        "default_pine_bush_stem.png",
-        "default_pine_needles.png"
-    },
     more_info = "A small tree, usually found as an understory tree in moist old growth forests growing beneath other larger trees",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Taxus%20brevifolia",
     img_credit = ""
@@ -373,9 +302,6 @@ local Grass = {
     region = "Southern BC, east of the Coast-Cascade Mountains",    
     texture = "grass.png",
     model_obj = "grass_5.obj",
-    model_spec = {
-        "default_grass_5.png"
-    },
     more_info = "Perennial, tufted grass that rarely flowers in shaded areas",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Calamagrostis%20rubescens",
     img_copyright = "",

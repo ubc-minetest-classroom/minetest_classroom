@@ -169,12 +169,12 @@ local function get_obj_directory(origin, obj)
 
     -- check if the "models" contains the object
     if magnify.table_has(minetest.get_dir_list(root.."/models", false), obj) then
+        -- Return path to object in "models" directory
         return root.."/models/"..obj
     else
         local dir = table.remove(string.split(root, "\\"))
         local trimmed_root = string.sub(root, 1, #root - #dir - 1)
 
-        --- @private
         --- Recursively searches for obj: returns the path of obj in the root directory, or nil if obj could not be found
         --- @param file File currently being compared with obj
         --- @param path Path to file
@@ -226,7 +226,6 @@ local function read_obj_textures(target_obj)
         line = model_iter()
         if not line then break end
     end
-
     return textures
 end
 

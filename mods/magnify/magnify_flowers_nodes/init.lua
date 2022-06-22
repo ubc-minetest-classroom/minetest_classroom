@@ -10,7 +10,6 @@ local template = {
     region = "",          -- Native region of plant (displayed as "Native to [region]")
     texture = "",         -- Image of plant (in `mod/textures`)
     model_obj = "",       -- Model file (in `mod/models`)
-    model_spec = {},      -- Model texture list, as a list of strings (format subject to change)
     more_info = "",       -- Description of plant
     external_link = "",   -- Link to page with more plant information
     img_copyright = "",   -- Copyright owner of plant image (displayed as "Image (c) [img_copyright]")
@@ -32,9 +31,6 @@ local black_lily = {
     region = "Southern BC, Washington, Oregon and California",
     texture = "Fritillaria_affinis.jpg",
     model_obj = "tulip_black.obj",
-    model_spec = {
-        "flowers_tulip_black.png"
-    },
     more_info = "A small, thin, bell-like perennial herb. Also known as the checkered lily, due to the greenish-yellow patterns that appear on its purple flowers. Typically found in grassy bluffs, meadows, and open forests.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Fritillaria%20affinis",
     img_copyright = "Jackie Chambers, licensed under CC BY-NC-SA 4.0"
@@ -52,9 +48,6 @@ local camas = {
     region = "Southern BC, Washington, Oregon and California",
     --texture = "",
     model_obj = "geranium.obj",
-    model_spec = {
-        "flowers_geranium.png"
-    },
     more_info = "A small perennial with stalked flowers and long, thin leaves at its stem. Typically found in vernally moist, meadowed areas.",
     external_link = "http://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Camassia%20leichtlinii"
     --img_copyright or img_credit = ""
@@ -72,9 +65,6 @@ local clover = {
     region = "Southern BC and Western USA",
     texture = "Trifolium_cyathiferum.jpg", 
     model_obj = "chrysanthemum_green.obj",
-    model_spec = {
-        "flowers_chrysanthemum_green.png"
-    },
     more_info = "A small, upright annual herb with leaves resembling three-leaf clovers, often with white, pink, or cream-coloured flowers.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Trifolium%20cyathiferum",
     img_credit = "Mary Winter, via Wikimedia Commons"
@@ -92,9 +82,6 @@ local rose = {
     region = "BC and Western USA",
     texture = "Castilleja_miniata_var._miniata.jpg",
     model_obj = "rose.obj",
-    model_spec = {
-        "flowers_rose.png"
-    },
     more_info = "A stout, hairy perennial herb with a woody, scaly base. Typically found in areas such as meadows, grassy slopes, clearings, roadsides, and open forests.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Castilleja%20miniata%20var.%20miniata",
     img_copyright = "Thayne Tuason, licensed under CC BY-SA 4.0"
@@ -112,9 +99,6 @@ local poppy = {
     region = "USA and Mexico, found worldwide",
     texture = "Eschscholzia_californica.jpg",
     model_obj = "tulip.obj",
-    model_spec = {
-        "flowers_tulip.png"
-    },
     more_info = "A short-lived, upright perennial herb originating from a deep taproot. Typically found in dry areas such as roadsides, rock outcrops, and wastelands.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Eschscholzia%20californica",
     img_credit = "the UBC Botanical Garden"
@@ -132,9 +116,6 @@ local viola = {
     region = "Southern BC, Washington, Oregon and California",
     --texture = "",
     model_obj = "viola.obj",
-    model_spec = {
-        "flowers_viola.png"
-    },
     more_info = "An solitary, upright, annual herb originating from a taproot. Typically found in mesic and vernally moist meadows, and in dry rocky areas.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Plectritis%20congesta"--,
     --img_copyright or img_credit = ""
@@ -152,9 +133,6 @@ local pearl = {
     region = "various countries, including Canada, the USA, Mexico, and Japan",
     texture = "Anapahlis_margaritacea.jpg",
     model_obj = "dandelion_white.obj",
-    model_spec = {
-        "flowers_dandelion_white.png"
-    },
     more_info = "A single-stemmed perennial herb with alternating leaves and white flowers. Typically found in meadows, open forests, fields, and along roadsides.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Anaphalis%20margaritacea",
     img_credit = "Wikimedia Commons"
@@ -172,9 +150,6 @@ local susan = {
     region = "BC, Alberta, Saskatchewan, Manitoba, and Northwest USA",
     --texture = "",
     model_obj = "dandelion_yellow.obj",
-    model_spec = {
-        "flowers_dandelion_yellow.png"
-    },
     more_info = "A hairy, long-stalked perennial originating from a taproot, with coarse-toothed or pinnately-cut base leaves and yellow flowers. Typically found in dry grasslands, shrublands, and moist sand bars.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Gaillardia%20aristata"--,
     --img_copyright or img_credit = ""
@@ -192,9 +167,6 @@ local brown_mushroom = {
     region = "the Pacific Northwest, often in hemlock (Tsuga heterophylla), spruce (Picea sitchensis), pine (Pinus spp.) and fir (Abies spp.) forests",        
     texture = "brown_mushroom.jpeg",
     model_obj = "mushroom_brown.obj",
-    model_spec = {
-        "flowers_mushroom_brown.png"
-    },
     more_info = "The fungus grows in deciduous and coniferous forests and tree plantations, forming symbiotic ectomycorrhizal associations with living trees by enveloping the tree's underground roots with sheaths of fungal tissue",
     external_link = "https://www.zoology.ubc.ca/~biodiv/mushroom/B_edulis.html",  
     img_credit = "",  
@@ -212,10 +184,6 @@ local waterlily = {
     region = "BC, Yukon, Northwest USA and Alaska",
     texture = "Nuphar_polysepala.jpg",
     model_obj = "waterlily.obj",
-    model_spec = {
-        "flowers_waterlily.png",
-        "flowers_waterlily_bottom.png"
-    },
     more_info = "An aquatic perennial with long-stalked, leathery leaves. Found in ponds and slow-moving streams in lowland, steppe, and montane areas",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Nuphar%20polysepala",
     img_copyright = "Marshal Hedin, licensed under CC BY 2.0"
@@ -233,9 +201,6 @@ local agaric = {
     region = "various areas in the Northern Hemisphere, including California",
     texture = "red_mushroom.jpeg",
     model_obj = "mushroom_red.obj",
-    model_spec = {
-        "flowers_mushroom_red.png"
-    },
     more_info = "A bright red-capped fungus with white warts. Often found on the ground scattered, in dense patches, or in large fairy rings under Pinus (pine), Picea (spruce), and Betula (birch) trees",
     external_link = "https://www.zoology.ubc.ca/~biodiv/mushroom/A_muscaria.html",
     --img_copyright = "",
