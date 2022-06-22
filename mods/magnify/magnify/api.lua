@@ -166,9 +166,10 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
     -- TODO: create V1 and V2 formtables
     if info ~= nil then
         -- entry good, return formspec
-        if info.model_obj and info.model_spec and info.texture then
+        if info.model_obj and info.model_spec then
             -- v2: model and image
             local size = (is_inv and "size[13.8,7.2]") or "size[17.4,9.3]"
+            local model_string = (type(info.model_spec) == "table" and table.concat(info.model_spec, ",")) or tostring(info.model_spec) -- for compatibility
             local formtable_v2 = {
                 "formspec_version[5]", size,
 
@@ -179,7 +180,7 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
 
                 "image[", (is_inv and "10.3,0") or "12.8,0.4", ";4.2,4.2;", info.texture or "test.png", "]",
                 "box[", (is_inv and "10.3,3.7;3.35,3.65") or "12.8,4.7;4.2,4.2", ";#789cbf]",
-                "model[", (is_inv and "10.3,3.7") or "12.8,4.7", ";4.2,4.2;plant_model;", info.model_obj, ";", info.model_spec, ";0,180;false;true;;]",
+                "model[", (is_inv and "10.3,3.7") or "12.8,4.7", ";4.2,4.2;plant_model;", info.model_obj, ";", model_string, ";0,180;false;true;;]",
 
                 "textarea[", (is_inv and "0.3,1.8;10.45,4.7") or "0.35,2.3;12.4,4.7", ";;;", -- info area
                 "- ", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "\n",
@@ -191,8 +192,6 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
                 "]",
 
                 "textarea[", (is_inv and "0.3,6;10.4,0.7") or "0.35,7.2;12.4,0.7", ";;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
-                --"label[0.4,7.15;", minetest.formspec_escape((info.external_link and "You can find more information at:") or ""), "]",
-                --"textarea[0.35,7.35;12.2,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
                 "button", (is_exit and "_exit") or "", "[", (is_inv and "0,6.75;10.2,0.6") or "0.4,8;12,0.9", ";back;Back]"
             }
             return table.concat(formtable_v2, ""), size
@@ -207,7 +206,6 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
                 "textarea[", (is_inv and "0.45,0.59;10,0.7") or "0.45,0.96;12.4,0.7", ";;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
                 "textarea[", (is_inv and "0.45,1.1;10,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
                 "image[", (is_inv and "9.9,0") or "12.4,0.4", ";5.7,5.7;", info.texture or "test.png", "]",
-                --"model[12.4,0.4;5.4,5.4;test_tree;tree_test.obj;default_acacia_tree_top.png,default_dry_grass_2.png,default_dry_dirt.png^default_dry_grass_side.png,default_acacia_leaves.png,default_acacia_tree.png,default_dry_grass_1.png,default_dry_grass_3.png,default_dry_grass_4.png,default_dry_grass.png;0,180;false;true;;]",
     
                 "textarea[", (is_inv and "0.3,1.8;10.05,4.3") or "0.35,2.3;12,4.4", ";;;", -- info area
                 "- ", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "\n",
@@ -219,9 +217,6 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
                 "]",
 
                 "textarea[", (is_inv and "0.3,5.6;11.6,0.7") or "0.35,6.9;11.6,0.7", ";;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
-                --"label[0.4,6.75;", minetest.formspec_escape((info.external_link and "You can find more information at:") or ""), "]",
-                --"textarea[0.35,6.9;11.6,0.6;;;", minetest.formspec_escape(info.external_link or ""), "]",
-		
                 "button", (is_exit and "_exit") or "", "[", (is_inv and "9.9,5.4;4.8,0.6") or "12.4,6.4;5.7,0.9", ";back;Back]"
             }
             return table.concat(formtable_v1, ""), size
