@@ -38,14 +38,17 @@ end
 ---@private
 function Realm:RunTeleportInFunctions(player)
     self:RunFunctionFromTable(self.PlayerJoinTable, player)
+    self:CallOnJoinCallbacks(player)
 end
 
 ---@private
 function Realm:RunTeleportOutFunctions(player)
     self:RunFunctionFromTable(self.PlayerLeaveTable, player)
+    self:CallOnLeaveCallbacks(player)
 end
 
 ---@private
+---@param table table
 function Realm:RegisterPlayer(player)
     local table = self:get_tmpData("Inhabitants")
     if (table == nil) then
@@ -56,6 +59,7 @@ function Realm:RegisterPlayer(player)
 end
 
 ---@private
+---@param player objectRef
 function Realm:DeregisterPlayer(player)
     local table = self:get_tmpData("Inhabitants")
     if (table == nil) then

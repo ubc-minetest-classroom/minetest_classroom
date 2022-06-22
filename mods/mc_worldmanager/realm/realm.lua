@@ -21,6 +21,8 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmDataManagement.lu
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmSchematicSaveLoad.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCoordinateConversion.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmIntegrationHelpers.lua")
+
 if (areas) then
     dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmAreasIntegration.lua")
 end
@@ -75,6 +77,8 @@ function Realm:New(name, area)
     end
 
     Realm.SaveDataToStorage()
+
+    this:CallOnCreateCallbacks()
 
     return this
 end
@@ -380,6 +384,7 @@ end
 ---@return void
 function Realm:Delete()
     self:RunFunctionFromTable(self.RealmDeleteTable)
+    self:CallOnDeleteCallbacks()
     self:ClearNodes()
 
     if (areas) then
