@@ -90,6 +90,15 @@ function minetest_classroom.create_group(name)
 	return group
 end
 
+function minetest_classroom.remove_group(name)
+	_groups[name].students = nil
+	_groups[name].name = nil
+	_groups[name] = nil
+
+	minetest_classroom.save()
+end
+
+
 function minetest_classroom.add_student_to_group(name, student)
 	local group = minetest_classroom.get_group(name)
 	if group then
