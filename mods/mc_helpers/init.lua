@@ -123,3 +123,7 @@ function mc_helpers.pairsByKeys (t, f)
     end
     return iter
 end
+
+function mc_helpers.trim(s)
+    return s:match( "^%s*(.-)%s*$" )
+end

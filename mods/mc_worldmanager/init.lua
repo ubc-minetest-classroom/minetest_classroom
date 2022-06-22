@@ -34,7 +34,7 @@ function mc_worldManager.GetSpawnRealm()
     local spawnRealm = Realm.realmDict[mc_worldManager.spawnRealmID]
     if (spawnRealm == nil) then
 
-        spawnRealm = Realm:NewFromSchematic("Spawn Realm", mc_worldManager.spawnRealmSchematic)
+        spawnRealm = Realm:NewFromSchematic("Spawn", mc_worldManager.spawnRealmSchematic)
         mc_worldManager.spawnRealmID = spawnRealm.ID
         mc_worldManager.save_data()
         Debug.log("Saving spawn realm information")

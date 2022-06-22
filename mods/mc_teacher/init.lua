@@ -51,10 +51,10 @@ Realm.RegisterOnLeaveCallback(function(realm)
 end)
 
 Realm.RegisterOnJoinCallback(function(realm, player)
-    minetest_classroom.add_student_to_group(realm.Name, player:get_player_name())
+    minetest_classroom.add_student_to_group(realm.Name .. " Realm Group", player:get_player_name())
 end)
 
 Realm.RegisterOnLeaveCallback(function(realm, player)
-    minetest_classroom.remove_student_from_group(realm.Name, player:get_player_name())
+    minetest_classroom.remove_student_from_group(realm.Name .. " Realm Group", player:get_player_name())
 end)
 
