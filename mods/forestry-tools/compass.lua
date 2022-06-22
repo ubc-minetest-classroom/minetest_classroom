@@ -55,8 +55,8 @@ local adjustments_menu = {
 	"formspec_version[5]",
 	"size[6,7]",
 	"textarea[1.7,0.2;3,0.5;;;Compass Settings]",
-	"textarea[0.5,1.3;5,1;declination;Set Magnetic Declination;" .. mag_declination .. "]",
-	"textarea[0.5,3;5,1;azimuth;Set Azimuth;" .. azimuth .. "]",
+	"textarea[0.5,1.3;5,1;declination;Set Magnetic Declination;]",
+	"textarea[0.5,3;5,1;azimuth;Set Azimuth;]",
 	"button_exit[0.1,0.1;0.5,0.5;exit;X]",
 	"button[4,5.8;1.5,0.8;save;Save]"
 }
@@ -67,21 +67,35 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "compass:adjustments_menu" then
 
 		if fields.save then
-			if fields.declination then
-				local declination_entered = tonumber(fields.declination)
-				if declination_entered > 360 or declination_entered < 0 then
-					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - magnetic declination must be between 0 and 360"))
-				else
-					mag_declination = declination_entered
-					minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - magnetic declination set to " .. fields.declination .. "°"))
+			if fields.declination ~= "" and tonumber(fields.declination) ~= mag_declination then
+				local only_nums = tonumber(fields.declination) ~= nil
+
+				if only_nums then
+					local declination_entered = tonumber(fields.declination)
+					if math.abs(declination_entered) > 360 then
+						minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - magnetic declination must be a number between -360 and 360"))
+					else
+						mag_declination = declination_entered
+						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - magnetic declination set to " .. fields.declination .. "°"))
+					end
+				else 
+					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - magnetic declination must be a number between -360 and 360"))
 				end
-			elseif fields.azimuth then
-				local azimuth_entered = tonumber(fields.azimuth)
-				if azimuth_entered > 360 or azimuth_entered < 0 then
-					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - azimuth must be between 0 and 360"))
-				else
-					azimuth = azimuth_entered
-					minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - azimuth set to " .. fields.azimuth .. "°"))
+			end
+
+			if fields.azimuth ~= "" and tonumber(fields.azimuth) ~= azimuth then
+				local only_nums = tonumber(fields.azimuth) ~= nil
+
+				if only_nums then
+					local azimuth_entered = tonumber(fields.azimuth)
+					if azimuth_entered > 360 or azimuth_entered < 0 then
+						minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - azimuth must be a number between 0 and 360"))
+					else
+						azimuth = azimuth_entered
+						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - azimuth set to " .. fields.azimuth .. "°"))
+					end
+				else 
+					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - azimuth must be a number between 0 and 360"))
 				end
 			end
 		end
@@ -90,12 +104,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 end)
 
 local function show_adjustments_menu(player) 
-	-- if HUD_showing then
-	-- 	hud:remove_all()
-	-- 	bezelHud:remove_all()
-	-- 	HUD_showing = false
-	-- end
-
 	local pname = player:get_player_name()
 	minetest.show_formspec(pname, "compass:adjustments_menu", table.concat(adjustments_menu, ""))
 end
@@ -146,18 +154,18 @@ minetest.register_globalstep(function(dtime)
 				local dir = player:get_look_horizontal()
 				local angle_relative = math.deg(dir)
 
-				-- if angle_relative >= math.abs(mag_declination) then
-				-- 	if (360 - angle_relative) >= math.abs(mag_declination) then
-				-- 		angle_relative = math.deg(dir) + mag_declination
-				-- 	else
-				-- 		local remainder = mag_declination - (360 - angle_relative)
-				-- 		angle_relative = math.deg(dir) + remainder
-				-- 	end
-				-- else 
-					
-				local compass_image
-				local adjustment, transformation
+				-- Set magnetic declination
+				if mag_declination > 0 and (360 - angle_relative) <= math.abs(mag_declination) then
+					angle_relative = mag_declination - (360 - angle_relative)
+				elseif mag_declination < 0 and angle_relative <= math.abs(mag_declination) then
+					angle_relative = 360 - (math.abs(mag_declination) - angle_relative)
+				else 
+					angle_relative = math.deg(dir) + mag_declination
+				end
 
+				local compass_image, adjustment, transformation
+
+				-- For needle rotation
 				if angle_relative < 90 then
 					adjustment = 0
 					transformation = 0
@@ -186,4 +194,6 @@ minetest.register_globalstep(function(dtime)
 		end
 	end
 end)
+
+
 
