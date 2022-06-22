@@ -150,6 +150,8 @@ function minetest_classroom.get_students_by_selector(selector)
 		else
 			return {}
 		end
+	elseif selector:sub(1,6) == "realm:" then
+		return Realm.GetRealm(selector:sub(7)):GetPlayersAsArray()
 	else
 		return {}
 	end

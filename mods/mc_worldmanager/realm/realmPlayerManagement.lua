@@ -97,10 +97,21 @@ function Realm.GetRealmFromPlayer(player)
 end
 
 ---@public
----GetPlayerNames retrieves a table of the current inhabitants of this realm.
+---GetPlayers retrieves a table containing the current inhabitants of this realm.
 ---@return table containing the names of players currently in this realm.
-function Realm:GetPlayerNames()
+function Realm:GetPlayers()
     return self:get_tmpData("Inhabitants")
+end
+
+function Realm:GetPlayersAsArray()
+    local players = self:GetPlayers()
+    local retval = {}
+    for k, v in pairs(players) do
+        if (v == true) then
+            table.insert(retval, k)
+        end
+    end
+    return retval
 end
 
 ---@public

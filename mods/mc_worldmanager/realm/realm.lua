@@ -87,7 +87,7 @@ end
 ---@param ID number
 ---Returns the realm corresponding to the ID parameter.
 function Realm.GetRealm(ID)
-    return Realm.realmDict[ID]
+    return Realm.realmDict[tonumber(ID)]
 end
 
 -- Online bin packing... A pretty challenging problem to solve.
