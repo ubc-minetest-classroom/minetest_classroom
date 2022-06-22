@@ -42,6 +42,8 @@ schematicManager.registerSchematicPath("MKRF512_hillshade", minetest.get_modpath
 schematicManager.registerSchematicPath("MKRF512_slope", minetest.get_modpath("mc_teacher") .. "/maps/MKRF512_slope")
 schematicManager.registerSchematicPath("MKRF512_tpi", minetest.get_modpath("mc_teacher") .. "/maps/MKRF512_tpi")
 
+
+--[[
 Realm.RegisterOnCreateCallback(function(realm)
     minetest_classroom.create_group(realm.Name)
 end)
@@ -57,4 +59,4 @@ end)
 Realm.RegisterOnLeaveCallback(function(realm, player)
     minetest_classroom.remove_student_from_group(realm.Name .. " Realm Group", player:get_player_name())
 end)
-
+--]]

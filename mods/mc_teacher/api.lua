@@ -71,12 +71,10 @@ function minetest_classroom.get_all_groups()
 end
 
 function minetest_classroom.get_group(name)
-	name = mc_helpers.trim(name)
 	return _groups[name]
 end
 
 function minetest_classroom.create_group(name)
-	name = mc_helpers.trim(name)
 	if _groups[name] or #name == 0 then
 		return nil
 	end
@@ -94,7 +92,6 @@ function minetest_classroom.create_group(name)
 end
 
 function minetest_classroom.remove_group(name)
-	name = mc_helpers.trim(name)
 	_groups[name].students = nil
 	_groups[name].name = nil
 	_groups[name] = nil
