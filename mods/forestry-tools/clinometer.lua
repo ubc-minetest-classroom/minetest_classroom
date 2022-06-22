@@ -52,7 +52,33 @@ minetest.register_alias("clinometer", "forestry_tools:clinometer")
 clinometer = minetest.registered_aliases[clinometer] or clinometer
 
 
+function init_hud(player)
+	update_automapper(player)
+	local name = player:get_player_name()
+	playerhuds[name] = {}
+	for i=1, o_lines do
+			playerhuds[name]["o_line"..i] = player:hud_add({
+			hud_elem_type = "text",
+			text = "",
+			position = clin_hud.settings.hud_pos,
+			offset = { x = clin_hud.settings.hud_offset.x, y = clin_hud.settings.hud_offset.y + 20*(i-1) },
+			alignment = clin_hud.settings.hud_alignment,
+			number = 0xFFFFFF,
+			scale= { x = 100, y = 20 },
+			z_index = 0,
+		})
+	end
+end
 
+
+function clin_hud.update_automapper(player)
+	if clin_hud.tool_active(player, "forestry_tools:clinometer") or minetest.is_creative_enabled(player:get_player_name()) then
+		player:hud_set_flags({minimap = true, minimap_radar = true})
+	
+	else
+		player:hud_set_flags({minimap = false, minimap_radar = false})
+	end
+end
 
 
 --
@@ -63,3 +89,13 @@ local pitch = player:get_look_vertical()*toDegrees
 if (clinometer) then 
     str_angles = S("Yaw: @1°, pitch: @2°", string.format("%.1f", yaw), string.format("%.1f", pitch))
 
+
+	
+minetest.register_on_newplayer(clin_hud.init_hud)
+minetest.register_on_joinplayer(clin_hud.init_hud)
+
+minetest.register_on_leaveplayer(function(player)
+	clin_hud.playerhuds[player:get_player_name()] = nil
+end)
+	
+	
