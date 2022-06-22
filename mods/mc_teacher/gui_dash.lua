@@ -195,7 +195,7 @@ local function get_player_list_formspec(player, context)
         "tablecolumns[color;text",
     }
 
-    context.select_toggle = context.select_toggle or "all"
+    context.select_toggle = context.select_toggle or "realm"
 
     for i, col in pairs(infos) do
         fs[#fs + 1] = ";color;text,align=center"
@@ -208,6 +208,7 @@ local function get_player_list_formspec(player, context)
     do
         fs[#fs + 1] = "tabheader[0,0;6.7,0.8;group;"
         fs[#fs + 1] = FS "All"
+
         local selected_group_idx = 1
         local i = 2
         for name, group in pairs(minetest_classroom.get_all_groups()) do
@@ -353,10 +354,7 @@ local function get_player_list_formspec(player, context)
             text = FS "Realm",
         }
 
-        if context.realm == mc_worldManager.GetSpawnRealm().ID then
-            btn.state = "disabled"
-            btn.tooltip = FS "Please ensure that you're not at spawn first."
-        elseif context.select_toggle == "realm" then
+        if context.select_toggle == "realm" then
             btn.state = "selected"
         else
             btn.state = "active"
