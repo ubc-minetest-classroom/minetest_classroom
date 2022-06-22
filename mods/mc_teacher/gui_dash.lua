@@ -28,7 +28,12 @@ local priv_table = { teacher = true }
 
 local function get_group(context)
     if context and context.groupname then
-        return minetest_classroom.get_group_students(context.groupname)
+        if (context.groupname == "Realm") then
+            return minetest_classroom.get_realm_students(context.realm)
+        else
+            return minetest_classroom.get_group_students(context.groupname)
+        end
+
     else
         return minetest_classroom.get_students()
     end
@@ -211,7 +216,8 @@ local function get_player_list_formspec(player, context)
 
         local selected_group_idx = 1
         local i = 2
-        for name, group in pairs(minetest_classroom.get_all_groups()) do
+
+        for name, group in pairs(minetest_classroom.get_all_groups(player)) do
             fs[#fs + 1] = ","
             fs[#fs + 1] = minetest.formspec_escape(name)
             if context.groupname and name == context.groupname then
@@ -259,6 +265,8 @@ local function get_player_list_formspec(player, context)
     fs[#fs + 1] = "]"
     fs[#fs + 1] = "container_end[]"
 
+
+
     -- New Group button
     do
         local btn = {
@@ -278,7 +286,7 @@ local function get_player_list_formspec(player, context)
             w = 2.5, h = 0.8,
             name = "edit_group",
             text = FS "Edit Group",
-            state = context.groupname ~= nil,
+            state = context.groupname ~= nil and context.groupname ~= "Realm",
             tooltip = not context.groupname and FS "Please select a group first",
         }
 
@@ -312,7 +320,7 @@ local function get_player_list_formspec(player, context)
             text = FS "Group",
         }
 
-        if not context.groupname then
+        if (context.groupname == nil or context.groupname == "Realm") then
             btn.state = "disabled"
             btn.tooltip = FS "Please select a group first"
         elseif context.select_toggle == "group" then
