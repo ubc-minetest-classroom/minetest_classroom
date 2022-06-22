@@ -353,12 +353,11 @@ local function get_player_list_formspec(player, context)
             text = FS "Realm",
         }
 
-        if not context.realm then
+        if context.realm == mc_worldManager.GetSpawnRealm().ID then
             btn.state = "disabled"
             btn.tooltip = FS "Please ensure that you're not at spawn first."
         elseif context.select_toggle == "realm" then
             btn.state = "selected"
-            btn.tooltip = FS "You are in realm: " .. context.realm
         else
             btn.state = "active"
         end
