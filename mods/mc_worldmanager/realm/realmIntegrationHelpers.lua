@@ -31,13 +31,13 @@ function Realm:CallOnDeleteCallbacks()
     end
 end
 
-function Realm:CallOnJoinCallbacks()
+function Realm:CallOnJoinCallbacks(player)
     for _, func in ipairs(Realm.onJoinRealmCallbackTable) do
         func(self, player)
     end
 end
 
-function Realm:CallOnLeaveCallbacks()
+function Realm:CallOnLeaveCallbacks(player)
     for _, func in ipairs(Realm.onLeaveRealmCallbackTable) do
         func(self, player)
     end
