@@ -3,14 +3,16 @@ magnify = {}
 
 --- @public
 --- Registers a plant species in the `magnify` plant database
+--- Should only be called on mod load-in 
 --- @param def_table Plant species definition table
 --- @param nodes Table of stringified nodes the species corresponds to in the MineTest world
 --- @see README.md > API > Registration
 function magnify.register_plant(def_table, nodes)
     local ref = magnify_plants:get("count") or 1
+    def_table["origin"] = minetest.get_current_modname()
+
     local serial_table = minetest.serialize(def_table)
     magnify_plants:set_string("ref_"..ref, serial_table)
-
     for k,v in pairs(nodes) do
         magnify_plants:set_string("node_"..v, "ref_"..ref)
     end
@@ -154,22 +156,97 @@ function magnify.get_all_registered_species()
     return name_table, ref_keys
 end
 
+--- @private
+--- Returns the path of obj in origin's mod directory, or nil if obj could not be found
+--- @param origin Name of mod whose directory should be searched
+--- @param obj File to search for
+--- @return string or nil
+local function get_obj_directory(origin, obj)
+    local root = minetest.get_modpath(origin)
+    if not root then
+        return nil
+    end
+
+    -- check if the "models" contains the object
+    if magnify.table_has(minetest.get_dir_list(root.."/models", false), obj) then
+        return root.."/models/"..obj
+    else
+        local dir = table.remove(string.split(root, "\\"))
+        local trimmed_root = string.sub(root, 1, #root - #dir - 1)
+
+        --- @private
+        --- Recursively searches for obj: returns the path of obj in the root directory, or nil if obj could not be found
+        --- @param file File currently being compared with obj
+        --- @param path Path to file
+        --- @param file_wl List of remaining files to be compared with obj
+        --- @param path_wl Corresponding list of paths to files in file_wl
+        --- @return string or nil
+        local function get_file_directory_tr(file, path, file_wl, path_wl)
+            if not file then
+                return nil
+            elseif file == obj then
+                return path.."/"..file
+            else
+                -- add new files/folders to list
+                local new_files = minetest.get_dir_list(path.."/"..file)
+                local new_paths = {}
+                for k,v in ipairs(new_files) do
+                    table.insert(new_paths, path.."/"..file)
+                end
+                table.insert_all(file_wl, new_files)
+                table.insert_all(path_wl, new_paths)
+
+                -- get next file/folder to search
+                local next_file = table.remove(file_wl, 1)
+                local next_path = table.remove(path_wl, 1)
+
+                -- continue recursive search, if file exists
+                return get_file_directory_tr(next_file, next_path, file_wl, path_wl)
+            end
+        end
+
+        -- Begin tail-recursive search
+        return get_file_directory_tr(dir, trimmed_root, {}, {})
+    end
+end
+
+--- @private
+--- Reads the textures from a .obj file and returns them as a table of strings
+--- @param target_obj Object file to read
+--- @return table
+local function read_obj_textures(target_obj)
+    local textures = {}
+    local model_iter = io.lines(target_obj, "r")
+    local line = model_iter()
+    while line do 
+        local match = string.match(line, "^g (.*)")
+        if match then
+            table.insert(textures, match)
+        end
+        line = model_iter()
+        if not line then break end
+    end
+
+    return textures
+end
+
 --- @public
 --- Builds the general plant information formspec for the species indexed at `ref` in the `magnify` plant database 
 --- @param ref Reference key of the plant species
 --- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
 --- @param is_inv true if the formspec is being used in the player inventory, false otherwise
---- @return formspec string, formspec "size[]" string or nil
+--- @return (formspec string, formspec "size[]" string) or nil
 function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
     local info = minetest.deserialize(magnify_plants:get(ref))
     
     -- TODO: create V1 and V2 formtables
     if info ~= nil then
         -- entry good, return formspec
-        if info.model_obj and info.model_spec then
+        local model_spec_loc = (info.model_obj and info.origin) and get_obj_directory(info.origin, info.model_obj)
+        if model_spec_loc then
             -- v2: model and image
+            local model_spec = read_obj_textures(model_spec_loc)
             local size = (is_inv and "size[13.8,7.2]") or "size[17.4,9.3]"
-            local model_string = (type(info.model_spec) == "table" and table.concat(info.model_spec, ",")) or tostring(info.model_spec) -- for compatibility
             local formtable_v2 = {
                 "formspec_version[5]", size,
 
@@ -180,7 +257,7 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
 
                 "image[", (is_inv and "10.3,0") or "12.8,0.4", ";4.2,4.2;", info.texture or "test.png", "]",
                 "box[", (is_inv and "10.3,3.7;3.35,3.65") or "12.8,4.7;4.2,4.2", ";#789cbf]",
-                "model[", (is_inv and "10.3,3.7") or "12.8,4.7", ";4.2,4.2;plant_model;", info.model_obj, ";", model_string, ";0,180;false;true;;]",
+                "model[", (is_inv and "10.3,3.7") or "12.8,4.7", ";4.2,4.2;plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";0,180;false;true;;]",
 
                 "textarea[", (is_inv and "0.3,1.8;10.45,4.7") or "0.35,2.3;12.4,4.7", ";;;", -- info area
                 "- ", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "\n",
