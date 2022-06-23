@@ -101,11 +101,20 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 end)
 
+-- gives the appearance that the formspec remembers the previously set fields
+local function remember_settings(formTableName, index, preText, variable, postText)
+	local textarea = formTableName[index]
+	textarea = preText .. variable .. postText
+	formTableName[index] = textarea
+end
+
 local function show_adjustments_menu(player) 
+	remember_settings(adjustments_menu, 4, "textarea[0.5,1.3;5,1;declination;Set Magnetic Declination;", mag_declination, "]")
+	remember_settings(adjustments_menu, 5, "textarea[0.5,3;5,1;azimuth;Set Azimuth;", azimuth, "]")
+
 	local pname = player:get_player_name()
 	minetest.show_formspec(pname, "compass:adjustments_menu", table.concat(adjustments_menu, ""))
 end
-
 
 minetest.register_tool("forestry_tools:compass" , {
 	description = "Compass",
