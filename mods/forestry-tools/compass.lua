@@ -126,7 +126,11 @@ minetest.register_tool("forestry_tools:compass" , {
 	end,
 
 	-- On right-click
-	on_place = function(itemstack, player, pointed_thing)
+	on_place = function(itemstack, placer, pointed_thing)
+		show_adjustments_menu(placer)
+	end,
+
+	on_secondary_use = function(itemstack, player, pointed_thing)
 		show_adjustments_menu(player)
 	end,
 
