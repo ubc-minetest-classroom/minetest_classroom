@@ -818,6 +818,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 pdata.end_day[context.selected] = nil
                 pdata.classroom_map[context.selected] = nil
                 pdata.access_code[context.selected] = nil
+                pdata.realm_id[context.selected] = nil
                 pmeta:set_string("classrooms", minetest.serialize(pdata
                 ))
 
