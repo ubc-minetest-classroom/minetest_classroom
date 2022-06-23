@@ -385,6 +385,17 @@ end
 function Realm:Delete()
     self:RunFunctionFromTable(self.RealmDeleteTable)
     self:CallOnDeleteCallbacks()
+
+    local spawn = mc_worldManager.GetSpawnRealm()
+    local players = self:GetPlayers()
+    if (players ~= nil) then
+        for k, v in pairs(players) do
+            if v == true then
+                spawn:TeleportPlayer(minetest.get_player_by_name(k))
+            end
+        end
+    end
+
     self:ClearNodes()
 
     if (areas) then
