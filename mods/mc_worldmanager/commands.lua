@@ -23,13 +23,14 @@ minetest.register_chatcommand("localPos", {
 
 commands["new"] = {
     func = function(name, params)
-        local realmName = params[2]
+        local realmName = tostring(params[1])
         if (realmName == "" or realmName == nil) then
             realmName = "Unnamed Realm"
         end
-        local size = params[3]
-        local sizeY = params[4]
-        local newRealm = Realm:New(realmName, { x = size, y = sizeY, z = size })
+        local sizeX = tonumber(params[2]) or 40
+        local sizeY = tonumber(params[3]) or 40
+        local sizeZ = tonumber(params[4]) or 40
+        local newRealm = Realm:New(realmName, { x = sizeX, y = sizeY, z = sizeZ })
         newRealm:CreateGround()
         newRealm:CreateBarriers()
 
@@ -39,6 +40,11 @@ commands["new"] = {
 commands["delete"] = {
     func = function(name, params)
         local realmID = params[1]
+
+        if (realmID == nil) then
+            return false, "No realm ID specified"
+        end
+
         local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
