@@ -47,8 +47,6 @@ local function show_bezel_hud(player)
 		scale={x = 10, y = 10},
 		offset = {x = -5.8, y = -3}
 	})
-
-	HUD_showing = true
 end
 
 local adjustments_menu = {
@@ -58,7 +56,7 @@ local adjustments_menu = {
 	"textarea[0.5,1.3;5,1;declination;Set Magnetic Declination;]",
 	"textarea[0.5,3;5,1;azimuth;Set Azimuth;]",
 	"button_exit[0.1,0.1;0.5,0.5;exit;X]",
-	"button[4,5.8;1.5,0.8;save;Save]"
+	"button[2.5,5.8;3,0.8;save;Adjust Compass]"
 }
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
@@ -127,11 +125,12 @@ minetest.register_tool("forestry_tools:compass" , {
 		end
 	end,
 
+	-- On right-click
 	on_place = function(itemstack, player, pointed_thing)
 		show_adjustments_menu(player)
 	end,
 
-	-- Destroy the item on_drop to keep things tidy
+	-- Destroy the item on_drop 
 	on_drop = function (itemstack, dropper, pos)
 		minetest.set_node(pos, {name="air"})
 	end,
@@ -139,6 +138,36 @@ minetest.register_tool("forestry_tools:compass" , {
 
 minetest.register_alias("compass", "forestry_tools:compass")
 compass = minetest.registered_aliases[compass] or compass
+
+
+function rotate_image(player, hud, hudName, referenceAngle) 
+	local adjustment, transformation, imgIndex
+
+	if referenceAngle < 90 then
+		adjustment = 0
+		transformation = 0
+	elseif referenceAngle < 180 then
+		adjustment = 90
+		transformation = 270
+	elseif referenceAngle < 270 then
+		adjustment = 180
+		transformation = 180
+	elseif referenceAngle < 360 then
+		adjustment = 270
+		transformation = 90
+	end
+
+	if referenceAngle >= 45 and math.floor(referenceAngle % 45) <= 4 then
+		imgIndex = 4.5
+	else
+		imgIndex = math.floor((referenceAngle - adjustment)/10)
+	end
+
+	local img = hudName .. "_" .. imgIndex .. ".png" .. "^[transformR" .. transformation
+	hud:change(player, hudName, {
+		text = img
+	})
+end
 
 
 minetest.register_globalstep(function(dtime)
@@ -163,37 +192,14 @@ minetest.register_globalstep(function(dtime)
 					angle_relative = math.deg(dir) + mag_declination
 				end
 
-				local compass_image, adjustment, transformation
+				-- Needle rotation
+				rotate_image(player, hud, "compass", angle_relative)
 
-				-- For needle rotation
-				if angle_relative < 90 then
-					adjustment = 0
-					transformation = 0
-				elseif angle_relative < 180 then
-					adjustment = 90
-					transformation = 270
-				elseif angle_relative < 270 then
-					adjustment = 180
-					transformation = 180
-				elseif angle_relative < 360 then
-					adjustment = 270
-					transformation = 90
-				end
-
-				if angle_relative % 45 == 0 then
-					compass_image = 4.5
-				else
-					compass_image = math.floor((angle_relative - adjustment)/10)
-				end
-
-				local img = "compass_" .. compass_image .. ".png" .. "^[transformR" .. transformation
-				hud:change(player, "compass", {
-					text = img
-				})
+				-- Bezel rotation
+				rotate_image(player, bezelHud, "bezel", azimuth)
 			end
 		end
 	end
 end)
-
 
 
