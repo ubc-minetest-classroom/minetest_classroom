@@ -45,7 +45,7 @@ local function show_bezel_hud(player)
 		text = "bezel_0.png",
 		position={x = 0.5, y = 0.5}, 
 		scale={x = 10, y = 10},
-		offset = {x = -5.8, y = -3}
+		offset = {x = -4, y = -4}
 	})
 end
 
@@ -171,6 +171,22 @@ function rotate_image(player, hud, hudName, referenceAngle)
 	hud:change(player, hudName, {
 		text = img
 	})
+
+	if hudName == "bezel" then
+		if adjustment == 90 then
+			bezelHud:change(player, "bezel", {
+				offset = {x = 4, y = -4}
+			})
+		elseif adjustment == 180 then
+			bezelHud:change(player, "bezel", {
+				offset = {x = 4, y = 4}
+			})
+		elseif adjustment == 270 then
+			bezelHud:change(player, "bezel", {
+				offset = {x = -4, y = 4}
+			})
+		end
+	end
 end
 
 
