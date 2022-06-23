@@ -170,7 +170,7 @@ function rotate_image(player, hud, hudName, referenceAngle)
 		transformation = 90
 	end
 
-	if referenceAngle >= 45 and math.floor(referenceAngle % 45) <= 4 then
+	if math.floor(referenceAngle % 45) <= 4 and not (math.floor(referenceAngle % 90) <= 9) then
 		imgIndex = 4.5
 	else
 		imgIndex = math.floor((referenceAngle - adjustment)/10)
