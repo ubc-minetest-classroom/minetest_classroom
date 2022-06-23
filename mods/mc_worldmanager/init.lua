@@ -31,9 +31,8 @@ mc_worldManager.load_data()
 ---This function ensures that systems that rely on a spawn don't break.
 ---@return table Realm
 function mc_worldManager.GetSpawnRealm()
-    local spawnRealm = Realm.realmDict[mc_worldManager.spawnRealmID]
+    local spawnRealm = Realm.GetRealm(mc_worldManager.spawnRealmID)
     if (spawnRealm == nil) then
-
         spawnRealm = Realm:NewFromSchematic("Spawn", mc_worldManager.spawnRealmSchematic)
         mc_worldManager.spawnRealmID = spawnRealm.ID
         mc_worldManager.save_data()
@@ -47,7 +46,6 @@ end
 ---@param newSpawnRealm table realm to set as spawn.
 ---@return boolean whether the operation succeeded or not.
 function mc_worldManager.SetSpawnRealm(newSpawnRealm)
-
     if (newSpawnRealm ~= nil) then
         mc_worldManager.spawnRealmID = newSpawnRealm.ID
         mc_worldManager.save_data()

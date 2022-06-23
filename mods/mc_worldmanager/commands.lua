@@ -27,9 +27,18 @@ commands["new"] = {
         if (realmName == "" or realmName == nil) then
             realmName = "Unnamed Realm"
         end
-        local sizeX = tonumber(params[2]) or 40
-        local sizeY = tonumber(params[3]) or 40
+        local sizeX = tonumber(params[2])
+        if (sizeX == nil or sizeX == 0) then
+            sizeX = 40
+        end
+        local sizeY = tonumber(params[3])
+        if (sizeY == nil or sizeY == 0) then
+            sizeY = 40
+        end
         local sizeZ = tonumber(params[4]) or 40
+        if (SizeZ == nil or SizeZ == 0) then
+            SizeZ = 40
+        end
         local newRealm = Realm:New(realmName, { x = sizeX, y = sizeY, z = sizeZ })
         newRealm:CreateGround()
         newRealm:CreateBarriers()
@@ -43,6 +52,10 @@ commands["delete"] = {
 
         if (realmID == nil) then
             return false, "No realm ID specified"
+        end
+
+        if (realmID == mc_worldManager.spawnRealmID) then
+            return false, "Cannot delete the spawn realm."
         end
 
         local requestedRealm = Realm.GetRealm(tonumber(realmID))
