@@ -256,7 +256,7 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
 
                 "image[", (is_inv and "10.3,0") or "12.8,0.4", ";4.2,4.2;", info.texture or "test.png", "]",
                 "box[", (is_inv and "10.3,3.7;3.35,3.65") or "12.8,4.7;4.2,4.2", ";#789cbf]",
-                "model[", (is_inv and "10.3,3.7") or "12.8,4.7", ";4.2,4.2;plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";0,180;false;true;;]",
+                "model[", (is_inv and "10.3,3.7") or "12.8,4.7", ";4.2,4.2;plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";", info.model_rot_x or "0", ",", info.model_rot_y or "180", ";false;true;;]",
 
                 "textarea[", (is_inv and "0.3,1.8;10.45,4.7") or "0.35,2.3;12.4,4.7", ";;;", -- info area
                 "- ", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "\n",

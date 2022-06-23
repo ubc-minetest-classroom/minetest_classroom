@@ -10,6 +10,8 @@ local template = {
     region = "",          -- Native region of plant (displayed as "Native to [region]")
     texture = "",         -- Image of plant (in `mod/textures`)
     model_obj = "",       -- Model file (in `mod/models`)
+    model_rot_x = 0,      -- Initial rotation of model about x-axis (in degrees; defaults to 0)
+    model_rot_y = 0,      -- Initial rotation of model about y-axis (in degrees; defaults to 180)
     more_info = "",       -- Description of plant
     external_link = "",   -- Link to page with more plant information
     img_copyright = "",   -- Copyright owner of plant image (displayed as "Image (c) [img_copyright]")
@@ -184,6 +186,7 @@ local waterlily = {
     region = "BC, Yukon, Northwest USA and Alaska",
     texture = "magnify_flowers_nuphar_polysepala.jpg",
     model_obj = "magnify_flowers_nuphar_polysepala.obj",
+    model_rot_x = -35,
     more_info = "An aquatic perennial with long-stalked, leathery leaves. Found in ponds and slow-moving streams in lowland, steppe, and montane areas",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Nuphar%20polysepala",
     img_copyright = "Marshal Hedin, licensed under CC BY 2.0"
