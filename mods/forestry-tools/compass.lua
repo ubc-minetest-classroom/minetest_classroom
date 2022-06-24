@@ -1,6 +1,6 @@
 
 local HUD_showing = false
-local mag_declination, azimuth, curr_north, new_north, prevAzimuth = 0, 0, 0, 0, 0
+local mag_declination, azimuth, curr_azimuth = 0, 0, 0
 
 -- Give the compass to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
@@ -62,10 +62,32 @@ local adjustments_menu = {
 	"textarea[0.5,4.2;5,0.5;;;]"
 }
 
+-- gives the appearance that the formspec remembers the previously set value for the given field
+local function remember_field(formTableName, index, preText, newText, postText)
+	local textarea = formTableName[index]
+	textarea = preText .. newText .. postText
+	formTableName[index] = textarea
+end
+
+local function show_adjustments_menu(player) 
+	remember_field(adjustments_menu, 4, "textarea[0.5,1.3;5,0.5;declination;Set Magnetic Declination;", mag_declination, "]")
+	remember_field(adjustments_menu, 5, "textarea[0.5,2.5;5,0.5;azimuth;Set Azimuth;", azimuth, "]")
+	minetest.show_formspec(player:get_player_name(), "compass:adjustments_menu", table.concat(adjustments_menu, ""))
+end
+
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	local pname = player:get_player_name()
 
 	if formname == "compass:adjustments_menu" then
+
+		if fields.exit then
+			adjustments_menu[10] = "textarea[0.5,4.2;5,0.5;;;]"
+		end
+
+		if fields.getAzimuth then
+			adjustments_menu[10] = "textarea[0.5,4.2;5,0.5;;;" .. math.floor(curr_azimuth) .. "]"
+			show_adjustments_menu(player)
+		end
 
 		if fields.save then
 			if fields.declination ~= "" and tonumber(fields.declination) ~= mag_declination then
@@ -99,23 +121,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - azimuth must be a number between 0 and 360"))
 				end
 			end
+
+			if tonumber(fields.declination) ~= 0 and string.sub(adjustments_menu[10], 25, 26) ~= "]" then
+				adjustments_menu[10] = "textarea[0.5,4.2;5,0.5;;;]"
+				show_adjustments_menu(player)
+			end
 		end
 
 	end
 end)
-
--- gives the appearance that the formspec remembers the previously set value for the given field
-local function remember_field(formTableName, index, preText, newText, postText)
-	local textarea = formTableName[index]
-	textarea = preText .. newText .. postText
-	formTableName[index] = textarea
-end
-
-local function show_adjustments_menu(player) 
-	remember_field(adjustments_menu, 4, "textarea[0.5,1.3;5,0.5;declination;Set Magnetic Declination;", mag_declination, "]")
-	remember_field(adjustments_menu, 5, "textarea[0.5,2.5;5,0.5;azimuth;Set Azimuth;", azimuth, "]")
-	minetest.show_formspec(player:get_player_name(), "compass:adjustments_menu", table.concat(adjustments_menu, ""))
-end
 
 minetest.register_tool("forestry_tools:compass" , {
 	description = "Compass",
@@ -224,6 +238,8 @@ minetest.register_globalstep(function(dtime)
 				else 
 					angle_relative = math.deg(dir) + mag_declination
 				end
+
+				curr_azimuth = 360 - angle_relative
 
 				-- Needle rotation
 				rotate_image(player, needleHud, "needle", angle_relative)
