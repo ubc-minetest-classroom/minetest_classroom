@@ -1,4 +1,3 @@
-
 local HUD_showing = false
 local mag_declination, azimuth, curr_azimuth = 0, 0, 0
 
@@ -26,28 +25,10 @@ minetest.register_on_joinplayer(function(player)
     end
 end)
 
-local needleHud = mhud.init()
-local function show_needle_hud(player)
-	needleHud:add(player, "needle", {
-		hud_elem_type = "image",
-		text = "needle_0.png",
-		position={x = 0.5, y = 0.5}, 
-		scale={x = 10.2, y = 10.2}
-	})
 
-	HUD_showing = true
-end
-
-local bezelHud = mhud.init()
-local function show_bezel_hud(player)
-	bezelHud:add(player, "bezel", {
-		hud_elem_type = "image",
-		text = "bezel_0.png",
-		position={x = 0.5, y = 0.5}, 
-		scale={x = 10, y = 10},
-		offset = {x = -4, y = -4}
-	})
-end
+---------------------------
+--- FORMSPEC MANAGEMENT ---
+---------------------------
 
 local adjustments_menu = {
 	"formspec_version[5]",
@@ -131,6 +112,35 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 end)
 
+
+
+--------------------------------------------
+--- HUD MANAGEMENT AND TOOL REGISTRATION ---
+--------------------------------------------
+
+local needleHud = mhud.init()
+local function show_needle_hud(player)
+	needleHud:add(player, "needle", {
+		hud_elem_type = "image",
+		text = "needle_0.png",
+		position={x = 0.5, y = 0.5}, 
+		scale={x = 10.2, y = 10.2}
+	})
+
+	HUD_showing = true
+end
+
+local bezelHud = mhud.init()
+local function show_bezel_hud(player)
+	bezelHud:add(player, "bezel", {
+		hud_elem_type = "image",
+		text = "bezel_0.png",
+		position={x = 0.5, y = 0.5}, 
+		scale={x = 10, y = 10},
+		offset = {x = -4, y = -4}
+	})
+end
+
 minetest.register_tool("forestry_tools:compass" , {
 	description = "Compass",
 	inventory_image = "needle_0.png",
@@ -168,6 +178,45 @@ minetest.register_alias("compass", "forestry_tools:compass")
 compass = minetest.registered_aliases[compass] or compass
 
 
+minetest.register_globalstep(function(dtime)
+	local players  = minetest.get_connected_players()
+	for i,player in ipairs(players) do
+
+		if HUD_showing then
+			-- Remove HUD when player is no longer wielding the compass
+			if player:get_wielded_item():get_name() ~= "forestry_tools:compass" then
+				needleHud:remove_all()
+				bezelHud:remove_all()
+				HUD_showing = false
+			else
+				local dir = player:get_look_horizontal()
+				local angle_relative = math.deg(dir)
+
+				-- Set magnetic declination
+				if mag_declination > 0 and (360 - angle_relative) <= math.abs(mag_declination) then
+					angle_relative = mag_declination - (360 - angle_relative)
+				elseif mag_declination < 0 and angle_relative <= math.abs(mag_declination) then
+					angle_relative = 360 - (math.abs(mag_declination) - angle_relative)
+				else 
+					angle_relative = math.deg(dir) + mag_declination
+				end
+
+				-- Update current azimuth to direction player is facing 
+				curr_azimuth = 360 - angle_relative
+
+				-- Needle rotation
+				rotate_image(player, needleHud, "needle", angle_relative)
+
+				-- Rotate bezel based on azimuth set
+				local shed_angle = 360 - azimuth
+				rotate_image(player, bezelHud, "bezel", shed_angle)
+			end
+		end
+	end
+end)
+
+-- Helper for rotating HUD images. The needle/bezel only show an angle change in intervals of 10, with the exception of 45°, 135°, 225°, 315°
+-- e.g. the needle will be in the same position from 0°-9°, then rotate to a new position for 10°-19°, etc. (same system applies to the bezel)
 function rotate_image(player, hud, hudName, referenceAngle) 
 	local adjustment, transformation, imgIndex
 
@@ -216,40 +265,5 @@ function rotate_image(player, hud, hudName, referenceAngle)
 	end
 end
 
-
-minetest.register_globalstep(function(dtime)
-	local players  = minetest.get_connected_players()
-	for i,player in ipairs(players) do
-
-		if HUD_showing then
-			if player:get_wielded_item():get_name() ~= "forestry_tools:compass" then
-				needleHud:remove_all()
-				bezelHud:remove_all()
-				HUD_showing = false
-			else
-				local dir = player:get_look_horizontal()
-				local angle_relative = math.deg(dir)
-
-				-- Set magnetic declination
-				if mag_declination > 0 and (360 - angle_relative) <= math.abs(mag_declination) then
-					angle_relative = mag_declination - (360 - angle_relative)
-				elseif mag_declination < 0 and angle_relative <= math.abs(mag_declination) then
-					angle_relative = 360 - (math.abs(mag_declination) - angle_relative)
-				else 
-					angle_relative = math.deg(dir) + mag_declination
-				end
-
-				curr_azimuth = 360 - angle_relative
-
-				-- Needle rotation
-				rotate_image(player, needleHud, "needle", angle_relative)
-
-				-- Rotate bezel to based on azimuth set
-				local shed_angle = 360 - azimuth
-				rotate_image(player, bezelHud, "bezel", shed_angle)
-			end
-		end
-	end
-end)
 
 
