@@ -1,6 +1,6 @@
 
 local HUD_showing = false
-local mag_declination, azimuth = 0, 0
+local mag_declination, azimuth, curr_north, new_north, prevAzimuth = 0, 0, 0, 0, 0
 
 -- Give the compass to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
@@ -26,11 +26,11 @@ minetest.register_on_joinplayer(function(player)
     end
 end)
 
-local hud = mhud.init()
-local function show_compass_hud(player)
-	hud:add(player, "compass", {
+local needleHud = mhud.init()
+local function show_needle_hud(player)
+	needleHud:add(player, "needle", {
 		hud_elem_type = "image",
-		text = "compass_0.png",
+		text = "needle_0.png",
 		position={x = 0.5, y = 0.5}, 
 		scale={x = 10.2, y = 10.2}
 	})
@@ -53,10 +53,13 @@ local adjustments_menu = {
 	"formspec_version[5]",
 	"size[6,7]",
 	"textarea[1.7,0.2;3,0.5;;;Compass Settings]",
-	"textarea[0.5,1.3;5,1;declination;Set Magnetic Declination;]",
-	"textarea[0.5,3;5,1;azimuth;Set Azimuth;]",
+	"textarea[0.5,1.3;5,0.5;declination;Set Magnetic Declination;]",
+	"textarea[0.5,2.5;5,0.5;azimuth;Set Azimuth;]",
 	"button_exit[0.1,0.1;0.5,0.5;exit;X]",
-	"button[2.5,5.8;3,0.8;save;Adjust Compass]"
+	"button[2.5,5.8;3,0.8;save;Adjust Compass]",
+	"button[0.5,3.3;3.5,0.8;getAzimuth;Get Current Azimuth]",
+	"box[0.5,4.2;5,0.5;#808080]",
+	"textarea[0.5,4.2;5,0.5;;;]"
 }
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
@@ -101,35 +104,33 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 end)
 
--- gives the appearance that the formspec remembers the previously set fields
-local function remember_settings(formTableName, index, preText, variable, postText)
+-- gives the appearance that the formspec remembers the previously set value for the given field
+local function remember_field(formTableName, index, preText, newText, postText)
 	local textarea = formTableName[index]
-	textarea = preText .. variable .. postText
+	textarea = preText .. newText .. postText
 	formTableName[index] = textarea
 end
 
 local function show_adjustments_menu(player) 
-	remember_settings(adjustments_menu, 4, "textarea[0.5,1.3;5,1;declination;Set Magnetic Declination;", mag_declination, "]")
-	remember_settings(adjustments_menu, 5, "textarea[0.5,3;5,1;azimuth;Set Azimuth;", azimuth, "]")
-
-	local pname = player:get_player_name()
-	minetest.show_formspec(pname, "compass:adjustments_menu", table.concat(adjustments_menu, ""))
+	remember_field(adjustments_menu, 4, "textarea[0.5,1.3;5,0.5;declination;Set Magnetic Declination;", mag_declination, "]")
+	remember_field(adjustments_menu, 5, "textarea[0.5,2.5;5,0.5;azimuth;Set Azimuth;", azimuth, "]")
+	minetest.show_formspec(player:get_player_name(), "compass:adjustments_menu", table.concat(adjustments_menu, ""))
 end
 
 minetest.register_tool("forestry_tools:compass" , {
 	description = "Compass",
-	inventory_image = "compass_0.png",
+	inventory_image = "needle_0.png",
     stack_max = 1,
 	liquids_pointable = true,
 
 	-- On left-click
     on_use = function(itemstack, player, pointed_thing)
 		if HUD_showing then
-			hud:remove_all()
+			needleHud:remove_all()
 			bezelHud:remove_all()
 			HUD_showing = false
 		else
-			show_compass_hud(player)
+			show_needle_hud(player)
 			show_bezel_hud(player)
 		end
 	end,
@@ -156,7 +157,7 @@ compass = minetest.registered_aliases[compass] or compass
 function rotate_image(player, hud, hudName, referenceAngle) 
 	local adjustment, transformation, imgIndex
 
-	if referenceAngle < 90 then
+	if referenceAngle < 90 or referenceAngle == 360 then
 		adjustment = 0
 		transformation = 0
 	elseif referenceAngle < 180 then
@@ -172,6 +173,8 @@ function rotate_image(player, hud, hudName, referenceAngle)
 
 	if math.floor(referenceAngle % 45) <= 4 and not (math.floor(referenceAngle % 90) <= 9) then
 		imgIndex = 4.5
+	elseif referenceAngle == 360 then
+		imgIndex = 0
 	else
 		imgIndex = math.floor((referenceAngle - adjustment)/10)
 	end
@@ -182,17 +185,18 @@ function rotate_image(player, hud, hudName, referenceAngle)
 	})
 
 	if hudName == "bezel" then
+		local x, y = -4, -4
 		if adjustment == 90 then
-			bezelHud:change(player, "bezel", {
-				offset = {x = 4, y = -4}
-			})
+			x = 4
 		elseif adjustment == 180 then
-			bezelHud:change(player, "bezel", {
-				offset = {x = 4, y = 4}
-			})
+			x, y = 4, 4
 		elseif adjustment == 270 then
+			y = 4
+		end
+
+		if x ~= -4 or y ~= -4 then
 			bezelHud:change(player, "bezel", {
-				offset = {x = -4, y = 4}
+				offset = {x = x, y = y}
 			})
 		end
 	end
@@ -205,7 +209,7 @@ minetest.register_globalstep(function(dtime)
 
 		if HUD_showing then
 			if player:get_wielded_item():get_name() ~= "forestry_tools:compass" then
-				hud:remove_all()
+				needleHud:remove_all()
 				bezelHud:remove_all()
 				HUD_showing = false
 			else
@@ -222,10 +226,11 @@ minetest.register_globalstep(function(dtime)
 				end
 
 				-- Needle rotation
-				rotate_image(player, hud, "compass", angle_relative)
+				rotate_image(player, needleHud, "needle", angle_relative)
 
-				-- Bezel rotation
-				rotate_image(player, bezelHud, "bezel", azimuth)
+				-- Rotate bezel to based on azimuth set
+				local shed_angle = 360 - azimuth
+				rotate_image(player, bezelHud, "bezel", shed_angle)
 			end
 		end
 	end
