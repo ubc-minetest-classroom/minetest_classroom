@@ -116,7 +116,7 @@ commands["gen"] = {
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
 
-        local groundLevel = (requestedRealm.StartPos.y + requestedRealm.EndPos.y) / 2
+        local groundLevel = math.floor((requestedRealm.EndPos.y - requestedRealm.StartPos.y) * 0.4) + requestedRealm.StartPos.y
         Debug.log("Ground level:" .. groundLevel)
 
         local seed = tonumber(params[2])
