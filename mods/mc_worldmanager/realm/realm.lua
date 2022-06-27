@@ -21,6 +21,7 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmDataManagement.lu
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmSchematicSaveLoad.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCoordinateConversion.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmTerrainGeneration.lua")
 if (areas) then
     dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmAreasIntegration.lua")
 end

@@ -1,0 +1,67 @@
+#mg_earth settings
+
+#Defines the scale in which the world is generated.  Has the effect of making a map of size 300m x 300m to 30000m x 30000m.
+mg_earth.mg_world_scale (Sets the scale of the world map.  Valid values are from 0.01 to 1. Default is 1.) float 1.0 0.01 1.0
+
+#Sets the height used to define biomes and ecosystems.  Stretches terrain vertically.  Good values range from 240 to 420 with 300 as the default.
+mg_earth.mg_base_height (Sets the maximum altitude in which to define biomes and ecosystems. Default is 300.) int 300 240 420
+
+#If enabled, will generate 'rivers' at voronoi cell edges.  Default is false.
+mg_earth.enable_rivers (If enabled, will generate 'rivers' at voronoi cell edges on vEarth.  Overridden if using vValleys setting.  true / false) bool false
+
+#If enabled, will generate caves.  Cave generation is influenced by biome. Default is true.
+mg_earth.enable_caves (Enable to generate caves.  true / false) bool true
+
+#If enabled, will generate lakes in depressions, (Sokomines Lakes mod).  (WIP-Lake generation is influenced by biome(TODO)). Default is false.
+mg_earth.enable_lakes (If enabled, will generate lakes in depressions.  WIP-TODO-Lake generation is influenced by biome  true / false) bool false
+
+#If enabled, will modify global heat values to mimic earth like temperatures, (hot at the equator, cold at the poles) with noise for minor variation.  Default is true.
+mg_earth.enable_heat_scalar (If enabled, will modify global heat values to mimic earth like temperatures, hot at the equator, cold at the poles with noise for minor variation.  true / false) bool true
+
+#If enabled, will modify global humidity values to mimic earth like mean precipitation.  Latitude determines dry / wet, with noise to vary. Default is true.
+mg_earth.enable_humidity_scalar (If enabled, will modify global humidity values to mimic earth like mean precipitation.  Latitude determines dry / wet, with noise to vary.  true / false) bool true
+
+#Sets the height used for Flat mapgen.  Default is 5.
+mg_earth.flat_height (Sets the height of the Flat mapgen. Default is 5.) int 5 -31000 31000
+
+#Sets the height of the sea level, the y value at which water generates.  Default is 1.
+mg_earth.sea_level (Sets the height of the sea level, the y value at which water generates.  Default is 1.) int 1 -31000 31000
+
+#Sets the width of river used in voronoi and valleys mapgens.  Default is 7.
+mg_earth.river_width (Sets the width of river used in voronoi and valleys mapgens.  Default is 7.) int 7 2 10
+
+#Selects from 13 options for terrain generation.  Includes vEarth, v6, v7, v67, vFlat, vIslands, vValleys, vVoronoi, vVoronoiPlus, vSpheres, vCubes, vDiamonds.  Default is 1.
+mg_earth.heightmap (Selects from vEarth, v6, v7, v67, vFlat, vIslands, vValleys, vVoronoi, vVoronoiPlus, vSpheres, vCubes, vDiamonds, v3D.  Default is 1.) int 1 1 13
+
+#Selects how distance is measured.  Options are 1 = chebyshev, 2 = euclidean, 3 = manhattan, 4 = chebyshev plus manattan divided by 2.  Default is 4.
+mg_earth.voronoi_distance (Selects how distance is measured.  Options are 1 = chebyshev, 2 = euclidean, 3 = manhattan, 4 = chebyshev plus manattan divided by 2.  Default is 4.) int 4 1 4
+
+#	--manual seed options.		The named seeds below were used during dev, but were interesting enough to include.  The names were entered in the menu, and these resulted.
+#	--Default					= Terraria
+#	--		Terraria			= "16096304901732432682",
+#	--		TheIsleOfSodor		= "4866059420164947791",
+#	--		TheGardenOfEden		= "4093201477345457311",
+#	-- 		Fermat				= "14971822871466973040",	
+#	--		Patience			= "7986080089770239873",
+#	--		Home				= "11071344221654115949",
+#	--		Gaia				= "388272015917266855",
+#	--		Theia				= "130097141630163915",
+#	--		Eufrisia			= "6535600191662084952",
+#	--		Coluerica			= "9359082767202495376",
+#	--		Pando				= "9237930693197265599",
+#	--		Pangaea				= "5475850681584857691",
+#	--		Gondwana			= "11779916298069921535",
+#	--		Alone				= "11763298958449250406",
+#	--		Agape				= "12213145824342997182",
+#	--		Walmart				= "5081532735129490002",
+#Custom map seed. This setting overrides menu, map_meta settings.  Default is '16096304901732432682'.
+mg_earth.seed (Custom map seed.  Overrides menu setting.) string "16096304901732432682"
+
+#Custom selection of alternate voronoi point sets, which define continents.  Files are lua tables that reside in 'modpath/point_sets/', and must follow the convention. Default is 'points_earth'.
+#mg_earth.voronoi_file (Custom Voronoi Point Sets lua table file name.) string "points_earth"
+mg_earth.voronoi_file (Custom Voronoi Point Sets lua table file name.  Options are 1 = "points_earth", 2 = "points_dev_isle".  Default is 1.) int 1 1 2
+
+#Custom selection of voronoi cell neighbors file.  This file is created and updated at runtime and save to the world folder on shutdown. Default is 'neighbors'.
+#mg_earth.voronoi_neighbor_file_suf (Custom Voronoi Point Sets lua table file name.) string "neighbors"
+
+
