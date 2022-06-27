@@ -108,6 +108,28 @@ commands["walls"] = {
         requestedRealm:CreateBarriers()
     end }
 
+commands["gen"] = {
+    func = function(name, params)
+        local realmID = params[1]
+        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        if (requestedRealm == nil) then
+            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+        end
+
+        local groundLevel = (requestedRealm.StartPos.y + requestedRealm.EndPos.y) / 2
+        Debug.log("Ground level:" .. groundLevel)
+
+        local seed = tonumber(params[2])
+        if (seed == nil) then
+            seed = math.random(1, 100)
+        end
+
+        requestedRealm:GenerateTerrain(seed, groundLevel)
+        requestedRealm:CreateBarriers()
+
+        return true
+    end }
+
 commands["schematic"] = {
     func = function(name, params)
         if (params[1] == "list") then
