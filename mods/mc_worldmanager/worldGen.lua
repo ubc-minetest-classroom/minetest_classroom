@@ -33,7 +33,7 @@ local function getBlock(posX, posY, posZ, groundLevel, seed, mainPerlin, contine
 end
 
 function Realm:GenerateTerrain(seed, groundLevel)
-
+    
     local perlin = minetest.get_perlin(seed, 4, 0.5, 100)
     local continentality = minetest.get_perlin(seed * 2, 4, 0.5, 100)
     local erosion = minetest.get_perlin(seed * 3, 4, 0.25, 25)
@@ -64,10 +64,17 @@ function Realm:GenerateTerrain(seed, groundLevel)
                 local vi = a:index(x, y, z)
                 local viAbove = a:index(x, y + 1, z)
                 local viBelow = a:index(x, y - 1, z)
-
+                local vileft = a:index(x - 1, y, z)
+                local viright = a:index(x + 1, y, z)
+                local viforwards = a:index(x, y, z + 1)
+                local viback = a:index(x, y, z - 1)
 
                 if (data[viAbove] == c_water and data[viBelow] == c_dirt) then
                     data[viBelow] = c_sand
+                    data[vi] = c_sand
+                end
+
+                if (data[vi] == c_dirt and (data[vileft] == c_water or data[viright] == c_water or data[viforwards] == c_water or data[viback] == c_water)) then
                     data[vi] = c_sand
                 end
 
