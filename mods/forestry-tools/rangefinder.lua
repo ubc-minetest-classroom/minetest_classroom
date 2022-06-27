@@ -1,4 +1,24 @@
-range = 32
+local range = 32
+local RAY_RANGE = 500
+local MODES = {"HT", "SD", "VD", "HD", "INC", "AZ", "ML"}
+
+local function track_raycast_hit(player)
+    local player_pos = vector.offset(player:get_pos(), 0, player:get_properties().eye_height, 0)
+    local ray = minetest.raycast(player_pos, vector.add(player_pos, vector.multiply(player:get_look_dir(), RAY_RANGE)))
+    local p, first_hit = ray:next(), ray:next()
+
+    if not first_hit then
+        return minetest.chat_send_player(player:get_player_name(), "No objects detected within range, cast not logged")
+    end
+    player:hud_add({
+        hud_elem_type = "image_waypoint",
+        world_pos = first_hit.intersection_point,
+        text = "forestry_tools_rf_marker.png",
+        scale = {x = 1.25, y = 1.25},
+        z_index = -300,
+        alignment = {x = 0, y = 0}
+    })
+end
 
 local finder_on = function(pos, facedir_param2, range)
     local meta = minetest.get_meta(pos)
@@ -6,7 +26,6 @@ local finder_on = function(pos, facedir_param2, range)
     local beam_pos = vector.new(pos)
     local beam_direction = minetest.facedir_to_dir(facedir_param2)
 
-	
     for i = 1, range + 1, 1 do
         beam_pos = vector.add(block_pos, vector.multiply(beam_direction, i))
         if minetest.get_node(beam_pos).name == "air" or minetest.get_node(beam_pos).name == "forestry_tools:rangefinder" then
@@ -74,22 +93,22 @@ end
 -- 	end
 -- end
 
--- minetest.register_tool("forestry_tools:rangefinder" , {
--- 	description = "Rangefinder",
--- 	inventory_image = "rangefinder.jpeg",
--- 	-- Left-click the tool activate function
--- 	on_use = function (itemstack, user, pointed_thing)
---         local pname = user:get_player_name()
--- 		-- Check for shout privileges
--- 		if check_perm(user) then
--- 			show_rangefinder(user)
--- 		end
--- 	end,
--- 	-- Destroy the item on_drop to keep things tidy
--- 	on_drop = function (itemstack, dropper, pos)
--- 		minetest.set_node(pos, {name="air"})
--- 	end,
--- })
+minetest.register_tool("forestry_tools:rangefinder" , {
+ 	description = "Rangefinder",
+ 	inventory_image = "rangefinder.jpg",
+ 	-- Left-click the tool activate function
+ 	on_use = function (itemstack, player, pointed_thing)
+        local pname = player:get_player_name()
+ 		-- Check for shout privileges
+ 		if check_perm(player) then
+            track_raycast_hit(player)
+ 			--show_rangefinder(player)
+ 		end
+ 	end,
+ 	-- Destroy the item on_drop to keep things tidy
+ 	on_drop = function (itemstack, dropper, pos)
+ 	end,
+})
 
 
 -- minetest.register_alias("rangefinder", "forestry_tools:rangefinder")
