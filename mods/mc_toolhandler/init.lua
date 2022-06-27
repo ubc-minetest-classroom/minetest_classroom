@@ -286,6 +286,18 @@ local function remove_reg_duplications(player, stack, i, list)
     end
 end
 
+minetest.register_allow_player_inventory_action(function(player, action, inventory, inv_info)
+    if action == "take" then
+        local def = inv_info.stack:get_definition()
+        if not def._mc_tool_allow_take then
+            if mc_helpers.tableHas(mc_toolhandler.reg_tools, inv_info.stack:get_name()) or (def._mc_tool_group and mc_helpers.tableHas(mc_toolhandler.reg_tools, "group:"..def._mc_tool_group)) then
+                return 0 -- do not allow item to be taken
+            end
+        end
+    end
+    return -- ignore
+end)
+
 -- Register callback for removing duplicate tools
 minetest.register_on_player_inventory_action(function(player, action, inventory, inv_info)
     if action == "put" or action == "take" then
