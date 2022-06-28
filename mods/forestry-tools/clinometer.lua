@@ -1,3 +1,5 @@
+local S = minetest.get_translator("forestry_tools")
+
 -- IN-PROGRESS: show yaw (horizontal angle) and pitch (vertical viewing angle) in degrees.
 
 local clin_hud = {}
@@ -81,14 +83,14 @@ function clin_hud.update_automapper(player)
 end
 
 
---
+--[[
 
 local yaw = 360 - player:get_look_horizontal()*toDegrees
 local pitch = player:get_look_vertical()*toDegrees
 
 if (clinometer) then 
     str_angles = S("Yaw: @1°, pitch: @2°", string.format("%.1f", yaw), string.format("%.1f", pitch))
-
+end
 
 	
 minetest.register_on_newplayer(clin_hud.init_hud)
@@ -97,5 +99,5 @@ minetest.register_on_joinplayer(clin_hud.init_hud)
 minetest.register_on_leaveplayer(function(player)
 	clin_hud.playerhuds[player:get_player_name()] = nil
 end)
-	
+]]
 	

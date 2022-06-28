@@ -1,3 +1,5 @@
+local S = minetest.get_translator("forestry_tools")
+
 -- Allows zooming
  minetest.register_tool("forestry_tools:wedgeprism", {
              description = S("Wedge Prism"),
