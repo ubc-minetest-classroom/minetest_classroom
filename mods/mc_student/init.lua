@@ -261,19 +261,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	while os.clock() - wait < 0.05 do end --popups don't work without this
 
 	-- Menu
-	if formname == "mc_student:menu" then 
-        if fields.spawn then
-            -- TODO: dynamically extract the static spawn point from the minetest.conf file
-            -- local cmeta = Settings(minetest.get_modpath("mc_teacher").."/maps/"..map..".conf")
-            -- local spawn_pos_x = tonumber(cmeta:get("spawn_pos_x"))
-            -- local spawn_pos_y = tonumber(cmeta:get("spawn_pos_y"))
-            -- local spawn_pos_z = tonumber(cmeta:get("spawn_pos_z"))
-            local spawn_pos = {
-                x = 1426,
-                y = 92,
-                z = 1083,
-            }
-            player:set_pos(spawn_pos)
+	if formname == "mc_student:menu" then
+		if fields.spawn then
+			local spawnRealm = mc_worldManager.GetSpawnRealm()
+			spawnRealm:TeleportPlayer(player)
         elseif fields.report then
 			show_report(player)
 		elseif fields.coordinates then
