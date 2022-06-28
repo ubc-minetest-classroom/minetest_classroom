@@ -3,12 +3,13 @@ minetest.set_mapgen_setting('flags', 'nolight', true)
 
 local c_stone = minetest.get_content_id("default:stone")
 local c_water = minetest.get_content_id("default:water_source")
+local c_lava = minetest.get_content_id("default:lava_source")
 local c_air = minetest.get_content_id("air")
 local c_dirt = minetest.get_content_id("default:dirt")
 local c_grass = minetest.get_content_id("default:dirt_with_grass")
 local c_sand = minetest.get_content_id("default:sand")
 
-local function getBlock(posX, posY, posZ, groundLevel, seed, mainPerlin, continentality, erosion)
+local function getTerrainNode(posX, posY, posZ, groundLevel, seed, mainPerlin, continentality, erosion)
 
     local noise = mainPerlin:get_2d({ x = posX, y = posZ })
     local noise2 = continentality:get_2d({ x = posX, y = posZ })
@@ -33,7 +34,7 @@ local function getBlock(posX, posY, posZ, groundLevel, seed, mainPerlin, contine
 end
 
 function Realm:GenerateTerrain(seed, groundLevel)
-    
+
     local perlin = minetest.get_perlin(seed, 4, 0.5, 100)
     local continentality = minetest.get_perlin(seed * 2, 4, 0.5, 100)
     local erosion = minetest.get_perlin(seed * 3, 4, 0.25, 25)
@@ -47,16 +48,18 @@ function Realm:GenerateTerrain(seed, groundLevel)
 
     local data = vm:get_data()
 
+    -- Create base terrain
     for z = self.StartPos.z, self.EndPos.z do
         for y = self.StartPos.y, self.EndPos.y do
             for x = self.StartPos.x, self.EndPos.x do
                 -- vi, voxel index, is a common variable name here
                 local vi = a:index(x, y, z)
-                data[vi] = getBlock(x, y, z, groundLevel, seed, perlin, continentality, erosion)
+                data[vi] = getTerrainNode(x, y, z, groundLevel, seed, perlin, continentality, erosion)
             end
         end
     end
 
+    -- Decorate terrain with grass, sand, etc.
     for z = self.StartPos.z, self.EndPos.z do
         for y = self.StartPos.y, self.EndPos.y do
             for x = self.StartPos.x, self.EndPos.x do
@@ -64,26 +67,25 @@ function Realm:GenerateTerrain(seed, groundLevel)
                 local vi = a:index(x, y, z)
                 local viAbove = a:index(x, y + 1, z)
                 local viBelow = a:index(x, y - 1, z)
-                local vileft = a:index(x - 1, y, z)
-                local viright = a:index(x + 1, y, z)
-                local viforwards = a:index(x, y, z + 1)
-                local viback = a:index(x, y, z - 1)
 
-                if (data[viAbove] == c_water and data[viBelow] == c_dirt) then
-                    data[viBelow] = c_sand
+                if (y <= groundLevel and data[vi] == c_dirt and (data[viAbove] == c_air or data[viAbove] == c_water)) then
                     data[vi] = c_sand
+
+                    if (data[viBelow] == c_dirt) then
+                        data[viBelow] = c_sand
+                    end
+
                 end
 
-                if (data[vi] == c_dirt and (data[vileft] == c_water or data[viright] == c_water or data[viforwards] == c_water or data[viback] == c_water)) then
-                    data[vi] = c_sand
-                end
-
-                if (data[viAbove] == c_air and data[vi] == c_dirt) then
+                if (data[vi] == c_dirt and data[viAbove] == c_air) then
                     data[vi] = c_grass
                 end
             end
         end
     end
+
+    -- Decorate terrain with trees
+    
 
     vm:set_data(data)
     vm:write_to_map()
