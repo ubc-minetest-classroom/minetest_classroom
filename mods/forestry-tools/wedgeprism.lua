@@ -3,8 +3,8 @@ local S = minetest.get_translator("forestry_tools")
 -- Allows zooming
  minetest.register_tool("forestry_tools:wedgeprism", {
              description = S("Wedge Prism"),
-            wield_image = "wedgeprism.jpeg",
-            inventory_image = "wedgeprism.jpeg",
+            wield_image = "wedgeprism.jpg",
+            inventory_image = "wedgeprism.jpg",
      })
 
 
