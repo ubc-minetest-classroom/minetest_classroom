@@ -16,7 +16,7 @@ local function getTerrainNode(posX, posY, posZ, groundLevel, seed, mainPerlin, c
     local noise3 = erosion:get_2d({ x = posX, y = posZ })
 
     local surfaceLevel = groundLevel + (noise2 * 5) + (noise * noise3 * 20)
-    local stoneLevel = surfaceLevel - (noise * noise2 * 10) - 5
+    local stoneLevel = surfaceLevel - ((noise + noise2 + noise3) / 3) - 5
     local seaLevel = groundLevel
 
     local node = c_air
@@ -36,8 +36,8 @@ end
 function Realm:GenerateTerrain(seed, groundLevel)
 
     local perlin = minetest.get_perlin(seed, 4, 0.5, 100)
-    local continentality = minetest.get_perlin(seed * 2, 4, 0.5, 100)
-    local erosion = minetest.get_perlin(seed * 3, 4, 0.25, 25)
+    local continentality = minetest.get_perlin(seed * 2, 4, 0.5, 400)
+    local erosion = minetest.get_perlin(seed * 3, 1, 0.5, 100)
 
     local vm = minetest.get_voxel_manip()
     local emin, emax = vm:read_from_map(self.StartPos, self.EndPos)
@@ -85,7 +85,7 @@ function Realm:GenerateTerrain(seed, groundLevel)
     end
 
     -- Decorate terrain with trees
-    
+
 
     vm:set_data(data)
     vm:write_to_map()
