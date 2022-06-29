@@ -9,15 +9,18 @@ local c_dirt = minetest.get_content_id("default:dirt")
 local c_grass = minetest.get_content_id("default:dirt_with_grass")
 local c_sand = minetest.get_content_id("default:sand")
 
-local function getTerrainNode(posX, posY, posZ, groundLevel, seed, mainPerlin, continentality, erosion)
-
+local function getTerrainHeight(posX, posZ, seaLevel, mainPerlin, continentality, erosion)
     local noise = mainPerlin:get_2d({ x = posX, y = posZ })
     local noise2 = continentality:get_2d({ x = posX, y = posZ })
     local noise3 = erosion:get_2d({ x = posX, y = posZ })
 
-    local surfaceLevel = groundLevel + (noise2 * 5) + (noise * noise3 * 20)
-    local stoneLevel = surfaceLevel - ((noise + noise2 + noise3) / 3) - 5
-    local seaLevel = groundLevel
+    local surfaceLevel = seaLevel + (noise2 * 5) + (noise * noise3 * 20)
+    local stoneLevel = surfaceLevel - ((noise + noise2 - noise3) * 3) - 5
+    return surfaceLevel, stoneLevel
+end
+
+local function getTerrainNode(posX, posY, posZ, seaLevel, seed, mainPerlin, continentality, erosion)
+    local surfaceLevel, stoneLevel = getTerrainHeight(posX, posZ, seaLevel, mainPerlin, continentality, erosion)
 
     local node = c_air
 
@@ -31,6 +34,35 @@ local function getTerrainNode(posX, posY, posZ, groundLevel, seed, mainPerlin, c
         node = c_air
     end
     return node
+end
+
+
+local function DecorateTerrain(StartPos, EndPos, groundLevel, data, a)
+    -- Decorate terrain with grass, sand, etc.
+    for z = StartPos.z, EndPos.z do
+        for y = StartPos.y, EndPos.y do
+            for x = StartPos.x, EndPos.x do
+                -- vi, voxel index, is a common variable name here
+                local vi = a:index(x, y, z)
+                local viAbove = a:index(x, y + 1, z)
+                local viBelow = a:index(x, y - 1, z)
+
+                if (y <= groundLevel and data[vi] == c_dirt and (data[viAbove] == c_air or data[viAbove] == c_water)) then
+                    data[vi] = c_sand
+
+                    if (data[viBelow] == c_dirt) then
+                        data[viBelow] = c_sand
+                    end
+
+                end
+
+                if (data[vi] == c_dirt and data[viAbove] == c_air) then
+                    data[vi] = c_grass
+                end
+            end
+        end
+    end
+
 end
 
 function Realm:GenerateTerrain(seed, groundLevel)
@@ -59,34 +91,19 @@ function Realm:GenerateTerrain(seed, groundLevel)
         end
     end
 
-    -- Decorate terrain with grass, sand, etc.
-    for z = self.StartPos.z, self.EndPos.z do
-        for y = self.StartPos.y, self.EndPos.y do
-            for x = self.StartPos.x, self.EndPos.x do
-                -- vi, voxel index, is a common variable name here
-                local vi = a:index(x, y, z)
-                local viAbove = a:index(x, y + 1, z)
-                local viBelow = a:index(x, y - 1, z)
+    DecorateTerrain(self.StartPos, self.EndPos, groundLevel, data, a)
 
-                if (y <= groundLevel and data[vi] == c_dirt and (data[viAbove] == c_air or data[viAbove] == c_water)) then
-                    data[vi] = c_sand
-
-                    if (data[viBelow] == c_dirt) then
-                        data[viBelow] = c_sand
-                    end
-
-                end
-
-                if (data[vi] == c_dirt and data[viAbove] == c_air) then
-                    data[vi] = c_grass
-                end
-            end
-        end
-    end
 
     -- Decorate terrain with trees
 
 
     vm:set_data(data)
     vm:write_to_map()
+
+
+    -- Set our new spawnpoint
+    local oldSpawnPos = self.SpawnPoint
+    local surfaceLevel = getTerrainHeight(oldSpawnPos.x, oldSpawnPos.z, groundLevel, perlin, continentality, erosion)
+
+    self:UpdateSpawn(self:WorldToLocalPosition({ x = oldSpawnPos.x, y = surfaceLevel, z = oldSpawnPos.z }))
 end
