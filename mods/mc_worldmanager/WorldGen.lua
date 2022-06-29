@@ -59,7 +59,7 @@ Realm.heightMapGenerator["v1"] = function(startPos, endPos, area, data, seed, se
                 if (ptable.get2D(heightMapTable, { x = posX, y = posZ }) == nil) then
                     local noise = mainPerlin:get_2d({ x = posX, y = posZ })
                     local noise2 = erosionPerlin:get_2d({ x = posX, y = posZ })
-                    surfaceHeight = seaLevel + (noise * 5) + (noise * noise2 * 20)
+                    surfaceHeight = math.ceil(seaLevel + (noise * 5) + (noise * noise2 * 20))
                     ptable.store2D(heightMapTable, { x = posX, y = posZ }, surfaceHeight)
                 else
                     surfaceHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
@@ -80,26 +80,7 @@ Realm.heightMapGenerator["v1"] = function(startPos, endPos, area, data, seed, se
 end
 
 Realm.MapDecorator["v1"] = function(startPos, endPos, area, data, heightMapTable, seed, seaLevel)
-
-    for posZ = startPos.z, endPos.z do
-        for posY = startPos.y, endPos.y do
-            for posX = startPos.x, endPos.x do
-                -- vi, voxel index, is a common variable name here
-                local vi = area:index(posX, posY, posZ)
-
-                local surfaceHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
-
-                if (data[vi] == c_stone) then
-                    if (posY > surfaceHeight - 10) then
-                        data[vi] = c_dirt
-                    end
-                end
-
-
-            end
-        end
-    end
-
+    Debug.log("Calling map decorator v1")
     for posZ = startPos.z, endPos.z do
         for posY = startPos.y, endPos.y do
             for posX = startPos.x, endPos.x do
@@ -108,20 +89,23 @@ Realm.MapDecorator["v1"] = function(startPos, endPos, area, data, heightMapTable
                 local viAbove = area:index(posX, posY + 1, posZ)
                 local viBelow = area:index(posX, posY - 1, posZ)
 
-                if (posY <= seaLevel and data[vi] == c_dirt and (data[viAbove] == c_air or data[viAbove] == c_water)) then
-                    data[vi] = c_sand
+                if (data[vi] == c_stone) then
 
-                    if (data[viBelow] == c_dirt) then
-                        data[viBelow] = c_sand
+                    local surfaceHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
+                    -- Debug.log("Surface height: " .. surfaceHeight)
+                    if (posY >= surfaceHeight - 1) then
+                        if (posY <= seaLevel) then
+                            data[vi] = c_sand
+                        else
+                            data[vi] = c_grass
+                        end
+                    elseif (posY > surfaceHeight - 5) then
+                        data[vi] = c_dirt
                     end
-
                 end
-
-                if (data[vi] == c_dirt and data[viAbove] == c_air) then
-                    data[vi] = c_grass
-                end
-
             end
         end
+
+
     end
 end
