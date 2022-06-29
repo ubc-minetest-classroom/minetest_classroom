@@ -3,16 +3,13 @@ networking.storage = minetest.get_mod_storage()
 networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
 if not networking.ipv4_whitelist then
     -- Set a boolean for enabling the whitelist. Whitelist is disabled by default on startup to avoid players from automatically being kicked if not hosted locally.
-    networking.storage:set_bool("enabled", false)
+    networking.storage:set_string("enabled", minetest.serialize(false))
     networking.storage:set_string("kick_message", "You are not authorized to join this server.")
     -- Initialize and set default whitelist ipv4 address 127.0.0.1 for singleplayer
     networking.ipv4_whitelist = {}
     networking.ipv4_whitelist["127.0.0.1"] = true
     networking.storage:set_string("ipv4_whitelist", minetest.serialize(networking.ipv4_whitelist))
 end
-
---local settings = Settings(minetest.get_modpath("tutorial") .. "/settings.conf")
---networking.server_ipv4 = tutorial.fetch_setting("server_ipv4")
 
 function networking.parse(s,sep)
     local values = {}
@@ -27,7 +24,7 @@ minetest.register_on_joinplayer(function(player)
     local ipv4 = minetest.get_player_ip(pname)
     networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
     -- Check against whitelist
-    if not networking.ipv4_whitelist[ipv4] and networking.storage:get_bool("enabled") then
+    if not networking.ipv4_whitelist[ipv4] and networking.storage:get_string("enabled") then
         minetest.kick_player(pname, networking.storage:get_string("kick_message"))
     end
 end)
@@ -291,6 +288,21 @@ minetest.register_chatcommand("dump_whitelist", {
         minetest.chat_send_player(pname,"[networking] Whitelisted IPV4 addresses:")
         for ipv4,_ in pairs(whitelist) do
             minetest.chat_send_player(pname,"[networking] "..ipv4)
+        end
+	end
+})
+
+minetest.register_chatcommand("whitelist", {
+	description = "Toggles the state of the whitelist between enabled and disabled.",
+	privs = {server = true},
+	func = function(pname, _)
+        local state = minetest.deserialize(networking.storage:get_string("enabled"))
+        if state then
+            networking.storage:set_string("enabled", minetest.serialize(false))
+            minetest.chat_send_player(pname,"[networking] Whitelist is now disabled.")
+        else
+            networking.storage:set_string("enabled", minetest.serialize(true))
+            minetest.chat_send_player(pname,"[networking] Whitelist is now enabled.")
         end
 	end
 })
