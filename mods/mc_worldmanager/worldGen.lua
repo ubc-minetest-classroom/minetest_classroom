@@ -14,9 +14,15 @@ local function getTerrainHeight(posX, posZ, seaLevel, mainPerlin, continentality
     local noise2 = continentality:get_2d({ x = posX, y = posZ })
     local noise3 = erosion:get_2d({ x = posX, y = posZ })
 
-    local surfaceLevel = seaLevel + (noise2 * 5) + (noise * noise3 * 20)
+    local surfaceLevel = seaLevel + (noise2 * 5) + (noise * noise2 * 20)
     local stoneLevel = surfaceLevel - ((noise + noise2 - noise3) * 3) - 5
     return surfaceLevel, stoneLevel
+end
+
+local function getStoneLevel(posX, posZ, seaLevel, continentality)
+    local noise = continentality:get_2d({ x = posX, y = posZ })
+
+
 end
 
 local function getTerrainNode(posX, posY, posZ, seaLevel, seed, mainPerlin, continentality, erosion)
@@ -65,7 +71,7 @@ local function DecorateTerrain(StartPos, EndPos, groundLevel, data, a)
 
 end
 
-function Realm:GenerateTerrain(seed, groundLevel)
+function Realm:GenerateTerrain(seed, seaLevel)
 
     local perlin = minetest.get_perlin(seed, 4, 0.5, 100)
     local continentality = minetest.get_perlin(seed * 2, 4, 0.5, 400)
@@ -86,24 +92,29 @@ function Realm:GenerateTerrain(seed, groundLevel)
             for x = self.StartPos.x, self.EndPos.x do
                 -- vi, voxel index, is a common variable name here
                 local vi = a:index(x, y, z)
-                data[vi] = getTerrainNode(x, y, z, groundLevel, seed, perlin, continentality, erosion)
+                data[vi] = getTerrainNode(x, y, z, seaLevel, seed, perlin, continentality, erosion)
+
             end
         end
     end
 
-    DecorateTerrain(self.StartPos, self.EndPos, groundLevel, data, a)
+   DecorateTerrain(self.StartPos, self.EndPos, seaLevel, data, a)
+
+   -- biomegen.generate_biomes(data, a, self.StartPos, self.EndPos, seaLevel)
+    vm:set_data(data)
+
 
 
     -- Decorate terrain with trees
 
 
-    vm:set_data(data)
+
     vm:write_to_map()
 
 
     -- Set our new spawnpoint
     local oldSpawnPos = self.SpawnPoint
-    local surfaceLevel = getTerrainHeight(oldSpawnPos.x, oldSpawnPos.z, groundLevel, perlin, continentality, erosion)
+    local surfaceLevel = getTerrainHeight(oldSpawnPos.x, oldSpawnPos.z, seaLevel, perlin, continentality, erosion)
 
     self:UpdateSpawn(self:WorldToLocalPosition({ x = oldSpawnPos.x, y = surfaceLevel, z = oldSpawnPos.z }))
 end
