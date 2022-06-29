@@ -8,6 +8,7 @@ local c_air = minetest.get_content_id("air")
 local c_dirt = minetest.get_content_id("default:dirt")
 local c_grass = minetest.get_content_id("default:dirt_with_grass")
 local c_sand = minetest.get_content_id("default:sand")
+local c_gravel = minetest.get_content_id("default:gravel")
 
 function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecoratorName)
     local heightMapGen
@@ -35,6 +36,8 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     local data = vm:get_data()
     local heightMapTable = heightMapGen(self.StartPos, self.EndPos, area, data, seed, seaLevel)
     mapDecorator(self.StartPos, self.EndPos, area, data, heightMapTable, seed, seaLevel)
+
+    Debug.log("Saving and loading map...")
 
     vm:set_data(data)
     vm:write_to_map()
@@ -81,6 +84,9 @@ end
 
 Realm.MapDecorator["v1"] = function(startPos, endPos, area, data, heightMapTable, seed, seaLevel)
     Debug.log("Calling map decorator v1")
+
+    local erosionPerlin = minetest.get_perlin(seed * 2, 4, 0.5, 400)
+
     for posZ = startPos.z, endPos.z do
         for posY = startPos.y, endPos.y do
             for posX = startPos.x, endPos.x do
@@ -90,18 +96,23 @@ Realm.MapDecorator["v1"] = function(startPos, endPos, area, data, heightMapTable
                 local viBelow = area:index(posX, posY - 1, posZ)
 
                 if (data[vi] == c_stone) then
-
                     local surfaceHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
-                    -- Debug.log("Surface height: " .. surfaceHeight)
-                    if (posY >= surfaceHeight - 1) then
+                    if (posY > surfaceHeight - ((1 - erosionPerlin:get_2d({ x = posX, y = posZ })) * 5)) then
+                        data[vi] = c_dirt
+                    end
+
+                    if (posY >= surfaceHeight - 1 and data[vi] == c_dirt) then
                         if (posY <= seaLevel) then
                             data[vi] = c_sand
+                            if (data[viBelow] == c_dirt) then
+                                data[viBelow] = c_sand
+                            end
                         else
                             data[vi] = c_grass
                         end
-                    elseif (posY > surfaceHeight - 5) then
-                        data[vi] = c_dirt
                     end
+
+
                 end
             end
         end

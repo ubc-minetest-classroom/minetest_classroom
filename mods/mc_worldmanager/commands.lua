@@ -125,7 +125,9 @@ commands["gen"] = {
         end
 
         requestedRealm:GenerateTerrain(seed, seaLevel, "v1", "v1")
-       requestedRealm:CreateBarriers()
+
+        Debug.log("Creating barrier...")
+        requestedRealm:CreateBarriers()
 
         return true
     end }
