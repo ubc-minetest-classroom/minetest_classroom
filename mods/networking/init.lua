@@ -148,7 +148,7 @@ minetest.register_chatcommand("add_ipv4_range", {
                                 end
                             else
                                 -- First two octets are equivalent
-                                if startOctets[3] < endOctets[3] then
+                                if tonumber(startOctets[3]) < tonumber(endOctets[3]) then
                                     for oct3=tonumber(startOctets[3]),tonumber(endOctets[3]),1 do
                                         if oct3 == tonumber(endOctets[3]) then lastOct = tonumber(endOctets[4]) else lastOct = 255 end
                                         for oct4=tonumber(startOctets[4]),lastOct,1 do
@@ -163,7 +163,7 @@ minetest.register_chatcommand("add_ipv4_range", {
                             end
                         else
                             -- First octet is equivalent
-                            if startOctets[2] < endOctets[2] then
+                            if tonumber(startOctets[2]) < tonumber(endOctets[2]) then
                                 for oct2=tonumber(startOctets[2]),tonumber(endOctets[2]),1 do
                                     for oct3=tonumber(startOctets[3]),lastOct3,1 do
                                         if oct3 == tonumber(endOctets[3]) then lastOct = tonumber(endOctets[4]) else lastOct = 255 end
@@ -181,7 +181,7 @@ minetest.register_chatcommand("add_ipv4_range", {
                         end
                     else
                         -- No octets are equivalent
-                        if startOctets[1] < endOctets[1] then
+                        if tonumber(startOctets[1]) < tonumber(endOctets[1]) then
                             for oct1=tonumber(startOctets[1]),tonumber(endOctets[1]),1 do
                                 for oct2=tonumber(startOctets[2]),tonumber(endOctets[2]),1 do
                                     for oct3=tonumber(startOctets[3]),tonumber(endOctets[3]),1 do
