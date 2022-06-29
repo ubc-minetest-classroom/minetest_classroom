@@ -33,7 +33,8 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     }
 
     local data = vm:get_data()
-    heightMapGen(self.StartPos, self.EndPos, area, data, seed, seaLevel)
+    local heightMapTable = heightMapGen(self.StartPos, self.EndPos, area, data, seed, seaLevel)
+    mapDecorator(self.StartPos, self.EndPos, area, data, heightMapTable, seed, seaLevel)
 
     vm:set_data(data)
     vm:write_to_map()
@@ -75,8 +76,52 @@ Realm.heightMapGenerator["v1"] = function(startPos, endPos, area, data, seed, se
         end
     end
 
-
+    return heightMapTable
 end
 
-Realm.MapDecorator["V1"] = function(startPos, endPos, area, data, heightMapTable, seed, seaLevel)
+Realm.MapDecorator["v1"] = function(startPos, endPos, area, data, heightMapTable, seed, seaLevel)
+
+    for posZ = startPos.z, endPos.z do
+        for posY = startPos.y, endPos.y do
+            for posX = startPos.x, endPos.x do
+                -- vi, voxel index, is a common variable name here
+                local vi = area:index(posX, posY, posZ)
+
+                local surfaceHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
+
+                if (data[vi] == c_stone) then
+                    if (posY > surfaceHeight - 10) then
+                        data[vi] = c_dirt
+                    end
+                end
+
+
+            end
+        end
+    end
+
+    for posZ = startPos.z, endPos.z do
+        for posY = startPos.y, endPos.y do
+            for posX = startPos.x, endPos.x do
+                -- vi, voxel index, is a common variable name here
+                local vi = area:index(posX, posY, posZ)
+                local viAbove = area:index(posX, posY + 1, posZ)
+                local viBelow = area:index(posX, posY - 1, posZ)
+
+                if (posY <= seaLevel and data[vi] == c_dirt and (data[viAbove] == c_air or data[viAbove] == c_water)) then
+                    data[vi] = c_sand
+
+                    if (data[viBelow] == c_dirt) then
+                        data[viBelow] = c_sand
+                    end
+
+                end
+
+                if (data[vi] == c_dirt and data[viAbove] == c_air) then
+                    data[vi] = c_grass
+                end
+
+            end
+        end
+    end
 end
