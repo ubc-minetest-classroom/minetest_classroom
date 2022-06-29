@@ -24,7 +24,7 @@ minetest.register_chatcommand("localPos", {
 commands["new"] = {
     func = function(name, params)
         local realmName = tostring(params[1])
-        if (realmName == "" or realmName == nil) then
+        if (realmName == "" or realmName == "nil") then
             realmName = "Unnamed Realm"
         end
         local sizeX = tonumber(params[2])
