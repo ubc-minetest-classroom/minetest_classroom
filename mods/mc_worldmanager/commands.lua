@@ -116,16 +116,16 @@ commands["gen"] = {
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
 
-        local groundLevel = math.floor((requestedRealm.EndPos.y - requestedRealm.StartPos.y) * 0.4) + requestedRealm.StartPos.y
-        Debug.log("Ground level:" .. groundLevel)
+        local seaLevel = math.floor((requestedRealm.EndPos.y - requestedRealm.StartPos.y) * 0.4) + requestedRealm.StartPos.y
+        Debug.log("Sea level:" .. seaLevel)
 
         local seed = tonumber(params[2])
         if (seed == nil) then
             seed = math.random(1, 100)
         end
 
-        requestedRealm:GenerateTerrain(seed, groundLevel)
-        requestedRealm:CreateBarriers()
+        requestedRealm:GenerateTerrain(seed, seaLevel, "v1", "v1")
+       requestedRealm:CreateBarriers()
 
         return true
     end }
