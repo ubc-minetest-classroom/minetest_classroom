@@ -1,3 +1,6 @@
+minetest.set_mapgen_setting('mg_name', 'singlenode', true)
+minetest.set_mapgen_setting('flags', 'nolight', true)
+
 Realm.heightMapGenerator = {}
 Realm.MapDecorator = {}
 
@@ -41,6 +44,12 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
 
     vm:set_data(data)
     vm:write_to_map()
+
+    -- Set our new spawnpoint
+    local oldSpawnPos = self.SpawnPoint
+    local surfaceLevel = getTerrainHeight(oldSpawnPos.x, oldSpawnPos.z, seaLevel, perlin, continentality, erosion)
+
+    self:UpdateSpawn(self:WorldToLocalPosition({ x = oldSpawnPos.x, y = surfaceLevel, z = oldSpawnPos.z }))
 end
 
 Realm.heightMapGenerator["v1"] = function(startPos, endPos, area, data, seed, seaLevel)
