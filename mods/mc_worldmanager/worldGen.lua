@@ -9,39 +9,32 @@ local c_dirt = minetest.get_content_id("default:dirt")
 local c_grass = minetest.get_content_id("default:dirt_with_grass")
 local c_sand = minetest.get_content_id("default:sand")
 
-local function getTerrainHeight(posX, posZ, seaLevel, mainPerlin, continentality, erosion)
+local function getTerrainLevel(posX, posZ, seaLevel, mainPerlin, erosionPerlin)
     local noise = mainPerlin:get_2d({ x = posX, y = posZ })
-    local noise2 = continentality:get_2d({ x = posX, y = posZ })
-    local noise3 = erosion:get_2d({ x = posX, y = posZ })
-
-    local surfaceLevel = seaLevel + (noise2 * 5) + (noise * noise2 * 20)
-    local stoneLevel = surfaceLevel - ((noise + noise2 - noise3) * 3) - 5
-    return surfaceLevel, stoneLevel
+    local noise2 = erosionPerlin:get_2d({ x = posX, y = posZ })
+    return seaLevel + (noise * 5) + (noise * noise2 * 20)
 end
 
-local function getStoneLevel(posX, posZ, seaLevel, continentality)
-    local noise = continentality:get_2d({ x = posX, y = posZ })
-
-
+local function getStoneLevel(posX, posZ, terrainLevel, continentalPerlin)
+    local noise = continentalPerlin:get_2d({ x = posX, y = posZ })
+    return terrainLevel - (noise * 3) - 5
 end
 
-local function getTerrainNode(posX, posY, posZ, seaLevel, seed, mainPerlin, continentality, erosion)
-    local surfaceLevel, stoneLevel = getTerrainHeight(posX, posZ, seaLevel, mainPerlin, continentality, erosion)
 
-    local node = c_air
+local function getTerrainNode(posX, posY, posZ, seaLevel, seed, mainPerlin, continentalPerlin, erosionPerlin)
+    local surfaceLevel = getTerrainLevel(posX, posZ, seaLevel, mainPerlin, erosionPerlin)
+    local stoneLevel = getStoneLevel(posX, posZ, surfaceLevel, continentalPerlin)
 
     if (posY < stoneLevel) then
-        node = c_stone
+        return c_stone
     elseif (posY < surfaceLevel) then
-        node = c_dirt
+        return c_dirt
     elseif (posY < seaLevel) then
-        node = c_water
+        return c_water
     else
-        node = c_air
+        return c_air
     end
-    return node
 end
-
 
 local function DecorateTerrain(StartPos, EndPos, groundLevel, data, a)
     -- Decorate terrain with grass, sand, etc.
@@ -98,9 +91,9 @@ function Realm:GenerateTerrain(seed, seaLevel)
         end
     end
 
-   DecorateTerrain(self.StartPos, self.EndPos, seaLevel, data, a)
+    DecorateTerrain(self.StartPos, self.EndPos, seaLevel, data, a)
 
-   -- biomegen.generate_biomes(data, a, self.StartPos, self.EndPos, seaLevel)
+    -- biomegen.generate_biomes(data, a, self.StartPos, self.EndPos, seaLevel)
     vm:set_data(data)
 
 
