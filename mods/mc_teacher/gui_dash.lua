@@ -217,7 +217,7 @@ local function get_player_list_formspec(player, context)
         local selected_group_idx = 1
         local i = 2
 
-        for name, group in pairs(minetest_classroom.get_all_groups(player)) do
+        for name, group in pairs(minetest_classroom.get_all_groups()) do
             fs[#fs + 1] = ","
             fs[#fs + 1] = minetest.formspec_escape(name)
             if context.groupname and name == context.groupname then
