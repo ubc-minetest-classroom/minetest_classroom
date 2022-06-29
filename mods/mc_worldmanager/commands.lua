@@ -286,7 +286,7 @@ commands["privs"] = {
             return true, "command executed succesfully"
         end
 
-        if (privilege == nil or privilege == "") then
+        if (privilege == "nil" or privilege == "") then
             return false, "Incorrect parameter... Missing realm privilege to add or revoke. Usage: realm privs [grant | list | revoke] <realmID> <privilege>"
         end
 
