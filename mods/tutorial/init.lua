@@ -1,4 +1,5 @@
 -- TODO:
+----- refactor mod/table name to prevent potential mod naming conflicts
 ----- add tutorial progress and completion to player meta
 ----- get/set pdata.tutorials.activeTutorial from player meta
 ----- make tutorials dependent on other tutorials (sequence of tutorials)
@@ -7,7 +8,8 @@
 ----- make tutorial_fs dynamic to show what a player will get on_complettion: use add item_image[]
 ----- need a way for the player to access the pdata.tutorials.activeTutorial instructions and possibly accompanying item_images and models
 ----- update the record_fs menu so that on_completion items and tools are displayed in an inventory and the number of items given can be set by the palyer recording the tutorial
------ add option to display a message after completing a specific action, like "now do this next"
+----- add option to display a message after completing a specific action, like "now do this next"\
+----- refactor global recording-specific variables such as tutorial.recordingActive into player-dependent tables so that multiple players can record different tutorials at once
 
 tutorial = {}
 tutorial.path = minetest.get_modpath("tutorial")
@@ -97,7 +99,7 @@ function tutorial.show_record_fs(player)
             "label[0.3,9.6;Give a tool]",
             "label[4.1,9.6;Give an item]",
             "label[9.1,9.5;Grant a privilege]",
-            "button_exit[8,10.9;2.5,0.8;finish;Finish Recording Tutorial]",
+            "button_exit[8,10.9;2.5,0.8;finish;Finish]",
             "label[0.5,3.9;The sequence of events that you recorded]"
         }
 
@@ -226,6 +228,42 @@ function tutorial.show_record_fs(player)
 		return true
 	end
 end
+
+--[[
+NEW FORMSPEC PROTOTYPES
+
+OVERVIEW TAB:
+formspec_version[5]
+size[12.6,10]
+field[0.4,0.7;11.8,0.7;title;Title;]
+textarea[0.4,1.9;11.8,1.3;description;Description;]
+textarea[0.4,3.7;11.8,1.3;message;Completion message;]
+textarea[0.4,5.5;11.8,3.2;;Tutorial summary;]
+button_exit[0.4,8.8;11.8,0.8;finish;Finish and save]
+
+EVENT/GROUP TAB:
+formspec_version[5]
+size[12.6,10]
+textlist[0.4,0.8;11.8,7.2;eventlist;;1;false]
+label[0.4,0.6;Recorded events]
+image_button[0.4,8.2;1.4,1.4;blank.png;eventlist_add_event;Add event;false;true]
+image_button[3.4,8.2;1.4,1.4;blank.png;eventlist_delete;Delete;false;true]
+image_button[4.9,8.2;1.4,1.4;blank.png;eventlist_duplicate;Duplicate;false;true]
+image_button[7.9,8.2;1.4,1.4;blank.png;eventlist_move_up;Move up;false;true]
+image_button[9.3,8.2;1.4,1.4;blank.png;eventlist_move_down;Move down;false;true]
+image_button[6.4,8.2;1.4,1.4;blank.png;eventlist_move_top;Move to top;false;true]
+image_button[10.8,8.2;1.4,1.4;blank.png;eventlist_move_bottom;Move to bottom;false;true]
+image_button[1.9,8.2;1.4,1.4;blank.png;eventlist_add_group;Add group;false;true]
+
+REWARDS TAB:
+formspec_version[5]
+size[12.6,10]
+
+DEPENDENCIES TAB:
+formspec_version[5]
+size[12.6,10]
+]]
+
 
 function tutorial.show_record_options_fs(player)
     local record_options_fs = {
