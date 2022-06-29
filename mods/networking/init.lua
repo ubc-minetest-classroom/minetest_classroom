@@ -2,7 +2,8 @@ networking = {}
 networking.storage = minetest.get_mod_storage()
 networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
 if not networking.ipv4_whitelist then
-    -- Set default kick message
+    -- Set a boolean for enabling the whitelist. Whitelist is disabled by default on startup to avoid players from automatically being kicked if not hosted locally.
+    networking.storage:set_bool("enabled", false)
     networking.storage:set_string("kick_message", "You are not authorized to join this server.")
     -- Initialize and set default whitelist ipv4 address 127.0.0.1 for singleplayer
     networking.ipv4_whitelist = {}
@@ -26,8 +27,8 @@ minetest.register_on_joinplayer(function(player)
     local ipv4 = minetest.get_player_ip(pname)
     networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
     -- Check against whitelist
-    if not networking.ipv4_whitelist[ipv4] then
-        minetest.kick_player(pname, networking.kick_message)
+    if not networking.ipv4_whitelist[ipv4] and networking.storage:get_bool("enabled") then
+        minetest.kick_player(pname, networking.storage:get_string("kick_message"))
     end
 end)
 
