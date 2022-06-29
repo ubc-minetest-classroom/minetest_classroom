@@ -256,7 +256,7 @@ commands["privs"] = {
         local realmID = tonumber(params[2])
         local privilege = tostring(params[3])
 
-        if (operation == nil or operation == "") then
+        if (operation == "nil" or operation == "") then
             return false, "Incorrect parameter... Missing realm privilege operation. Usage: realm privs [<grant> | <revoke>] <realmID> <privilege>"
         end
 
