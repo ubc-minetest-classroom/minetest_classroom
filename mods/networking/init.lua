@@ -23,8 +23,8 @@ minetest.register_on_joinplayer(function(player)
     local pname = player:get_player_name()
     local ipv4 = minetest.get_player_ip(pname)
     networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
-    -- Check against whitelist
-    if not networking.ipv4_whitelist[ipv4] and networking.storage:get_string("enabled") then
+    local state = minetest.deserialize(networking.storage:get_string("enabled"))
+    if not networking.ipv4_whitelist[ipv4] and state then
         minetest.kick_player(pname, networking.storage:get_string("kick_message"))
     end
 end)
