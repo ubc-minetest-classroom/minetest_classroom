@@ -16,7 +16,6 @@ local function check_perm(player)
     return minetest.check_player_privs(player:get_player_name(), priv_table)
 end
 
-
 -- Registers the magnifying glass tool
 minetest.register_tool(tool_name, {
     description = "Magnifying Glass",
@@ -27,8 +26,8 @@ minetest.register_tool(tool_name, {
     tool_capabilities = {},
     range = 10,
     groups = { disable_repair = 1 }, 
-    wield_image = "magnifying_tool.png",
-    inventory_image = "magnifying_tool.png",
+    wield_image = "magnify_magnifying_tool.png",
+    inventory_image = "magnify_magnifying_tool.png",
     liquids_pointable = false,
     on_use = function(itemstack, player, pointed_thing)
         if not check_perm(player) or pointed_thing.type ~= "node" then

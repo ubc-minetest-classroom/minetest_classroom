@@ -34,7 +34,7 @@ vn 1.000000 0.000000 0.000000
 vn -1.000000 0.000000 0.000000
 vn 0.000000 0.000000 -1.000000
 vn 0.000000 0.000000 1.000000
-usemtl default_blueberry_bush_leaves.png^default_blueberry_overlay.png
+g default_blueberry_bush_leaves.png^default_blueberry_overlay.png
 f 1/1/1 2/2/1 3/3/1 4/4/1
 f 5/1/2 6/2/2 7/3/2 8/4/2
 f 7/1/3 6/2/3 3/3/3 2/4/3
