@@ -4,8 +4,8 @@ minetest.set_mapgen_setting('flags', 'nolight', true)
 Realm.heightMapGenerator = {}
 Realm.MapDecorator = {}
 
-local c_stone = minetest.get_content_id("default:stone")
-local c_water = minetest.get_content_id("default:water_source")
+local c_stone = minetest.get_content_id("mapgen_stone")
+local c_water = minetest.get_content_id("mapgen_water_source")
 local c_lava = minetest.get_content_id("default:lava_source")
 local c_air = minetest.get_content_id("air")
 local c_dirt = minetest.get_content_id("default:dirt")
@@ -37,8 +37,8 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     }
 
     local data = vm:get_data()
-    local heightMapTable = heightMapGen(self.StartPos, self.EndPos, area, data, seed, seaLevel)
-    mapDecorator(self.StartPos, self.EndPos, area, data, heightMapTable, seed, seaLevel)
+    local heightMapTable = heightMapGen(self.StartPos, self.EndPos, vm, area, data, seed, seaLevel)
+    mapDecorator(self.StartPos, self.EndPos, vm, area, data, heightMapTable, seed, seaLevel)
 
     Debug.log("Saving and loading map...")
 
@@ -47,12 +47,12 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
 
     -- Set our new spawnpoint
     local oldSpawnPos = self.SpawnPoint
-    local surfaceLevel = getTerrainHeight(oldSpawnPos.x, oldSpawnPos.z, seaLevel, perlin, continentality, erosion)
+    local surfaceLevel = ptable.get2D(heightMapTable, { x = oldSpawnPos.x, y = oldSpawnPos.z })
 
     self:UpdateSpawn(self:WorldToLocalPosition({ x = oldSpawnPos.x, y = surfaceLevel, z = oldSpawnPos.z }))
 end
 
-Realm.heightMapGenerator["v1"] = function(startPos, endPos, area, data, seed, seaLevel)
+Realm.heightMapGenerator["v1"] = function(startPos, endPos, vm, area, data, seed, seaLevel)
     Debug.log("Calling heightmap generator v1")
 
     local mainPerlin = minetest.get_perlin(seed, 4, 0.5, 100)
@@ -91,7 +91,7 @@ Realm.heightMapGenerator["v1"] = function(startPos, endPos, area, data, seed, se
     return heightMapTable
 end
 
-Realm.MapDecorator["v1"] = function(startPos, endPos, area, data, heightMapTable, seed, seaLevel)
+Realm.MapDecorator["v1"] = function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
     Debug.log("Calling map decorator v1")
 
     local erosionPerlin = minetest.get_perlin(seed * 2, 4, 0.5, 400)
@@ -125,7 +125,10 @@ Realm.MapDecorator["v1"] = function(startPos, endPos, area, data, heightMapTable
                 end
             end
         end
-
-
     end
+end
+
+Realm.MapDecorator["biomegen"] = function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
+    Debug.log("Calling biomegen map decorator")
+    biomegen.generate_all(data, area, vm, startPos, endPos, seed, seaLevel)
 end
