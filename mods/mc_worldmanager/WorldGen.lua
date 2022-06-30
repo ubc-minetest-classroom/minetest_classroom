@@ -130,5 +130,6 @@ end
 
 Realm.MapDecorator["biomegen"] = function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
     Debug.log("Calling biomegen map decorator")
+    biomegen.set_elevation_chill(0)
     biomegen.generate_all(data, area, vm, startPos, endPos, seed, seaLevel)
 end
