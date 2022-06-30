@@ -21,6 +21,8 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmDataManagement.lu
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmSchematicSaveLoad.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCoordinateConversion.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmIntegrationHelpers.lua")
+
 if (areas) then
     dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmAreasIntegration.lua")
 end
@@ -31,9 +33,18 @@ end
 ---@param area table Size of the realm in {x,y,z} format
 ---@return table a new "Realm" table object / class.
 function Realm:New(name, area)
-    area.x = area.x or 80
-    area.y = area.y or 80
-    area.z = area.z or 80
+
+    if (area.x == nil or area.x == 0) then
+        area.x = 80
+    end
+
+    if (area.y == nil or area.y == 0) then
+        area.y = 80
+    end
+
+    if (area.z == nil or area.z == 0) then
+        area.z = 80
+    end
 
     if (name == nil or name == "") then
         name = "Unnamed Realm"
@@ -70,13 +81,22 @@ function Realm:New(name, area)
 
     if (areas) then
         local protectionID = areas:add("Server", this.ID .. this.Name, this.StartPos, this.EndPos)
-        this:set_string("protectionID", protectionID)
+        this:set_data("protectionID", protectionID)
         areas:save()
     end
 
     Realm.SaveDataToStorage()
 
+    this:CallOnCreateCallbacks()
+
     return this
+end
+
+---GetRealm
+---@param ID number
+---Returns the realm corresponding to the ID parameter.
+function Realm.GetRealm(ID)
+    return Realm.realmDict[tonumber(ID)]
 end
 
 -- Online bin packing... A pretty challenging problem to solve.
@@ -189,8 +209,19 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
 end
 
 function Realm.markSpaceAsFree(startPos, endPos)
+    Debug.logCoords(startPos, "start pos")
+    Debug.logCoords(endPos, "end pos")
+
+    -- Crashes on a value of 3 when deleting spawns, but only when deleting spawns. I don't know why.
+    -- The values in the calling function 'Delete' are all correct.
+    -- Somehow, the value is turning from '3' to nil between method calls.
+    if (endPos.z == nil) then
+        endPos.z = startPos.z
+        Debug.log("endPos.z is nil")
+    end
+
     local entry = {}
-    entry.startPos = startPos
+    entry.startPos = { x = startPos.x, y = startPos.y, z = startPos.z }
     entry.area = { x = endPos.x - startPos.x,
                    y = endPos.y - startPos.y,
                    z = endPos.z - startPos.z }
@@ -372,28 +403,67 @@ end
 ---NOTE: remember to clear any references to the realm so that memory can be released by the GC.
 ---@return void
 function Realm:Delete()
+
+    -- We need to first calculate where the realm is located on the realm grid.
+    -- For some reason, this code sometimes does not work later on in the process...
+    local gridStartPos = Realm.worldToGridSpace({
+        x = self.StartPos.x,
+        y = self.StartPos.y,
+        z = self.StartPos.z })
+
+    local gridEndPos = Realm.worldToGridSpace({
+        x = self.EndPos.x,
+        y = self.EndPos.y,
+        z = self.EndPos.z })
+
+    gridStartPos.x = gridStartPos.x - Realm.const.bufferSize
+    gridStartPos.y = gridStartPos.y - Realm.const.bufferSize
+    gridStartPos.z = gridStartPos.z - Realm.const.bufferSize
+
+    if (self.ID == mc_worldManager.spawnRealmID) then
+        mc_worldManager.spawnRealmID = nil
+    end
+
+    local players = self:GetPlayers()
+
+    -- We call the functions registered with the realm's OnDelete event as well as global onDelete callbacks.
+
     self:RunFunctionFromTable(self.RealmDeleteTable)
+    self:CallOnDeleteCallbacks()
+
+
+    -- We need to remove all players from the realm
+    local spawn = mc_worldManager.GetSpawnRealm()
+    if (players ~= nil) then
+        for k, v in pairs(players) do
+            if v == true then
+                spawn:TeleportPlayer(minetest.get_player_by_name(k))
+            end
+        end
+    end
+
+
+    -- We clear all nodes from the realm.
     self:ClearNodes()
 
+    -- We clear block protection
     if (areas) then
-        local protectionID = self:get_string("protectionID")
+        local protectionID = self:get_data("protectionID")
         if (protectionID ~= nil) then
             areas:remove(protectionID, true)
             areas:save()
         end
     end
 
-    local gridSpace = Realm.worldToGridSpace({
-        x = self.StartPos.x,
-        y = self.StartPos.y,
-        z = self.StartPos.z })
+    -- We save the realms data to storage twice. The first time is to ensure that critical data such as the realm dict is saved to disk.
+    -- The second time is to ensure that we have saved the updated realm grid.
 
-    gridSpace.x = gridSpace.x - Realm.const.bufferSize
-    gridSpace.y = gridSpace.y - Realm.const.bufferSize
-    gridSpace.z = gridSpace.z - Realm.const.bufferSize
-
-    Realm.markSpaceAsFree(gridSpace, Realm.worldToGridSpace(self.EndPos))
+    -- remove the realm dictionary entry.
     Realm.realmDict[self.ID] = nil
+    Realm.SaveDataToStorage()
+
+    -- We need to remove the realm from the realm grid and clear the space for other realms.
+    Realm.markSpaceAsFree(gridStartPos, gridEndPos)
     Realm.SaveDataToStorage()
 end
 

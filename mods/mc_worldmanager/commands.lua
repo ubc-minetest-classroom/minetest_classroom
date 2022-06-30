@@ -9,14 +9,8 @@ minetest.register_chatcommand("localPos", {
         teacher = true,
     },
     func = function(name, param)
-
-
         local player = minetest.get_player_by_name(name)
-
-        local pmeta = player:get_meta()
-        local realmID = pmeta:get_int("realm")
-
-        local requestedRealm = Realm.realmDict[realmID]
+        local requestedRealm = Realm.GetRealmFromPlayer(player)
 
         if (requestedRealm == nil) then
             return false, "Player is not listed in a realm OR current realm has been deleted; Try teleporting to a different realm and then back..."
@@ -29,13 +23,23 @@ minetest.register_chatcommand("localPos", {
 
 commands["new"] = {
     func = function(name, params)
-        local realmName = params[2]
-        if (realmName == "" or realmName == nil) then
+        local realmName = tostring(params[1])
+        if (realmName == "" or realmName == "nil") then
             realmName = "Unnamed Realm"
         end
-        local size = params[3]
-        local sizeY = params[4]
-        local newRealm = Realm:New(realmName, { x = size, y = sizeY, z = size })
+        local sizeX = tonumber(params[2])
+        if (sizeX == nil or sizeX == 0) then
+            sizeX = 40
+        end
+        local sizeY = tonumber(params[3])
+        if (sizeY == nil or sizeY == 0) then
+            sizeY = 40
+        end
+        local sizeZ = tonumber(params[4]) or 40
+        if (SizeZ == nil or SizeZ == 0) then
+            SizeZ = 40
+        end
+        local newRealm = Realm:New(realmName, { x = sizeX, y = sizeY, z = sizeZ })
         newRealm:CreateGround()
         newRealm:CreateBarriers()
 
@@ -45,7 +49,16 @@ commands["new"] = {
 commands["delete"] = {
     func = function(name, params)
         local realmID = params[1]
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+
+        if (realmID == nil) then
+            return false, "No realm ID specified"
+        end
+
+        if (realmID == mc_worldManager.spawnRealmID) then
+            return false, "Cannot delete the spawn realm."
+        end
+
+        local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
@@ -65,7 +78,7 @@ commands["list"] = {
 commands["info"] = {
     func = function(name, params)
         local realmID = params[1]
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
             return false, "Requested realm does not exist."
         end
@@ -86,12 +99,12 @@ commands["tp"] = {
     privs = { teleport = true },
     func = function(name, params)
         local realmID = params[1]
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
 
-        player = minetest.get_player_by_name(name)
+        local player = minetest.get_player_by_name(name)
         requestedRealm:TeleportPlayer(player)
 
         return true, "teleported to: " .. realmID
@@ -100,7 +113,7 @@ commands["tp"] = {
 commands["walls"] = {
     func = function(name, params)
         local realmID = params[1]
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
@@ -121,7 +134,7 @@ commands["schematic"] = {
         elseif (params[1] == "save") then
             table.remove(params, 1)
             local realmID = params[1]
-            local requestedRealm = Realm.realmDict[tonumber(realmID)]
+            local requestedRealm = Realm.GetRealm(tonumber(realmID))
 
             if (requestedRealm == nil) then
                 return false, "Requested realm of ID:" .. realmID .. " does not exist."
@@ -163,21 +176,20 @@ commands["schematic"] = {
 commands["setspawn"] = {
     func = function(name, params)
         local player = minetest.get_player_by_name(name)
-        local pmeta = player:get_meta()
-        local realmID = pmeta:get_int("realm")
-        local requestedRealm = Realm.realmDict[realmID]
+
+        local requestedRealm = Realm.GetRealmFromPlayer(player)
 
         local position = requestedRealm:WorldToLocalPosition(player:get_pos())
 
         requestedRealm:UpdateSpawn(position)
 
-        return true, "Updated spawnpoint for realm with ID: " .. realmID
+        return true, "Updated spawnpoint for realm with ID: " .. requestedRealm.ID
     end }
 
 commands["setspawnrealm"] = {
     func = function(name, params)
         local realmID = params[1]
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
@@ -209,8 +221,6 @@ commands["help"] = {
 
 commands["define"] = {
     func = function(name, params)
-        local params = mc_helpers.split(param, " ")
-
         -- this is really hacky, we should come up with a better way to do this...
 
         local name = tostring(params[1])
@@ -244,6 +254,40 @@ commands["define"] = {
         Realm.realmCount = newRealm.ID
         Realm:Restore(newRealm)
     end }
+
+commands["players"] = {
+    func = function(name, params)
+
+
+        if (params[1] == "list") then
+            local realmID = params[2]
+            local requestedRealm = Realm.GetRealm(tonumber(realmID))
+            if (requestedRealm == nil) then
+                return false, "Requested realm of ID:" .. realmID .. " does not exist."
+            end
+
+            local realmPlayerList = requestedRealm:get_tmpData("Inhabitants")
+
+            if (realmPlayerList == nil) then
+                return false, "no players found in realm player list."
+            end
+
+            Debug.log(minetest.serialize(realmPlayerList))
+
+            for k, v in pairs(realmPlayerList) do
+                minetest.chat_send_player(name, k)
+            end
+
+            return true, "listed all players in realm."
+        elseif (params[1] == "scan") then
+            Realm.ScanForPlayerRealms()
+            return true, "re-associated players with realms."
+
+        end
+
+        return false, "unknown sub-command."
+    end
+}
 
 minetest.register_chatcommand("realm", {
     params = "Subcommand Realm ID Option",

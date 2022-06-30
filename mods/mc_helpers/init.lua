@@ -123,3 +123,28 @@ function mc_helpers.pairsByKeys (t, f)
     end
     return iter
 end
+
+function mc_helpers.trim(s)
+    return s:match( "^%s*(.-)%s*$" )
+end
+
+
+function mc_helpers.shallowCopy(table)
+    local copy = {}
+    for k, v in pairs(table) do
+        copy[k] = v
+    end
+    return copy
+end
+
+function mc_helpers.deepCopy(table)
+    local copy = {}
+    for k, v in pairs(table) do
+        if type(v) == "table" then
+            copy[k] = mc_helpers.deepCopy(v)
+        else
+            copy[k] = v
+        end
+    end
+    return copy
+end
