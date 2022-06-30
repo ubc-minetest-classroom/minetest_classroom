@@ -39,12 +39,22 @@ local function initialize(chulens, seaLevel, seed)
     local noiseparams = minetest.get_mapgen_setting_noiseparams
 
     local chulens2d = { x = chulens.x, y = chulens.z, z = 1 }
+
     local np_heat = noiseparams('mg_biome_np_heat')
-    np_heat.offset = np_heat.offset + seaLevel * elevation_chill
+    np_heat.seed = seed
+    np_heat.offset = np_heat.offset + (seaLevel * elevation_chill)
+
+    local np_humidity = noiseparams('mg_biome_np_humidity')
+    np_humidity.seed = seed
+
     nobj_filler_depth = minetest.get_perlin_map(np_filler_depth, chulens2d)
+
     nobj_heat = minetest.get_perlin_map(np_heat, chulens2d)
     nobj_heat_blend = minetest.get_perlin_map(noiseparams('mg_biome_np_heat_blend'), chulens2d)
-    nobj_humid = minetest.get_perlin_map(noiseparams('mg_biome_np_humidity'), chulens2d)
+
+
+
+    nobj_humid = minetest.get_perlin_map(np_humidity, chulens2d)
     nobj_humid_blend = minetest.get_perlin_map(noiseparams('mg_biome_np_humidity_blend'), chulens2d)
 
     c_ignore = minetest.get_content_id("ignore")

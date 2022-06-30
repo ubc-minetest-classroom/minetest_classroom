@@ -28,7 +28,11 @@ function Realm:ClearNodes()
 
     local context = {} -- persist data between callback calls
     context.realm = self
-    minetest.emerge_area(self.StartPos, self.EndPos, emerge_callback, context)
+
+    local startPos = { x = self.StartPos.x - 40, y = self.StartPos.y - 40, z = self.StartPos.z - 40 }
+    local endPos = { x = self.EndPos.x + 40, y = self.EndPos.y + 40, z = self.EndPos.z + 40 }
+
+    minetest.emerge_area(startPos, endPos, emerge_callback, context)
 
     minetest.chat_send_all("[INFO] Started cleaning up a realm, block placement might act unresponsive for a moment.")
 end
