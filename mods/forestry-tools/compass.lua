@@ -1,6 +1,11 @@
 local HUD_showing = false
 local mag_declination, azimuth, curr_azimuth = 0, 0, 0
 
+local compassData = {
+	mag_declination = mag_declination,
+	azimuth = azimuth
+}
+
 -- Give the compass to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
     local inv = player:get_inventory()
@@ -71,6 +76,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 
 		if fields.save then
+			local pmeta = player:get_meta()
+			
 			if fields.declination ~= "" and tonumber(fields.declination) ~= mag_declination then
 				local only_nums = tonumber(fields.declination) ~= nil
 
@@ -80,6 +87,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - magnetic declination must be a number between -90 and 90"))
 					else
 						mag_declination = declination_entered
+						pmeta:set_int("declination", mag_declination)
+
 						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - magnetic declination set to " .. fields.declination .. "°"))
 					end
 				else 
@@ -96,6 +105,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - azimuth must be a number between 0 and 360"))
 					else
 						azimuth = azimuth_entered
+						pmeta:set_int("azimuth", azimuth)
+
 						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - azimuth set to " .. fields.azimuth .. "°"))
 					end
 				else 
@@ -164,6 +175,10 @@ minetest.register_tool("forestry_tools:compass" , {
 
 	-- On left-click
     on_use = function(itemstack, player, pointed_thing)
+		local pmeta = player:get_meta()
+		mag_declination = pmeta:get_int("declination")
+		azimuth = pmeta:get_int("azimuth")
+
 		if HUD_showing then
 			needleHud:remove_all()
 			bezelHud:remove_all()
