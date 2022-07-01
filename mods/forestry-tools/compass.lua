@@ -1,6 +1,11 @@
 local HUD_showing = false
 local mag_declination, azimuth, curr_azimuth = 0, 0, 0
 
+local compassData = {
+	mag_declination = mag_declination,
+	azimuth = azimuth
+}
+
 -- Give the compass to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
     local inv = player:get_inventory()
@@ -71,19 +76,23 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 
 		if fields.save then
+			local pmeta = player:get_meta()
+			
 			if fields.declination ~= "" and tonumber(fields.declination) ~= mag_declination then
 				local only_nums = tonumber(fields.declination) ~= nil
 
 				if only_nums then
 					local declination_entered = tonumber(fields.declination)
-					if math.abs(declination_entered) > 360 then
-						minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - magnetic declination must be a number between -360 and 360"))
+					if math.abs(declination_entered) > 90 or math.abs(declination_entered) < -90 then
+						minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - magnetic declination must be a number between -90 and 90"))
 					else
 						mag_declination = declination_entered
+						pmeta:set_int("declination", mag_declination)
+
 						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - magnetic declination set to " .. fields.declination .. "°"))
 					end
 				else 
-					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - magnetic declination must be a number between -360 and 360"))
+					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - magnetic declination must be a number between -90 and 90"))
 				end
 			end
 
@@ -96,6 +105,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - azimuth must be a number between 0 and 360"))
 					else
 						azimuth = azimuth_entered
+						pmeta:set_int("azimuth", azimuth)
+
 						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - azimuth set to " .. fields.azimuth .. "°"))
 					end
 				else 
@@ -123,7 +134,9 @@ local function show_needle_hud(player)
 	needleHud:add(player, "needle", {
 		hud_elem_type = "image",
 		text = "needle_0.png",
-		position={x = 0.5, y = 0.5}, 
+		-- position={x = 0.5, y = 0.5}, 
+		-- scale={x = 10.2, y = 10.2}
+		position={x = 0.525, y = 0.4}, 
 		scale={x = 10.2, y = 10.2}
 	})
 
@@ -135,11 +148,24 @@ local function show_bezel_hud(player)
 	bezelHud:add(player, "bezel", {
 		hud_elem_type = "image",
 		text = "bezel_0.png",
-		position={x = 0.5, y = 0.5}, 
+		position={x = 0.525, y = 0.4}, 
 		scale={x = 10, y = 10},
+		-- position={x = 0.5, y = 0.5}, 
+		-- scale={x = 10, y = 10},
 		offset = {x = -4, y = -4}
 	})
 end
+
+-- local mirrorHud = mhud.init()
+-- local function show_mirror_hud(player)
+-- 	bezelHud:add(player, "mirror", {
+-- 		hud_elem_type = "image",
+-- 		text = "compass_mirror.png",
+-- 		position={x = 0.5, y = 0.5}, 
+-- 		scale={x = 10, y = 10},
+-- 		offset = {x = -4, y = -4}
+-- 	})
+-- end
 
 minetest.register_tool("forestry_tools:compass" , {
 	description = "Compass",
@@ -149,6 +175,10 @@ minetest.register_tool("forestry_tools:compass" , {
 
 	-- On left-click
     on_use = function(itemstack, player, pointed_thing)
+		local pmeta = player:get_meta()
+		mag_declination = pmeta:get_int("declination")
+		azimuth = pmeta:get_int("azimuth")
+
 		if HUD_showing then
 			needleHud:remove_all()
 			bezelHud:remove_all()
@@ -156,6 +186,7 @@ minetest.register_tool("forestry_tools:compass" , {
 		else
 			show_needle_hud(player)
 			show_bezel_hud(player)
+			-- show_mirror_hud(player)
 		end
 	end,
 
@@ -207,8 +238,16 @@ minetest.register_globalstep(function(dtime)
 				-- Needle rotation
 				rotate_image(player, needleHud, "needle", angle_relative)
 
-				-- Rotate bezel based on azimuth set
-				local shed_angle = 360 - azimuth
+				-- Rotate bezel based on azimuth and declination set
+				local shed_angle
+				if mag_declination > 0 and azimuth < mag_declination then
+					shed_angle = mag_declination - azimuth
+				elseif mag_declination < 0 and (360 - azimuth) < math.abs(mag_declination) then
+					shed_angle = mag_declination + azimuth 
+				else
+					shed_angle = mag_declination + (360 - azimuth)
+				end
+
 				rotate_image(player, bezelHud, "bezel", shed_angle)
 			end
 		end
