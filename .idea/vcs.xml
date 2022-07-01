@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="VcsDirectoryMappings">
-    <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/mods/UBC_Campus_Minetest_Map" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/mods/areas" vcs="Git" />
-  </component>
-</project>

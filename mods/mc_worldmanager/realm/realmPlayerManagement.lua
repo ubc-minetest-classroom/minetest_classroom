@@ -19,6 +19,7 @@ function Realm:TeleportPlayer(player)
 
     self:RegisterPlayer(player)
     mc_worldManager.updateHud(player)
+    self:ApplyPrivileges(player)
 end
 
 ---@private

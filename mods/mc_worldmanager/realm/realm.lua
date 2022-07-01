@@ -21,6 +21,7 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmDataManagement.lu
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmSchematicSaveLoad.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCoordinateConversion.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPrivileges.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmIntegrationHelpers.lua")
 
 if (areas) then
@@ -59,6 +60,7 @@ function Realm:New(name, area)
         PlayerJoinTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
         PlayerLeaveTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
         RealmDeleteTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
+        Permissions = {},
         MetaStorage = {}
     }
 
@@ -487,6 +489,22 @@ function Realm:RunFunctionFromTable(table, player)
             end
         end
     end
+end
+
+function Realm:ContainsCoordinate(coordinate)
+    if (coordinate.x < self.StartPos.x or coordinate.x > self.EndPos.x) then
+        return false
+    end
+
+    if (coordinate.z < self.StartPos.z or coordinate.z > self.EndPos.z) then
+        return false
+    end
+
+    if (coordinate.y < self.StartPos.y or coordinate.y > self.EndPos.y) then
+        return false
+    end
+
+    return true
 end
 
 Realm.LoadDataFromStorage()

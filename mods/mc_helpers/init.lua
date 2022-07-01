@@ -97,7 +97,7 @@ end
 ---@param string delimiter the character(s) to split s by
 ---@return table with split entries
 function mc_helpers.split(s, delimiter)
-    result = {};
+    local result = {};
     for match in (s .. delimiter):gmatch("(.-)" .. delimiter) do
         table.insert(result, match);
     end
@@ -112,18 +112,29 @@ end
 ---@return function iterator
 function mc_helpers.pairsByKeys (t, f)
     local a = {}
-    for n in pairs(t) do table.insert(a, n) end
+    for n in pairs(t) do
+        table.insert(a, n)
+    end
     table.sort(a, f)
     local i = 0      -- iterator variable
-    local iter = function ()   -- iterator function
+    local iter = function()
+        -- iterator function
         i = i + 1
-        if a[i] == nil then return nil
-        else return a[i], t[a[i]]
+        if a[i] == nil then
+            return nil
+        else
+            return a[i], t[a[i]]
         end
     end
     return iter
 end
 
+function mc_helpers.isNumber(str)
+    if (str == nil) then
+        return false
+    end
+    return not (str == "" or str:match("%D"))
+end
 function mc_helpers.trim(s)
     return s:match( "^%s*(.-)%s*$" )
 end
