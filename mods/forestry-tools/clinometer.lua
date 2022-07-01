@@ -79,15 +79,47 @@ local clinHud = mhud.init()
 local function show_clin_hud(player)
 	clinHud:add(player, "clinometer", {
 		hud_elem_type = "text",
-		text = "yaw, pitch",   -- not sure if that works 
+		text = "",
 		number =  "0xFF0000",
-		position={x = 0.5, y = 0.5}, 
+		position={x = 0.5, y = 0}, 
 		scale={x = 10, y = 10},
-		offset = {x = 0, y = 5}
+		offset = {x = 0, y = 15},
+		z_index = 0,
+			
 	})
 end
 
 -- double check ^
+
+
+function update_hud_displays(player)
+	local toDegrees = 180/math.pi
+	local name = player:get_player_name()
+	local clinometer
+	local pos = vector.round(player:get_pos())
+	
+	
+	if tool_active(player, "forestry_tools:clinometer") then 
+		clinometer = true 
+	end 
+	
+	
+	
+	-- Minetest goes counter clokwise
+	local yaw = 360 - player:get_look_horizontal()*toDegrees
+	local pitch = player:get_look_vertical()*toDegrees
+	
+	if (clinometer)
+		str_angles = S("Yaw: @1°, pitch: @2°", string.format("%.1f", yaw), string.format("%.1f", pitch))
+	end
+	
+
+	if str_angles ~= "" then 
+		player:hud_change(name, "text", strs_angles)
+	end
+	
+	
+	
 
 
 minetest.register_globalstep(function(dtime)
@@ -102,11 +134,10 @@ minetest.register_globalstep(function(dtime)
 			else
 				
 
-			local yaw = 360 - player:get_look_horizontal()*toDegrees
-			local pitch = player:get_look_vertical()*toDegrees
+			--what to add
 
-		if (clinometer) then 
-    	str_angles = S("Yaw: @1°, pitch: @2°", string.format("%.1f", yaw), string.format("%.1f", pitch))
+		
+    
 		end
 
 		-- finish this section 
@@ -115,6 +146,14 @@ minetest.register_globalstep(function(dtime)
 	end
 	
 end)
+	
+	
+-- have to account for change of player FOV, direction, update HUD to display
+	
+minetest.register_on_newplayer(clinHud)
+minetest.register_on_joinplayer(clinHud)
+
+
 
 -- local clin_hud = {}
 -- clin_hud.playerhuds = {}
