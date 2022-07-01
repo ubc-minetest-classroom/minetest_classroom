@@ -124,6 +124,7 @@ commands["walls"] = {
         end
 
         requestedRealm:CreateBarriers()
+        return true, "created walls in realm: " .. tostring(realmID)
     end }
 
 commands["gen"] = {

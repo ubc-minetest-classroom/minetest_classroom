@@ -52,29 +52,37 @@ end
 ---Creates invisible walls around the realm.
 ---@return void
 function Realm:CreateBarriers()
-    local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
-    local pos2 = { x = self.StartPos.x, y = self.EndPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
 
-    local pos1 = { x = self.EndPos.x, y = self.StartPos.y, z = self.StartPos.z }
-    local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+    local startPos = self.StartPos
+    local endPos = self.EndPos
 
-    local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
-    local pos2 = { x = self.EndPos.x, y = self.StartPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+    local barrierNode = minetest.get_content_id("unbreakable_map_barrier:barrier")
 
-    local pos1 = { x = self.StartPos.x, y = self.EndPos.y, z = self.StartPos.z }
-    local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+    -- Read data into LVM
+    local vm = minetest.get_voxel_manip()
+    local emin, emax = vm:read_from_map(self.StartPos, self.EndPos)
+    local a = VoxelArea:new {
+        MinEdge = emin,
+        MaxEdge = emax
+    }
+    local data = vm:get_data()
 
-    local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
-    local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.StartPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+    -- Modify data
+    for z = startPos.z, self.EndPos.z do
+        for y = startPos.y, self.EndPos.y do
+            for x = startPos.x, self.EndPos.x do
 
-    local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.EndPos.z }
-    local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+                if (x == startPos.x or x == endPos.x) or (y == startPos.y or y == endPos.y) or (z == startPos.z or z == endPos.z) then
+                    local index = a:index(x, y, z)
+                    data[index] = barrierNode
+                end
+            end
+        end
+    end
+
+    -- Write data to world
+    vm:set_data(data)
+    vm:write_to_map(true)
 end
 
 ---Helper function to set cubic areas of nodes based on world coordinates and node type
