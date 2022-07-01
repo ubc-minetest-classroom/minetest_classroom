@@ -32,7 +32,9 @@ minetest.register_on_leaveplayer(function(player)
 end)
 
 minetest.register_on_chat_message(function(playerName, message)
-    players[playerName]["lastAction"] = minetest.get_gametime()
+    if (players[playerName] ~= nil) then
+        players[playerName].lastAction = minetest.get_gametime()
+    end
 end)
 
 minetest.register_globalstep(function(dtime)

@@ -18,21 +18,22 @@ Registers a plant species in the `magnify` plant database
 
     ```lua
     local def_table = {
-        sci_name = "",        -- Scientific name of species
-        com_name = "",        -- Common name of species
-        fam_name = "",        -- Family name of species
-        cons_status = "",     -- Conservation status of species
-        status_col = "",      -- Hex colour of status box ("#000000")
-        height = "",          -- Plant height
-        bloom = "",           -- The way the plant blooms
-        region = "",          -- Native region/range of plant (displayed as "Found in [region]")
-        texture = "",         -- Image of plant (in `mod/textures`)
-        model_obj = "",       -- Model file (in `mod/models`)
-        model_spec = "",      -- Model texture list, as a single string (format may change)
-        more_info = "",       -- Description of plant
-        external_link = "",   -- Link to page with more plant information
-        img_copyright = "",   -- Copyright owner of plant image (displayed as "Image (c) [img_copyright]")
-        img_credit = ""       -- Author of plant image (displayed as "Image courtesy of [img_credit]")
+      sci_name = "",        -- Scientific name of species
+      com_name = "",        -- Common name of species
+      fam_name = "",        -- Family name of species
+      cons_status = "",     -- Conservation status of species
+      status_col = "",      -- Hex colour of status box ("#000000")
+      height = "",          -- Plant height
+      bloom = "",           -- The way the plant blooms
+      region = "",          -- Native region/range of plant (displayed as "Found in [region]")
+      texture = "",         -- Image of plant (in `mod/textures`)
+      model_obj = "",       -- Model file (in `mod/models`)
+      model_rot_x = 0,      -- Initial rotation of model about x-axis (in degrees; defaults to 0)
+      model_rot_y = 0,      -- Initial rotation of model about y-axis (in degrees; defaults to 180)
+      more_info = "",       -- Description of plant
+      external_link = "",   -- Link to page with more plant information
+      img_copyright = "",   -- Copyright owner of plant image (displayed as "Image (c) [img_copyright]")
+      img_credit = ""       -- Author of plant image (displayed as "Image courtesy of [img_credit]")
     }
     ```
 
@@ -42,6 +43,15 @@ Registers a plant species in the `magnify` plant database
   ```lua
   magnify.register_plant(def_table, {"mod:node", "mod:another_node", "other_mod:other_node"})
   ```
+
+- Additional notes:
+  - The following properties will automatically be added to the plant definiton table when `magnify.register_plant` is called during mod load-in:
+
+    ```lua
+    {
+      origin = ""           -- Name of mod which registered the plant species
+    }
+    ```
 
 #### `magnify.clear_nodes(nodes)  -->  nil`
 
@@ -72,7 +82,7 @@ Returns the reference key associated with `node` in the `magnify` plant database
 
 #### `magnify.get_species_from_ref(ref)  -->  table, table`
 
-Returns information about the species indexed at `ref` in the `magnify` plant database
+Returns the plant definition table the species indexed at `ref` in the `magnify` plant database, and a list of nodes the species is associated with
 
 - Parameters:
   - `ref` (*`string`*): Reference key of the plant species
@@ -82,12 +92,14 @@ Returns information about the species indexed at `ref` in the `magnify` plant da
   *OR*
   - `nil` if `ref` is invalid
 
-#### `magnify.get_all_registered_species()  -->  table`
+#### `magnify.get_all_registered_species()  -->  table, table`
 
-Returns a human-readable list of all species registered in the `magnify` plant database
+Returns a human-readable list of all species registered in the `magnify` plant database, and a list of reference keys corresponding to them  
+Each species and its corresponding reference key will be at the same index in both lists
 
 - Returns:
-  - *`table`*: Names of all registered plant species, formatted as "#0: Common name (Scientific name)"
+  - *`table`*: Names of all registered plant species, formatted as "Common name (Scientific name)"
+  - *`table`*: Reference keys for all registered plant species, in the same order as the list of names
 
 #### `magnify.build_formspec_from_ref(ref, is_exit, is_inv)  -->  string, string`
 

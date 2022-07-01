@@ -75,29 +75,6 @@ function mc_helpers.fileExists(path)
 end
 
 ---@public
----Sorting comparison function for strings with numerals within them
----Returns true if the first detected numeral in a is less than the first detected numeral in b
----Fallbacks:
----If only one string contains a numeral, returns true if a contains the numeral, false if b contains the numeral
----If neither string has a numeral, returns the result of a < b (default sort)
----@param a The first string to be sorted
----@param b The second string to be sorted
----@return boolean
-function mc_helpers.numSubstringCompare(a, b)
-    local pattern = "^%D-(%d+)"
-    local a_num = string.match(a, pattern)
-    local b_num = string.match(b, pattern)
-
-    if a_num and b_num then
-        return tonumber(a_num) < tonumber(b_num)
-    elseif not b_num and not a_num then
-        return a < b
-    else
-        return a_num or false
-    end
-end
-
----@public
 ---Returns true if any of the values in the given table is equal to the value provided
 ---@param table The table to check
 ---@param val The value to check for
@@ -157,4 +134,28 @@ function mc_helpers.isNumber(str)
         return false
     end
     return not (str == "" or str:match("%D"))
+end
+function mc_helpers.trim(s)
+    return s:match( "^%s*(.-)%s*$" )
+end
+
+
+function mc_helpers.shallowCopy(table)
+    local copy = {}
+    for k, v in pairs(table) do
+        copy[k] = v
+    end
+    return copy
+end
+
+function mc_helpers.deepCopy(table)
+    local copy = {}
+    for k, v in pairs(table) do
+        if type(v) == "table" then
+            copy[k] = mc_helpers.deepCopy(v)
+        else
+            copy[k] = v
+        end
+    end
+    return copy
 end
