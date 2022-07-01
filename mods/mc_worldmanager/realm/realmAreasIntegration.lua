@@ -6,7 +6,7 @@
 ---@param player table
 function Realm:AddPlayerArea(player)
     local playerName = player:get_player_name()
-    local realmArea = self:get_string("protectionID")
+    local realmArea = self:get_data("protectionID")
 
     if (self.MetaStorage.areas == nil) then
         self.MetaStorage.areas = {}

@@ -1,3 +1,6 @@
+Realm.tempData = {}
+
+
 ---@private
 ---Loads the persistant global data for the realm class
 ---@return void
@@ -35,7 +38,7 @@ end
 ---@private
 ---Saves the persistant global data for the realm class
 ---@return void
-function Realm.SaveDataToStorage ()
+function Realm.SaveDataToStorage()
     mc_worldManager.storage:set_string("realmDict", minetest.serialize(Realm.realmDict))
     mc_worldManager.storage:set_string("realmCount", tostring(Realm.realmCount))
 
@@ -60,6 +63,7 @@ function Realm:Restore(template)
         PlayerJoinTable = template.PlayerJoinTable,
         PlayerLeaveTable = template.PlayerLeaveTable,
         RealmDeleteTable = template.RealmDeleteTable,
+        Permissions = template.Permissions,
         MetaStorage = template.MetaStorage
     }
 
@@ -71,18 +75,54 @@ function Realm:Restore(template)
     return this
 end
 
-function Realm:set_string(key, value)
+---@public
+---set_data
+---Saves data into the realms metadata. This data will be serialized and saved with the realm.
+---@param key any
+---@param value any
+function Realm:set_data(key, value)
+    if (self.MetaStorage == nil) then
+        self.MetaStorage = {}
+    end
+
     self.MetaStorage[key] = value
 end
 
-function Realm:get_string(key)
+---@public
+---get_data
+---Retrieves data from the realms metadata.
+---@param key any
+---@return any
+function Realm:get_data(key)
+    if (self.MetaStorage == nil) then
+        self.MetaStorage = {}
+    end
+
     return self.MetaStorage[key]
 end
 
-function Realm:set_int(key, value)
-    self.MetaStorage[key] = tostring(value)
+---@public
+---set_tmpData
+---Saves data into temporary realm metadata. This data is not saved with the realm.
+---@param key any
+---@param value any
+function Realm:set_tmpData(key, value)
+    if (Realm.tempData[self] == nil) then
+        Realm.tempData[self] = {}
+    end
+
+    Realm.tempData[self][string.lower(key)] = value
 end
 
-function Realm:get_int(key)
-    return tonumber(self.MetaStorage[key])
+---@public
+---get_data
+---Retrieves data from the realms temporary metadata.
+---@param key any
+---@return any
+function Realm:get_tmpData(key)
+    if (Realm.tempData[self] == nil) then
+        Realm.tempData[self] = {}
+    end
+
+    return Realm.tempData[self][string.lower(key)]
 end
