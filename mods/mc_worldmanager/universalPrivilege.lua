@@ -3,6 +3,11 @@ function mc_worldManager.grantUniversalPriv(player, privs)
 
     local playerPrivileges = minetest.deserialize(pmeta:get_string("universalPrivs"))
 
+
+    if (playerPrivileges == nil) then
+        playerPrivileges = {}
+    end
+
     for index, privilege in pairs(privs) do
         if (privilege == "all") then
             for k, v in pairs(minetest.registered_privileges) do
@@ -24,6 +29,10 @@ function mc_worldManager.revokeUniversalPriv(player, privs)
     local pmeta = player:get_meta()
 
     local playerPrivileges = minetest.deserialize(pmeta:get_string("universalPrivs"))
+
+    if (playerPrivileges == nil) then
+        playerPrivileges = {}
+    end
 
     for index, privilege in pairs(privs) do
         if (privilege == "all") then
