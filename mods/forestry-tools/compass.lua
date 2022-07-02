@@ -1,10 +1,6 @@
-local HUD_showing = false
+local closed_HUD_showing, open_HUD_showing = false, false
 local mag_declination, azimuth, curr_azimuth = 0, 0, 0
-
-local compassData = {
-	mag_declination = mag_declination,
-	azimuth = azimuth
-}
+local curr_needle, curr_bezel = "needle_0.png", "bezel_0.png"
 
 -- Give the compass to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
@@ -48,6 +44,20 @@ local adjustments_menu = {
 	"textarea[0.5,4.2;5,0.5;;;]"
 }
 
+-- local adjustments_menu = {
+-- 	"formspec_version[5]",
+-- 	"size[13,7]",
+-- 	"textarea[5,0.2;3,0.5;;;Compass Settings]",
+-- 	"textarea[0.5,1.3;5,0.5;declination;Set Magnetic Declination;]",
+-- 	"textarea[0.5,2.5;5,0.5;azimuth;Set Azimuth;]",
+-- 	"button_exit[0.1,0.1;0.5,0.5;exit;X]",
+-- 	"button[8,5.8;3,0.8;save;Adjust Compass]",
+-- 	"button[0.5,3.3;3.5,0.8;getAzimuth;Get Current Azimuth]",
+-- 	"box[0.5,4.2;5,0.5;#808080]",
+-- 	"textarea[0.5,4.2;5,0.5;;;]",
+-- 	"image[6.7,1;5.5,4.5;needle_0]"
+-- }
+
 -- gives the appearance that the formspec remembers the previously set value for the given field
 local function remember_field(formTableName, index, preText, newText, postText)
 	local textarea = formTableName[index]
@@ -77,7 +87,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 		if fields.save then
 			local pmeta = player:get_meta()
-			
+			local prev_needle = curr_needle
+
 			if fields.declination ~= "" and tonumber(fields.declination) ~= mag_declination then
 				local only_nums = tonumber(fields.declination) ~= nil
 
@@ -90,6 +101,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						pmeta:set_int("declination", mag_declination)
 
 						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - magnetic declination set to " .. fields.declination .. "°"))
+
+						-- adjustments_menu[11] = "image[6.7,1;5.5,4.5;" .. curr_needle .. "]"
+						-- show_adjustments_menu(player)
 					end
 				else 
 					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - magnetic declination must be a number between -90 and 90"))
@@ -123,24 +137,34 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 end)
 
-
-
 --------------------------------------------
 --- HUD MANAGEMENT AND TOOL REGISTRATION ---
 --------------------------------------------
+
+local closedHud = mhud.init()
+local function show_closed_hud(player)
+	closedHud:add(player, "closed", {
+		hud_elem_type = "image",
+		text = "compass_closed.png",
+		position = {x = 0.5, y = 0.5}, 
+		scale = {x = 9, y = 9},
+		offset = {x = -4, y = -4}
+	})
+
+	closed_HUD_showing = true
+end
 
 local needleHud = mhud.init()
 local function show_needle_hud(player)
 	needleHud:add(player, "needle", {
 		hud_elem_type = "image",
 		text = "needle_0.png",
-		-- position={x = 0.5, y = 0.5}, 
-		-- scale={x = 10.2, y = 10.2}
-		position={x = 0.525, y = 0.4}, 
-		scale={x = 10.2, y = 10.2}
+		position = {x = 0.5285, y = 0.405}, 
+		scale = {x = 10.2, y = 10.2},
+		offset = {x = -4, y = -4}
 	})
 
-	HUD_showing = true
+	open_HUD_showing = true
 end
 
 local bezelHud = mhud.init()
@@ -148,24 +172,22 @@ local function show_bezel_hud(player)
 	bezelHud:add(player, "bezel", {
 		hud_elem_type = "image",
 		text = "bezel_0.png",
-		position={x = 0.525, y = 0.4}, 
-		scale={x = 10, y = 10},
-		-- position={x = 0.5, y = 0.5}, 
-		-- scale={x = 10, y = 10},
+		position = {x = 0.525, y = 0.4}, 
+		scale = {x = 10, y = 10},
 		offset = {x = -4, y = -4}
 	})
 end
 
--- local mirrorHud = mhud.init()
--- local function show_mirror_hud(player)
--- 	bezelHud:add(player, "mirror", {
--- 		hud_elem_type = "image",
--- 		text = "compass_mirror.png",
--- 		position={x = 0.5, y = 0.5}, 
--- 		scale={x = 10, y = 10},
--- 		offset = {x = -4, y = -4}
--- 	})
--- end
+local mirrorHud = mhud.init()
+local function show_mirror_hud(player)
+	mirrorHud:add(player, "mirror", {
+		hud_elem_type = "image",
+		text = "compass_mirror.png",
+		position = {x = 0.5, y = 0.5}, 
+		scale = {x = 10, y = 10},
+		offset = {x = -4, y = -4}
+	})
+end
 
 minetest.register_tool("forestry_tools:compass" , {
 	description = "Compass",
@@ -179,23 +201,31 @@ minetest.register_tool("forestry_tools:compass" , {
 		mag_declination = pmeta:get_int("declination")
 		azimuth = pmeta:get_int("azimuth")
 
-		if HUD_showing then
-			needleHud:remove_all()
-			bezelHud:remove_all()
-			HUD_showing = false
-		else
+		if not closed_HUD_showing and not open_HUD_showing then
+			show_closed_hud(player)
+		elseif closed_HUD_showing then
+			closedHud:remove_all(player)
+			closed_HUD_showing = false
+
 			show_needle_hud(player)
 			show_bezel_hud(player)
-			-- show_mirror_hud(player)
+			show_mirror_hud(player)
+		else
+			needleHud:remove_all()
+			bezelHud:remove_all()
+			mirrorHud:remove_all()
+			open_HUD_showing = false
 		end
 	end,
 
 	-- On right-click
 	on_place = function(itemstack, placer, pointed_thing)
+		-- adjustments_menu[11] = "image[6.7,1;5.5,4.5;" .. curr_needle .. "]"
 		show_adjustments_menu(placer)
 	end,
 
 	on_secondary_use = function(itemstack, player, pointed_thing)
+		-- adjustments_menu[11] = "image[6.7,1;5.5,4.5;" .. curr_needle .. "]"
 		show_adjustments_menu(player)
 	end,
 
@@ -213,12 +243,20 @@ minetest.register_globalstep(function(dtime)
 	local players  = minetest.get_connected_players()
 	for i,player in ipairs(players) do
 
-		if HUD_showing then
+		if closed_HUD_showing then
+			if player:get_wielded_item():get_name() ~= "forestry_tools:compass" then
+				closedHud:remove_all()
+				closed_HUD_showing = false
+			end
+		end
+
+		if open_HUD_showing then
 			-- Remove HUD when player is no longer wielding the compass
 			if player:get_wielded_item():get_name() ~= "forestry_tools:compass" then
 				needleHud:remove_all()
 				bezelHud:remove_all()
-				HUD_showing = false
+				mirrorHud:remove_all()
+				open_HUD_showing = false
 			else
 				local dir = player:get_look_horizontal()
 				local angle_relative = math.deg(dir)
@@ -236,7 +274,11 @@ minetest.register_globalstep(function(dtime)
 				curr_azimuth = 360 - angle_relative
 
 				-- Needle rotation
-				rotate_image(player, needleHud, "needle", angle_relative)
+				local needle_text = rotate_image(player, "needle", angle_relative)
+				curr_needle = needle_text
+				needleHud:change(player, "needle", {
+					text = needle_text
+				})
 
 				-- Rotate bezel based on azimuth and declination set
 				local shed_angle
@@ -248,7 +290,9 @@ minetest.register_globalstep(function(dtime)
 					shed_angle = mag_declination + (360 - azimuth)
 				end
 
-				rotate_image(player, bezelHud, "bezel", shed_angle)
+				bezelHud:change(player, "bezel", {
+					text = rotate_image(player, "bezel", shed_angle)
+				})
 			end
 		end
 	end
@@ -256,7 +300,8 @@ end)
 
 -- Helper for rotating HUD images. The needle/bezel only show an angle change in intervals of 10, with the exception of 45°, 135°, 225°, 315°
 -- e.g. the needle will be in the same position from 0°-9°, then rotate to a new position for 10°-19°, etc. (same system applies to the bezel)
-function rotate_image(player, hud, hudName, referenceAngle) 
+-- Returns the name of the corresponding texture
+function rotate_image(player, hudName, referenceAngle) 
 	local adjustment, transformation, imgIndex
 
 	if referenceAngle < 90 or referenceAngle == 360 then
@@ -273,19 +318,6 @@ function rotate_image(player, hud, hudName, referenceAngle)
 		transformation = 90
 	end
 
-	if math.floor(referenceAngle % 45) <= 4 and not (math.floor(referenceAngle % 90) <= 9) then
-		imgIndex = 4.5
-	elseif referenceAngle == 360 then
-		imgIndex = 0
-	else
-		imgIndex = math.floor((referenceAngle - adjustment)/10)
-	end
-
-	local img = hudName .. "_" .. imgIndex .. ".png" .. "^[transformR" .. transformation
-	hud:change(player, hudName, {
-		text = img
-	})
-
 	if hudName == "bezel" then
 		local x, y = -4, -4
 		if adjustment == 90 then
@@ -300,8 +332,26 @@ function rotate_image(player, hud, hudName, referenceAngle)
 			bezelHud:change(player, "bezel", {
 				offset = {x = x, y = y}
 			})
+
+			needleHud:change(player, "needle", {
+				offset = {x = x, y = y}
+			})
+
+			mirrorHud:change(player, "mirror", {
+				offset = {x = x, y = y}
+			})
 		end
 	end
+
+	if math.floor(referenceAngle % 45) <= 4 and not (math.floor(referenceAngle % 90) <= 9) then
+		imgIndex = 4.5
+	elseif referenceAngle == 360 then
+		imgIndex = 0
+	else
+		imgIndex = math.floor((referenceAngle - adjustment)/10)
+	end
+
+	return hudName .. "_" .. imgIndex .. ".png" .. "^[transformR" .. transformation
 end
 
 
