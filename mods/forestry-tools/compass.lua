@@ -33,30 +33,18 @@ end)
 
 local adjustments_menu = {
 	"formspec_version[5]",
-	"size[6,7]",
-	"textarea[1.7,0.2;3,0.5;;;Compass Settings]",
+	"size[13,7]",
+	"textarea[5,0.2;3,0.5;;;Compass Settings]",
 	"textarea[0.5,1.3;5,0.5;declination;Set Magnetic Declination;]",
 	"textarea[0.5,2.5;5,0.5;azimuth;Set Azimuth;]",
 	"button_exit[0.1,0.1;0.5,0.5;exit;X]",
-	"button[2.5,5.8;3,0.8;save;Adjust Compass]",
+	"button[8,5.8;3,0.8;save;Adjust Compass]",
 	"button[0.5,3.3;3.5,0.8;getAzimuth;Get Current Azimuth]",
 	"box[0.5,4.2;5,0.5;#808080]",
-	"textarea[0.5,4.2;5,0.5;;;]"
+	"textarea[0.5,4.2;5,0.5;;;]",
+	"image[7.67,1.75;3.8,3.1;needle_0.png]",
+	"image[6.9,1.1;5.2,4.3;bezel_0.png]"
 }
-
--- local adjustments_menu = {
--- 	"formspec_version[5]",
--- 	"size[13,7]",
--- 	"textarea[5,0.2;3,0.5;;;Compass Settings]",
--- 	"textarea[0.5,1.3;5,0.5;declination;Set Magnetic Declination;]",
--- 	"textarea[0.5,2.5;5,0.5;azimuth;Set Azimuth;]",
--- 	"button_exit[0.1,0.1;0.5,0.5;exit;X]",
--- 	"button[8,5.8;3,0.8;save;Adjust Compass]",
--- 	"button[0.5,3.3;3.5,0.8;getAzimuth;Get Current Azimuth]",
--- 	"box[0.5,4.2;5,0.5;#808080]",
--- 	"textarea[0.5,4.2;5,0.5;;;]",
--- 	"image[6.7,1;5.5,4.5;needle_0]"
--- }
 
 -- gives the appearance that the formspec remembers the previously set value for the given field
 local function remember_field(formTableName, index, preText, newText, postText)
@@ -69,6 +57,16 @@ local function show_adjustments_menu(player)
 	remember_field(adjustments_menu, 4, "textarea[0.5,1.3;5,0.5;declination;Set Magnetic Declination;", mag_declination, "]")
 	remember_field(adjustments_menu, 5, "textarea[0.5,2.5;5,0.5;azimuth;Set Azimuth;", azimuth, "]")
 	minetest.show_formspec(player:get_player_name(), "compass:adjustments_menu", table.concat(adjustments_menu, ""))
+end
+
+local function update_formspec_needle(player)
+	adjustments_menu[11] = "image[7.67,1.75;3.8,3.1;" .. curr_needle .. "]"
+	show_adjustments_menu(player)
+end
+
+local function update_formspec_bezel(player)
+	adjustments_menu[12] = "image[6.7,1;5.5,4.5;" .. curr_bezel .. "]"
+	show_adjustments_menu(player)
 end
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
@@ -87,7 +85,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 		if fields.save then
 			local pmeta = player:get_meta()
-			local prev_needle = curr_needle
 
 			if fields.declination ~= "" and tonumber(fields.declination) ~= mag_declination then
 				local only_nums = tonumber(fields.declination) ~= nil
@@ -102,8 +99,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - magnetic declination set to " .. fields.declination .. "°"))
 
-						-- adjustments_menu[11] = "image[6.7,1;5.5,4.5;" .. curr_needle .. "]"
-						-- show_adjustments_menu(player)
+						minetest.after(0.1, update_formspec_needle, player)
+						minetest.after(0.1, update_formspec_bezel, player)
 					end
 				else 
 					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - magnetic declination must be a number between -90 and 90"))
@@ -122,6 +119,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						pmeta:set_int("azimuth", azimuth)
 
 						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - azimuth set to " .. fields.azimuth .. "°"))
+
+						minetest.after(0.1, update_formspec_bezel, player)
 					end
 				else 
 					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - azimuth must be a number between 0 and 360"))
@@ -220,13 +219,19 @@ minetest.register_tool("forestry_tools:compass" , {
 
 	-- On right-click
 	on_place = function(itemstack, placer, pointed_thing)
-		-- adjustments_menu[11] = "image[6.7,1;5.5,4.5;" .. curr_needle .. "]"
-		show_adjustments_menu(placer)
+		if open_HUD_showing then 
+			update_formspec_needle(placer)
+			update_formspec_bezel(placer)
+			show_adjustments_menu(placer) 
+		end
 	end,
 
 	on_secondary_use = function(itemstack, player, pointed_thing)
-		-- adjustments_menu[11] = "image[6.7,1;5.5,4.5;" .. curr_needle .. "]"
-		show_adjustments_menu(player)
+		if open_HUD_showing then 
+			update_formspec_needle(player)
+			update_formspec_bezel(player)
+			show_adjustments_menu(player) 
+		end
 	end,
 
 	-- Destroy the item on_drop 
@@ -290,8 +295,10 @@ minetest.register_globalstep(function(dtime)
 					shed_angle = mag_declination + (360 - azimuth)
 				end
 
+				local bezel_text = rotate_image(player, "bezel", shed_angle)
+				curr_bezel = bezel_text
 				bezelHud:change(player, "bezel", {
-					text = rotate_image(player, "bezel", shed_angle)
+					text = bezel_text
 				})
 			end
 		end
