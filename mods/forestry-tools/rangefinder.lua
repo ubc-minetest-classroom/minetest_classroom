@@ -1,19 +1,37 @@
+--[[ TODO
+-- Add random chance for noise/skipping when raycast hits nodes with:
+  -- node group: leaves
+  -- drawtype: plantlike, plantlike_rooted
+-- Determine calculation algorithms
+-- Determine how to get reliable angle measurements
+-- Add calculation/cast outputs to HUD instead of chat
+-- Auto-reset?
+]]
+
 local range = 32
 local RAY_RANGE = 500
 local MODES = {
-    {key = "HT",  lim = 3, desc = "height"},
-    {key = "SD",  lim = 2, desc = "slope dist."},
-    {key = "VD",  lim = 2, desc = "vertical dist."},
-    {key = "HD",  lim = 2, desc = "horizontal dist."},
-    {key = "INC", lim = 2, desc = "inclination"},
-    {key = "AZ",  lim = 2, desc = "azimuth"},
-    {key = "ML",  lim = 2, desc = "missing line"}
+    [1] = {key = "HT",  lim = 3, unit = "m", desc = "height"},
+    [2] = {key = "SD",  lim = 2, unit = "m", desc = "slope dist."},
+    [3] = {key = "VD",  lim = 2, unit = "m", desc = "vertical dist."},
+    [4] = {key = "HD",  lim = 2, unit = "m", desc = "horizontal dist."},
+    [5] = {key = "INC", lim = 1, unit = "%", desc = "inclination"},
+    [6] = {key = "AZ",  lim = 1, unit = "°", desc = "azimuth"},
+    [7] = {key = "ML",  lim = 2, unit = "m", desc = "missing line"}
 }
 local MODE_POS = {x = 0.075, y = 0.8855}
+
+local tool_name = "forestry_tools:rangefinder"
 
 forestry_tools.rangefinder = {hud = {}}
 local hud = mhud.init()
 
+-- Gets the internal index number for the rangefinder's current mode
+local function get_mode(meta)
+    return tonumber(meta:get("mode") or 1)
+end
+
+-- Clears all the logged casts from the rangefinder's metadata
 local function clear_saved_casts(player, itemstack)
     local meta = itemstack:get_meta()
     meta:set_string("casts", "")
@@ -24,22 +42,22 @@ local function clear_saved_casts(player, itemstack)
         end
     end
     meta:set_string("marks", "")
+    return itemstack
 end
 
+-- Casts a ray and logs where it first hit, if it hit an object/node in range
 local function track_raycast_hit(player, itemstack)
     local meta = itemstack:get_meta()
     if meta then
         -- log hit in rangefinder
         local cast_table = minetest.deserialize(meta:get("casts") or minetest.serialize({}))
         local mark_table = minetest.deserialize(meta:get("marks") or minetest.serialize({}))
-
-        local mode = tonumber(meta:get("mode") or 1)
+        local mode = get_mode(meta)
 
         if #cast_table >= MODES[mode]["lim"] then
             -- clear hits
-            clear_saved_casts(player, itemstack)
-            minetest.chat_send_player(player:get_player_name(), "Rangefinder reset")
-            return itemstack
+            minetest.chat_send_player(player:get_player_name(), "Rangefinder reset, ready to start new measurement")
+            return clear_saved_casts(player, itemstack), nil, nil
         end
 
         local player_pos = vector.offset(player:get_pos(), 0, player:get_properties().eye_height, 0)
@@ -48,13 +66,13 @@ local function track_raycast_hit(player, itemstack)
 
         if not first_hit then
             -- no objects/nodes within range, note failed hit
-            minetest.chat_send_player(player:get_player_name(), "No objects detected within range, cast not logged")
-            return nil
+            minetest.chat_send_player(player:get_player_name(), "No objects detected within a 500m range, measurement not tracked")
+            return itemstack, nil, nil
         end
 
         local dir = vector.direction(cast_point.intersection_point, first_hit.intersection_point)
         local dist = vector.distance(cast_point.intersection_point, first_hit.intersection_point)
-        table.insert(cast_table, {dir = dir, dist = dist})
+        table.insert(cast_table, {dir = dir, dist = dist, pos = first_hit.intersection_point})
         meta:set_string("casts", minetest.serialize(cast_table))
 
         -- display hit on screen + log ID in rangefinder
@@ -67,14 +85,14 @@ local function track_raycast_hit(player, itemstack)
             alignment = {x = 0, y = 0}
         }))
         meta:set_string("marks", minetest.serialize(mark_table))
+
+        local table_length = math.min(#cast_table, #mark_table)
+        local lim_reached = table_length >= MODES[mode]["lim"]
+        return itemstack, table_length, lim_reached
     end
-
-    --local 
-
-    return itemstack
 end
 
---- Creates a HUD text element which displays the rangefinder's current mode
+--- Creates a HUD text element for the rangefinder's mode display
 local function mode_hud_text_abstract(player, oper, elem, text, pos_offset, col, size, style)
     local def = {
         hud_elem_type = "text",
@@ -95,9 +113,10 @@ local function mode_hud_text_abstract(player, oper, elem, text, pos_offset, col,
     end
 end
 
+-- Creates the background for the rangefinder's mode display
 local function create_mode_hud_background(player, oper)
-    if not hud:get(player, "forestry_tools:rf:mode_bg") then
-        hud:add(player, "forestry_tools:rf:mode_bg", {
+    if not hud:get(player, tool_name..":mode_bg") then
+        hud:add(player, tool_name..":mode_bg", {
             hud_elem_type = "image",
             position = {x = MODE_POS.x, y = MODE_POS.y},
             alignment = {x = 0, y = 0},
@@ -106,7 +125,7 @@ local function create_mode_hud_background(player, oper)
             text = "forestry_tools_rf_bg.png",
             z_index = -2,
         })
-        hud:add(player, "forestry_tools:rf:mode_bg_upper", {
+        hud:add(player, tool_name..":mode_bg_upper", {
             hud_elem_type = "image",
             position = {x = MODE_POS.x, y = MODE_POS.y - 0.09},
             alignment = {x = 0, y = 0},
@@ -115,7 +134,7 @@ local function create_mode_hud_background(player, oper)
             text = "forestry_tools_rf_bg_alt.png",
             z_index = -3,
         })
-        hud:add(player, "forestry_tools:rf:mode_bg_lower", {
+        hud:add(player, tool_name..":mode_bg_lower", {
             hud_elem_type = "image",
             position = {x = MODE_POS.x, y = MODE_POS.y + 0.09},
             alignment = {x = 0, y = 0},
@@ -127,6 +146,7 @@ local function create_mode_hud_background(player, oper)
     end
 end
 
+-- Creates the arrows indicating the current mode change direction for the rangefinder's mode display
 local function update_mode_hud_arrows(player, keys)
     local arrow_1 = {
         hud_elem_type = "image",
@@ -146,16 +166,17 @@ local function update_mode_hud_arrows(player, keys)
         text = (keys.aux1 and "forestry_tools_rf_arrow_down.png") or "forestry_tools_rf_arrow_up.png",
         z_index = -1,
     }
-    if not hud:get(player, "forestry_tools:rf:mode_arrow_1") then
-        hud:add(player, "forestry_tools:rf:mode_arrow_1", arrow_1)
-        hud:add(player, "forestry_tools:rf:mode_arrow_2", arrow_2)
+    if not hud:get(player, tool_name..":mode_arrow_1") then
+        hud:add(player, tool_name..":mode_arrow_1", arrow_1)
+        hud:add(player, tool_name..":mode_arrow_2", arrow_2)
     else
-        hud:change(player, "forestry_tools:rf:mode_arrow_1", arrow_1)
-        hud:change(player, "forestry_tools:rf:mode_arrow_2", arrow_2)
+        hud:change(player, tool_name..":mode_arrow_1", arrow_1)
+        hud:change(player, tool_name..":mode_arrow_2", arrow_2)
     end
 end
 
-local function update_rangefinder_hud(player, itemstack)
+-- Updates the rangefinder's mode display
+local function update_rf_mode_hud(player, itemstack)
     local meta = itemstack:get_meta()
     if meta then
         local mode_num = meta:contains("mode") and meta:get_int("mode") or 1
@@ -163,18 +184,19 @@ local function update_rangefinder_hud(player, itemstack)
             next = (mode_num + 1 <= #MODES and mode_num + 1) or 1,
             prev = (mode_num - 1 >= 1 and mode_num - 1) or #MODES
         }
-        local mode_hud_exists = hud:get(player, "forestry_tools:rf:mode")
-        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", "forestry_tools:rf:mode", MODES[mode_num]["key"], {y = -0.02}, nil, 4, 1)
-        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", "forestry_tools:rf:mode_desc", MODES[mode_num]["desc"], {y = 0.0325}, nil, 2, 0)
-        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", "forestry_tools:rf:mode_prev", MODES[mode_surround.prev]["key"], {y = -0.09}, 0xbbbbbb, 2, 0)
-        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", "forestry_tools:rf:mode_next", MODES[mode_surround.next]["key"], {y = 0.09}, 0xbbbbbb, 2, 0)
+        local mode_hud_exists = hud:get(player, tool_name..":mode")
+        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", tool_name..":mode", MODES[mode_num]["key"], {y = -0.02}, nil, 4, 1)
+        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", tool_name..":mode_desc", MODES[mode_num]["desc"], {y = 0.0325}, nil, 2, 0)
+        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", tool_name..":mode_prev", MODES[mode_surround.prev]["key"], {y = -0.09}, 0xbbbbbb, 2, 0)
+        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", tool_name..":mode_next", MODES[mode_surround.next]["key"], {y = 0.09}, 0xbbbbbb, 2, 0)
         create_mode_hud_background(player)
     end
 end
 
+-- Shows the rangefinder's zooming crosshair
 local function show_zoom_hud(player)
-    if not hud:get(player, "forestry_tools:rf:overlay") then
-        hud:add(player, "forestry_tools:rf:overlay", {
+    if not hud:get(player, tool_name..":overlay") then
+        hud:add(player, tool_name..":overlay", {
             hud_elem_type = "image",
             position = {x = 0.5, y = 0.5},
             text = "forestry_tools_rf_overlay.png",
@@ -185,15 +207,48 @@ local function show_zoom_hud(player)
     end
 end
 
+-- Hides the rangefinder's zooming crosshair
 local function hide_zoom_hud(player)
-    if hud:get(player, "forestry_tools:rf:overlay") then
-        hud:remove(player, "forestry_tools:rf:overlay")
+    if hud:get(player, tool_name..":overlay") then
+        hud:remove(player, tool_name..":overlay")
     end
 end
 
+-- Calculates the final output for the rangefinder to display
+local function rangefinder_calc(meta)
+    local casts = minetest.deserialize(meta:get_string("casts"))
+    local mode = get_mode(meta)
+    local calculation_table = {
+        [1] = function() -- HT
+            return mode
+        end,
+        [2] = function() -- SD
+            return mode
+        end,
+        [3] = function() -- VD
+            return mode
+        end,
+        [4] = function() -- HD
+            return mode
+        end,
+        [5] = function() -- INC
+            
+            return mode
+        end,
+        [6] = function() -- AZ
+            return mode
+        end,
+        [7] = function() -- ML
+            return mode
+        end
+    }
+    return calculation_table[mode]()
+end
+
+-- Changes the rangefinder's mode
 local function rangefinder_mode_switch(itemstack, player, pointed_thing)
     local meta = itemstack:get_meta()
-    local current_mode = meta:get("mode") or 1
+    local current_mode = get_mode(meta)
     local keys = player:get_player_control()
     local new_mode = nil
 
@@ -204,12 +259,12 @@ local function rangefinder_mode_switch(itemstack, player, pointed_thing)
     end
     meta:set_int("mode", new_mode)
     
-    update_rangefinder_hud(player, itemstack)
+    update_rf_mode_hud(player, itemstack)
     clear_saved_casts(player, itemstack)
     return itemstack
 end
 
-minetest.register_tool("forestry_tools:rangefinder" , {
+minetest.register_tool(tool_name , {
  	description = "Rangefinder",
  	inventory_image = "rangefinder.jpg",
     _mc_tool_privs = { interact = true },
@@ -218,8 +273,23 @@ minetest.register_tool("forestry_tools:rangefinder" , {
         local pname = player:get_player_name()
  		-- Check for shout privileges
  		if check_perm(player) then
-            local new_stack = track_raycast_hit(player, itemstack)
-
+            local new_stack, cast_num, cast_complete = track_raycast_hit(player, itemstack)
+            if new_stack then
+                local meta = new_stack:get_meta()
+                -- log cast distance
+                if cast_num then
+                    local casts = minetest.deserialize(meta:get_string("casts"))
+                    if casts[cast_num] then
+                        minetest.chat_send_player(pname, casts[cast_num]["dist"])
+                    end
+                end
+                -- perform and log calculation
+                if cast_complete then
+                    local result = rangefinder_calc(meta)
+                    local mode = get_mode(meta)
+                    minetest.chat_send_player(pname, "Final measurement: "..result..MODES[mode]["unit"])
+                end
+            end
             -- Register a node punch
             if pointed_thing.under then
                 minetest.node_punch(pointed_thing.under, minetest.get_node(pointed_thing.under), player, pointed_thing)
@@ -232,9 +302,7 @@ minetest.register_tool("forestry_tools:rangefinder" , {
  	on_drop = function(itemstack, dropper, pos)
  	end,
 })
-
-minetest.register_alias("rangefinder", "forestry_tools:rangefinder")
-minetest.register_alias("forestry_tools:rf", "forestry_tools:rangefinder")
+minetest.register_alias("rangefinder", tool_name)
 
 minetest.register_globalstep(function(dtime)
     local online_players = minetest.get_connected_players()
@@ -245,9 +313,9 @@ minetest.register_globalstep(function(dtime)
 
     for _,player in pairs(online_players) do
         local wield = player:get_wielded_item()
-        if wield:get_name() == "forestry_tools:rangefinder" then
-            if not hud:get(player, "forestry_tools:rf:mode") then
-                update_rangefinder_hud(player, wield)
+        if wield:get_name() == tool_name then
+            if not hud:get(player, tool_name..":mode") then
+                update_rf_mode_hud(player, wield)
             end
             local keys = player:get_player_control()
             if keys.zoom then
@@ -317,6 +385,19 @@ local range_check = function(pos, facedir_param2, range)
     end
     return is_not_beam
 end
+
+minetest.register_on_joinplayer(function(player)
+    -- clear previously saved casts with rangefinder tool
+    local inv = player:get_inventory()
+    for list,data in pairs(inv:get_lists()) do
+        for i,item in pairs(data) do
+            if item:get_name() == tool_name then
+                clear_saved_casts(player, item)
+                inv:set_stack(list, i, item)
+            end
+        end
+    end
+end)
 
 -- minetest.register_on_joinplayer(function(player)
 --     local inv = player:get_inventory()
