@@ -2,7 +2,7 @@
 -- IN-PROGRESS: show yaw (horizontal angle) and pitch (vertical viewing angle) in degrees.
 
 
-local S = minetest.get_translator("forestry_tools")
+--local S = minetest.get_translator("forestry_tools")
 local HUD_showing = false; 
 
 
@@ -89,7 +89,6 @@ local function show_clin_hud(player)
 	})
 end
 
--- double check ^
 
 
 function update_hud_displays(player)
@@ -117,9 +116,10 @@ function update_hud_displays(player)
 	if str_angles ~= "" then 
 		player:hud_change(name, "text", strs_angles)
 	end
+
 	
-	
-	
+	-- issues w updating HUD 
+	  
 
 
 minetest.register_globalstep(function(dtime)
@@ -134,13 +134,11 @@ minetest.register_globalstep(function(dtime)
 			else
 				
 
-			--what to add
-
-		
+			-- not sure(?)
+			update_hud_displays(player)
     
 		end
 
-		-- finish this section 
 			
 		end
 	end
