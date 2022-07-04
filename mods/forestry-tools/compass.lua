@@ -160,7 +160,8 @@ local function show_needle_hud(player)
 		text = "needle_0.png",
 		position = {x = 0.5285, y = 0.405}, 
 		scale = {x = 10.3, y = 10.3},
-		offset = {x = -4, y = -4}
+		offset = {x = -4, y = -4},
+		alignment = {x = 0, y = 0}
 	})
 
 	open_HUD_showing = true
@@ -173,7 +174,8 @@ local function show_bezel_hud(player)
 		text = "bezel_0.png",
 		position = {x = 0.525, y = 0.4}, 
 		scale = {x = 10.2, y = 10.2},
-		offset = {x = -4, y = -4}
+		offset = {x = -4, y = -4},
+		alignment = {x = 0, y = 0}
 	})
 end
 
@@ -308,33 +310,41 @@ end)
 -- Helper for rotating HUD images. The needle/bezel only show an angle change in intervals of 10, with the exception of 45°, 135°, 225°, 315°
 -- e.g. the needle will be in the same position from 0°-9°, then rotate to a new position for 10°-19°, etc. (same system applies to the bezel)
 -- Returns the name of the corresponding texture
+local prev_bez_rotation = 0
+
 function rotate_image(player, hudName, referenceAngle) 
 	local adjustment, transformation, imgIndex
+	local bx, by, nx, ny = -4, -4, -4, -4
 
 	if referenceAngle < 90 or referenceAngle == 360 then
 		adjustment = 0
 		transformation = 0
+
+		if referenceAngle == 0 or referenceAngle == 360 then
+			if prev_bez_rotation == 270 then
+				bx = -10
+			elseif prev_bez_rotation == 180 then
+				bx, by = -10, -8
+			elseif prev_bez_rotation == 90 then
+				bx, by = -6, -12
+			end
+		end	
 	elseif referenceAngle < 180 then
 		adjustment = 90
 		transformation = 270
+		bx, nx = -1, -10
 	elseif referenceAngle < 270 then
 		adjustment = 180
 		transformation = 180
+		by, ny, nx = -1, -8, -12
 	elseif referenceAngle < 360 then
 		adjustment = 270
 		transformation = 90
+		bx, ny, nx = -10, -13, -8
 	end
 
 	if hudName == "bezel" then
-		local bx, by, nx, ny = -4, -4, -4, -4
-
-		if adjustment == 90 then
-			bx, nx = -1, -10
-		elseif adjustment == 180 then
-			by, ny, nx = -1, -8, -12
-		elseif adjustment == 270 then
-			bx, ny, nx = -10, -13, -8
-		end
+		prev_bez_rotation = transformation
 
 		if bx ~= -4 or by ~= -4 then
 			bezelHud:change(player, "bezel", {
