@@ -42,7 +42,7 @@ local adjustments_menu = {
 	"button[0.5,3.3;3.5,0.8;getAzimuth;Get Current Azimuth]",
 	"box[0.5,4.2;5,0.5;#808080]",
 	"textarea[0.5,4.2;5,0.5;;;]",
-	"image[7.67,1.75;3.8,3.1;needle_0.png]",
+	"image[7.5,1.73;4,3.3;needle_0.png]",
 	"image[6.9,1.1;5.2,4.3;bezel_0.png]"
 }
 
@@ -60,12 +60,24 @@ local function show_adjustments_menu(player)
 end
 
 local function update_formspec_needle(player)
-	adjustments_menu[11] = "image[7.67,1.75;3.8,3.1;" .. curr_needle .. "]"
+	adjustments_menu[11] = "image[7.7,1.7;3.8,3.2;" .. curr_needle .. "]"
 	show_adjustments_menu(player)
 end
 
 local function update_formspec_bezel(player)
-	adjustments_menu[12] = "image[6.7,1;5.5,4.5;" .. curr_bezel .. "]"
+	local preText = "image[6.9,1.1;5.2,4.3;"
+
+	if string.len(curr_bezel) > 11 then 
+		if string.sub(curr_bezel, 12, 25) == "^[transformR90" or string.sub(curr_bezel, 14, 27) == "^[transformR90" then
+			preText = "image[6.95,1.2;5.2,4.3;"
+		elseif string.sub(curr_bezel, 12, 26) == "^[transformR180" or string.sub(curr_bezel, 14, 28) == "^[transformR180" then
+			preText = "image[7.1,1.2;5.2,4.3;"
+		elseif string.sub(curr_bezel, 12, 26) == "^[transformR270" or string.sub(curr_bezel, 14, 28) == "^[transformR270" then
+			preText = "image[7.05,1.1;5.2,4.3;"
+		end
+	end
+
+	adjustments_menu[12] = preText .. curr_bezel .. "]"
 	show_adjustments_menu(player)
 end
 
