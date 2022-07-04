@@ -1,8 +1,8 @@
 
 -- IN-PROGRESS: show yaw (horizontal angle) and pitch (vertical viewing angle) in degrees.
 
-
---local S = minetest.get_translator("forestry_tools")
+-- <!> This is important, since calls to S() are made in this file - without this, the game will crash
+local S = minetest.get_translator("forestry_tools")
 local HUD_showing = false; 
 
 
@@ -108,7 +108,7 @@ function update_hud_displays(player)
 	local yaw = 360 - player:get_look_horizontal()*toDegrees
 	local pitch = player:get_look_vertical()*toDegrees
 	
-	if (clinometer)
+	if (clinometer) then
 		str_angles = S("Yaw: @1°, pitch: @2°", string.format("%.1f", yaw), string.format("%.1f", pitch))
 	end
 	
@@ -116,7 +116,7 @@ function update_hud_displays(player)
 	if str_angles ~= "" then 
 		player:hud_change(name, "text", strs_angles)
 	end
-
+end
 	
 	-- issues w updating HUD 
 	  
@@ -147,9 +147,10 @@ end)
 	
 	
 -- have to account for change of player FOV, direction, update HUD to display
-	
-minetest.register_on_newplayer(clinHud)
-minetest.register_on_joinplayer(clinHud)
+
+-- <!> These two lines currently crash the game - please replace with functions if they are intended to be used
+--minetest.register_on_newplayer(clinHud)
+--minetest.register_on_joinplayer(clinHud)
 
 
 
