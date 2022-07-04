@@ -52,37 +52,29 @@ end
 ---Creates invisible walls around the realm.
 ---@return void
 function Realm:CreateBarriers()
+    local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
+    local pos2 = { x = self.StartPos.x, y = self.EndPos.y, z = self.EndPos.z }
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
 
-    local startPos = self.StartPos
-    local endPos = self.EndPos
+    local pos1 = { x = self.EndPos.x, y = self.StartPos.y, z = self.StartPos.z }
+    local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
 
-    local barrierNode = minetest.get_content_id("unbreakable_map_barrier:barrier")
+    local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
+    local pos2 = { x = self.EndPos.x, y = self.StartPos.y, z = self.EndPos.z }
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
 
-    -- Read data into LVM
-    local vm = minetest.get_voxel_manip()
-    local emin, emax = vm:read_from_map(self.StartPos, self.EndPos)
-    local a = VoxelArea:new {
-        MinEdge = emin,
-        MaxEdge = emax
-    }
-    local data = vm:get_data()
+    local pos1 = { x = self.StartPos.x, y = self.EndPos.y, z = self.StartPos.z }
+    local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
 
-    -- Modify data
-    for z = startPos.z, self.EndPos.z do
-        for y = startPos.y, self.EndPos.y do
-            for x = startPos.x, self.EndPos.x do
+    local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
+    local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.StartPos.z }
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
 
-                if (x == startPos.x or x == endPos.x) or (y == startPos.y or y == endPos.y) or (z == startPos.z or z == endPos.z) then
-                    local index = a:index(x, y, z)
-                    data[index] = barrierNode
-                end
-            end
-        end
-    end
-
-    -- Write data to world
-    vm:set_data(data)
-    vm:write_to_map(true)
+    local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.EndPos.z }
+    local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
 end
 
 ---Helper function to set cubic areas of nodes based on world coordinates and node type
@@ -114,6 +106,83 @@ function Realm:SetNodes(pos1, pos2, node)
     -- Write data to world
     vm:set_data(data)
     vm:write_to_map(true)
+end
+
+---@public
+---Sets all nodes in a realm to air.
+---This function dispatches additional asynchronous function calls to prevent crashing the server.
+---@return void
+function Realm:CreateBarriersFast()
+    local function emerge_callback(blockpos, action,
+                                   num_calls_remaining, context)
+        -- On first call, record number of blocks
+        if not context.total_blocks then
+            context.total_blocks = num_calls_remaining + 1
+            context.loaded_blocks = 0
+        end
+
+        -- Increment number of blocks loaded
+        context.loaded_blocks = context.loaded_blocks + 1
+
+        -- Send finished message
+        if context.total_blocks == context.loaded_blocks then
+            minetest.chat_send_all("Finished walling realm!")
+        end
+
+        local pos1 = { x = blockpos.x * 16, y = blockpos.y * 16, z = blockpos.z * 16 }
+        local pos2 = { x = blockpos.x * 16 + 15, y = blockpos.y * 16 + 15, z = blockpos.z * 16 + 15 }
+
+        -- If we are in the middle of a realm, we can return as we don't need to place any barriers here.
+        if (pos1.x > context.startPos.x + 15 and pos1.x < context.endPos.x - 15 and pos1.y > context.startPos.y + 15 and pos1.y < context.endPos.y - 15 and pos1.z > context.startPos.z + 15 and pos1.z < context.endPos.z - 15) then
+            return
+        end
+
+        local barrierNode = minetest.get_content_id("unbreakable_map_barrier:barrier")
+        local airNode = minetest.get_content_id("air")
+
+        -- Read data into LVM
+        local vm = minetest.get_voxel_manip()
+        local emin, emax = vm:read_from_map(pos1, pos2)
+        local a = VoxelArea:new {
+            MinEdge = emin,
+            MaxEdge = emax
+        }
+        local data = vm:get_data()
+
+        -- Modify data
+        for z = pos1.z, pos2.z do
+            for y = pos1.y, pos2.y do
+                for x = pos1.x, pos2.x do
+
+                    -- Check if we are in the realm. If we are, we place barrier. If not, we clean up the boundary area.
+                    -- This can probably be optimized but it's fast enough for now.
+                    if (x >= context.startPos.x and x <= context.endPos.x) and (y >= context.startPos.y and y <= context.endPos.y) and (z >= context.startPos.z and z <= context.endPos.z) then
+                        if (x == context.startPos.x or x == context.endPos.x) or (y == context.startPos.y or y == context.endPos.y) or (z == context.startPos.z or z == context.endPos.z) then
+                            local index = a:index(x, y, z)
+                            data[index] = barrierNode
+                        end
+                    else
+                        local index = a:index(x, y, z)
+                        data[index] = airNode
+                    end
+                end
+            end
+        end
+
+        -- Write data to world
+        vm:set_data(data)
+        vm:write_to_map(true)
+
+    end
+
+    local context = {} -- persist data between callback calls
+    context.realm = self
+    context.startPos = self.StartPos
+    context.endPos = self.EndPos
+
+    minetest.emerge_area(context.startPos, context.endPos, emerge_callback, context)
+
+    minetest.chat_send_all("[INFO] Started creating barriers for realm, block placement might act unresponsive for a moment.")
 end
 
 function Realm:CleanNodes()

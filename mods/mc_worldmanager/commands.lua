@@ -41,7 +41,7 @@ commands["new"] = {
         end
         local newRealm = Realm:New(realmName, { x = sizeX, y = sizeY, z = sizeZ })
         newRealm:CreateGround()
-        newRealm:CreateBarriers()
+        newRealm:CreateBarriersFast()
 
         return true, "created new realm with ID: " .. newRealm.ID
     end }
@@ -123,7 +123,12 @@ commands["walls"] = {
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
 
-        requestedRealm:CreateBarriers()
+        if (params[2] ~= nil and params[2] == "fast") then
+            requestedRealm:CreateBarriersFast()
+        else
+            requestedRealm:CreateBarriers()
+        end
+
         return true, "created walls in realm: " .. tostring(realmID)
     end }
 
@@ -149,7 +154,7 @@ commands["gen"] = {
         requestedRealm:GenerateTerrain(seed, seaLevel, heightGen, decGen)
 
         Debug.log("Creating barrier...")
-        requestedRealm:CreateBarriers()
+        requestedRealm:CreateBarriersFast()
 
         return true
     end }
