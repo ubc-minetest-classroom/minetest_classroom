@@ -159,7 +159,7 @@ local function show_needle_hud(player)
 		hud_elem_type = "image",
 		text = "needle_0.png",
 		position = {x = 0.5285, y = 0.405}, 
-		scale = {x = 10.2, y = 10.2},
+		scale = {x = 10.3, y = 10.3},
 		offset = {x = -4, y = -4}
 	})
 
@@ -172,7 +172,7 @@ local function show_bezel_hud(player)
 		hud_elem_type = "image",
 		text = "bezel_0.png",
 		position = {x = 0.525, y = 0.4}, 
-		scale = {x = 10, y = 10},
+		scale = {x = 10.2, y = 10.2},
 		offset = {x = -4, y = -4}
 	})
 end
@@ -326,26 +326,25 @@ function rotate_image(player, hudName, referenceAngle)
 	end
 
 	if hudName == "bezel" then
-		local x, y = -4, -4
+		local bx, by, nx, ny = -4, -4, -4, -4
+
 		if adjustment == 90 then
-			x = 4
+			bx, nx = -1, -10
 		elseif adjustment == 180 then
-			x, y = 4, 4
+			by, ny, nx = -1, -8, -12
 		elseif adjustment == 270 then
-			y = 4
+			bx, ny, nx = -10, -13, -8
 		end
 
-		if x ~= -4 or y ~= -4 then
+		if bx ~= -4 or by ~= -4 then
 			bezelHud:change(player, "bezel", {
-				offset = {x = x, y = y}
+				offset = {x = bx, y = by}
 			})
+		end
 
+		if nx ~= -4 or ny ~= -4 then
 			needleHud:change(player, "needle", {
-				offset = {x = x, y = y}
-			})
-
-			mirrorHud:change(player, "mirror", {
-				offset = {x = x, y = y}
+				offset = {x = nx, y = ny}
 			})
 		end
 	end
