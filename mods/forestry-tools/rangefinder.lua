@@ -3,7 +3,6 @@
   -- node group: leaves
   -- drawtype: plantlike, plantlike_rooted
 -- Determine calculation algorithms
--- Determine how to get reliable angle measurements
 -- Add calculation/cast outputs to HUD instead of chat
 -- Auto-reset?
 ]]
@@ -220,6 +219,20 @@ local function hide_zoom_hud(player)
     end
 end
 
+-- Rounds num to the given number of decimal places
+local function round_to_decim_places(num, places, as_string)
+    local factor = 10^places
+    local round_num = math.round(num * factor)
+    if not as_string then
+        return round_num / factor
+    else
+        local num_string = tostring(round_num)
+        local whole = string.sub(num_string, 1, -1 - places)
+        local decim = string.sub(num_string, -places)
+        return decim ~= "" and (whole ~= "" and whole or "0").."."..decim or (whole ~= "" and whole or "0")
+    end
+end
+
 -- Calculates the final output for the rangefinder to display
 local function rangefinder_calc(meta)
     local casts = minetest.deserialize(meta:get_string("casts"))
@@ -230,20 +243,22 @@ local function rangefinder_calc(meta)
 
     local calculation_table = {
         [1] = function() -- HT
-            local gamma_dist = casts[1]["dist"]
             local gamma = vector.angle(casts[1]["dir"], vector.new(casts[1]["dir"]["x"], 0, casts[1]["dir"]["z"]))
             local alpha = vector.angle(casts[2]["dir"], vector.new(casts[2]["dir"]["x"], 0, casts[2]["dir"]["z"]))
             local beta = vector.angle(casts[3]["dir"], vector.new(casts[3]["dir"]["x"], 0, casts[3]["dir"]["z"]))
 
+            local gamma_dist = casts[1]["dist"]
             local horiz_dist = gamma_dist * math.cos(gamma)
-            local alpha_dist = horiz_dist * math.tan(alpha)
-            local beta_dist = horiz_dist * math.tan(beta)
+            local alpha_dist = horiz_dist / math.cos(alpha)
+            local beta_dist = horiz_dist / math.cos(beta)
 
-            minetest.log(horiz_dist)
-            minetest.log(alpha_dist)
-            minetest.log(beta_dist)
-
-            return alpha_dist + beta_dist
+            local theta
+            if math.sign(casts[2]["dir"]["y"]) == math.sign(casts[3]["dir"]["y"]) then
+                theta = math.abs(alpha - beta)
+            else
+                theta = math.abs(alpha + beta)
+            end
+            return math.sqrt(alpha_dist^2 + beta_dist^2 - 2*alpha_dist*beta_dist*math.cos(theta))
         end,
         [2] = function() -- SD
             return mode
@@ -287,7 +302,8 @@ local function rangefinder_mode_switch(itemstack, player, pointed_thing)
     else
         local result = rangefinder_calc(meta)
         if result then
-            minetest.chat_send_player(player:get_player_name(), "Measurement for new mode: "..result..MODES[new_mode]["unit"])
+            local round_res = round_to_decim_places(result, 1, true)
+            minetest.chat_send_player(player:get_player_name(), "Measurement for new mode: "..round_res..MODES[new_mode]["unit"])
         end
     end
     return itemstack
@@ -309,7 +325,8 @@ minetest.register_tool(tool_name , {
                 if cast_num then
                     local casts = minetest.deserialize(meta:get_string("casts"))
                     if casts[cast_num] then
-                        minetest.chat_send_player(pname, casts[cast_num]["dist"])
+                        local cast_dist = round_to_decim_places(casts[cast_num]["dist"], 1, true)
+                        minetest.chat_send_player(pname, "Cast "..cast_num.." logged - distance: "..cast_dist.."m")
                     end
                 end
                 -- perform and log calculation
@@ -317,7 +334,8 @@ minetest.register_tool(tool_name , {
                     local result = rangefinder_calc(meta)
                     local mode = get_mode(meta)
                     if result then
-                        minetest.chat_send_player(pname, "Final measurement: "..result..MODES[mode]["unit"])
+                        local round_res = round_to_decim_places(result, 1, true)
+                        minetest.chat_send_player(pname, "Final measurement: "..round_res..MODES[mode]["unit"])
                     end
                 end
             end
