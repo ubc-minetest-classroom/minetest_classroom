@@ -7,9 +7,9 @@ local HUD_showing = false;
 
 
 
+
 minetest.register_tool("forestry_tools:clinometer", {
 	description = S("Yaw (horizontal) and Sextant (vertical)"),
-	_tt_help = S("Shows your pitch"),
 	_doc_items_longdesc = S("It shows your pitch (vertical viewing angle) in degrees. and your sextant (horizontal viewing angle) in degrees"),
 	_doc_items_usagehelp = use,
 	wield_image = "clinometer.png",
@@ -39,6 +39,29 @@ minetest.register_alias("clinometer", "forestry_tools:clinometer")
 clinometer = minetest.registered_aliases[clinometer] or clinometer
 
 
+
+
+minetest.register_on_joinplayer(function(player)
+    local inv = player:get_inventory()
+    if inv:contains_item("main", ItemStack("forestry_tools:clinometer")) then
+        -- Player has the clinometer
+        if check_perm(player) then
+            -- The player should have the clinometer
+            return
+        else   
+            -- The player should not have the clinometer
+            player:get_inventory():remove_item('main', "forestry_tools:clinometer")
+        end
+    else
+        -- Player does not have the clinometer
+        if check_perm(player) then
+            -- The player should have the clinometer
+            player:get_inventory():add_item('main', "forestry_tools:clinometer")
+        else
+            -- The player should not have the clinometer
+            return
+        end     
+    end
 
 
 
@@ -101,7 +124,15 @@ end
 
 minetest.register_globalstep(function(dtime)
 	local players  = minetest.get_connected_players()
+		
+		 if #players == 0 then
+			returne
+		end
+		
+		
 	for i,player in ipairs(players) do
+			
+			
 
 		if HUD_showing then
 			-- Remove HUD when player is no longer wielding the clinometer
