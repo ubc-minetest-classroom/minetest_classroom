@@ -21,6 +21,12 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmDataManagement.lu
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmSchematicSaveLoad.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCoordinateConversion.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPrivileges.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmIntegrationHelpers.lua")
+
+if (areas) then
+    dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmAreasIntegration.lua")
+end
 
 ---@public
 ---The constructor for the realm class.
@@ -28,9 +34,18 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCoordinateConvers
 ---@param area table Size of the realm in {x,y,z} format
 ---@return table a new "Realm" table object / class.
 function Realm:New(name, area)
-    area.x = area.x or 80
-    area.y = area.y or 80
-    area.z = area.z or 80
+
+    if (area.x == nil or area.x == 0) then
+        area.x = 80
+    end
+
+    if (area.y == nil or area.y == 0) then
+        area.y = 80
+    end
+
+    if (area.z == nil or area.z == 0) then
+        area.z = 80
+    end
 
     if (name == nil or name == "") then
         name = "Unnamed Realm"
@@ -45,8 +60,12 @@ function Realm:New(name, area)
         PlayerJoinTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
         PlayerLeaveTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
         RealmDeleteTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
+        Permissions = {},
         MetaStorage = {}
     }
+
+    setmetatable(this, self)
+    Realm.realmDict[this.ID] = this
 
     Realm.realmCount = this.ID
 
@@ -62,12 +81,24 @@ function Realm:New(name, area)
                         y = (this.StartPos.y + 2),
                         z = (this.StartPos.z + this.EndPos.z) / 2 }
 
-    setmetatable(this, self)
-    Realm.realmDict[this.ID] = this
+    if (areas) then
+        local protectionID = areas:add("Server", this.ID .. this.Name, this.StartPos, this.EndPos)
+        this:set_data("protectionID", protectionID)
+        areas:save()
+    end
 
     Realm.SaveDataToStorage()
 
+    this:CallOnCreateCallbacks()
+
     return this
+end
+
+---GetRealm
+---@param ID number
+---Returns the realm corresponding to the ID parameter.
+function Realm.GetRealm(ID)
+    return Realm.realmDict[tonumber(ID)]
 end
 
 -- Online bin packing... A pretty challenging problem to solve.
@@ -179,10 +210,20 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
     return StartPos, EndPos
 end
 
-
 function Realm.markSpaceAsFree(startPos, endPos)
+    Debug.logCoords(startPos, "start pos")
+    Debug.logCoords(endPos, "end pos")
+
+    -- Crashes on a value of 3 when deleting spawns, but only when deleting spawns. I don't know why.
+    -- The values in the calling function 'Delete' are all correct.
+    -- Somehow, the value is turning from '3' to nil between method calls.
+    if (endPos.z == nil) then
+        endPos.z = startPos.z
+        Debug.log("endPos.z is nil")
+    end
+
     local entry = {}
-    entry.startPos = startPos
+    entry.startPos = { x = startPos.x, y = startPos.y, z = startPos.z }
     entry.area = { x = endPos.x - startPos.x,
                    y = endPos.y - startPos.y,
                    z = endPos.z - startPos.z }
@@ -210,81 +251,83 @@ function Realm.consolidateEmptySpace()
     end
 
     -- Run a nearest neighbor search to group points up according to their neighbors
-    -- Note that this function uses GOTO statements; the alternative would be to have a boolean
-    -- Keeping track of when to break the loops.
-    -- This is necessary because of our nested loops.
     local function buildGroups(pointGrid)
+
+        local function isNeighbor(lastPos, currentPos, coord)
+            local difference = math.abs(currentPos - lastPos)
+            if (difference == 0 or difference == 1) then
+                return true
+            end
+            return false
+        end
 
         local groups = {}
         local groupCounter = 0
 
-        :: start ::
-        local lastX = nil
-        local lastY = nil
-        local lastZ = nil
+        local repeatFlag = false
 
-        local function isNeighbor(lastPos, currentPos, coord)
+        while (repeatFlag) do
+            repeatFlag = false
+            local lastX = nil
+            local lastY = nil
+            local lastZ = nil
 
-            local difference = math.abs(currentPos - lastPos)
-
-            if (difference == 0 or difference == 1) then
-                return true
-            end
-
-            return false
-        end
-
-        for kx, xTable in mc_helpers.pairsByKeys(pointGrid) do
-            if (lastX == nil) then
-                lastX = kx
-            end
-
-            lastY = nil
-            lastZ = nil
-
-            if (isNeighbor(lastX, kx, "x")) then
-                lastX = kx
-            else
-                groupCounter = groupCounter + 1
-
-                goto start
-                break
-            end
-
-            for ky, yTable in mc_helpers.pairsByKeys(xTable) do
-                if (lastY == nil) then
-                    lastY = ky
+            for kx, xTable in mc_helpers.pairsByKeys(pointGrid) do
+                if (lastX == nil) then
+                    lastX = kx
                 end
 
-                if (isNeighbor(lastY, ky, "y")) then
-                    lastY = ky
-                else
+                lastY = nil
+                lastZ = nil
 
+                if (isNeighbor(lastX, kx, "x")) then
+                    lastX = kx
+                else
+                    groupCounter = groupCounter + 1
+
+                    -- Alternative of GOTO is a while loop with a boolean flag
+                    repeatFlag = true
                     break
                 end
 
-                for kz, zTable in mc_helpers.pairsByKeys(yTable) do
-                    if (lastZ == nil) then
-                        lastZ = kz
-                    end
-
-                    if (isNeighbor(lastZ, kz, "z")) then
-                        lastZ = kz
-                    else
-
-                        break
-                    end
-
-                    local coords = { x = kx, y = ky, z = kz }
-
-                    if (zTable == true) then
-                        if (groups[groupCounter] == nil) then
-                            groups[groupCounter] = {}
+                if (repeatFlag == false) then
+                    for ky, yTable in mc_helpers.pairsByKeys(xTable) do
+                        if (lastY == nil) then
+                            lastY = ky
                         end
 
-                        table.insert(groups[groupCounter], coords)
-                        ptable.delete(pointGrid, coords)
+                        if (isNeighbor(lastY, ky, "y")) then
+                            lastY = ky
+                        else
+
+                            break
+                        end
+
+                        for kz, zTable in mc_helpers.pairsByKeys(yTable) do
+                            if (lastZ == nil) then
+                                lastZ = kz
+                            end
+
+                            if (isNeighbor(lastZ, kz, "z")) then
+                                lastZ = kz
+                            else
+
+                                break
+                            end
+
+                            local coords = { x = kx, y = ky, z = kz }
+
+                            if (zTable == true) then
+                                if (groups[groupCounter] == nil) then
+                                    groups[groupCounter] = {}
+                                end
+
+                                table.insert(groups[groupCounter], coords)
+                                ptable.delete(pointGrid, coords)
+                            end
+                        end
                     end
+
                 end
             end
         end
@@ -362,20 +405,67 @@ end
 ---NOTE: remember to clear any references to the realm so that memory can be released by the GC.
 ---@return void
 function Realm:Delete()
-    self:RunFunctionFromTable(self.RealmDeleteTable)
-    self:ClearNodes()
 
-    local gridSpace = Realm.worldToGridSpace({
+    -- We need to first calculate where the realm is located on the realm grid.
+    -- For some reason, this code sometimes does not work later on in the process...
+    local gridStartPos = Realm.worldToGridSpace({
         x = self.StartPos.x,
         y = self.StartPos.y,
         z = self.StartPos.z })
 
-    gridSpace.x = gridSpace.x - Realm.const.bufferSize
-    gridSpace.y = gridSpace.y - Realm.const.bufferSize
-    gridSpace.z = gridSpace.z - Realm.const.bufferSize
+    local gridEndPos = Realm.worldToGridSpace({
+        x = self.EndPos.x,
+        y = self.EndPos.y,
+        z = self.EndPos.z })
 
-    Realm.markSpaceAsFree(gridSpace, Realm.worldToGridSpace(self.EndPos))
+    gridStartPos.x = gridStartPos.x - Realm.const.bufferSize
+    gridStartPos.y = gridStartPos.y - Realm.const.bufferSize
+    gridStartPos.z = gridStartPos.z - Realm.const.bufferSize
+
+    if (self.ID == mc_worldManager.spawnRealmID) then
+        mc_worldManager.spawnRealmID = nil
+    end
+
+    local players = self:GetPlayers()
+
+    -- We call the functions registered with the realm's OnDelete event as well as global onDelete callbacks.
+
+    self:RunFunctionFromTable(self.RealmDeleteTable)
+    self:CallOnDeleteCallbacks()
+
+
+    -- We need to remove all players from the realm
+    local spawn = mc_worldManager.GetSpawnRealm()
+    if (players ~= nil) then
+        for k, v in pairs(players) do
+            if v == true then
+                spawn:TeleportPlayer(minetest.get_player_by_name(k))
+            end
+        end
+    end
+
+
+    -- We clear all nodes from the realm.
+    self:ClearNodes()
+
+    -- We clear block protection
+    if (areas) then
+        local protectionID = self:get_data("protectionID")
+        if (protectionID ~= nil) then
+            areas:remove(protectionID, true)
+            areas:save()
+        end
+    end
+
+    -- We save the realms data to storage twice. The first time is to ensure that critical data such as the realm dict is saved to disk.
+    -- The second time is to ensure that we have saved the updated realm grid.
+
+    -- remove the realm dictionary entry.
     Realm.realmDict[self.ID] = nil
+    Realm.SaveDataToStorage()
+
+    -- We need to remove the realm from the realm grid and clear the space for other realms.
+    Realm.markSpaceAsFree(gridStartPos, gridEndPos)
     Realm.SaveDataToStorage()
 end
 
@@ -399,6 +489,22 @@ function Realm:RunFunctionFromTable(table, player)
             end
         end
     end
+end
+
+function Realm:ContainsCoordinate(coordinate)
+    if (coordinate.x < self.StartPos.x or coordinate.x > self.EndPos.x) then
+        return false
+    end
+
+    if (coordinate.z < self.StartPos.z or coordinate.z > self.EndPos.z) then
+        return false
+    end
+
+    if (coordinate.y < self.StartPos.y or coordinate.y > self.EndPos.y) then
+        return false
+    end
+
+    return true
 end
 
 Realm.LoadDataFromStorage()

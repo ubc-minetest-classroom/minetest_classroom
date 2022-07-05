@@ -24,11 +24,16 @@ local infos = {
     },
 }
 local tool_name = "mc_teacher:controller"
-local priv_table = {teacher = true}
+local priv_table = { teacher = true }
 
 local function get_group(context)
     if context and context.groupname then
-        return minetest_classroom.get_group_students(context.groupname)
+        if (context.groupname == "Realm") then
+            return minetest_classroom.get_realm_students(context.realm)
+        else
+            return minetest_classroom.get_group_students(context.groupname)
+        end
+
     else
         return minetest_classroom.get_students()
     end
@@ -36,49 +41,49 @@ end
 
 -- Label the teacher in red
 minetest.register_on_joinplayer(function(player)
-    if mc_helpers.checkPrivs(player,priv_table) then
+    if mc_helpers.checkPrivs(player, priv_table) then
         player:set_nametag_attributes({ color = { r = 255, g = 0, b = 0 } })
     end
 end)
 
 -- Define an initial formspec that will redirect to different formspecs depending on what the teacher wants to do
 local mc_teacher_menu = {
-	"formspec_version[5]",
-	"size[10,9]",
-	"label[3.2,0.7;What do you want to do?]",
-	"button[1,1.6;3.8,1.3;spawn;Go to UBC]",
-	"button[5.2,1.6;3.8,1.3;tasks;Manage Tasks]",
-	"button[1,3.3;3.8,1.3;lessons;Manage Lessons]",
-	"button[5.2,3.3;3.8,1.3;players;Manage Players]",
-	"button[1,5;3.8,1.3;classrooms;Manage Classrooms]",
-	"button[5.2,5;3.8,1.3;rules;Manage Server Rules]",
-	"button[1,6.7;3.8,1.3;mail;Teacher Mail]",
-	"button_exit[5.2,6.7;3.8,1.3;exit;Exit]"
+    "formspec_version[5]",
+    "size[10,9]",
+    "label[3.2,0.7;What do you want to do?]",
+    "button[1,1.6;3.8,1.3;spawn;Go to UBC]",
+    "button[5.2,1.6;3.8,1.3;tasks;Manage Tasks]",
+    "button[1,3.3;3.8,1.3;lessons;Manage Lessons]",
+    "button[5.2,3.3;3.8,1.3;players;Manage Players]",
+    "button[1,5;3.8,1.3;classrooms;Manage Classrooms]",
+    "button[5.2,5;3.8,1.3;rules;Manage Server Rules]",
+    "button[1,6.7;3.8,1.3;mail;Teacher Mail]",
+    "button_exit[5.2,6.7;3.8,1.3;exit;Exit]"
 }
 
 local function show_teacher_menu(player)
-    if mc_helpers.checkPrivs(player,priv_table) then
+    if mc_helpers.checkPrivs(player, priv_table) then
         local pname = player:get_player_name()
-        minetest.show_formspec(pname, "mc_teacher:menu", table.concat(mc_teacher_menu,""))
+        minetest.show_formspec(pname, "mc_teacher:menu", table.concat(mc_teacher_menu, ""))
         return true
     end
 end
 
 -- Define the Manage Tasks formspec (teacher-view)
 local mc_teacher_tasks = {
-	"formspec_version[5]",
-	"size[10,13]",
-	"field[0.375,0.75;9.25,0.8;task;Enter task below;]",
-	"textarea[0.375,2.5;9.25,7;instructions;Enter instructions below;]",
-	"field[0.375,10.5;9.25,0.8;timer;Enter timer for task in seconds (0 or blank = no timer);]",
-	"button[0.375,11.5;2,0.8;back;Back]",
-	"button_exit[2.575,11.5;2,0.8;submit;Submit]"
+    "formspec_version[5]",
+    "size[10,13]",
+    "field[0.375,0.75;9.25,0.8;task;Enter task below;]",
+    "textarea[0.375,2.5;9.25,7;instructions;Enter instructions below;]",
+    "field[0.375,10.5;9.25,0.8;timer;Enter timer for task in seconds (0 or blank = no timer);]",
+    "button[0.375,11.5;2,0.8;back;Back]",
+    "button_exit[2.575,11.5;2,0.8;submit;Submit]"
 }
 
 local function show_tasks(player)
-    if mc_helpers.checkPrivs(player,priv_table) then
+    if mc_helpers.checkPrivs(player, priv_table) then
         local pname = player:get_player_name()
-        minetest.show_formspec(pname, "mc_teacher:tasks", table.concat(mc_teacher_tasks,""))
+        minetest.show_formspec(pname, "mc_teacher:tasks", table.concat(mc_teacher_tasks, ""))
         return true
     end
 end
@@ -129,13 +134,15 @@ end
 local DASHBOARD_HEADER = "formspec_version[5]size[13,11]"
 
 local function get_player_list_formspec(player, context)
-    if not mc_helpers.checkPrivs(player,priv_table) then
+    if not mc_helpers.checkPrivs(player, priv_table) then
         return "label[0,0;" .. FS "Access denied" .. "]"
     end
 
     if context.selected_student and not minetest.get_player_by_name(context.selected_student) then
         context.selected_student = nil
     end
+
+    context.realm = Realm.GetRealmFromPlayer(player).ID
 
     local function button(def)
         local x = assert(def.x)
@@ -193,7 +200,7 @@ local function get_player_list_formspec(player, context)
         "tablecolumns[color;text",
     }
 
-    context.select_toggle = context.select_toggle or "all"
+    context.select_toggle = context.select_toggle or "realm"
 
     for i, col in pairs(infos) do
         fs[#fs + 1] = ";color;text,align=center"
@@ -206,8 +213,10 @@ local function get_player_list_formspec(player, context)
     do
         fs[#fs + 1] = "tabheader[0,0;6.7,0.8;group;"
         fs[#fs + 1] = FS "All"
+
         local selected_group_idx = 1
         local i = 2
+
         for name, group in pairs(minetest_classroom.get_all_groups()) do
             fs[#fs + 1] = ","
             fs[#fs + 1] = minetest.formspec_escape(name)
@@ -256,6 +265,8 @@ local function get_player_list_formspec(player, context)
     fs[#fs + 1] = "]"
     fs[#fs + 1] = "container_end[]"
 
+
+
     -- New Group button
     do
         local btn = {
@@ -275,7 +286,7 @@ local function get_player_list_formspec(player, context)
             w = 2.5, h = 0.8,
             name = "edit_group",
             text = FS "Edit Group",
-            state = context.groupname ~= nil,
+            state = context.groupname ~= nil and context.groupname ~= "Realm",
             tooltip = not context.groupname and FS "Please select a group first",
         }
 
@@ -304,12 +315,12 @@ local function get_player_list_formspec(player, context)
     do
         local btn = {
             x = 8.5, y = 2,
-            w = 1.4, h = 0.8,
+            w = 1, h = 0.8,
             name = "select_group",
             text = FS "Group",
         }
 
-        if not context.groupname then
+        if (context.groupname == nil or context.groupname == "Realm") then
             btn.state = "disabled"
             btn.tooltip = FS "Please select a group first"
         elseif context.select_toggle == "group" then
@@ -324,8 +335,8 @@ local function get_player_list_formspec(player, context)
     -- Select Selected button
     do
         local btn = {
-            x = 10, y = 2,
-            w = 1.8, h = 0.8,
+            x = 9.7, y = 2,
+            w = 1, h = 0.8,
             name = "select_selected",
             text = FS "Selected",
         }
@@ -334,6 +345,24 @@ local function get_player_list_formspec(player, context)
             btn.state = "disabled"
             btn.tooltip = FS "Please select a student first"
         elseif context.select_toggle == "selected" then
+            btn.state = "selected"
+        else
+            btn.state = "active"
+        end
+
+        fs[#fs + 1] = button(btn)
+    end
+
+    -- Select Realm button
+    do
+        local btn = {
+            x = 10.9, y = 2,
+            w = 1, h = 0.8,
+            name = "select_realm",
+            text = FS "Realm",
+        }
+
+        if context.select_toggle == "realm" then
             btn.state = "selected"
         else
             btn.state = "active"
@@ -366,7 +395,7 @@ local function get_player_list_formspec(player, context)
 end
 
 local function handle_results(player, context, fields)
-    if not mc_helpers.checkPrivs(player,priv_table) then
+    if not mc_helpers.checkPrivs(player, priv_table) then
         return false
     end
 
@@ -404,6 +433,9 @@ local function handle_results(player, context, fields)
     elseif fields.select_selected then
         context.select_toggle = "selected"
         return true
+    elseif fields.select_realm then
+        context.select_toggle = "realm"
+        return true
     end
 
     if fields.teleport and context.selected_student then
@@ -436,6 +468,8 @@ local function handle_results(player, context, fields)
                 selector = "group:" .. context.groupname
             elseif context.select_toggle == "selected" then
                 selector = "user:" .. context.selected_student
+            elseif context.select_toggle == "realm" then
+                selector = "realm:" .. context.realm
             else
                 error("Unknown selector")
             end
@@ -448,7 +482,7 @@ end
 
 local _contexts = {}
 local function show_players(player)
-    if mc_helpers.checkPrivs(player,priv_table) then
+    if mc_helpers.checkPrivs(player, priv_table) then
         local pname = player:get_player_name()
         local context = _contexts[pname] or {}
         _contexts[pname] = context
@@ -462,7 +496,7 @@ end
 local mc_teacher_lessons = "formspec_version[5]"
 
 local function show_lessons(player)
-    if mc_helpers.checkPrivs(player,priv_table) then
+    if mc_helpers.checkPrivs(player, priv_table) then
         local pname = player:get_player_name()
         minetest.show_formspec(pname, "mc_teacher:lessons", mc_teacher_lessons)
         return true
@@ -471,13 +505,13 @@ end
 
 -- Define the Manage Classrooms formspec
 local function show_classrooms(player)
-    if mc_helpers.checkPrivs(player,priv_table) then
-        local mc_teacher_classrooms = { 
-                "formspec_version[5]",
-                "size[14,14]",
-                "label[0.4,0.8;Your Classrooms]",
-                "button[0.375,6.5;4,0.8;join;Join Selected Classroom]",
-                "button[0.375,7.5;4,0.8;delete;Delete Selected Classroom]"
+    if mc_helpers.checkPrivs(player, priv_table) then
+        local mc_teacher_classrooms = {
+            "formspec_version[5]",
+            "size[14,14]",
+            "label[0.4,0.8;Your Classrooms]",
+            "button[0.375,6.5;4,0.8;join;Join Selected Classroom]",
+            "button[0.375,7.5;4,0.8;delete;Delete Selected Classroom]"
         }
 
         -- Get the stored classrooms for the teacher
@@ -509,11 +543,11 @@ local function show_classrooms(player)
             for i in pairs(pcc) do
                 mc_teacher_classrooms[#mc_teacher_classrooms + 1] = pcc[i]
                 mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " "
-                mc_teacher_classrooms[#mc_teacher_classrooms + 1] =  psn[i]
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = psn[i]
                 mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " "
-                mc_teacher_classrooms[#mc_teacher_classrooms + 1] =  map[i]
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = map[i]
                 mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " Expires "
-                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = pem[i] 
+                mc_teacher_classrooms[#mc_teacher_classrooms + 1] = pem[i]
                 mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " "
                 mc_teacher_classrooms[#mc_teacher_classrooms + 1] = ped[i]
                 mc_teacher_classrooms[#mc_teacher_classrooms + 1] = " "
@@ -546,7 +580,7 @@ local function show_classrooms(player)
         mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "button[9.625,13;4,0.8;submit;Create New Classroom]"
         mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "button[0.375,13;2,0.8;back;Back]"
         mc_teacher_classrooms[#mc_teacher_classrooms + 1] = "button[2.575,13;2,0.8;deleteall;Delete All]"
-        
+
         local pname = player:get_player_name()
         minetest.show_formspec(pname, "mc_teacher:classrooms", table.concat(mc_teacher_classrooms, ""))
         return true
@@ -564,7 +598,7 @@ local function get_reports_formspec(reports)
     -- Add the reports
     local reports_table = minetest_classroom.reports:to_table()["fields"]
     for k, v in pairs(reports_table) do
-        mc_teacher_mail[#mc_teacher_mail + 1] = k 
+        mc_teacher_mail[#mc_teacher_mail + 1] = k
         mc_teacher_mail[#mc_teacher_mail + 1] = " "
         mc_teacher_mail[#mc_teacher_mail + 1] = v
         mc_teacher_mail[#mc_teacher_mail + 1] = ","
@@ -576,7 +610,7 @@ local function get_reports_formspec(reports)
 end
 
 local function show_mail(player)
-    if mc_helpers.checkPrivs(player,priv_table) then
+    if mc_helpers.checkPrivs(player, priv_table) then
         local pname = player:get_player_name()
         minetest.show_formspec(pname, "mc_teacher:mail", get_reports_formspec(minetest_classroom.reports))
         return true
@@ -588,7 +622,7 @@ end
 
 -- Processing the form from the menu
 minetest.register_on_player_receive_fields(function(player, formname, fields)
-    if string.sub(formname, 1, 10) ~= "mc_teacher" or not mc_helpers.checkPrivs(player,priv_table) then
+    if string.sub(formname, 1, 10) ~= "mc_teacher" or not mc_helpers.checkPrivs(player, priv_table) then
         return false
     end
 
@@ -601,15 +635,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     -- Menu
     if formname == "mc_teacher:menu" then
         if fields.spawn then
-	    -- Temporary patch to stop server from crashing
+            -- Temporary patch to stop server from crashing
             --local spawnRealm = mc_worldManager.GetSpawnRealm()
             --spawnRealm:TeleportPlayer(player)
             local spawn_pos = {
-            	x = 1426,
-            	y = 92,
-            	z = 1083,
-             }
-             player:set_pos(spawn_pos)		
+                x = 1426,
+                y = 92,
+                z = 1083,
+            }
+            player:set_pos(spawn_pos)
         elseif fields.tasks then
             show_tasks(player)
         elseif fields.lessons then
@@ -784,6 +818,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 pdata.end_day[context.selected] = nil
                 pdata.classroom_map[context.selected] = nil
                 pdata.access_code[context.selected] = nil
+                pdata.realm_id[context.selected] = nil
                 pmeta:set_string("classrooms", minetest.serialize(pdata
                 ))
 
@@ -805,7 +840,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 end)
 
 function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
-    if mc_helpers.checkPrivs(player,priv_table) then
+    if mc_helpers.checkPrivs(player, priv_table) then
         local pname = player:get_player_name()
         pmeta = player:get_meta()
 
@@ -816,10 +851,7 @@ function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
         math.randomseed(os.time())
         access_num = tostring(math.floor(math.random() * 100000))
 
-
-        local newRealm = Realm:NewFromSchematic(cc..sn..map, map)
-
-
+        local newRealm = Realm:NewFromSchematic(cc .. sn .. map, map)
 
         if temp == nil then
             -- Build the new classroom table entry
@@ -899,11 +931,12 @@ months = {
 minetest.register_tool(tool_name, {
     description = "Controller for teachers",
     inventory_image = "controller.png",
+    _mc_tool_privs = priv_table,
     -- Left-click the tool activates the teacher menu
     on_use = function(itemstack, player, pointed_thing)
         local pname = player:get_player_name()
         -- Check for teacher privileges
-        if mc_helpers.checkPrivs(player,priv_table) then
+        if mc_helpers.checkPrivs(player, priv_table) then
             show_teacher_menu(player)
         end
     end,
@@ -911,66 +944,3 @@ minetest.register_tool(tool_name, {
     on_drop = function(itemstack, dropper, pos)
     end,
 })
-
--- Tool handling functions:
-    -- Give the controller to any player who joins with adequate privileges or take away the controller if they do not have them
-    -- Give the controller to any player who is granted adequate privileges
-    -- Take the controller away from anyone who is revoked privileges and no longer has adequate ones
-
--- Give the controller to any player who joins with adequate privileges or take away the controller if they do not have them
-minetest.register_on_joinplayer(function(player)
-    local inv = player:get_inventory()
-    if inv:contains_item("main", ItemStack(tool_name)) then
-        -- Player has the controller
-        if mc_helpers.checkPrivs(player,priv_table) then
-            -- The player should have the controller
-            return
-        else
-            -- The player should not have the controller
-            player:get_inventory():remove_item('main', tool_name)
-        end
-    else
-        -- Player does not have the controller
-        if mc_helpers.checkPrivs(player,priv_table) then
-            -- The player should have the controller
-            player:get_inventory():add_item('main', tool_name)
-        else
-            -- The player should not have the controller
-            return
-        end
-    end
-end)
-
--- Give the controller to any player who is granted adequate privileges
-minetest.register_on_priv_grant(function(name, granter, priv)
-    -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
-        return true -- skip this callback, continue to next callback
-    end
-
-    local player = minetest.get_player_by_name(name)
-    local inv = player:get_inventory()
-
-    if (not inv:contains_item("main", ItemStack(tool_name))) and mc_helpers.checkPrivs(player,priv_table) then
-        player:get_inventory():add_item('main', tool_name)
-    end
-
-    return true -- continue to next callback
-end)
-
--- Take the controller away from anyone who is revoked privileges and no longer has adequate ones
-minetest.register_on_priv_revoke(function(name, revoker, priv)
-    -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
-        return true -- skip this callback, continue to next callback
-    end
-
-    local player = minetest.get_player_by_name(name)
-    local inv = player:get_inventory()
-	
-    if inv:contains_item("main", ItemStack(tool_name)) and (not mc_helpers.checkPrivs(player,priv_table)) then
-        player:get_inventory():remove_item('main', tool_name)
-    end
-
-    return true -- continue to next callback
-end)

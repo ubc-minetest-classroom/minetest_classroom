@@ -85,13 +85,31 @@ end
 ---@return boolean whether the schematic fit entirely in the realm when loading.
 function Realm:Load_Schematic(schematic, config)
 
-    self.Name = config.name
-
-
-
     --TODO: Add code to check if the realm is large enough to support the schematic; If not, create a new realm that can;
     local schematicEndPos = self:LocalToWorldPosition(config.schematicSize)
-    self.EndPos = schematicEndPos
+
+    if (schematicEndPos.x > self.EndPos.x or schematicEndPos.y > self.EndPos.y or schematicEndPos.z > self.EndPos.z) then
+        Debug.log("Schematic is too large for realm")
+    else
+        if (schematicEndPos.x == nil or schematicEndPos == 0) then
+            schematicEndPos.x = 80
+            Debug.log("Schematic size x is 0, setting to 80")
+        end
+
+        if (schematicEndPos.y == nil or schematicEndPos == 0) then
+            schematicEndPos.y = 80
+            Debug.log("Schematic size y is 0, setting to 80")
+        end
+
+        if (schematicEndPos.z == nil or schematicEndPos == 0) then
+            schematicEndPos.z = 80
+            Debug.log("Schematic size z is 0, setting to 80")
+        end
+
+        self.EndPos = schematicEndPos
+    end
+
+
 
 
     --exschem is having issues loading random chunks, need to debug
@@ -162,6 +180,11 @@ end
 
 function Realm:NewFromSchematic(name, key)
     local schematic, config = schematicManager.getSchematic(key)
+
+    if (name == "" or name == nil) then
+        name = config.name
+    end
+
     local newRealm = Realm:New(name, config.schematicSize)
     newRealm:Load_Schematic(schematic, config)
 
