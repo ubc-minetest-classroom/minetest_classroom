@@ -5,6 +5,17 @@
 -- Determine calculation algorithms
 -- Add calculation/cast outputs to HUD instead of chat
 -- Auto-reset?
+-- Differentiate routines (DEFAULT, HT, ML) from measurement modes (SD, HD, VD, INC, AZ)
+  -- cycle through routines by default
+]]
+
+--[[ CURRENT CONTROL SCHEME
+-- left click = take measurement / reset
+-- right click = cycle (forwards)
+-- AUX + right click = cycle (reverse)
+
+-- SHIFT + right click = cycle routine (forwards)
+-- SHIFT + AUX + right click = cycle routine (reverse)
 ]]
 
 local range = 32
@@ -19,6 +30,25 @@ local MODES = {
     [7] = {key = "ML",  casts = 2, unit = "m", desc = "missing line"}
 }
 local MODE_POS = {x = 0.075, y = 0.8855}
+
+-- for upcoming routine/mode rework
+local ROUTINES = {
+    [1] = {key = "NA", casts = 1, desc = "default", modes = {
+        [1] = {key = "SD", unit = "m"},
+        [2] = {key = "VD", unit = "m"},
+        [3] = {key = "HD", unit = "m"},
+        [4] = {key = "INC", unit = "%"},
+        [5] = {key = "AZ", unit = "°"}
+    }},
+    [2] = {key = "HT", casts = 3, desc = "height", unit = "m"},
+    [3] = {key = "ML", casts = 2, desc = "missing line", modes = {
+        [1] = {key = "SD", unit = "m"},
+        [2] = {key = "VD", unit = "m"},
+        [3] = {key = "HD", unit = "m"},
+        [4] = {key = "INC", unit = "%"},
+        [5] = {key = "AZ", unit = "°"}
+    }}
+}
 
 local tool_name = "forestry_tools:rangefinder"
 
@@ -70,7 +100,7 @@ local function track_raycast_hit(player, itemstack)
 
         if not first_hit then
             -- no objects/nodes within range, note failed hit
-            minetest.chat_send_player(player:get_player_name(), "No objects detected within a 500m range, measurement not tracked")
+            minetest.chat_send_player(player:get_player_name(), "Nothing detected within a 500m range, measurement not tracked")
             return itemstack, nil, nil
         end
 
@@ -221,6 +251,10 @@ end
 
 -- Rounds num to the given number of decimal places
 local function round_to_decim_places(num, places, as_string)
+    if type(num) ~= "number" then
+        return num
+    end
+
     local factor = 10^places
     local round_num = math.round(num * factor)
     if not as_string then
@@ -252,7 +286,7 @@ local function rangefinder_calc(meta)
             local alpha_dist = horiz_dist / math.cos(alpha)
             local beta_dist = horiz_dist / math.cos(beta)
 
-            local theta
+            local theta = nil
             if math.sign(casts[2]["dir"]["y"]) == math.sign(casts[3]["dir"]["y"]) then
                 theta = math.abs(alpha - beta)
             else
@@ -261,22 +295,37 @@ local function rangefinder_calc(meta)
             return math.sqrt(alpha_dist^2 + beta_dist^2 - 2*alpha_dist*beta_dist*math.cos(theta))
         end,
         [2] = function() -- SD
-            return mode
+            return casts[1]["dist"]
         end,
         [3] = function() -- VD
-            return mode
+            local slope_dist = casts[1]["dist"]
+            local slope_dir = casts[1]["dir"]
+            local theta = vector.angle(slope_dir, vector.new(slope_dir.x, 0, slope_dir.z))
+            local verti_dist = slope_dist * math.sin(theta)
+            return verti_dist * math.sign(slope_dir.y)
         end,
         [4] = function() -- HD
-            return mode
+            local slope_dist = casts[1]["dist"]
+            local slope_dir = casts[1]["dir"]
+            local theta = vector.angle(slope_dir, vector.new(slope_dir.x, 0, slope_dir.z))
+            local horiz_dist = slope_dist * math.cos(theta)
+            return horiz_dist
         end,
         [5] = function() -- INC
-            return mode
+            local slope_dist = casts[1]["dist"]
+            local slope_dir = casts[1]["dir"]
+            local theta = vector.angle(slope_dir, vector.new(slope_dir.x, 0, slope_dir.z))
+            local horiz_dist = slope_dist * math.cos(theta)
+            local verti_dist = slope_dist * math.sin(theta)
+            return 100 * math.sign(slope_dir.y) * verti_dist / horiz_dist
         end,
         [6] = function() -- AZ
-            return mode
+            return "n/a " -- stub
         end,
         [7] = function() -- ML
-            return mode
+            --local dist_1 = casts[1]["dist"]
+            --local dist_2 = casts[2]["dist"]
+            return "n/a " -- stub
         end
     }
     return calculation_table[mode]()
