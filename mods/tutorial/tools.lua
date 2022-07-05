@@ -2,6 +2,7 @@
 minetest.register_tool("tutorial:tutorialbook" , {
 	description = "Tutorial book",
 	inventory_image = "tutorialbook.png",
+    _mc_tool_include = true,
 	-- Left-click the tool activates the tutorial menu
 	on_use = function (itemstack, user, pointed_thing)
         local pname = user:get_player_name()
@@ -25,6 +26,7 @@ minetest.register_tool("tutorial:recording_tool", {
     _doc_items_longdesc = "This tool can be used to record a sequence of action callbacks (punch, dig, place, position, look directions, and key strikes) that are stored in a tutorial table.",
     _doc_items_usagehelp = "Using the tool (left-click) to start the recording, perform some actions, and use it again to stop the recording sequence. While a recording is active, right-click the tool to access additional recording options.",
     _doc_items_hidden = false,
+    _mc_tool_include = true,
     tool_capabilities = {},
     range = 100,
     groups = { disable_repair = 1 }, 
