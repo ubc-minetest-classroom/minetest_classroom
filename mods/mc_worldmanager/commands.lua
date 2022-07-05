@@ -151,6 +151,13 @@ commands["gen"] = {
             seed = math.random(1, 100)
         end
 
+        local seaLevel = requestedRealm.StartPos.y
+        if (params[5] == "" or params[5] == nil) then
+            seaLevel = seaLevel + 30
+        else
+            seaLevel = seaLevel + tonumber(params[5])
+        end
+
         requestedRealm:GenerateTerrain(seed, seaLevel, heightGen, decGen)
 
         Debug.log("Creating barrier...")

@@ -45,7 +45,7 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     }
 
     local data = vm:get_data()
-    local heightMapTable = heightMapGen(self.StartPos, self.EndPos, vm, area, data, seed, seaLevel)
+    local heightMapTable = heightMapGen(self.StartPos, self.EndPos, vm, area, data, seed, self.StartPos.y, seaLevel)
 
     if mapDecorator ~= nil then
         mapDecorator(self.StartPos, self.EndPos, vm, area, data, heightMapTable, seed, seaLevel)
@@ -63,7 +63,7 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     self:UpdateSpawn(self:WorldToLocalPosition({ x = oldSpawnPos.x, y = surfaceLevel, z = oldSpawnPos.z }))
 end
 
-Realm.WorldGen.RegisterHeightMapGenerator("v1", function(startPos, endPos, vm, area, data, seed, seaLevel)
+Realm.WorldGen.RegisterHeightMapGenerator("v1", function(startPos, endPos, vm, area, data, seed, realmFloorLevel, seaLevel)
     Debug.log("Calling heightmap generator v1")
 
     local mainPerlin = minetest.get_perlin(seed, 4, 0.5, 100)
@@ -82,7 +82,7 @@ Realm.WorldGen.RegisterHeightMapGenerator("v1", function(startPos, endPos, vm, a
                 if (ptable.get2D(heightMapTable, { x = posX, y = posZ }) == nil) then
                     local noise = mainPerlin:get_2d({ x = posX, y = posZ })
                     local noise2 = erosionPerlin:get_2d({ x = posX, y = posZ })
-                    surfaceHeight = math.ceil(seaLevel + (noise * 5) + (noise * noise2 * 20))
+                    surfaceHeight = math.ceil(realmFloorLevel + (noise * 5) + (noise * noise2 * 20) + 30)
 
                     ptable.store2D(heightMapTable, { x = posX, y = posZ }, surfaceHeight)
                 else
@@ -103,7 +103,7 @@ Realm.WorldGen.RegisterHeightMapGenerator("v1", function(startPos, endPos, vm, a
     return heightMapTable
 end)
 
-Realm.WorldGen.RegisterHeightMapGenerator("v2", function(startPos, endPos, vm, area, data, seed, seaLevel)
+Realm.WorldGen.RegisterHeightMapGenerator("v2", function(startPos, endPos, vm, area, data, seed, realmFloorLevel, seaLevel)
     Debug.log("Calling heightmap generator v2")
 
     local mainPerlin = minetest.get_perlin(seed, 4, 0.5, 100)
@@ -138,7 +138,7 @@ Realm.WorldGen.RegisterHeightMapGenerator("v2", function(startPos, endPos, vm, a
 
                     noise = (noise - 0.5) * 2
 
-                    surfaceHeight = math.ceil(seaLevel + (noise * 5) + (noise * noise2 * 10)) + (mountainNoise * 10) + 5
+                    surfaceHeight = math.ceil(realmFloorLevel + (noise * 5) + (noise * noise2 * 10)) + (mountainNoise * 10) + 40
 
                     ptable.store2D(heightMapTable, { x = posX, y = posZ }, surfaceHeight)
                 else
