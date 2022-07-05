@@ -49,9 +49,9 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     local data = vm:get_data()
     local heightMapTable = heightMapGen(self.StartPos, self.EndPos, vm, area, data, seed, self.StartPos.y, seaLevel)
 
-    local mapAlreadySaved = false
+    local decoratorData = { }
     if mapDecorator ~= nil then
-        mapAlreadySaved = mapDecorator(self.StartPos, self.EndPos, vm, area, data, heightMapTable, seed, seaLevel)
+        decoratorData = mapDecorator(self.StartPos, self.EndPos, vm, area, data, heightMapTable, seed, seaLevel)
     end
 
     Debug.log("Saving and loading map...")
@@ -60,7 +60,7 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     vm:write_to_map()
 
     if (vegetationDecorator ~= nil) then
-        vegetationDecorator(self.StartPos, self.EndPos, area, data, heightMapTable, seed, seaLevel)
+        vegetationDecorator(self.StartPos, self.EndPos, area, data, heightMapTable, decoratorData, seed, seaLevel)
     end
 
     -- Set our new spawnpoint

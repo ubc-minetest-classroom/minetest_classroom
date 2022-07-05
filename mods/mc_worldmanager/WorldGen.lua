@@ -176,7 +176,7 @@ Realm.WorldGen.RegisterMapDecorator("v2",
 
         end,
 
-        function(startPos, endPos, area, data, heightMapTable, seed, seaLevel)
+        function(startPos, endPos, area, data, heightMapTable, decoratorData, seed, seaLevel)
             Debug.log("Calling map decorator v2")
 
             local treedef = {
