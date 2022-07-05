@@ -139,96 +139,82 @@ Realm.WorldGen.RegisterMapDecorator("v1", function(startPos, endPos, vm, area, d
     end
 end)
 
-Realm.WorldGen.RegisterMapDecorator("v2", function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
+Realm.WorldGen.RegisterMapDecorator("v2",
+        function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
+            Debug.log("Calling map decorator v2")
 
-    local treedef = {
-        axiom = "FaF[-FFFF][+FFFF][&FFFF][^FFFF]FFFF[---FF][+++FF][&&&FF][^^^FF]FFf",
-        rules_a = "FFa",
-        rules_b = "",
-        trunk = "default:tree",
-        leaves = "default:leaves",
-        angle = 30,
-        iterations = 4,
-        random_level = 2,
-        trunk_type = "single",
-        thin_branches = true,
-        fruit_chance = 0,
-        fruit = "default:apple"
-    }
+            local erosionPerlin = minetest.get_perlin(seed * 2, 4, 0.5, 400)
 
-    Debug.log("Calling map decorator v2")
+            for posZ = startPos.z, endPos.z do
+                for posY = startPos.y, endPos.y do
+                    for posX = startPos.x, endPos.x do
+                        -- vi, voxel index, is a common variable name here
+                        local vi = area:index(posX, posY, posZ)
+                        local viAbove = area:index(posX, posY + 1, posZ)
+                        local viBelow = area:index(posX, posY - 1, posZ)
 
-    local erosionPerlin = minetest.get_perlin(seed * 2, 4, 0.5, 400)
-
-    for posZ = startPos.z, endPos.z do
-        for posY = startPos.y, endPos.y do
-            for posX = startPos.x, endPos.x do
-                -- vi, voxel index, is a common variable name here
-                local vi = area:index(posX, posY, posZ)
-                local viAbove = area:index(posX, posY + 1, posZ)
-                local viBelow = area:index(posX, posY - 1, posZ)
-
-                if (data[vi] == c_stone) then
-                    local surfaceHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
-                    if (posY > surfaceHeight - ((1 - erosionPerlin:get_2d({ x = posX, y = posZ })) * 5)) then
-                        data[vi] = c_dirt
-                    end
-
-                    if (posY >= surfaceHeight - 1 and data[vi] == c_dirt) then
-                        if (posY <= seaLevel) then
-                            data[vi] = c_sand
-                            if (data[viBelow] == c_dirt) then
-                                data[viBelow] = c_sand
+                        if (data[vi] == c_stone) then
+                            local surfaceHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
+                            if (posY > surfaceHeight - ((1 - erosionPerlin:get_2d({ x = posX, y = posZ })) * 5)) then
+                                data[vi] = c_dirt
                             end
-                        else
-                            data[vi] = c_grass
+
+                            if (posY >= surfaceHeight - 1 and data[vi] == c_dirt) then
+                                if (posY <= seaLevel) then
+                                    data[vi] = c_sand
+                                    if (data[viBelow] == c_dirt) then
+                                        data[viBelow] = c_sand
+                                    end
+                                else
+                                    data[vi] = c_grass
+                                end
+                            end
                         end
                     end
                 end
             end
-        end
-    end
 
-    local ps = PcgRandom(seed)
+        end,
 
-    local treePositions = {}
+        function(startPos, endPos, area, data, heightMapTable, seed, seaLevel)
+            Debug.log("Calling map decorator v2")
 
-    local realmArea = (endPos.x - startPos.x) * (endPos.z - startPos.z)
-    for i = 1, (realmArea / 200) do
+            local treedef = {
+                axiom = "FaF[-FFFF][+FFFF][&FFFF][^FFFF]FFFF[---FF][+++FF][&&&FF][^^^FF]FFf",
+                rules_a = "FFa",
+                rules_b = "",
+                trunk = "default:tree",
+                leaves = "default:leaves",
+                angle = 30,
+                iterations = 4,
+                random_level = 2,
+                trunk_type = "single",
+                thin_branches = true,
+                fruit_chance = 0,
+                fruit = "default:apple"
+            }
 
-        local treeX = ps:next(startPos.x, endPos.x)
+            local ps = PcgRandom(seed)
 
-        local treeZ = ps:next(startPos.z, endPos.z)
-        local treeY = ptable.get2D(heightMapTable, { x = treeX, y = treeZ })
+            local realmArea = (endPos.x - startPos.x) * (endPos.z - startPos.z)
+            for i = 1, (realmArea / 200) do
 
-        if (treeY > seaLevel) then
-            local pos = { x = treeX, y = treeY, z = treeZ }
+                local treeX = ps:next(startPos.x, endPos.x)
 
-            local vi = area:index(treeX, treeY, treeZ)
-            data[vi] = c_air
+                local treeZ = ps:next(startPos.z, endPos.z)
+                local treeY = ptable.get2D(heightMapTable, { x = treeX, y = treeZ })
 
-            local viYNeg1 = area:index(treeX, treeY - 1, treeZ)
-            data[viYNeg1] = c_dirt
-
-            ptable.store(treePositions, pos, treedef)
-        end
-
-    end
-
-    vm:set_data(data)
-    vm:write_to_map()
-
-    for kx, vx in pairs(treePositions) do
-        for ky, vy in pairs(vx) do
-            for kz, vz in pairs(vy) do
-                minetest.spawn_tree({ x = kx, y = ky, z = kz }, vz)
+                if (treeY > seaLevel) then
+                    local vi = area:index(treeX, treeY - 1, treeZ)
+                    if (data[vi] == c_grass) then
+                        local pos = { x = treeX, y = treeY, z = treeZ }
+                        minetest.remove_node(pos)
+                        minetest.spawn_tree(pos, treedef)
+                    end
+                end
             end
-        end
-    end
 
-    return true
-
-end)
+        end)
 
 Realm.WorldGen.RegisterMapDecorator("biomegen", function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
     Debug.log("Calling biomegen map decorator")

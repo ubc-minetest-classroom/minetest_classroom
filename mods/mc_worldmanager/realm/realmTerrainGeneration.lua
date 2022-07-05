@@ -4,21 +4,23 @@ minetest.set_mapgen_setting('flags', 'nolight', true)
 Realm.WorldGen = {}
 local heightMapGenerator = {}
 local MapDecorator = {}
+local VegetationDecorator = {}
 
-function Realm.WorldGen.RegisterHeightMapGenerator(name, func)
+function Realm.WorldGen.RegisterHeightMapGenerator(name, heightMapGeneratorFunction)
     if (heightMapGenerator[name] ~= nil) then
         Debug.log("HeightMapGenerator " .. name .. " already exists.")
         return
     end
-    heightMapGenerator[name] = func
+    heightMapGenerator[name] = heightMapGeneratorFunction
 end
 
-function Realm.WorldGen.RegisterMapDecorator(name, func)
+function Realm.WorldGen.RegisterMapDecorator(name, NodeDecoratorFunction, VegetationDecoratorFunction)
     if (MapDecorator[name] ~= nil) then
         Debug.log("MapDecorator " .. name .. " already exists.")
         return
     end
-    MapDecorator[name] = func
+    MapDecorator[name] = NodeDecoratorFunction
+    VegetationDecorator[name] = VegetationDecoratorFunction
 end
 
 function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecoratorName)
@@ -30,6 +32,7 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
 
     local heightMapGen = heightMapGenerator[heightMapGeneratorName]
     local mapDecorator = MapDecorator[mapDecoratorName]
+    local vegetationDecorator = VegetationDecorator[mapDecoratorName]
 
     if (heightMapGen == nil) then
         Debug.log("Height map generator with name: " .. heightMapGeneratorName .. " does not exist.")
@@ -48,14 +51,16 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
 
     local mapAlreadySaved = false
     if mapDecorator ~= nil then
-       mapAlreadySaved = mapDecorator(self.StartPos, self.EndPos, vm, area, data, heightMapTable, seed, seaLevel)
+        mapAlreadySaved = mapDecorator(self.StartPos, self.EndPos, vm, area, data, heightMapTable, seed, seaLevel)
     end
 
     Debug.log("Saving and loading map...")
 
-    if (not mapAlreadySaved) then
-        vm:set_data(data)
-        vm:write_to_map()
+    vm:set_data(data)
+    vm:write_to_map()
+
+    if (vegetationDecorator ~= nil) then
+        vegetationDecorator(self.StartPos, self.EndPos, area, data, heightMapTable, seed, seaLevel)
     end
 
     -- Set our new spawnpoint
