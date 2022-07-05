@@ -317,7 +317,7 @@ minetest.register_tool(tool_name , {
  	on_use = function(itemstack, player, pointed_thing)
         local pname = player:get_player_name()
  		-- Check for shout privileges
- 		if check_perm(player) then
+ 		if forestry_tools.check_perm(player) then
             local new_stack, cast_num, cast_complete = track_raycast_hit(player, itemstack)
             if new_stack then
                 local meta = new_stack:get_meta()
@@ -447,26 +447,3 @@ minetest.register_on_joinplayer(function(player)
         end
     end
 end)
-
--- minetest.register_on_joinplayer(function(player)
---     local inv = player:get_inventory()
---     if inv:contains_item("main", ItemStack("forestry_tools:rangefinder")) then
---         -- Player has the rangefinder
---         if check_perm(player) then
---             -- The player should have the rangefinder
---             return
---         else   
---             -- The player should not have the rangefinder
---             player:get_inventory():remove_item('main', "forestry_tools:rangefinder")
---         end
---     else
---         -- Player does not have the rangefinder
---         if check_perm(player) then
---             -- The player should have the rangefinder
---             player:get_inventory():add_item('main', "forestry_tools:rangefinder")
---         else
---             -- The player should not have the rangefinder
---             return
---         end     
---     end
--- end)
