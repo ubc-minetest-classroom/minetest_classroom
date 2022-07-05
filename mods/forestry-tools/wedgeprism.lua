@@ -1,11 +1,14 @@
-local S = minetest.get_translator("forestry_tools")
+local S = forestry_tools.S
 
 -- Allows zooming
  minetest.register_tool("forestry_tools:wedgeprism", {
-             description = S("Wedge Prism"),
-            wield_image = "wedgeprism.jpg",
-            inventory_image = "wedgeprism.jpg",
-     })
+    description = S("Wedge Prism"),
+    wield_image = "wedgeprism.jpg",
+    inventory_image = "wedgeprism.jpg",
+	_mc_tool_privs = forestry_tools.priv_table,
+	on_drop = function(itemstack, dropper, pos)
+	end,
+})
 
 
 minetest.register_privilege("alwayszoom", {})

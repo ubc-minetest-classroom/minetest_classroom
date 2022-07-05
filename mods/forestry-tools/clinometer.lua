@@ -2,7 +2,7 @@
 -- IN-PROGRESS: show yaw (horizontal angle) and pitch (vertical viewing angle) in degrees.
 
 -- <!> This is important, since calls to S() are made in this file - without this, the game will crash
-local S = minetest.get_translator("forestry_tools")
+local S = forestry_tools.S
 local HUD_showing = false; 
 
 
@@ -15,7 +15,7 @@ minetest.register_tool("forestry_tools:clinometer", {
 	wield_image = "clinometer.png",
 	inventory_image = "clinometer.png",
 	groups = { disable_repair = 1 },
-
+	_mc_tool_privs = forestry_tools.priv_table,
 
 			
 		-- On left-click
@@ -30,7 +30,6 @@ minetest.register_tool("forestry_tools:clinometer", {
 		
     	-- Destroy the item on_drop to keep things tidy
 	on_drop = function (itemstack, dropper, pos)
-		minetest.set_node(pos, {name="air"})
 	end
 })
 
@@ -40,29 +39,7 @@ minetest.register_alias("clinometer", "forestry_tools:clinometer")
 clinometer = minetest.registered_aliases[clinometer] or clinometer
 
 
--- Give the clinometer to any player who joins with adequate privileges or take it away if they do not have them
-minetest.register_on_joinplayer(function(player)
-    local inv = player:get_inventory()
-    if inv:contains_item("main", ItemStack("forestry_tools:clinometer")) then
-        -- Player has the clinometer
-        if check_perm(player) then
-            -- The player should have the clinometer
-            return
-        else   
-            -- The player should not have the clinometer
-            player:get_inventory():remove_item('main', "forestry_tools:compass")
-        end
-    else
-        -- Player does not have the clinometer
-        if check_perm(player) then
-            -- The player should have the clinometer
-            player:get_inventory():add_item('main', "forestry_tools:clinometer")
-        else
-            -- The player should not have the clinometer
-            return
-        end     
-    end
-end)
+
 
 
 

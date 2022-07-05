@@ -182,6 +182,7 @@ minetest.register_tool("forestry_tools:compass" , {
 	inventory_image = "needle_0.png",
     stack_max = 1,
 	liquids_pointable = true,
+	_mc_tool_privs = forestry_tools.priv_table,
 
 	-- On left-click
     on_use = function(itemstack, player, pointed_thing)
@@ -225,7 +226,6 @@ minetest.register_tool("forestry_tools:compass" , {
 
 	-- Destroy the item on_drop 
 	on_drop = function (itemstack, dropper, pos)
-		minetest.set_node(pos, {name="air"})
 	end,
 })
 
