@@ -2,8 +2,11 @@ local c_stone = minetest.get_content_id("mapgen_stone")
 local c_water = minetest.get_content_id("mapgen_water_source")
 local c_air = minetest.get_content_id("air")
 local c_dirt = minetest.get_content_id("default:dirt")
-local c_grass = minetest.get_content_id("default:dirt_with_grass")
+local c_dirtGrass = minetest.get_content_id("default:dirt_with_grass")
 local c_sand = minetest.get_content_id("default:sand")
+
+local c_grass = minetest.get_content_id("default:grass_1")
+local c_rose = minetest.get_content_id("flowers:rose")
 
 Realm.WorldGen.RegisterHeightMapGenerator("v1", function(startPos, endPos, vm, area, data, seed, realmFloorLevel, seaLevel)
     Debug.log("Calling heightmap generator v1")
@@ -128,7 +131,7 @@ Realm.WorldGen.RegisterMapDecorator("v1", function(startPos, endPos, vm, area, d
                                 data[viBelow] = c_sand
                             end
                         else
-                            data[vi] = c_grass
+                            data[vi] = c_dirtGrass
                         end
                     end
 
@@ -144,6 +147,7 @@ Realm.WorldGen.RegisterMapDecorator("v2",
             Debug.log("Calling map decorator v2")
 
             local erosionPerlin = minetest.get_perlin(seed * 2, 4, 0.5, 400)
+            local fertilityPerlin = minetest.get_perlin(seed * 2, 1, 0.5, 25)
 
             for posZ = startPos.z, endPos.z do
                 for posY = startPos.y, endPos.y do
@@ -154,8 +158,12 @@ Realm.WorldGen.RegisterMapDecorator("v2",
                         local viBelow = area:index(posX, posY - 1, posZ)
 
                         if (data[vi] == c_stone) then
+
+                            local erosionNoise = erosionPerlin:get_2d({ x = posX, y = posZ })
+                            local fertilityNoise = fertilityPerlin:get_2d({ x = posX, y = posZ })
+
                             local surfaceHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
-                            if (posY > surfaceHeight - ((1 - erosionPerlin:get_2d({ x = posX, y = posZ })) * 5)) then
+                            if (posY > surfaceHeight - ((1 - erosionNoise) * 5)) then
                                 data[vi] = c_dirt
                             end
 
@@ -166,7 +174,15 @@ Realm.WorldGen.RegisterMapDecorator("v2",
                                         data[viBelow] = c_sand
                                     end
                                 else
-                                    data[vi] = c_grass
+                                    data[vi] = c_dirtGrass
+                                    if (erosionNoise <= 0.75 and fertilityNoise >= 0.8) then
+                                        data[viAbove] = c_grass
+                                    end
+
+                                    if (fertilityNoise == erosionNoise) then
+                                        data[viAbove] = c_rose
+                                    end
+
                                 end
                             end
                         end
@@ -206,7 +222,7 @@ Realm.WorldGen.RegisterMapDecorator("v2",
 
                 if (treeY > seaLevel) then
                     local vi = area:index(treeX, treeY - 1, treeZ)
-                    if (data[vi] == c_grass) then
+                    if (data[vi] == c_dirtGrass) then
                         local pos = { x = treeX, y = treeY, z = treeZ }
                         minetest.remove_node(pos)
                         minetest.spawn_tree(pos, treedef)
