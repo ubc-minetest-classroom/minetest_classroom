@@ -158,7 +158,13 @@ commands["gen"] = {
             seaLevel = seaLevel + tonumber(params[5])
         end
 
-        requestedRealm:GenerateTerrain(seed, seaLevel, heightGen, decGen)
+        if (heightGen == "" or heightGen == nil) then
+            heightGen = "default"
+        end
+
+        if (requestedRealm:GenerateTerrain(seed, seaLevel, heightGen, decGen) == false) then
+            return false, "Failed to generate terrain"
+        end
 
         Debug.log("Creating barrier...")
         requestedRealm:CreateBarriersFast()
@@ -182,15 +188,15 @@ commands["regen"] = {
         local heightGen = requestedRealm:get_data("worldMapGenerator")
         local decGen = requestedRealm:get_data("worldDecoratorName")
 
-        if (seed == nil) then
+        if (seed == nil or seed == "nil") then
             return false, "Realm does not have any saved seed information."
         end
 
-        if (heightGen == nil) then
+        if (heightGen == nil or heightGen == "") then
             return false, "Realm does not have any saved height generator information. Please try to manually regenerate world with gen command and seed " .. tostring(seed)
         end
 
-        if (decGen == nil) then
+        if (decGen == nil or decGen == "") then
             return false, "Realm does not have any saved decorator information. Please try to manually regenerate world with gen command, seed " .. tostring(seed) .. " and height generator name " .. tostring(heightGen)
         end
 
