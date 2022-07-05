@@ -148,7 +148,7 @@ commands["gen"] = {
 
         local seed = tonumber(params[4])
         if (seed == nil) then
-            seed = math.random(1, 100)
+            seed = math.random(1, 1000)
         end
 
         local seaLevel = requestedRealm.StartPos.y
@@ -165,6 +165,19 @@ commands["gen"] = {
 
         return true
     end }
+
+commands["seed"] = { func = function(name, params)
+    local realmID = params[1]
+    local requestedRealm = Realm.GetRealm(tonumber(realmID))
+    if (requestedRealm == nil) then
+        return false, "Requested realm of ID:" .. realmID .. " does not exist."
+    end
+
+    local seed = requestedRealm:get_data("worldSeed")
+
+    return true, "World Seed for Realm: " .. tostring(seed)
+end }
+
 
 commands["schematic"] = {
     func = function(name, params)

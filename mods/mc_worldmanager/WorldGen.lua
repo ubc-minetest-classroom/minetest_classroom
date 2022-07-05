@@ -29,6 +29,9 @@ function Realm.WorldGen.RegisterMapDecorator(name, func)
 end
 
 function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecoratorName)
+
+    self:set_data("worldSeed", seed)
+
     local heightMapGen = heightMapGenerator[heightMapGeneratorName]
     local mapDecorator = MapDecorator[mapDecoratorName]
 
@@ -80,8 +83,9 @@ Realm.WorldGen.RegisterHeightMapGenerator("v1", function(startPos, endPos, vm, a
                 local surfaceHeight
 
                 if (ptable.get2D(heightMapTable, { x = posX, y = posZ }) == nil) then
-                    local noise = mainPerlin:get_2d({ x = posX, y = posZ })
-                    local noise2 = erosionPerlin:get_2d({ x = posX, y = posZ })
+                    local noise = mainPerlin:get_2d({ x = posX - startPos.x, y = posZ - startPos.z })
+                    local noise2 = erosionPerlin:get_2d({ x = posX -startPos.x, y = posZ - startPos.z })
+
                     surfaceHeight = math.ceil(realmFloorLevel + (noise * 5) + (noise * noise2 * 20) + 30)
 
                     ptable.store2D(heightMapTable, { x = posX, y = posZ }, surfaceHeight)
@@ -121,10 +125,10 @@ Realm.WorldGen.RegisterHeightMapGenerator("v2", function(startPos, endPos, vm, a
                 local surfaceHeight
 
                 if (ptable.get2D(heightMapTable, { x = posX, y = posZ }) == nil) then
-                    local noise = mainPerlin:get_2d({ x = posX, y = posZ })
-                    local noise2 = erosionPerlin:get_2d({ x = posX, y = posZ })
+                    local noise = mainPerlin:get_2d({ x = posX - startPos.x, y = posZ - startPos.z })
+                    local noise2 = erosionPerlin:get_2d({ x = posX - startPos.x, y = posZ - startPos.z })
 
-                    local noise4 = mountainPerlin:get_2d({ x = posX, y = posZ })
+                    local noise4 = mountainPerlin:get_2d({ x = posX - startPos.x, y = posZ - startPos.z })
 
                     local mountainNoise = 0
 
