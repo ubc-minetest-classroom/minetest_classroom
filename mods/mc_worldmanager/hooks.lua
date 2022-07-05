@@ -121,6 +121,10 @@ minetest.register_globalstep(function(deltaTime)
             end
 
             player:set_hp(hp, "void")
+
+            if (player:get_hp() < 0) then
+                player:set_hp(0, "void")
+            end
         end
 
 
