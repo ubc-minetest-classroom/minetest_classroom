@@ -166,6 +166,42 @@ commands["gen"] = {
         return true
     end }
 
+commands["regen"] = {
+    func = function(name, params)
+        local realmID = params[1]
+        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        if (requestedRealm == nil) then
+            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+        end
+
+        local seaLevel = math.floor((requestedRealm.EndPos.y - requestedRealm.StartPos.y) * 0.4) + requestedRealm.StartPos.y
+        Debug.log("Sea level:" .. seaLevel)
+
+        local seed = requestedRealm:get_data("worldSeed")
+        local seaLevel = requestedRealm:get_data("worldSeaLevel")
+        local heightGen = requestedRealm:get_data("worldMapGenerator")
+        local decGen = requestedRealm:get_data("worldDecoratorName")
+
+        if (seed == nil) then
+            return false, "Realm does not have any saved seed information."
+        end
+
+        if (heightGen == nil) then
+            return false, "Realm does not have any saved height generator information. Please try to manually regenerate world with gen command and seed " .. tostring(seed)
+        end
+
+        if (decGen == nil) then
+            return false, "Realm does not have any saved decorator information. Please try to manually regenerate world with gen command, seed " .. tostring(seed) .. " and height generator name " .. tostring(heightGen)
+        end
+
+        requestedRealm:GenerateTerrain(seed, seaLevel, heightGen, decGen)
+
+        Debug.log("Creating barrier...")
+        requestedRealm:CreateBarriersFast()
+
+        return true
+    end }
+
 commands["seed"] = { func = function(name, params)
     local realmID = params[1]
     local requestedRealm = Realm.GetRealm(tonumber(realmID))
@@ -177,7 +213,6 @@ commands["seed"] = { func = function(name, params)
 
     return true, "World Seed for Realm: " .. tostring(seed)
 end }
-
 
 commands["schematic"] = {
     func = function(name, params)
