@@ -277,6 +277,11 @@ local function round_to_decim_places(num, places, as_string)
     end
 end
 
+-- Returns the length of the side of a triangle opposite angle theta, given theta and the other two side lengths
+local function cosine_law(a, b, theta)
+    return math.sqrt(a^2 + b^2 - 2*a*b*math.cos(theta))
+end
+
 -- Calculates the final output for the rangefinder to display
 local function rangefinder_calc(meta)
     local casts = minetest.deserialize(meta:get_string("casts"))
@@ -287,115 +292,81 @@ local function rangefinder_calc(meta)
     end
 
     local calculation_table = {
-        [1] = {
-            [1] = function()
-                return routine..":"..mode -- stub
+        [1] = { -- measurement (--)
+            [1] = function() -- SD
+                return casts[1]["dist"]
             end,
-            [2] = function()
-                return routine..":"..mode -- stub
+            [2] = function() -- VD
+                local slope_dist = casts[1]["dist"]
+                local slope_dir = casts[1]["dir"]
+                local theta = vector.angle(slope_dir, vector.new(slope_dir.x, 0, slope_dir.z))
+                return slope_dist * math.sin(theta) * math.sign(slope_dir.y)
             end,
-            [3] = function()
-                return routine..":"..mode -- stub
+            [3] = function() -- HD
+                local slope_dist = casts[1]["dist"]
+                local slope_dir = casts[1]["dir"]
+                local theta = vector.angle(slope_dir, vector.new(slope_dir.x, 0, slope_dir.z))
+                return slope_dist * math.cos(theta)
             end,
-            [4] = function()
-                return routine..":"..mode -- stub
+            [4] = function() -- INC
+                local slope_dist = casts[1]["dist"]
+                local slope_dir = casts[1]["dir"]
+                local theta = vector.angle(slope_dir, vector.new(slope_dir.x, 0, slope_dir.z))
+                local horiz_dist = slope_dist * math.cos(theta) 
+                local verti_dist = slope_dist * math.sin(theta) * math.sign(slope_dir.y)
+                return 100 * verti_dist / horiz_dist
             end,
-            [5] = function()
-                return routine..":"..mode -- stub
+            [5] = function() -- AZ
+                return "n/a " -- stub
             end
         },
-        [2] = {
-            [1] = function()
+        [2] = { -- height (HT)
+            [1] = function() -- HT
                 local gamma = vector.angle(casts[1]["dir"], vector.new(casts[1]["dir"]["x"], 0, casts[1]["dir"]["z"]))
                 local alpha = vector.angle(casts[2]["dir"], vector.new(casts[2]["dir"]["x"], 0, casts[2]["dir"]["z"]))
                 local beta = vector.angle(casts[3]["dir"], vector.new(casts[3]["dir"]["x"], 0, casts[3]["dir"]["z"]))
-    
-                local gamma_dist = casts[1]["dist"]
-                local horiz_dist = gamma_dist * math.cos(gamma)
-                local alpha_dist = horiz_dist / math.cos(alpha)
-                local beta_dist = horiz_dist / math.cos(beta)
-    
+                local horiz_dist = casts[1]["dist"] * math.cos(gamma)
                 local theta = nil
                 if math.sign(casts[2]["dir"]["y"]) == math.sign(casts[3]["dir"]["y"]) then
                     theta = math.abs(alpha - beta)
                 else
                     theta = math.abs(alpha + beta)
                 end
-                return math.sqrt(alpha_dist^2 + beta_dist^2 - 2*alpha_dist*beta_dist*math.cos(theta))
+                return cosine_law(horiz_dist/math.cos(alpha), horiz_dist/math.cos(beta), theta)
             end
         },
-        [3] = {
-            [1] = function()
-                return routine..":"..mode -- stub
+        [3] = { -- missing line (ML)
+            [1] = function() -- SD
+                return cosine_law(casts[1]["dist"], casts[2]["dist"], vector.angle(casts[1]["dir"], casts[2]["dir"]))
             end,
-            [2] = function()
-                return routine..":"..mode -- stub
+            [2] = function() -- VD
+                local vect_a = vector.multiply(casts[1]["dir"], casts[1]["dist"])
+                local vect_b = vector.multiply(casts[2]["dir"], casts[2]["dist"])
+                local slope_vect = vector.subtract(vect_b, vect_a)
+                local phi = vector.angle(slope_vect, vector.new(slope_vect.x, 0, slope_vect.z))
+                return vector.length(slope_vect) * math.sin(phi) * math.sign(slope_vect.y)
             end,
-            [3] = function()
-                return routine..":"..mode -- stub
+            [3] = function() -- HD
+                local vect_a = vector.multiply(casts[1]["dir"], casts[1]["dist"])
+                local vect_b = vector.multiply(casts[2]["dir"], casts[2]["dist"])
+                local slope_vect = vector.subtract(vect_b, vect_a)
+                local phi = vector.angle(slope_vect, vector.new(slope_vect.x, 0, slope_vect.z))
+                return vector.length(slope_vect) * math.cos(phi)
             end,
-            [4] = function()
-                return routine..":"..mode -- stub
+            [4] = function() -- INC
+                local vect_a = vector.multiply(casts[1]["dir"], casts[1]["dist"])
+                local vect_b = vector.multiply(casts[2]["dir"], casts[2]["dist"])
+                local slope_vect = vector.subtract(vect_b, vect_a)
+                local phi = vector.angle(slope_vect, vector.new(slope_vect.x, 0, slope_vect.z))
+                local horiz_dist = vector.length(slope_vect) * math.cos(phi)
+                local verti_dist = vector.length(slope_vect) * math.sin(phi) * math.sign(slope_vect.y)
+                return 100 * verti_dist / horiz_dist
             end,
-            [5] = function()
+            [5] = function() -- AZ
                 return routine..":"..mode -- stub
             end
         }
-
-        --[[[1] = function() -- HT
-            local gamma = vector.angle(casts[1]["dir"], vector.new(casts[1]["dir"]["x"], 0, casts[1]["dir"]["z"]))
-            local alpha = vector.angle(casts[2]["dir"], vector.new(casts[2]["dir"]["x"], 0, casts[2]["dir"]["z"]))
-            local beta = vector.angle(casts[3]["dir"], vector.new(casts[3]["dir"]["x"], 0, casts[3]["dir"]["z"]))
-
-            local gamma_dist = casts[1]["dist"]
-            local horiz_dist = gamma_dist * math.cos(gamma)
-            local alpha_dist = horiz_dist / math.cos(alpha)
-            local beta_dist = horiz_dist / math.cos(beta)
-
-            local theta = nil
-            if math.sign(casts[2]["dir"]["y"]) == math.sign(casts[3]["dir"]["y"]) then
-                theta = math.abs(alpha - beta)
-            else
-                theta = math.abs(alpha + beta)
-            end
-            return math.sqrt(alpha_dist^2 + beta_dist^2 - 2*alpha_dist*beta_dist*math.cos(theta))
-        end,
-        [2] = function() -- SD
-            return casts[1]["dist"]
-        end,
-        [3] = function() -- VD
-            local slope_dist = casts[1]["dist"]
-            local slope_dir = casts[1]["dir"]
-            local theta = vector.angle(slope_dir, vector.new(slope_dir.x, 0, slope_dir.z))
-            local verti_dist = slope_dist * math.sin(theta)
-            return verti_dist * math.sign(slope_dir.y)
-        end,
-        [4] = function() -- HD
-            local slope_dist = casts[1]["dist"]
-            local slope_dir = casts[1]["dir"]
-            local theta = vector.angle(slope_dir, vector.new(slope_dir.x, 0, slope_dir.z))
-            local horiz_dist = slope_dist * math.cos(theta)
-            return horiz_dist
-        end,
-        [5] = function() -- INC
-            local slope_dist = casts[1]["dist"]
-            local slope_dir = casts[1]["dir"]
-            local theta = vector.angle(slope_dir, vector.new(slope_dir.x, 0, slope_dir.z))
-            local horiz_dist = slope_dist * math.cos(theta)
-            local verti_dist = slope_dist * math.sin(theta)
-            return 100 * math.sign(slope_dir.y) * verti_dist / horiz_dist
-        end,
-        [6] = function() -- AZ
-            return "n/a " -- stub
-        end,
-        [7] = function() -- ML
-            local dist_1 = casts[1]["dist"]
-            local dist_2 = casts[2]["dist"]
-            local theta = vector.angle(casts[1]["dir"], casts[2]["dir"])
-            return math.sqrt(dist_1^2 + dist_2^2 - 2*dist_1*dist_2*math.cos(theta))
-        end]]
     }
-
     return calculation_table[routine][mode]()
 end
 
@@ -434,7 +405,6 @@ local function rangefinder_mode_switch(itemstack, player, pointed_thing)
         end
     end
 
-    minetest.log(new_routine..":"..new_mode)
     meta:set_int("mode", new_mode)
     meta:set_int("routine", new_routine)
     
