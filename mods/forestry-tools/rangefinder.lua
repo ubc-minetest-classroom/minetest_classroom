@@ -5,42 +5,34 @@
 -- Determine calculation algorithms
 -- Add calculation/cast outputs to HUD instead of chat
 -- Auto-reset?
--- Differentiate routines (DEFAULT, HT, ML) from measurement modes (SD, HD, VD, INC, AZ)
-  -- cycle through routines by default
 ]]
 
 --[[ CURRENT CONTROL SCHEME
--- left click = take measurement / reset
--- right click = cycle (forwards)
--- AUX + right click = cycle (reverse)
+-- L-CLICK               = take measurement/reset
+-- L-CLICK + AUX         = undo previous measurement (WIP)
+-- L-CLICK + SNEAK       = open measurement settings (WIP)
+-- L-CLICK + AUX + SNEAK = reset measurement (WIP)
 
--- SHIFT + right click = cycle routine (forwards)
--- SHIFT + AUX + right click = cycle routine (reverse)
+-- R-CLICK               = cycle (forwards)
+-- R-CLICK + AUX         = cycle (reverse)
+-- R-CLICK + SNEAK       = cycle routine (forwards)
+-- R-CLICK + AUX + SNEAK = cycle routine (reverse)
 ]]
 
-local range = 32
-local RAY_RANGE = 500
-local MODES = {
-    [1] = {key = "HT",  casts = 3, unit = "m", desc = "height"},
-    [2] = {key = "SD",  casts = 1, unit = "m", desc = "slope dist."},
-    [3] = {key = "VD",  casts = 1, unit = "m", desc = "vertical dist."},
-    [4] = {key = "HD",  casts = 1, unit = "m", desc = "horizontal dist."},
-    [5] = {key = "INC", casts = 1, unit = "%", desc = "inclination"},
-    [6] = {key = "AZ",  casts = 1, unit = "°", desc = "azimuth"},
-    [7] = {key = "ML",  casts = 2, unit = "m", desc = "missing line"}
-}
-local MODE_POS = {x = 0.075, y = 0.8855}
+local range = 32 -- extraneous
 
--- for upcoming routine/mode rework
+local RAY_RANGE = 500
 local ROUTINES = {
-    [1] = {key = "NA", casts = 1, desc = "default", modes = {
+    [1] = {key = "--", casts = 1, desc = "measurement", modes = {
         [1] = {key = "SD", unit = "m"},
         [2] = {key = "VD", unit = "m"},
         [3] = {key = "HD", unit = "m"},
         [4] = {key = "INC", unit = "%"},
         [5] = {key = "AZ", unit = "°"}
     }},
-    [2] = {key = "HT", casts = 3, desc = "height", unit = "m"},
+    [2] = {key = "HT", casts = 3, desc = "height", modes = {
+        [1] = {key = "HT", unit = "m"}
+    }},
     [3] = {key = "ML", casts = 2, desc = "missing line", modes = {
         [1] = {key = "SD", unit = "m"},
         [2] = {key = "VD", unit = "m"},
@@ -49,15 +41,25 @@ local ROUTINES = {
         [5] = {key = "AZ", unit = "°"}
     }}
 }
-
-local tool_name = "forestry_tools:rangefinder"
+local MODE_HUD_POS = {x = 0.075, y = 0.8855}
+local TOOL_NAME = "forestry_tools:rangefinder"
 
 forestry_tools.rangefinder = {hud = {}}
 local hud = mhud.init()
 
+-- Gets the internal index number for the rangefinder's current routine
+local function get_routine(meta)
+    return tonumber(meta:get("routine") or 1)
+end
+
 -- Gets the internal index number for the rangefinder's current mode
 local function get_mode(meta)
     return tonumber(meta:get("mode") or 1)
+end
+
+-- Constrains val to the open domain defined by [min, max]
+local function constrain(min, val, max)
+    return math.max(min, math.min(max, val))
 end
 
 -- Clears all the logged casts from the rangefinder's metadata
@@ -80,6 +82,18 @@ local function clear_saved_casts(player, itemstack)
     return itemstack
 end
 
+-- Adds a cast market to the world
+local function add_cast_marker(player, pos, is_angle)
+    return hud:add(player, nil, {
+        hud_elem_type = "image_waypoint",
+        world_pos = pos,
+        text = is_angle and "forestry_tools_rf_anglemarker.png" or "forestry_tools_rf_marker.png",
+        scale = {x = 1.5, y = 1.5},
+        z_index = is_angle and -301 or -300,
+        alignment = {x = 0, y = 0}
+    })
+end
+
 -- Casts a ray and logs where it first hit, if it hit an object/node in range
 local function track_raycast_hit(player, itemstack)
     local meta = itemstack:get_meta()
@@ -87,9 +101,9 @@ local function track_raycast_hit(player, itemstack)
         -- log hit in rangefinder
         local cast_table = minetest.deserialize(meta:get("casts") or minetest.serialize({}))
         local mark_table = minetest.deserialize(meta:get("marks") or minetest.serialize({}))
-        local mode = get_mode(meta)
+        local routine = get_routine(meta)
 
-        if #cast_table >= MODES[mode]["casts"] then
+        if #cast_table >= ROUTINES[routine]["casts"] then
             -- clear hits
             return clear_saved_casts(player, itemstack), nil, nil
         end
@@ -110,18 +124,11 @@ local function track_raycast_hit(player, itemstack)
         meta:set_string("casts", minetest.serialize(cast_table))
 
         -- display hit on screen + log ID in rangefinder
-        table.insert(mark_table, hud:add(player, nil, {
-            hud_elem_type = "image_waypoint",
-            world_pos = first_hit.intersection_point,
-            text = (mode == 1 and #mark_table ~= 0) and "forestry_tools_rf_anglemarker.png" or "forestry_tools_rf_marker.png",
-            scale = {x = 1.5, y = 1.5},
-            z_index = (mode == 1 and #mark_table ~= 0) and -301 or -300,
-            alignment = {x = 0, y = 0}
-        }))
+        table.insert(mark_table, add_cast_marker(player, first_hit.intersection_point, routine == 2 and #mark_table ~= 0))
         meta:set_string("marks", minetest.serialize(mark_table))
 
         local table_length = math.min(#cast_table, #mark_table)
-        local casts_reached = table_length >= MODES[mode]["casts"]
+        local casts_reached = table_length >= ROUTINES[routine]["casts"]
         return itemstack, table_length, casts_reached
     end
 end
@@ -130,7 +137,7 @@ end
 local function mode_hud_text_abstract(player, oper, elem, text, pos_offset, col, size, style)
     local def = {
         hud_elem_type = "text",
-        position = {x = MODE_POS.x + (pos_offset and pos_offset.x or 0), y = MODE_POS.y + (pos_offset and pos_offset.y or 0)},
+        position = {x = MODE_HUD_POS.x + (pos_offset and pos_offset.x or 0), y = MODE_HUD_POS.y + (pos_offset and pos_offset.y or 0)},
         alignment = {x = 0, y = 0},
         offset = {x = 5, y = -5},
         color = col or 0xFFFFFF,
@@ -149,28 +156,28 @@ end
 
 -- Creates the background for the rangefinder's mode display
 local function create_mode_hud_background(player, oper)
-    if not hud:get(player, tool_name..":mode_bg") then
-        hud:add(player, tool_name..":mode_bg", {
+    if not hud:get(player, TOOL_NAME..":mode_bg") then
+        hud:add(player, TOOL_NAME..":mode_bg", {
             hud_elem_type = "image",
-            position = {x = MODE_POS.x, y = MODE_POS.y},
+            position = {x = MODE_HUD_POS.x, y = MODE_HUD_POS.y},
             alignment = {x = 0, y = 0},
             offset = {x = 5, y = -5},
             scale = {x = -15, y = -12.7},
             text = "forestry_tools_rf_bg.png",
             z_index = -2,
         })
-        hud:add(player, tool_name..":mode_bg_upper", {
+        hud:add(player, TOOL_NAME..":mode_bg_upper", {
             hud_elem_type = "image",
-            position = {x = MODE_POS.x, y = MODE_POS.y - 0.09},
+            position = {x = MODE_HUD_POS.x, y = MODE_HUD_POS.y - 0.09},
             alignment = {x = 0, y = 0},
             offset = {x = 5, y = -5},
             scale = {x = -5, y = -4.7},
             text = "forestry_tools_rf_bg_alt.png",
             z_index = -3,
         })
-        hud:add(player, tool_name..":mode_bg_lower", {
+        hud:add(player, TOOL_NAME..":mode_bg_lower", {
             hud_elem_type = "image",
-            position = {x = MODE_POS.x, y = MODE_POS.y + 0.09},
+            position = {x = MODE_HUD_POS.x, y = MODE_HUD_POS.y + 0.09},
             alignment = {x = 0, y = 0},
             offset = {x = 5, y = -5},
             scale = {x = -5, y = -4.7},
@@ -184,7 +191,7 @@ end
 local function update_mode_hud_arrows(player, keys)
     local arrow_u = {
         hud_elem_type = "image",
-        position = {x = MODE_POS.x, y = MODE_POS.y - 0.063},
+        position = {x = MODE_HUD_POS.x, y = MODE_HUD_POS.y - 0.063},
         alignment = {x = 0, y = 0},
         offset = {x = 5, y = -5},
         scale = (keys.aux1 and {x = -0.75, y = -0.75}) or {x = -1.25, y = -1.25},
@@ -193,7 +200,7 @@ local function update_mode_hud_arrows(player, keys)
     }
     local arrow_l = {
         hud_elem_type = "image",
-        position = {x = MODE_POS.x, y = MODE_POS.y + 0.063},
+        position = {x = MODE_HUD_POS.x, y = MODE_HUD_POS.y + 0.063},
         alignment = {x = 0, y = 0},
         offset = {x = 5, y = -5},
         scale = (keys.aux1 and {x = -1.25, y = -1.25}) or {x = -0.75, y = -0.75},
@@ -201,12 +208,12 @@ local function update_mode_hud_arrows(player, keys)
         z_index = -1,
     }
 
-    if not hud:get(player, tool_name..":mode_arrow_u") then
-        hud:add(player, tool_name..":mode_arrow_u", arrow_u)
-        hud:add(player, tool_name..":mode_arrow_l", arrow_l)
+    if not hud:get(player, TOOL_NAME..":mode_arrow_u") then
+        hud:add(player, TOOL_NAME..":mode_arrow_u", arrow_u)
+        hud:add(player, TOOL_NAME..":mode_arrow_l", arrow_l)
     else
-        hud:change(player, tool_name..":mode_arrow_u", arrow_u)
-        hud:change(player, tool_name..":mode_arrow_l", arrow_l)
+        hud:change(player, TOOL_NAME..":mode_arrow_u", arrow_u)
+        hud:change(player, TOOL_NAME..":mode_arrow_l", arrow_l)
     end
 end
 
@@ -214,27 +221,30 @@ end
 local function update_rf_mode_hud(player, itemstack)
     local meta = itemstack:get_meta()
     if meta then
-        local mode_num = meta:contains("mode") and meta:get_int("mode") or 1
-        local mode_surround = {
-            next = (mode_num + 1 <= #MODES and mode_num + 1) or 1,
-            prev = (mode_num - 1 >= 1 and mode_num - 1) or #MODES
-        }
-        local mode_hud_exists = hud:get(player, tool_name..":mode")
-        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", tool_name..":mode", MODES[mode_num]["key"], {y = -0.02}, nil, 4, 1)
-        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", tool_name..":mode_desc", MODES[mode_num]["desc"], {y = 0.0325}, nil, 2, 0)
-        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", tool_name..":mode_prev", MODES[mode_surround.prev]["key"], {y = 0.09}, 0xd0d0d0, 2, 0)
-        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", tool_name..":mode_next", MODES[mode_surround.next]["key"], {y = -0.09}, 0xd0d0d0, 2, 0)
+        local routine = constrain(1, get_routine(meta), #ROUTINES)
+        local mode = constrain(1, get_mode(meta), #ROUTINES[routine]["modes"])
+        --[[local mode_surround = {
+            next = (mode + 1 <= #ROUTINES and mode + 1) or 1,
+            prev = (mode - 1 >= 1 and mode - 1) or #ROUTINES
+        }]]
+
+        local mode_hud_exists = hud:get(player, TOOL_NAME..":routine")
+        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", TOOL_NAME..":routine", ROUTINES[routine]["key"], {y = -0.02}, nil, 4, 1)
+        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", TOOL_NAME..":routine_desc", ROUTINES[routine]["desc"], {y = 0.0325}, nil, 2, 0)
+        mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", TOOL_NAME..":mode", ROUTINES[routine]["modes"][mode]["key"], {y = -0.09}, 0xd0d0d0, 2, 0)
+        --mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", TOOL_NAME..":mode_prev", ROUTINES[mode_surround.prev]["key"], {y = 0.09}, 0xd0d0d0, 2, 0)
+        --mode_hud_text_abstract(player, (mode_hud_exists and "change") or "add", TOOL_NAME..":mode_next", ROUTINES[mode_surround.next]["key"], {y = -0.09}, 0xd0d0d0, 2, 0)
         create_mode_hud_background(player)
     end
 end
 
 -- Shows the rangefinder's zooming crosshair
 local function show_zoom_hud(player)
-    if not hud:get(player, tool_name..":overlay") then
-        hud:add(player, tool_name..":overlay", {
+    if not hud:get(player, TOOL_NAME..":crosshair") then
+        hud:add(player, TOOL_NAME..":crosshair", {
             hud_elem_type = "image",
             position = {x = 0.5, y = 0.5},
-            text = "forestry_tools_rf_overlay.png",
+            text = "forestry_tools_rf_crosshair.png",
             scale = {x = -60, y = -60},
             z_index = -100,
             alignment = {x = 0, y = 0}
@@ -244,8 +254,8 @@ end
 
 -- Hides the rangefinder's zooming crosshair
 local function hide_zoom_hud(player)
-    if hud:get(player, tool_name..":overlay") then
-        hud:remove(player, tool_name..":overlay")
+    if hud:get(player, TOOL_NAME..":crosshair") then
+        hud:remove(player, TOOL_NAME..":crosshair")
     end
 end
 
@@ -270,13 +280,69 @@ end
 -- Calculates the final output for the rangefinder to display
 local function rangefinder_calc(meta)
     local casts = minetest.deserialize(meta:get_string("casts"))
+    local routine = get_routine(meta)
     local mode = get_mode(meta)
-    if not casts or #casts < MODES[mode]["casts"] then
+    if not casts or #casts < ROUTINES[routine]["casts"] then
         return nil
     end
 
     local calculation_table = {
-        [1] = function() -- HT
+        [1] = {
+            [1] = function()
+                return routine..":"..mode -- stub
+            end,
+            [2] = function()
+                return routine..":"..mode -- stub
+            end,
+            [3] = function()
+                return routine..":"..mode -- stub
+            end,
+            [4] = function()
+                return routine..":"..mode -- stub
+            end,
+            [5] = function()
+                return routine..":"..mode -- stub
+            end
+        },
+        [2] = {
+            [1] = function()
+                local gamma = vector.angle(casts[1]["dir"], vector.new(casts[1]["dir"]["x"], 0, casts[1]["dir"]["z"]))
+                local alpha = vector.angle(casts[2]["dir"], vector.new(casts[2]["dir"]["x"], 0, casts[2]["dir"]["z"]))
+                local beta = vector.angle(casts[3]["dir"], vector.new(casts[3]["dir"]["x"], 0, casts[3]["dir"]["z"]))
+    
+                local gamma_dist = casts[1]["dist"]
+                local horiz_dist = gamma_dist * math.cos(gamma)
+                local alpha_dist = horiz_dist / math.cos(alpha)
+                local beta_dist = horiz_dist / math.cos(beta)
+    
+                local theta = nil
+                if math.sign(casts[2]["dir"]["y"]) == math.sign(casts[3]["dir"]["y"]) then
+                    theta = math.abs(alpha - beta)
+                else
+                    theta = math.abs(alpha + beta)
+                end
+                return math.sqrt(alpha_dist^2 + beta_dist^2 - 2*alpha_dist*beta_dist*math.cos(theta))
+            end
+        },
+        [3] = {
+            [1] = function()
+                return routine..":"..mode -- stub
+            end,
+            [2] = function()
+                return routine..":"..mode -- stub
+            end,
+            [3] = function()
+                return routine..":"..mode -- stub
+            end,
+            [4] = function()
+                return routine..":"..mode -- stub
+            end,
+            [5] = function()
+                return routine..":"..mode -- stub
+            end
+        }
+
+        --[[[1] = function() -- HT
             local gamma = vector.angle(casts[1]["dir"], vector.new(casts[1]["dir"]["x"], 0, casts[1]["dir"]["z"]))
             local alpha = vector.angle(casts[2]["dir"], vector.new(casts[2]["dir"]["x"], 0, casts[2]["dir"]["z"]))
             local beta = vector.angle(casts[3]["dir"], vector.new(casts[3]["dir"]["x"], 0, casts[3]["dir"]["z"]))
@@ -323,42 +389,69 @@ local function rangefinder_calc(meta)
             return "n/a " -- stub
         end,
         [7] = function() -- ML
-            --local dist_1 = casts[1]["dist"]
-            --local dist_2 = casts[2]["dist"]
-            return "n/a " -- stub
-        end
+            local dist_1 = casts[1]["dist"]
+            local dist_2 = casts[2]["dist"]
+            local theta = vector.angle(casts[1]["dir"], casts[2]["dir"])
+            return math.sqrt(dist_1^2 + dist_2^2 - 2*dist_1*dist_2*math.cos(theta))
+        end]]
     }
-    return calculation_table[mode]()
+
+    return calculation_table[routine][mode]()
 end
 
 -- Changes the rangefinder's mode
 local function rangefinder_mode_switch(itemstack, player, pointed_thing)
     local meta = itemstack:get_meta()
-    local current_mode = get_mode(meta)
+    local cur_routine = get_routine(meta)
+    local cur_mode = get_mode(meta)
     local keys = player:get_player_control()
-    local new_mode = nil
+    local new_routine, new_mode = cur_routine, cur_mode
 
-    if keys.aux1 then -- cycle mode backwards
-        new_mode = (current_mode - 1 >= 1 and current_mode - 1) or #MODES
-    else -- cycle mode forwards
-        new_mode = (current_mode + 1 <= #MODES and current_mode + 1) or 1
+    if keys.sneak then
+        if keys.aux1 then
+            -- cycle routine backwards
+            new_routine = (cur_routine - 1 >= 1 and cur_routine - 1) or #ROUTINES
+        else
+            -- cycle routine forwards
+            new_routine = (cur_routine + 1 <= #ROUTINES and cur_routine + 1) or 1
+        end
+        new_mode = ROUTINES[new_routine]["modes"] and 1 or nil
+    else
+        if keys.aux1 then
+            -- cycle mode backwards, switch routines if at end
+            new_mode = cur_mode - 1
+            if new_mode < 1 then
+                new_routine = (cur_routine - 1 >= 1 and cur_routine - 1) or #ROUTINES
+                new_mode = ROUTINES[new_routine]["modes"] and #ROUTINES[new_routine]["modes"] or nil
+            end
+        else
+            -- cycle mode forwards, switch routines if at end
+            new_mode = cur_mode + 1
+            if new_mode > #ROUTINES[cur_routine]["modes"] then
+                new_routine = (cur_routine + 1 <= #ROUTINES and cur_routine + 1) or 1
+                new_mode = ROUTINES[new_routine]["modes"] and 1 or nil
+            end
+        end
     end
+
+    minetest.log(new_routine..":"..new_mode)
     meta:set_int("mode", new_mode)
+    meta:set_int("routine", new_routine)
     
     update_rf_mode_hud(player, itemstack)
-    if MODES[current_mode]["casts"] ~= MODES[new_mode]["casts"] then
+    if cur_routine ~= new_routine then
         clear_saved_casts(player, itemstack)
     else
         local result = rangefinder_calc(meta)
         if result then
             local round_res = round_to_decim_places(result, 1, true)
-            minetest.chat_send_player(player:get_player_name(), "Measurement for new mode: "..round_res..MODES[new_mode]["unit"])
+            minetest.chat_send_player(player:get_player_name(), "Measurement for new mode: "..round_res..ROUTINES[new_routine]["modes"][new_mode]["unit"])
         end
     end
     return itemstack
 end
 
-minetest.register_tool(tool_name , {
+minetest.register_tool(TOOL_NAME, {
  	description = "Rangefinder",
  	inventory_image = "rangefinder.jpg",
     _mc_tool_privs = { interact = true },
@@ -381,10 +474,11 @@ minetest.register_tool(tool_name , {
                 -- perform and log calculation
                 if cast_complete then
                     local result = rangefinder_calc(meta)
+                    local routine = get_routine(meta)
                     local mode = get_mode(meta)
                     if result then
                         local round_res = round_to_decim_places(result, 1, true)
-                        minetest.chat_send_player(pname, "Final measurement: "..round_res..MODES[mode]["unit"])
+                        minetest.chat_send_player(pname, "Final measurement: "..round_res..ROUTINES[routine]["modes"][mode]["unit"])
                     end
                 end
             end
@@ -400,7 +494,7 @@ minetest.register_tool(tool_name , {
  	on_drop = function(itemstack, dropper, pos)
  	end,
 })
-minetest.register_alias("rangefinder", tool_name)
+minetest.register_alias("rangefinder", TOOL_NAME)
 
 minetest.register_globalstep(function(dtime)
     local online_players = minetest.get_connected_players()
@@ -411,8 +505,8 @@ minetest.register_globalstep(function(dtime)
 
     for _,player in pairs(online_players) do
         local wield = player:get_wielded_item()
-        if wield:get_name() == tool_name then
-            if not hud:get(player, tool_name..":mode") then
+        if wield:get_name() == TOOL_NAME then
+            if not hud:get(player, TOOL_NAME..":mode") then
                 update_rf_mode_hud(player, wield)
             end
             local keys = player:get_player_control()
@@ -489,7 +583,7 @@ minetest.register_on_joinplayer(function(player)
     local inv = player:get_inventory()
     for list,data in pairs(inv:get_lists()) do
         for i,item in pairs(data) do
-            if item:get_name() == tool_name then
+            if item:get_name() == TOOL_NAME then
                 clear_saved_casts(player, item)
                 inv:set_stack(list, i, item)
             end
