@@ -1,8 +1,11 @@
 minetest.register_node("unbreakable_map_barrier:barrierAir", {
         description = "Indestructible Map Block Barrier",
-		drawtype = "airlike",
-		--tiles = {"barrier.png","barrier_detail.png"},
-		--use_texture_alpha = "blend",
+		drawtype = "glasslike_framed",
+		align_style="world",
+		scale=16,
+		backface_culling = false,
+		tiles = {"barrier.png", "barrier_detail.png"},
+		use_texture_alpha = "blend",
 		paramtype = "light",
 		paramtype2 = "glasslikeliquidlevel",
 		sunlight_propagates = true,
@@ -17,8 +20,11 @@ minetest.register_node("unbreakable_map_barrier:barrierAir", {
 
 minetest.register_node("unbreakable_map_barrier:barrierSolid", {
 	description = "Indestructible Map Block Barrier",
-	drawtype = "clip",
-	tiles = {"barrier.png"},
+	drawtype = "glasslike_framed",
+	align_style="world",
+	scale=16,
+	backface_culling = false,
+	tiles = {"barrierSolid.png", "barrierSolid_detail.png"},
 	use_texture_alpha = "blend",
 	paramtype = "light",
 	paramtype2 = "glasslikeliquidlevel",
