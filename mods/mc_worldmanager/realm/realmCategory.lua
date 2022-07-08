@@ -1,38 +1,76 @@
-realm.categories = {}
+Realm.categories = {}
 
-realm.categories["spawn"] = {
+function Realm.RegisterCategory(categoryDefinition)
+    Realm.categories[string.lower(categoryDefinition.key)] = categoryDefinition
+end
+
+function Realm:setCategoryKey(category)
+    self:set_data("category", category)
+end
+
+function Realm:getCategoryKey()
+    local category = self:get_data("category")
+
+    if (category == nil or category == "") then
+        category = "default"
+    end
+end
+
+function Realm.getCategoryFromKey(key)
+    return Realm.categories[key]
+end
+
+function Realm:getCategory()
+    return Realm.getCategoryFromKey(self:getCategoryKey())
+end
+
+Realm.RegisterCategory({
+    key = "default",
     visible = function(realm, player)
+        return true
     end,
     joinable = function(realm, player)
+        return true
     end
-}
+})
 
-realm.categories["world"] = {
+
+Realm.RegisterCategory({
+    key = "spawn",
     visible = function(realm, player)
+        return true
     end,
     joinable = function(realm, player)
+        return true
     end
-}
+})
 
-realm.categories["classroom"] = {
-visible = function (realm, player)
-end,
-joinable = function (realm, player)
-end
-}
+Realm.RegisterCategory({
+    key = "world",
+    visible = function(realm, player)
+        return true
+    end,
+    joinable = function(realm, player)
+        return true
+    end
+})
 
-realm.categories["instanced"] = {
-visible = function (realm, player)
-end,
-joinable = function (realm, player)
-end
-}
+Realm.RegisterCategory({
+    key = "classroom",
+    visible = function(realm, player)
+        return true
+    end,
+    joinable = function(realm, player)
+        return true
+    end
+})
 
-
-function Realm:SetCategory(category)
-self:set_string("category", category)
-end
-
-function Realm:GetCategory()
-return self:get_string("category")
-end
+Realm.RegisterCategory({
+    key = "instanced",
+    visible = function(realm, player)
+        return true
+    end,
+    joinable = function(realm, player)
+        return true
+    end
+})

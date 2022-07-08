@@ -5,6 +5,14 @@
 function Realm:TeleportPlayer(player)
     local newRealmID, OldRealmID = self:UpdatePlayerMetaData(player)
 
+
+    local realmCategory = self:getCategory()
+
+
+    if (not realmCategory.joinable(self, player)) then
+        return false
+    end
+
     if (OldRealmID ~= nil) then
         local oldRealm = Realm.realmDict[OldRealmID]
         if (oldRealm ~= nil) then
@@ -20,6 +28,8 @@ function Realm:TeleportPlayer(player)
     self:RegisterPlayer(player)
     mc_worldManager.updateHud(player)
     self:ApplyPrivileges(player)
+
+    return true
 end
 
 ---@private

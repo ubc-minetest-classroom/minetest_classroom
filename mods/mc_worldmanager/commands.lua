@@ -208,6 +208,28 @@ commands["setspawnrealm"] = {
         end
     end }
 
+commands["category"] = {
+    func = function(name, params)
+        local realmID = tonumber(params[1])
+        local requestedRealm = Realm.GetRealm(tonumber(realmID))
+        if (requestedRealm == nil) then
+            return false, "Requested realm of ID:" .. tostring(realmID) .. " does not exist."
+        end
+
+        local subcommand = tostring(params[2])
+
+        if (string.lower(subcommand) == "set") then
+            local category = tostring(params[3])
+
+            requestedRealm:setCategoryKey(category)
+            return true, "Updated category for realm with ID: " .. realmID .. " to " .. category
+        else
+            return false, "unknown subcommand. Try realm category set <category>"
+        end
+
+
+    end }
+
 commands["consolidate"] = {
     func = function(name, params)
         Realm.consolidateEmptySpace()

@@ -1,4 +1,4 @@
-mc_worldManager = { storage = minetest.get_mod_storage(), path = minetest.get_modpath("mc_worldmanager"), spawnRealmSchematic = "vancouver_osm", hud = mhud.init()  }
+mc_worldManager = { storage = minetest.get_mod_storage(), path = minetest.get_modpath("mc_worldmanager"), spawnRealmSchematic = "vancouver_osm", hud = mhud.init() }
 
 -- Include our source files
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realm.lua")
@@ -8,7 +8,6 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/schematicmanager.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/hooks.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/hud.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/universalPrivilege.lua")
-
 
 ---@private
 ---Loads the persistent mod data for mc_worldManager.
@@ -36,6 +35,7 @@ function mc_worldManager.GetSpawnRealm()
     local spawnRealm = Realm.GetRealm(mc_worldManager.spawnRealmID)
     if (spawnRealm == nil) then
         spawnRealm = Realm:NewFromSchematic("Spawn", mc_worldManager.spawnRealmSchematic)
+        spawnRealm:setCategoryKey("spawn")
         mc_worldManager.spawnRealmID = spawnRealm.ID
         mc_worldManager.save_data()
         Debug.log("Saving spawn realm information")

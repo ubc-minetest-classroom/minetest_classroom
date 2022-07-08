@@ -23,6 +23,7 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCoordinateConversion.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPrivileges.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmIntegrationHelpers.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCategory.lua")
 
 if (areas) then
     dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmAreasIntegration.lua")
