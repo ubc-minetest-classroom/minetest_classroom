@@ -59,6 +59,16 @@ local function get_mode(meta)
     return tonumber(meta:get("mode") or 1)
 end
 
+-- Sets the internal index number for the rangefinder's current routine to the given number
+local function set_routine(meta, routine)
+    meta:set_int("routine", tonumber(routine))
+end
+
+-- Sets the internal index number for the rangefinder's current mode to the given number
+local function set_mode(meta, routine)
+    meta:set_int("mode", tonumber(routine))
+end
+
 -- Constrains val to the open domain defined by [min, max]
 local function constrain(min, val, max)
     return math.max(min, math.min(max, val))
@@ -268,8 +278,8 @@ local function update_rf_mode_hud(player, itemstack)
         mode_hud_text_abstract(player, hud, (mode_hud_exists and "change") or "add", TOOL_NAME..":MRHUD:routine", ROUTINES[routine]["key"], {y = -0.045}, nil, 5, 5)
         mode_hud_text_abstract(player, hud, (mode_hud_exists and "change") or "add", TOOL_NAME..":MRHUD:routine_desc", ROUTINES[routine]["desc"], {y = 0.025}, nil, 2, 0)
         mode_hud_text_abstract(player, hud, (mode_hud_exists and "change") or "add", TOOL_NAME..":MRHUD:routine_cast_desc", cast_desc, {y = 0.065}, nil, 2, 0)
-        mode_hud_text_abstract(player, hud, (mode_hud_exists and "change") or "add", TOOL_NAME..":MRHUD:routine_prev", ROUTINES[surround.prev]["key"], {y = sub_shift}, 0xcacfcd, 2, 4)
-        mode_hud_text_abstract(player, hud, (mode_hud_exists and "change") or "add", TOOL_NAME..":MRHUD:routine_next", ROUTINES[surround.next]["key"], {y = -sub_shift}, 0xcacfcd, 2, 4)
+        mode_hud_text_abstract(player, hud, (mode_hud_exists and "change") or "add", TOOL_NAME..":MRHUD:routine_prev", ROUTINES[surround.prev]["key"], {y = -sub_shift}, 0xcacfcd, 2, 4)
+        mode_hud_text_abstract(player, hud, (mode_hud_exists and "change") or "add", TOOL_NAME..":MRHUD:routine_next", ROUTINES[surround.next]["key"], {y = sub_shift}, 0xcacfcd, 2, 4)
         
         update_mode_hud_modes(player, routine, mode)
         create_mode_hud_background(player)
@@ -443,8 +453,8 @@ local function rangefinder_mode_switch(itemstack, player, pointed_thing)
         end
     end
 
-    meta:set_int("mode", new_mode)
-    meta:set_int("routine", new_routine)
+    set_mode(meta, new_mode)
+    set_routine(meta, new_routine)
     
     update_rf_mode_hud(player, itemstack)
     if cur_routine ~= new_routine then
@@ -538,6 +548,13 @@ minetest.register_on_joinplayer(function(player)
         for i,item in pairs(data) do
             if item:get_name() == TOOL_NAME then
                 clear_saved_casts(player, item)
+                local meta = item:get_meta()
+                if not ROUTINES[get_routine(meta)] then
+                    set_routine(meta, 1)
+                end
+                if not ROUTINES[get_routine(meta)]["modes"][get_mode(meta)] then
+                    set_mode(meta, 1)
+                end
                 inv:set_stack(list, i, item)
             end
         end
