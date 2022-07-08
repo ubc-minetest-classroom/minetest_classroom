@@ -110,9 +110,9 @@ commands["tp"] = {
         end
 
         local player = minetest.get_player_by_name(name)
-        requestedRealm:TeleportPlayer(player)
+        local success, reason = requestedRealm:TeleportPlayer(player)
 
-        return true, "teleported to realm: " .. tostring(realmID)
+        return success, reason
     end }
 
 commands["walls"] = {

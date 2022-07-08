@@ -8,32 +8,26 @@ function Realm:setCategoryKey(category)
     self:set_data("category", category)
 end
 
-function Realm:getCategoryKey()
+function Realm:getCategory()
     local category = self:get_data("category")
-
     if (category == nil or category == "") then
         category = "default"
     end
-end
 
-function Realm.getCategoryFromKey(key)
-    return Realm.categories[key]
-end
+    local categoryObject = Realm.categories[string.lower(category)]
 
-function Realm:getCategory()
-    return Realm.getCategoryFromKey(self:getCategoryKey())
+    return categoryObject
 end
 
 Realm.RegisterCategory({
     key = "default",
     visible = function(realm, player)
-        return true
+        return false
     end,
     joinable = function(realm, player)
-        return true
+        return false
     end
 })
-
 
 Realm.RegisterCategory({
     key = "spawn",
@@ -45,16 +39,7 @@ Realm.RegisterCategory({
     end
 })
 
-Realm.RegisterCategory({
-    key = "world",
-    visible = function(realm, player)
-        return true
-    end,
-    joinable = function(realm, player)
-        return true
-    end
-})
-
+--TODO: integrate into the mc_teachers mod.
 Realm.RegisterCategory({
     key = "classroom",
     visible = function(realm, player)
@@ -68,9 +53,16 @@ Realm.RegisterCategory({
 Realm.RegisterCategory({
     key = "instanced",
     visible = function(realm, player)
-        return true
+        if (realm:get_data("owner")[player:get_player_name()] ~= nil) then
+            return true
+        end
+
+        return false
     end,
     joinable = function(realm, player)
-        return true
+        if (realm:get_data("owner")[player:get_player_name()] ~= nil) then
+            return true
+        end
+        return false
     end
 })

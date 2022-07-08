@@ -50,6 +50,7 @@ end
 function mc_worldManager.SetSpawnRealm(newSpawnRealm)
     if (newSpawnRealm ~= nil) then
         mc_worldManager.spawnRealmID = newSpawnRealm.ID
+        newSpawnRealm:setCategoryKey("spawn")
         mc_worldManager.save_data()
         return true
     end
