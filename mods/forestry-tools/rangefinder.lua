@@ -4,7 +4,6 @@
   -- drawtype: plantlike, plantlike_rooted
 -- Add calculation/cast outputs to HUD instead of chat
 -- Auto-reset?
--- Re-implement directional arrows
 -- Implement altername left-click actions (?)
 ]]
 
@@ -65,16 +64,6 @@ local function get_mode(meta)
     return tonumber(meta:get("mode") or 1)
 end
 
--- Gets the rangefinder's current arrow metadata
-local function get_arrow_meta(meta)
-    return minetest.deserialize(meta:get("arrow_meta") or minetest.serialize({
-        cycle_dir = "down",
-        cycle_mode = "mode",
-        position = {x = 0, y = 0},
-        offset = 0,
-    }))
-end
-
 -- Sets the internal index number for the rangefinder's current routine to the given number
 local function set_routine(meta, routine)
     meta:set_int("routine", tonumber(routine))
@@ -83,13 +72,6 @@ end
 -- Sets the internal index number for the rangefinder's current mode to the given number
 local function set_mode(meta, routine)
     meta:set_int("mode", tonumber(routine))
-end
-
--- Sets the given key in the rangefinder's arrow metadata to the given value
-local function set_arrow_meta(meta, key, val)
-    local arrow_meta = get_arrow_meta(meta)
-    arrow_meta[key] = val
-    meta:set_string("arrow_meta", minetest.serialize(arrow_meta))
 end
 
 -- Constrains val to the open domain defined by [min, max]
@@ -223,7 +205,7 @@ local function create_mode_hud_background(player)
             alignment = {x = 0, y = 0},
             offset = MRHUD_OFFSET,
             scale = MRHUD_BG_SCALE,
-            text = "forestry_tools_pixel.png^[colorize:#000000:255^[opacity:127",
+            text = "forestry_tools_pixel.png^[multiply:#000000^[opacity:127",
             z_index = -2,
         })
         hud:add(player, TOOL_NAME..":MRHUD:routine_bg_u", {
@@ -232,7 +214,7 @@ local function create_mode_hud_background(player)
             alignment = {x = 0, y = 0},
             offset = MRHUD_OFFSET,
             scale = SUB_BG_SCALE,
-            text = "forestry_tools_pixel.png^[colorize:#39403b:255^[opacity:127",
+            text = "forestry_tools_pixel.png^[multiply:#39403b^[opacity:127",
             z_index = -3,
         })
         hud:add(player, TOOL_NAME..":MRHUD:routine_bg_l", {
@@ -241,7 +223,7 @@ local function create_mode_hud_background(player)
             alignment = {x = 0, y = 0},
             offset = MRHUD_OFFSET,
             scale = SUB_BG_SCALE,
-            text = "forestry_tools_pixel.png^[colorize:#39403b:255^[opacity:127",
+            text = "forestry_tools_pixel.png^[multiply:#39403b^[opacity:127",
             z_index = -3,
         })
     end
@@ -254,19 +236,19 @@ local function create_mode_hud_arrows(player)
             [TOOL_NAME..":MRHUD:arrow_mu"] = {
                 hud_elem_type = "image",
                 position = {x = MRHUD_POS.x, y = MRHUD_POS.y},
-                alignment = {x = 0, y = 0},
+                alignment = {x = 0, y = -1},
                 offset = MRHUD_OFFSET,
                 scale = {x = -0.75, y = -0.75},
-                text = "forestry_tools_rf_arrow_up.png^[opacity:127",
+                text = MRHUD_ARROW_DEFAULTS.up,
                 z_index = -1
             },
             [TOOL_NAME..":MRHUD:arrow_md"] = {
                 hud_elem_type = "image",
                 position = {x = MRHUD_POS.x, y = MRHUD_POS.y},
-                alignment = {x = 0, y = 0},
+                alignment = {x = 0, y = 1},
                 offset = MRHUD_OFFSET,
                 scale = {x = -0.75, y = -0.75},
-                text = "forestry_tools_rf_arrow_up.png^[transformFY^[opacity:127",
+                text = MRHUD_ARROW_DEFAULTS.down,
                 z_index = -1
             },
 
@@ -276,7 +258,7 @@ local function create_mode_hud_arrows(player)
                 alignment = {x = 0, y = 0},
                 offset = MRHUD_OFFSET,
                 scale = {x = -0.75, y = -0.75},
-                text = "forestry_tools_rf_arrow_up.png^[opacity:255",
+                text = MRHUD_ARROW_DEFAULTS.up,
                 z_index = -1
             },
             [TOOL_NAME..":MRHUD:arrow_rd"] = {
@@ -285,7 +267,7 @@ local function create_mode_hud_arrows(player)
                 alignment = {x = 0, y = 0},
                 offset = MRHUD_OFFSET,
                 scale = {x = -0.75, y = -0.75},
-                text = "forestry_tools_rf_arrow_up.png^[transformFY^[opacity:255",
+                text = MRHUD_ARROW_DEFAULTS.down,
                 z_index = -1
             }
         }
@@ -294,6 +276,21 @@ local function create_mode_hud_arrows(player)
         end
         --minetest.log(minetest.serialize(hud:get(player, TOOL_NAME..":MRHUD:arrow_mu")))
     end
+end
+
+-- Moves the routine/mode display's arrows to the given position, offsetting them by the given amount
+local function move_mode_hud_arrows(player, position, offset)
+    -- create arrows if they do not already exist
+    create_mode_hud_arrows(player)
+    local def_table = {
+        mu = hud:get(player, TOOL_NAME..":MRHUD:arrow_mu").def,
+        md = hud:get(player, TOOL_NAME..":MRHUD:arrow_md").def,
+    }
+
+    def_table.mu.position = {x = MRHUD_POS.x + position.x, y = MRHUD_POS.y + position.y - offset}
+    def_table.md.position = {x = MRHUD_POS.x + position.x, y = MRHUD_POS.y + position.y + offset}
+    hud:change(player, TOOL_NAME..":MRHUD:arrow_mu", def_table.mu)
+    hud:change(player, TOOL_NAME..":MRHUD:arrow_md", def_table.md)
 end
 
 -- Creates the arrows indicating the current mode change direction for the rangefinder's mode display
@@ -310,64 +307,31 @@ local function update_mode_hud_arrows(player, itemstack)
         [TOOL_NAME..":MRHUD:arrow_ru"] = hud:get(player, TOOL_NAME..":MRHUD:arrow_ru").def,
         [TOOL_NAME..":MRHUD:arrow_rd"] = hud:get(player, TOOL_NAME..":MRHUD:arrow_rd").def,
     }
-    local arrow_meta = get_arrow_meta(meta)
 
     for elem,def in pairs(def_table) do
-        local tag = string.sub(elem, -2)
+        local pos, dir = string.sub(elem, -2, -2), string.sub(elem, -1, -1)
+        local text = (dir == "u" and MRHUD_ARROW_DEFAULTS.up) or MRHUD_ARROW_DEFAULTS.down
 
-        --[[if pos == "m" then
-
-
+        if pos == "m" then
+            if dir == "u" then
+                text = text..(keys.aux1 and "^[multiply:#f2fcf9" or "^[multiply:#a9a9a9")
+                def.scale = (keys.aux1 and {x = -0.85, y = -0.85}) or {x = -0.6, y = -0.6}
+            elseif dir == "d" then
+                text = text..(not keys.aux1 and "^[multiply:#f2fcf9" or "^[multiply:#a9a9a9")
+                def.scale = (not keys.aux1 and {x = -0.85, y = -0.85}) or {x = -0.6, y = -0.6}
+            end
+            def.text = text..((keys.sneak or #ROUTINES[routine]["modes"] == 1) and "^[opacity:0" or "")
         elseif pos == "r" then
             if dir == "u" then
+                def.text = text..(keys.aux1 and "^[multiply:#f2fcf9" or "^[multiply:#a9a9a9")..((keys.sneak or mode == 1) and "" or "^[opacity:0")
                 def.scale = (keys.aux1 and {x = -1.25, y = -1.25}) or {x = -0.75, y = -0.75}
             elseif dir == "d" then
+                def.text = text..(not keys.aux1 and "^[multiply:#f2fcf9" or "^[multiply:#a9a9a9")..((keys.sneak or mode == #ROUTINES[routine]["modes"]) and "" or "^[opacity:0")
                 def.scale = (not keys.aux1 and {x = -1.25, y = -1.25}) or {x = -0.75, y = -0.75}
             end
-        end]]
-    end
-
-    --def_table[TOOL_NAME..":MRHUD:arrow_mu"][scale] = keys.aux1 and {x = -1.25, y = -1.25} or {x = -0.75, y = -0.75}
-    --def_table[TOOL_NAME..":MRHUD:arrow_mu"][scale] = keys.aux1 and {x = -1.25, y = -1.25} or {x = -0.75, y = -0.75}
-
-    --[[for elem,data in pairs(arrow_table) do
-        if data.cond then
-            if not hud:get(player, elem) then
-                hud:add(player, elem, data.def)
-            else
-                hud:change(player, elem, data.def)
-            end
-        elseif hud:get(player, elem) then
-            hud:remove(player, elem)
         end
-    end]]
-
-    --[[local arrow_u = {
-        hud_elem_type = "image",
-        position = {x = MRHUD_POS.x, y = MRHUD_POS.y - 0.063},
-        alignment = {x = 0, y = 0},
-        offset = MRHUD_OFFSET,
-        scale = (keys.aux1 and {x = -0.75, y = -0.75}) or {x = -1.25, y = -1.25},
-        text = (keys.aux1 and "forestry_tools_rf_arrow_up.png") or "forestry_tools_rf_arrow_up.png^[transformFY",
-        z_index = -1,
-    }
-    local arrow_l = {
-        hud_elem_type = "image",
-        position = {x = MRHUD_POS.x, y = MRHUD_POS.y + 0.063},
-        alignment = {x = 0, y = 0},
-        offset = MRHUD_OFFSET,
-        scale = (keys.aux1 and {x = -1.25, y = -1.25}) or {x = -0.75, y = -0.75},
-        text = (keys.aux1 and "forestry_tools_rf_arrow_up.png") or "forestry_tools_rf_arrow_up.png^[transformFY",
-        z_index = -1,
-    }
-
-    if not hud:get(player, TOOL_NAME..":MRHUD:arrow_u") then
-        hud:add(player, TOOL_NAME..":MRHUD:arrow_u", arrow_u)
-        hud:add(player, TOOL_NAME..":MRHUD:arrow_l", arrow_l)
-    else
-        hud:change(player, TOOL_NAME..":MRHUD:arrow_u", arrow_u)
-        hud:change(player, TOOL_NAME..":MRHUD:arrow_l", arrow_l)
-    end]]
+        hud:change(player, elem, def)
+    end
 end
 
 -- Creates the mode display area for the rangefinder's routine/mode HUD
@@ -378,28 +342,27 @@ local function update_mode_hud_modes(player, itemstack)
 
     -- clear mode hud to prevent element overlap
     mrhud_mode_hud:remove(player)
-    if mode_count == 1 then
-        return -- only 1 mode in routine, do not display
+    if mode_count ~= 1 then
+        local scale = {x = -5, y = (math.abs(MRHUD_BG_SCALE.y) - MRHUD_SPACER * (mode_count - 1)) / -mode_count}
+        local shift_x = (math.abs(MRHUD_BG_SCALE.x / 2) + math.abs(scale.x / 2) + MRHUD_SPACER) / 100
+        local initial_y = (math.abs(scale.y) - math.abs(MRHUD_BG_SCALE.y))/200
+
+        for i,mode_data in ipairs(ROUTINES[routine]["modes"]) do
+            local offset_y = initial_y + ((i - 1)*(math.abs(scale.y) + MRHUD_SPACER)/100)
+            mrhud_mode_hud:add(player, TOOL_NAME..":MRHUD:mode_"..i, {
+                hud_elem_type = "image",
+                position = {x = MRHUD_POS.x + shift_x, y = MRHUD_POS.y + offset_y},
+                alignment = {x = 0, y = 0},
+                offset = MRHUD_OFFSET,
+                scale = scale,
+                text = (i == mode and "forestry_tools_pixel.png^[multiply:#7a968b^[opacity:159") or "forestry_tools_pixel.png^[multiply:#39403b^[opacity:127",
+                z_index = -3,
+            })
+            mode_hud_text_abstract(player, mrhud_mode_hud, "add", TOOL_NAME..":MRHUD:mode_"..i.."_text", mode_data["key"], {x = shift_x, y = offset_y}, (i == mode and 0xffffff) or 0xd0d0d0, (i == mode and 2) or 1, 5)
+        end
+
+        move_mode_hud_arrows(player, {x = shift_x, y = initial_y + ((mode - 1)*(math.abs(scale.y) + MRHUD_SPACER)/100) + MRHUD_SPACER/200}, math.abs(scale.y / 200))
     end
-
-    local scale = {x = -5, y = (math.abs(MRHUD_BG_SCALE.y) - MRHUD_SPACER * (mode_count - 1)) / -mode_count}
-    local shift_x = (math.abs(MRHUD_BG_SCALE.x / 2) + math.abs(scale.x / 2) + MRHUD_SPACER) / 100
-    local initial_y = (math.abs(scale.y) - math.abs(MRHUD_BG_SCALE.y))/200
-
-    for i,mode_data in ipairs(ROUTINES[routine]["modes"]) do
-        local offset_y = initial_y + ((i - 1)*(math.abs(scale.y) + MRHUD_SPACER)/100)
-        mrhud_mode_hud:add(player, TOOL_NAME..":MRHUD:mode_"..i, {
-            hud_elem_type = "image",
-            position = {x = MRHUD_POS.x + shift_x, y = MRHUD_POS.y + offset_y},
-            alignment = {x = 0, y = 0},
-            offset = MRHUD_OFFSET,
-            scale = scale,
-            text = (i == mode and "forestry_tools_pixel.png^[colorize:#7a968b:255^[opacity:159") or "forestry_tools_pixel.png^[colorize:#39403b:255^[opacity:127",
-            z_index = -3,
-        })
-        mode_hud_text_abstract(player, mrhud_mode_hud, "add", TOOL_NAME..":MRHUD:mode_"..i.."_text", mode_data["key"], {x = shift_x, y = offset_y}, (i == mode and 0xffffff) or 0xd0d0d0, (i == mode and 2) or 1, 5)
-    end
-
     update_mode_hud_arrows(player, itemstack)
 end
 
