@@ -4,21 +4,22 @@
   -- drawtype: plantlike, plantlike_rooted
 -- Add calculation/cast outputs to HUD instead of chat
 -- Auto-reset?
+-- Re-implement directional arrows
+-- Implement altername left-click actions (?)
 ]]
 
 --[[ CURRENT CONTROL SCHEME
--- L-CLICK               = take measurement/reset
--- L-CLICK + AUX         = undo previous measurement (WIP)
--- L-CLICK + SNEAK       = open measurement settings (WIP)
--- L-CLICK + AUX + SNEAK = reset measurement (WIP)
+-- L-CLICK               = take measurement/clear
+-- L-CLICK + AUX         = clear previous measurement
+-- L-CLICK + AUX + SNEAK = clear all measurements
 
 -- R-CLICK               = cycle (forwards)
 -- R-CLICK + AUX         = cycle (reverse)
 -- R-CLICK + SNEAK       = cycle routine (forwards)
 -- R-CLICK + AUX + SNEAK = cycle routine (reverse)
-]]
 
-local range = 32 -- extraneous
+-- L-CLICK + SNEAK       = open measurement settings (IN CONSIDERATION)
+]]
 
 local RAY_RANGE = 500
 local ROUTINES = {
@@ -44,6 +45,11 @@ local MRHUD_POS = {x = 0.0725, y = 0.857}
 local MRHUD_OFFSET = {x = 5, y = -5} -- {x = 0, y = 0}
 local MRHUD_BG_SCALE = {x = -14.5, y = -19}
 local SUB_BG_SCALE = {x = -6, y = -4.8}
+local MRHUD_SPACER = 0.1
+local MRHUD_ARROW_DEFAULTS = {
+    up = "forestry_tools_rf_arrow_up.png",
+    down = "forestry_tools_rf_arrow_up.png^[transformFY"
+}
 local TOOL_NAME = "forestry_tools:rangefinder"
 
 local hud = mhud.init()
@@ -59,6 +65,16 @@ local function get_mode(meta)
     return tonumber(meta:get("mode") or 1)
 end
 
+-- Gets the rangefinder's current arrow metadata
+local function get_arrow_meta(meta)
+    return minetest.deserialize(meta:get("arrow_meta") or minetest.serialize({
+        cycle_dir = "down",
+        cycle_mode = "mode",
+        position = {x = 0, y = 0},
+        offset = 0,
+    }))
+end
+
 -- Sets the internal index number for the rangefinder's current routine to the given number
 local function set_routine(meta, routine)
     meta:set_int("routine", tonumber(routine))
@@ -67,6 +83,13 @@ end
 -- Sets the internal index number for the rangefinder's current mode to the given number
 local function set_mode(meta, routine)
     meta:set_int("mode", tonumber(routine))
+end
+
+-- Sets the given key in the rangefinder's arrow metadata to the given value
+local function set_arrow_meta(meta, key, val)
+    local arrow_meta = get_arrow_meta(meta)
+    arrow_meta[key] = val
+    meta:set_string("arrow_meta", minetest.serialize(arrow_meta))
 end
 
 -- Constrains val to the open domain defined by [min, max]
@@ -89,8 +112,32 @@ local function clear_saved_casts(player, itemstack)
     meta:set_string("marks", "")
 
     if count > 0 then
-        minetest.chat_send_player(player:get_player_name(), "Rangefinder reset, ready to start new measurement")
+        minetest.chat_send_player(player:get_player_name(), "Rangefinder memory cleared, ready to start new measurement")
     end
+    return itemstack
+end
+
+-- Clears the last logged cast from the rangefinder's metadata
+local function undo_last_cast(player, itemstack)
+    local meta = itemstack:get_meta()
+    local cast_table = minetest.deserialize(meta:get("casts") or minetest.serialize({}))
+    local mark_table = minetest.deserialize(meta:get("marks") or minetest.serialize({}))
+
+    if #cast_table > 0 and #mark_table > 0 then
+        table.remove(cast_table)
+        meta:set_string("casts", minetest.serialize(cast_table))
+
+        local marker_id = table.remove(mark_table)
+        if hud:get(player, marker_id) then
+            hud:remove(player, marker_id)
+        end
+        meta:set_string("marks", minetest.serialize(mark_table))
+
+        minetest.chat_send_player(player:get_player_name(), "Previous cast cleared from rangefinder memory")
+    else
+        minetest.chat_send_player(player:get_player_name(), "Rangefinder memory empty, no measurements cleared")
+    end
+
     return itemstack
 end
 
@@ -166,11 +213,10 @@ local function mode_hud_text_abstract(player, hud, oper, elem, text, pos_offset,
     end
 end
 
--- Creates the background for the rangefinder's mode display
+-- Creates the background for the rangefinder's routine/mode display
 local function create_mode_hud_background(player)
     if not hud:get(player, TOOL_NAME..":MRHUD:routine_bg") then
         local shift = (math.abs(MRHUD_BG_SCALE.y) + math.abs(SUB_BG_SCALE.y)) / 200
-
         hud:add(player, TOOL_NAME..":MRHUD:routine_bg", {
             hud_elem_type = "image",
             position = MRHUD_POS,
@@ -201,38 +247,101 @@ local function create_mode_hud_background(player)
     end
 end
 
--- Creates the mode display area for the rangefinder's routine/mode HUD
-local function update_mode_hud_modes(player, routine, mode)
-    local mode_count = #ROUTINES[routine]["modes"]
+-- Creates the arrows for the rangefinder's routine/mode display
+local function create_mode_hud_arrows(player)
+    if not hud:get(player, TOOL_NAME..":MRHUD:arrow_mu") then
+        local arrow_table = {
+            [TOOL_NAME..":MRHUD:arrow_mu"] = {
+                hud_elem_type = "image",
+                position = {x = MRHUD_POS.x, y = MRHUD_POS.y},
+                alignment = {x = 0, y = 0},
+                offset = MRHUD_OFFSET,
+                scale = {x = -0.75, y = -0.75},
+                text = "forestry_tools_rf_arrow_up.png^[opacity:127",
+                z_index = -1
+            },
+            [TOOL_NAME..":MRHUD:arrow_md"] = {
+                hud_elem_type = "image",
+                position = {x = MRHUD_POS.x, y = MRHUD_POS.y},
+                alignment = {x = 0, y = 0},
+                offset = MRHUD_OFFSET,
+                scale = {x = -0.75, y = -0.75},
+                text = "forestry_tools_rf_arrow_up.png^[transformFY^[opacity:127",
+                z_index = -1
+            },
 
-    -- clear mode hud to prevent element overlap
-    mrhud_mode_hud:remove(player)
-    if mode_count == 1 then
-        return -- only 1 mode in routine, do not display
-    end
-
-    local spacer = 0.1
-    local scale = {x = -5, y = (math.abs(MRHUD_BG_SCALE.y) - spacer * (mode_count - 1)) / -mode_count}
-    local shift_x = (math.abs(MRHUD_BG_SCALE.x / 2) + math.abs(scale.x / 2) + spacer) / 100
-    local initial_y = (math.abs(scale.y) - math.abs(MRHUD_BG_SCALE.y))/200
-
-    for i,mode_data in ipairs(ROUTINES[routine]["modes"]) do
-        local offset_y = initial_y + ((i - 1)*(math.abs(scale.y) + spacer)/100)
-        mrhud_mode_hud:add(player, TOOL_NAME..":MRHUD:mode_"..i, {
-            hud_elem_type = "image",
-            position = {x = MRHUD_POS.x + shift_x, y = MRHUD_POS.y + offset_y},
-            alignment = {x = 0, y = 0},
-            offset = MRHUD_OFFSET,
-            scale = scale,
-            text = (i == mode and "forestry_tools_pixel.png^[colorize:#7a968b:255^[opacity:159") or "forestry_tools_pixel.png^[colorize:#39403b:255^[opacity:127",
-            z_index = -3,
-        })
-        mode_hud_text_abstract(player, mrhud_mode_hud, "add", TOOL_NAME..":MRHUD:mode_"..i.."_text", mode_data["key"], {x = shift_x, y = offset_y}, (i == mode and 0xffffff) or 0xd0d0d0, (i == mode and 2) or 1, 5)
+            [TOOL_NAME..":MRHUD:arrow_ru"] = {
+                hud_elem_type = "image",
+                position = {x = MRHUD_POS.x, y = MRHUD_POS.y - math.abs(MRHUD_BG_SCALE.y / 200)},
+                alignment = {x = 0, y = 0},
+                offset = MRHUD_OFFSET,
+                scale = {x = -0.75, y = -0.75},
+                text = "forestry_tools_rf_arrow_up.png^[opacity:255",
+                z_index = -1
+            },
+            [TOOL_NAME..":MRHUD:arrow_rd"] = {
+                hud_elem_type = "image",
+                position = {x = MRHUD_POS.x, y = MRHUD_POS.y + math.abs(MRHUD_BG_SCALE.y / 200)},
+                alignment = {x = 0, y = 0},
+                offset = MRHUD_OFFSET,
+                scale = {x = -0.75, y = -0.75},
+                text = "forestry_tools_rf_arrow_up.png^[transformFY^[opacity:255",
+                z_index = -1
+            }
+        }
+        for elem,def in pairs(arrow_table) do
+            hud:add(player, elem, def)
+        end
+        --minetest.log(minetest.serialize(hud:get(player, TOOL_NAME..":MRHUD:arrow_mu")))
     end
 end
 
 -- Creates the arrows indicating the current mode change direction for the rangefinder's mode display
-local function update_mode_hud_arrows(player, keys)
+local function update_mode_hud_arrows(player, itemstack)
+    local keys = player:get_player_control()
+    local meta = itemstack:get_meta()
+    local routine, mode = get_routine(meta), get_mode(meta)
+    
+    -- create arrows if they do not already exist
+    create_mode_hud_arrows(player)
+    local def_table = {
+        [TOOL_NAME..":MRHUD:arrow_mu"] = hud:get(player, TOOL_NAME..":MRHUD:arrow_mu").def,
+        [TOOL_NAME..":MRHUD:arrow_md"] = hud:get(player, TOOL_NAME..":MRHUD:arrow_md").def,
+        [TOOL_NAME..":MRHUD:arrow_ru"] = hud:get(player, TOOL_NAME..":MRHUD:arrow_ru").def,
+        [TOOL_NAME..":MRHUD:arrow_rd"] = hud:get(player, TOOL_NAME..":MRHUD:arrow_rd").def,
+    }
+    local arrow_meta = get_arrow_meta(meta)
+
+    for elem,def in pairs(def_table) do
+        local tag = string.sub(elem, -2)
+
+        --[[if pos == "m" then
+
+
+        elseif pos == "r" then
+            if dir == "u" then
+                def.scale = (keys.aux1 and {x = -1.25, y = -1.25}) or {x = -0.75, y = -0.75}
+            elseif dir == "d" then
+                def.scale = (not keys.aux1 and {x = -1.25, y = -1.25}) or {x = -0.75, y = -0.75}
+            end
+        end]]
+    end
+
+    --def_table[TOOL_NAME..":MRHUD:arrow_mu"][scale] = keys.aux1 and {x = -1.25, y = -1.25} or {x = -0.75, y = -0.75}
+    --def_table[TOOL_NAME..":MRHUD:arrow_mu"][scale] = keys.aux1 and {x = -1.25, y = -1.25} or {x = -0.75, y = -0.75}
+
+    --[[for elem,data in pairs(arrow_table) do
+        if data.cond then
+            if not hud:get(player, elem) then
+                hud:add(player, elem, data.def)
+            else
+                hud:change(player, elem, data.def)
+            end
+        elseif hud:get(player, elem) then
+            hud:remove(player, elem)
+        end
+    end]]
+
     --[[local arrow_u = {
         hud_elem_type = "image",
         position = {x = MRHUD_POS.x, y = MRHUD_POS.y - 0.063},
@@ -261,6 +370,39 @@ local function update_mode_hud_arrows(player, keys)
     end]]
 end
 
+-- Creates the mode display area for the rangefinder's routine/mode HUD
+local function update_mode_hud_modes(player, itemstack)
+    local meta = itemstack:get_meta()
+    local routine, mode = get_routine(meta), get_mode(meta)
+    local mode_count = #ROUTINES[routine]["modes"]
+
+    -- clear mode hud to prevent element overlap
+    mrhud_mode_hud:remove(player)
+    if mode_count == 1 then
+        return -- only 1 mode in routine, do not display
+    end
+
+    local scale = {x = -5, y = (math.abs(MRHUD_BG_SCALE.y) - MRHUD_SPACER * (mode_count - 1)) / -mode_count}
+    local shift_x = (math.abs(MRHUD_BG_SCALE.x / 2) + math.abs(scale.x / 2) + MRHUD_SPACER) / 100
+    local initial_y = (math.abs(scale.y) - math.abs(MRHUD_BG_SCALE.y))/200
+
+    for i,mode_data in ipairs(ROUTINES[routine]["modes"]) do
+        local offset_y = initial_y + ((i - 1)*(math.abs(scale.y) + MRHUD_SPACER)/100)
+        mrhud_mode_hud:add(player, TOOL_NAME..":MRHUD:mode_"..i, {
+            hud_elem_type = "image",
+            position = {x = MRHUD_POS.x + shift_x, y = MRHUD_POS.y + offset_y},
+            alignment = {x = 0, y = 0},
+            offset = MRHUD_OFFSET,
+            scale = scale,
+            text = (i == mode and "forestry_tools_pixel.png^[colorize:#7a968b:255^[opacity:159") or "forestry_tools_pixel.png^[colorize:#39403b:255^[opacity:127",
+            z_index = -3,
+        })
+        mode_hud_text_abstract(player, mrhud_mode_hud, "add", TOOL_NAME..":MRHUD:mode_"..i.."_text", mode_data["key"], {x = shift_x, y = offset_y}, (i == mode and 0xffffff) or 0xd0d0d0, (i == mode and 2) or 1, 5)
+    end
+
+    update_mode_hud_arrows(player, itemstack)
+end
+
 -- Updates the rangefinder's mode display
 local function update_rf_mode_hud(player, itemstack)
     local meta = itemstack:get_meta()
@@ -281,7 +423,7 @@ local function update_rf_mode_hud(player, itemstack)
         mode_hud_text_abstract(player, hud, (mode_hud_exists and "change") or "add", TOOL_NAME..":MRHUD:routine_prev", ROUTINES[surround.prev]["key"], {y = -sub_shift}, 0xcacfcd, 2, 4)
         mode_hud_text_abstract(player, hud, (mode_hud_exists and "change") or "add", TOOL_NAME..":MRHUD:routine_next", ROUTINES[surround.next]["key"], {y = sub_shift}, 0xcacfcd, 2, 4)
         
-        update_mode_hud_modes(player, routine, mode)
+        update_mode_hud_modes(player, itemstack)
         create_mode_hud_background(player)
     end
 end
@@ -333,8 +475,7 @@ end
 -- Calculates the final output for the rangefinder to display
 local function rangefinder_calc(meta)
     local casts = minetest.deserialize(meta:get_string("casts"))
-    local routine = get_routine(meta)
-    local mode = get_mode(meta)
+    local routine, mode = get_routine(meta), get_mode(meta)
     if not casts or #casts < ROUTINES[routine]["casts"] then
         return nil
     end
@@ -478,33 +619,47 @@ minetest.register_tool(TOOL_NAME, {
         local pname = player:get_player_name()
  		-- Check for shout privileges
  		if forestry_tools.check_perm(player) then
-            local new_stack, cast_num, cast_complete = track_raycast_hit(player, itemstack)
-            if new_stack then
-                local meta = new_stack:get_meta()
-                -- log cast distance
-                if cast_num then
-                    local casts = minetest.deserialize(meta:get_string("casts"))
-                    if casts[cast_num] then
-                        local cast_dist = round_to_decim_places(casts[cast_num]["dist"], 1, true)
-                        minetest.chat_send_player(pname, "Cast "..cast_num.." logged - distance: "..cast_dist.."m")
+            local keys = player:get_player_control()
+
+            if keys.aux1 then
+                if keys.sneak then
+                    -- reset measurements
+                    return clear_saved_casts(player, itemstack)
+                else
+                    -- undo last measurement
+                    return undo_last_cast(player, itemstack)
+                end
+            else
+                -- record measurement
+                local new_stack, cast_num, cast_complete = track_raycast_hit(player, itemstack)
+                if new_stack then
+                    local meta = new_stack:get_meta()
+                    
+                    -- log cast distance
+                    if cast_num then
+                        local casts = minetest.deserialize(meta:get_string("casts"))
+                        if casts[cast_num] then
+                            local cast_dist = round_to_decim_places(casts[cast_num]["dist"], 1, true)
+                            minetest.chat_send_player(pname, "Cast "..cast_num.." logged - distance: "..cast_dist.."m")
+                        end
+                    end
+                    -- perform and log calculation
+                    if cast_complete then
+                        local result = rangefinder_calc(meta)
+                        local routine, mode = get_routine(meta), get_mode(meta)
+                        if result then
+                            local round_res = round_to_decim_places(result, 1, true)
+                            minetest.chat_send_player(pname, "Final measurement: "..round_res..ROUTINES[routine]["modes"][mode]["unit"])
+                        end
                     end
                 end
-                -- perform and log calculation
-                if cast_complete then
-                    local result = rangefinder_calc(meta)
-                    local routine = get_routine(meta)
-                    local mode = get_mode(meta)
-                    if result then
-                        local round_res = round_to_decim_places(result, 1, true)
-                        minetest.chat_send_player(pname, "Final measurement: "..round_res..ROUTINES[routine]["modes"][mode]["unit"])
-                    end
+    
+                -- Register a node punch
+                if pointed_thing.under then
+                    minetest.node_punch(pointed_thing.under, minetest.get_node(pointed_thing.under), player, pointed_thing)
                 end
+                return new_stack
             end
-            -- Register a node punch
-            if pointed_thing.under then
-                minetest.node_punch(pointed_thing.under, minetest.get_node(pointed_thing.under), player, pointed_thing)
-            end
-            return new_stack
  		end
  	end,
     on_secondary_use = rangefinder_mode_switch,
@@ -533,7 +688,7 @@ minetest.register_globalstep(function(dtime)
             else
                 hide_zoom_hud(player)
             end
-            update_mode_hud_arrows(player, keys)
+            update_mode_hud_arrows(player, wield)
         else
             hud:remove(player)
             mrhud_mode_hud:remove(player)
@@ -564,7 +719,7 @@ end)
 
 -- OLD FRAMEWORK
 
-local finder_on = function(pos, facedir_param2, range)
+--[[local finder_on = function(pos, facedir_param2, range)
     local meta = minetest.get_meta(pos)
     local block_pos = vector.new(pos)
     local beam_pos = vector.new(pos)
@@ -616,4 +771,4 @@ local range_check = function(pos, facedir_param2, range)
         end
     end
     return is_not_beam
-end
+end]]
