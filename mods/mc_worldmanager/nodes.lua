@@ -19,17 +19,13 @@ minetest.register_node("mc_worldmanager:teleporter", {
         local realmID = meta:get_int("realm")
 
         if (realmID == 0) then
-            minetest.chat_send_player(clicker:get_player_name(), "This teleporter is not linked to a realm.")
-        end
-
-        if (realmID == 0) then
+            minetest.chat_send_player(clicker:get_player_name(), "This teleporter is not linked to a realm. Linking to this realm...")
             realmID = Realm.GetRealmFromPlayer(clicker).ID
 
             meta:set_int("realm", realmID)
 
             minetest.swap_node(pos, { name = "mc_worldmanager:teleporter", param2 = math.ceil(math.sin(realmID) * 255) })
 
-            Debug.log("Teleport block not set to a realm. Setting to realm ID: " .. realmID)
             return nil
         end
 
@@ -60,10 +56,16 @@ minetest.register_node("mc_worldmanager:teleporter", {
     end,
 
     after_place_node = function(pos, placer, itemstack, pointed_thing)
+        Debug.log("after_Place_node")
+
         local itemMeta = itemstack:get_meta()
 
         local nodeMeta = minetest.get_meta(pos)
-        nodeMeta:set_int('realm', itemMeta:get_int('realm'))
+        local realmID = itemMeta:get_int("realm")
+
+        nodeMeta:set_int('realm', realmID)
+
+        minetest.swap_node(pos, { name = "mc_worldmanager:teleporter", param2 = math.ceil(math.sin(realmID) * 255) })
     end
 
 })

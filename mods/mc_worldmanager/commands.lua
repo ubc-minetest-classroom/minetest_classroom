@@ -382,6 +382,33 @@ commands["players"] = {
     end
 }
 
+commands["blocks"] = {
+    func = function(name, params)
+
+
+        if (params[1] == "teleporter") then
+            local realmID = params[2]
+            local requestedRealm = Realm.GetRealm(tonumber(realmID))
+            if (requestedRealm == nil) then
+                return false, "Requested realm of ID:" .. realmID .. " does not exist."
+            end
+
+            local is = ItemStack({ name = "mc_worldmanager:teleporter", count = params[3], param2 = math.ceil(math.sin(realmID) * 255) })
+
+            local meta = is:get_meta()
+            meta:set_int('realm', realmID)
+            meta:set_string("description", "A teleporter to realm " .. tostring(meta:get_int("realm")) .. ".")
+
+            local player = minetest.get_player_by_name(name)
+
+            player:get_inventory():add_item("main", is)
+            return true, "added teleporter to inventory."
+        end
+
+        return false, "unknown sub-command."
+    end
+}
+
 minetest.register_chatcommand("realm", {
     params = "Subcommand Realm ID Option",
     func = function(name, param)
