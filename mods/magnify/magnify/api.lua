@@ -254,7 +254,7 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
                 "textarea[", (is_inv and "0.45,0.59;10.4,0.7") or "0.45,0.96;12.4,0.7", ";;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
                 "textarea[", (is_inv and "0.45,1.1;10.4,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
 
-                "image[", (is_inv and "10.3,0") or "12.8,0.4", ";4.2,4.2;", info.texture or "test.png", "]",
+                "image[", (is_inv and "10.3,0") or "12.8,0.4", ";4.2,4.2;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
                 "box[", (is_inv and "10.3,3.7;3.35,3.65") or "12.8,4.7;4.2,4.2", ";#789cbf]",
                 "model[", (is_inv and "10.3,3.7") or "12.8,4.7", ";4.2,4.2;plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";", info.model_rot_x or "0", ",", info.model_rot_y or "180", ";false;true;;]",
 
@@ -281,7 +281,7 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
                 "textarea[", (is_inv and "0.45,0.08;10,0.7") or "0.45,0.45;12.4,0.7", ";;;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
                 "textarea[", (is_inv and "0.45,0.59;10,0.7") or "0.45,0.96;12.4,0.7", ";;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
                 "textarea[", (is_inv and "0.45,1.1;10,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
-                "image[", (is_inv and "9.9,0") or "12.4,0.4", ";5.7,5.7;", info.texture or "test.png", "]",
+                "image[", (is_inv and "9.9,0") or "12.4,0.4", ";5.7,5.7;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
     
                 "textarea[", (is_inv and "0.3,1.8;10.05,4.3") or "0.35,2.3;12,4.4", ";;;", -- info area
                 "- ", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "\n",
@@ -311,7 +311,7 @@ box[0.4,0.4;12,1.6;", minetest.formspec_escape(info.status_col or "#9192A3"), "]
 textarea[0.45,0.45;12.4,0.7;;;", minetest.formspec_escape(info.sci_name or "N/A"), "]
 textarea[0.45,0.97;12.4,0.7;;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]
 textarea[0.45,1.47;12.4,0.7;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]
-image[12.8,0.4;4.2,4.2;", info.texture or "test.png", "]
+image[12.8,0.4;4.2,4.2;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]
 box[12.8,4.7;4.2,4.2;#789cbf]
 textarea[0.35,2.3;12.4,4.7;;;"add the original giant text box here"]
 textarea[0.35,7.2;12.4,0.7;;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]
@@ -324,7 +324,7 @@ box[0.4,0.4;11.6,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), 
 textarea[0.45,0.45;12,0.7;;;", minetest.formspec_escape(info.sci_name or "N/A"), "]
 textarea[0.45,0.97;12,0.7;;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]
 textarea[0.45,1.47;12,0.7;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]
-image[12.4,0.4;5.7,5.7;", minetest.formspec_escape(info.texture or "test.png"), "]
+image[12.4,0.4;5.7,5.7;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]
 textarea[0.35,2.3;12,4.4;;;"add the original giant text box here"]
 textarea[0.35,6.9;11.6,0.7;;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]
 button[12.4,6.4;5.4,0.9;back;Back]
