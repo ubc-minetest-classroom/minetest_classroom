@@ -1,6 +1,6 @@
 local S = forestry_tools.S
 local HUD_showing = false
-local curr_pitch = 0
+local curr_pitch, curr_percent = 0
 local bg_angle
 
 ----------------------------
@@ -76,10 +76,10 @@ local function show_percent_plus_0_hud(player)
 	percentPlus0Hud:add(player, "percentPlus0", {
 		hud_elem_type = "text",
 		text = "test0",
-		alignment = {x = "left", y = "centre"},
+		alignment = {x = "right", y = "centre"},
 		position = {x = 0.7, y = 0.5}, 
 		scale = {x = 6.5, y = 6.5},
-		offset = {x = 73, y = -4}
+		offset = {x = 35, y = -4}
 	})
 end
 
@@ -88,10 +88,10 @@ local function show_percent_plus_10_hud(player)
 	percentPlus10Hud:add(player, "percentPlus10", {
 		hud_elem_type = "text",
 		text = "test10",
-		alignment = {x = "left", y = "centre"},
+		alignment = {x = "right", y = "centre"},
 		position = {x = 0.7, y = 0.5}, 
 		scale = {x = 6.5, y = 6.5},
-		offset = {x = 80, y = -43}
+		offset = {x = 35, y = -43}
 	})
 end
 
@@ -100,10 +100,34 @@ local function show_percent_plus_20_hud(player)
 	percentPlus20Hud:add(player, "percentPlus20", {
 		hud_elem_type = "text",
 		text = "test20",
-		alignment = {x = "left", y = "centre"},
+		alignment = {x = "right", y = "centre"},
 		position = {x = 0.7, y = 0.5}, 
 		scale = {x = 6.5, y = 6.5},
-		offset = {x = 80, y = -83}
+		offset = {x = 35, y = -83}
+	})
+end
+
+local percentPlus30Hud = mhud.init()
+local function show_percent_plus_30_hud(player)
+	percentPlus30Hud:add(player, "percentPlus30", {
+		hud_elem_type = "text",
+		text = "test30",
+		alignment = {x = "right", y = "centre"},
+		position = {x = 0.7, y = 0.5}, 
+		scale = {x = 6.5, y = 6.5},
+		offset = {x = 35, y = -120}
+	})
+end
+
+local percentPlus40Hud = mhud.init()
+local function show_percent_plus_40_hud(player)
+	percentPlus40Hud:add(player, "percentPlus40", {
+		hud_elem_type = "text",
+		text = "test40",
+		alignment = {x = "right", y = "centre"},
+		position = {x = 0.7, y = 0.5}, 
+		scale = {x = 6.5, y = 6.5},
+		offset = {x = 35, y = -160}
 	})
 end
 
@@ -112,10 +136,10 @@ local function show_percent_minus_10_hud(player)
 	percentMinus10Hud:add(player, "percentMinus10", {
 		hud_elem_type = "text",
 		text = "test-10",
-		alignment = {x = "left", y = "centre"},
+		alignment = {x = "right", y = "centre"},
 		position = {x = 0.7, y = 0.5}, 
 		scale = {x = 6.5, y = 6.5},
-		offset = {x = 85, y = 37}
+		offset = {x = 35, y = 37}
 	})
 end
 
@@ -124,10 +148,34 @@ local function show_percent_minus_20_hud(player)
 	percentMinus20Hud:add(player, "percentMinus20", {
 		hud_elem_type = "text",
 		text = "test-20",
-		alignment = {x = "left", y = "centre"},
+		alignment = {x = "right", y = "centre"},
 		position = {x = 0.7, y = 0.5}, 
 		scale = {x = 6.5, y = 6.5},
-		offset = {x = 85, y = 75}
+		offset = {x = 35, y = 75}
+	})
+end
+
+local percentMinus30Hud = mhud.init()
+local function show_percent_minus_30_hud(player)
+	percentMinus30Hud:add(player, "percentMinus30", {
+		hud_elem_type = "text",
+		text = "test-30",
+		alignment = {x = "right", y = "centre"},
+		position = {x = 0.7, y = 0.5}, 
+		scale = {x = 6.5, y = 6.5},
+		offset = {x = 35, y = 115}
+	})
+end
+
+local percentMinus40Hud = mhud.init()
+local function show_percent_minus_40_hud(player)
+	percentMinus40Hud:add(player, "percentMinus40", {
+		hud_elem_type = "text",
+		text = "test-40",
+		alignment = {x = "right", y = "centre"},
+		position = {x = 0.7, y = 0.5}, 
+		scale = {x = 6.5, y = 6.5},
+		offset = {x = 35, y = 153}
 	})
 end
 
@@ -159,12 +207,16 @@ local function show_huds(player)
 	show_percent_plus_0_hud(player)
 	show_percent_plus_10_hud(player)
 	show_percent_plus_20_hud(player)
+	show_percent_plus_30_hud(player)
+	show_percent_plus_40_hud(player)
 	show_percent_minus_10_hud(player)
 	show_percent_minus_20_hud(player)
+	show_percent_minus_30_hud(player)
+	show_percent_minus_40_hud(player)
 	HUD_showing = true
 end
 
-local function hide_huds(player)
+local function hide_huds()
 	bgHud:remove_all()
 	degreePlus0Hud:remove_all()
 	degreePlus10Hud:remove_all()
@@ -174,8 +226,12 @@ local function hide_huds(player)
 	percentPlus0Hud:remove_all()
 	percentPlus10Hud:remove_all()
 	percentPlus20Hud:remove_all()
+	percentPlus30Hud:remove_all()
+	percentPlus40Hud:remove_all()
 	percentMinus10Hud:remove_all()
 	percentMinus20Hud:remove_all()
+	percentMinus30Hud:remove_all()
+	percentMinus40Hud:remove_all()
 	HUD_showing = false
 end
 
@@ -189,7 +245,7 @@ minetest.register_tool("forestry_tools:clinometer" , {
 	-- On left-click
     on_use = function(itemstack, player, pointed_thing)
 		if HUD_showing then
-			hide_huds(player)
+			hide_huds()
 		else
 			show_huds(player)
 		end
@@ -233,50 +289,77 @@ local function update_degrees(player)
 	update_hud(player, degreePlus0Hud, "degreePlus0", tostring(curr_pitch)) 
 end
 
+local function update_percent(player)
+	if curr_pitch >= 70 and curr_pitch < 80 then
+		update_hud(player, percentPlus40Hud, "percentPlus40", "")
+	elseif curr_pitch >= 80 and curr_pitch < 89 then
+		update_hud(player, percentPlus20Hud, "percentPlus20", "")
+		update_hud(player, percentPlus30Hud, "percentPlus30", "")
+	elseif curr_pitch >= 89 then
+		update_hud(player, percentPlus10Hud, "percentPlus10", "")
+	elseif curr_pitch <= -70 and curr_pitch > -80 then
+		update_hud(player, percentMinus40Hud, "percentMinus40", "")
+	elseif curr_pitch <= -80 and curr_pitch > -89 then
+		update_hud(player, percentMinus20Hud, "percentMinus20", "")
+		update_hud(player, percentMinus30Hud, "percentMinus30", "")
+	elseif curr_pitch <= -89 then
+		update_hud(player, percentMinus10Hud, "percentMinus10", "")
+	else
+		update_hud(player, percentPlus10Hud, "percentPlus10", tostring(curr_percent + 10))
+		update_hud(player, percentPlus20Hud, "percentPlus20", tostring(curr_percent + 20))
+		update_hud(player, percentPlus30Hud, "percentPlus30", tostring(curr_percent + 30))
+		update_hud(player, percentPlus40Hud, "percentPlus40", tostring(curr_percent + 40))
+		update_hud(player, percentMinus10Hud, "percentMinus10", tostring(curr_percent - 10))
+		update_hud(player, percentMinus20Hud, "percentMinus20", tostring(curr_percent - 20)) 
+		update_hud(player, percentMinus30Hud, "percentMinus30", tostring(curr_percent - 30)) 
+		update_hud(player, percentMinus40Hud, "percentMinus40", tostring(curr_percent - 40)) 
+	end
+
+	update_hud(player, percentPlus0Hud, "percentPlus0", tostring(curr_percent)) 
+end
 
 minetest.register_globalstep(function(dtime)
 	local players  = minetest.get_connected_players()
 	for i,player in ipairs(players) do
 
 		if HUD_showing then
-			local pitch_rad = player:get_look_vertical()
-			local pitch = -1 * math.deg(pitch_rad)
-			curr_pitch = math.floor(pitch)
-
-			if curr_pitch >= 70 then 
-				if curr_pitch < 80 then
-					bg_angle = "70"
-				elseif curr_pitch >= 80 and curr_pitch < 89 then
-					bg_angle = "80"
-				elseif curr_pitch >= 89 then
-					bg_angle = "90"
-				end
-			elseif curr_pitch <= -70 then
-				if curr_pitch > -80 then
-					bg_angle = "70.1"
-				elseif curr_pitch <= -80 and curr_pitch > -89 then
-					bg_angle = "80.1"
-				elseif curr_pitch <= -89 then
-					bg_angle = "90.1"
-				end
-			else 
-				bg_angle = "0"
-			end
-
-			update_degrees(player) 
-
-			local percent
-			if pitch == 90 or pitch == -90 then
-				percent = 0
+			if player:get_wielded_item():get_name() ~= "forestry_tools:clinometer" then
+				hide_huds(player)
 			else
-				percent = math.floor(-100 * math.tan(pitch_rad))
-			end
+				local pitch_rad = player:get_look_vertical()
+				local pitch = -1 * math.deg(pitch_rad)
+				curr_pitch = math.floor(pitch)
 
-			update_hud(player, percentPlus0Hud, "percentPlus0", tostring(percent)) 
-			update_hud(player, percentPlus10Hud, "percentPlus10", tostring(percent + 10))
-			update_hud(player, percentPlus20Hud, "percentPlus20", tostring(percent + 20))
-			update_hud(player, percentMinus10Hud, "percentMinus10", tostring(percent - 10))
-			update_hud(player, percentMinus20Hud, "percentMinus20", tostring(percent - 20)) 
+				if curr_pitch >= 70 then 
+					if curr_pitch < 80 then
+						bg_angle = "70"
+					elseif curr_pitch >= 80 and curr_pitch < 89 then
+						bg_angle = "80"
+					elseif curr_pitch >= 89 then
+						bg_angle = "90"
+					end
+				elseif curr_pitch <= -70 then
+					if curr_pitch > -80 then
+						bg_angle = "70.1"
+					elseif curr_pitch <= -80 and curr_pitch > -89 then
+						bg_angle = "80.1"
+					elseif curr_pitch <= -89 then
+						bg_angle = "90.1"
+					end
+				else 
+					bg_angle = "0"
+				end
+
+				update_degrees(player) 
+
+				if curr_pitch == 90 then
+					curr_percent = math.floor(-100 * math.tan(89.999))
+				else
+					curr_percent = math.floor(-100 * math.tan(pitch_rad))
+				end
+
+				update_percent(player)
+			end
 		end
 	end
 end)
