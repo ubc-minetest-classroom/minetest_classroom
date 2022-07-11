@@ -1,7 +1,8 @@
 --[[ TODO
 -- Add random chance for noise/skipping when raycast hits nodes with:
-  -- node group: leaves
+  -- node group: leaves, sapling
   -- drawtype: plantlike, plantlike_rooted
+-- Treat plant casts as imprecise (round to whole rather than decimal)
 -- Add calculation/cast outputs to HUD instead of chat
 -- Auto-reset?
 -- Implement altername left-click actions (?)
@@ -80,7 +81,7 @@ local function constrain(min, val, max)
 end
 
 -- Clears all the logged casts from the rangefinder's metadata
-local function clear_saved_casts(player, itemstack)
+local function clear_saved_casts(player, itemstack, log_if_empty)
     local meta = itemstack:get_meta()
     local count = 0
     meta:set_string("casts", "")
@@ -95,6 +96,8 @@ local function clear_saved_casts(player, itemstack)
 
     if count > 0 then
         minetest.chat_send_player(player:get_player_name(), "Rangefinder memory cleared, ready to start new measurement")
+    elseif log_if_empty then
+        minetest.chat_send_player(player:get_player_name(), "Rangefinder memory empty, no measurements cleared")
     end
     return itemstack
 end
@@ -135,6 +138,49 @@ local function add_cast_marker(player, pos, is_angle)
     })
 end
 
+-- Gets the first valid block hit by the ray
+local function get_first_valid_hit(ray, dir)
+    local rng = PcgRandom(os.clock())
+
+    local hit = ray:next()
+    while hit do
+        if hit.type == "object" then
+            return hit -- always hit objects
+        elseif hit.type == "node" then
+            local node = minetest.get_node(hit.under)
+            local node_def = minetest.registered_nodes[node.name]
+            if node_def then
+                if node_def.drawtype == "plantlike" or node_def.drawtype == "plantlike_rooted" then
+                    -- plantlike: 60% chance to detect normally, 40% chance to skip
+                    local rng_gen = rng:next(1, 100)
+                    if rng_gen > 40 then
+                        return hit
+                    end
+                elseif node_def.groups["leaves"] or node_def.groups["sapling"] then
+                    -- defined as plant: 5% chance to detect normally, 85% chance to detect with random noise, 10% chance to skip
+                    local rng_gen = rng:next(1, 100)
+                    if rng_gen > 95 then
+                        return hit
+                    elseif rng_gen > 10 then
+                        local noise_mod = rng:next(0, 65535) / 65535
+                        local noise_vector = vector.multiply(dir, noise_mod)
+                        local hit_point = hit.intersection_point
+
+                        local noisy_hit = table.copy(hit)
+                        noisy_hit.intersection_point = {x = hit_point.x + noise_vector.x, y = hit_point.y + noise_vector.y, z = hit_point.z + noise_vector.z}
+                        return noisy_hit
+                    end
+                else
+                    -- not a plant: valid
+                    return hit
+                end
+            end
+        end
+        hit = ray:next()
+    end
+    return nil
+end
+
 -- Casts a ray and logs where it first hit, if it hit an object/node in range
 local function track_raycast_hit(player, itemstack)
     local meta = itemstack:get_meta()
@@ -151,7 +197,7 @@ local function track_raycast_hit(player, itemstack)
 
         local player_pos = vector.offset(player:get_pos(), 0, player:get_properties().eye_height, 0)
         local ray = minetest.raycast(player_pos, vector.add(player_pos, vector.multiply(player:get_look_dir(), RAY_RANGE)))
-        local cast_point, first_hit = ray:next(), ray:next()
+        local cast_point, first_hit = ray:next(), get_first_valid_hit(ray, player:get_look_dir())
 
         if not first_hit then
             -- no objects/nodes within range, note failed hit
@@ -587,7 +633,7 @@ minetest.register_tool(TOOL_NAME, {
             if keys.aux1 then
                 if keys.sneak then
                     -- reset measurements
-                    return clear_saved_casts(player, itemstack)
+                    return clear_saved_casts(player, itemstack, true)
                 else
                     -- undo last measurement
                     return undo_last_cast(player, itemstack)
