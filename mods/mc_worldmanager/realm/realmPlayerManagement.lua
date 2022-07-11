@@ -5,7 +5,9 @@
 function Realm:TeleportPlayer(player)
     local realmCategory = self:getCategory()
 
-    if (not realmCategory.joinable(self, player) and not minetest.check_player_privs(player, { teacher = true })) then
+    local joinable, reason = realmCategory.joinable(self, player)
+
+    if (not joinable and not minetest.check_player_privs(player, { teacher = true })) then
         return false, "Player does not have permission to join this realm."
     end
 

@@ -22,20 +22,20 @@ end
 Realm.RegisterCategory({
     key = "default",
     visible = function(realm, player)
-        return false
+        return false, "this realm is not visible."
     end,
     joinable = function(realm, player)
-        return false
+        return false, "this realm is not joinable."
     end
 })
 
 Realm.RegisterCategory({
     key = "spawn",
     visible = function(realm, player)
-        return true
+        return true, "Spawn realms are visible to all players."
     end,
     joinable = function(realm, player)
-        return true
+        return true, "Spawn realms are joinable by all players."
     end
 })
 
