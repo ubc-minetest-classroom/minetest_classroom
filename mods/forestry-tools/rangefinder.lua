@@ -80,6 +80,16 @@ local function constrain(min, val, max)
     return math.max(min, math.min(max, val))
 end
 
+-- Returns the precision that should be used for rounding the rangefinder's output based on the least precise rangefinder measurement recorded
+local function get_precision(meta)
+    local prec_table = minetest.deserialize(meta:get("precs") or minetest.serialize({}))
+    local precision = 1
+    for i,prec in ipairs(prec_table) do
+        precision = precision * (prec and 1 or 0)
+    end
+    return precision
+end
+
 -- Clears all the logged casts from the rangefinder's metadata
 local function clear_saved_casts(player, itemstack, log_if_empty)
     local meta = itemstack:get_meta()
@@ -93,6 +103,7 @@ local function clear_saved_casts(player, itemstack, log_if_empty)
         count = count + 1
     end
     meta:set_string("marks", "")
+    meta:set_string("precs", "")
 
     if count > 0 then
         minetest.chat_send_player(player:get_player_name(), "Rangefinder memory cleared, ready to start new measurement")
@@ -107,10 +118,13 @@ local function undo_last_cast(player, itemstack)
     local meta = itemstack:get_meta()
     local cast_table = minetest.deserialize(meta:get("casts") or minetest.serialize({}))
     local mark_table = minetest.deserialize(meta:get("marks") or minetest.serialize({}))
+    local prec_table = minetest.deserialize(meta:get("precs") or minetest.serialize({}))
 
-    if #cast_table > 0 and #mark_table > 0 then
+    if #cast_table > 0 and #mark_table > 0 and #prec_table > 0 then
         table.remove(cast_table)
         meta:set_string("casts", minetest.serialize(cast_table))
+        table.remove(prec_table)
+        meta:set_string("precs", minetest.serialize(prec_table))
 
         local marker_id = table.remove(mark_table)
         if hud:get(player, marker_id) then
@@ -138,29 +152,29 @@ local function add_cast_marker(player, pos, is_angle)
     })
 end
 
--- Gets the first valid block hit by the ray
+-- Returns the first valid block hit by the ray, and whether the hit is accurate or not
 local function get_first_valid_hit(ray, dir)
     local rng = PcgRandom(os.clock())
 
     local hit = ray:next()
     while hit do
         if hit.type == "object" then
-            return hit -- always hit objects
+            return hit, true -- always hit objects
         elseif hit.type == "node" then
             local node = minetest.get_node(hit.under)
             local node_def = minetest.registered_nodes[node.name]
             if node_def then
                 if node_def.drawtype == "plantlike" or node_def.drawtype == "plantlike_rooted" then
-                    -- plantlike: 60% chance to detect normally, 40% chance to skip
+                    -- plantlike: 70% chance to detect normally, 30% chance to skip
                     local rng_gen = rng:next(1, 100)
-                    if rng_gen > 40 then
-                        return hit
+                    if rng_gen > 30 then
+                        return hit, false
                     end
                 elseif node_def.groups["leaves"] or node_def.groups["sapling"] then
                     -- defined as plant: 5% chance to detect normally, 85% chance to detect with random noise, 10% chance to skip
                     local rng_gen = rng:next(1, 100)
                     if rng_gen > 95 then
-                        return hit
+                        return hit, false
                     elseif rng_gen > 10 then
                         local noise_mod = rng:next(0, 65535) / 65535
                         local noise_vector = vector.multiply(dir, noise_mod)
@@ -168,11 +182,11 @@ local function get_first_valid_hit(ray, dir)
 
                         local noisy_hit = table.copy(hit)
                         noisy_hit.intersection_point = {x = hit_point.x + noise_vector.x, y = hit_point.y + noise_vector.y, z = hit_point.z + noise_vector.z}
-                        return noisy_hit
+                        return noisy_hit, false
                     end
                 else
                     -- not a plant: valid
-                    return hit
+                    return hit, true
                 end
             end
         end
@@ -188,6 +202,7 @@ local function track_raycast_hit(player, itemstack)
         -- log hit in rangefinder
         local cast_table = minetest.deserialize(meta:get("casts") or minetest.serialize({}))
         local mark_table = minetest.deserialize(meta:get("marks") or minetest.serialize({}))
+        local prec_table = minetest.deserialize(meta:get("precs") or minetest.serialize({}))
         local routine = get_routine(meta)
 
         if #cast_table >= ROUTINES[routine]["casts"] then
@@ -197,7 +212,7 @@ local function track_raycast_hit(player, itemstack)
 
         local player_pos = vector.offset(player:get_pos(), 0, player:get_properties().eye_height, 0)
         local ray = minetest.raycast(player_pos, vector.add(player_pos, vector.multiply(player:get_look_dir(), RAY_RANGE)))
-        local cast_point, first_hit = ray:next(), get_first_valid_hit(ray, player:get_look_dir())
+        local cast_point, first_hit, is_accurate = ray:next(), get_first_valid_hit(ray, player:get_look_dir())
 
         if not first_hit then
             -- no objects/nodes within range, note failed hit
@@ -214,7 +229,10 @@ local function track_raycast_hit(player, itemstack)
         table.insert(mark_table, add_cast_marker(player, first_hit.intersection_point, routine == 2 and #mark_table ~= 0))
         meta:set_string("marks", minetest.serialize(mark_table))
 
-        local table_length = math.min(#cast_table, #mark_table)
+        table.insert(prec_table, is_accurate)
+        meta:set_string("precs", minetest.serialize(prec_table))
+
+        local table_length = math.min(#cast_table, #mark_table, #prec_table)
         local casts_reached = table_length >= ROUTINES[routine]["casts"]
         return itemstack, table_length, casts_reached
     end
@@ -471,7 +489,7 @@ local function round_to_decim_places(num, places, as_string)
     else
         local num_string = tostring(round_num)
         local whole = string.sub(num_string, 1, -1 - places)
-        local decim = string.sub(num_string, -places)
+        local decim = places > 0 and string.sub(num_string, -places) or ""
         return decim ~= "" and (whole ~= "" and whole or "0").."."..decim or (whole ~= "" and whole or "0")
     end
 end
@@ -612,7 +630,7 @@ local function rangefinder_mode_switch(itemstack, player, pointed_thing)
     else
         local result = rangefinder_calc(meta)
         if result then
-            local round_res = round_to_decim_places(result, 1, true)
+            local round_res = round_to_decim_places(result, get_precision(meta), true)
             minetest.chat_send_player(player:get_player_name(), "Measurement for new mode: "..round_res..ROUTINES[new_routine]["modes"][new_mode]["unit"])
         end
     end
@@ -648,7 +666,7 @@ minetest.register_tool(TOOL_NAME, {
                     if cast_num then
                         local casts = minetest.deserialize(meta:get_string("casts"))
                         if casts[cast_num] then
-                            local cast_dist = round_to_decim_places(casts[cast_num]["dist"], 1, true)
+                            local cast_dist = round_to_decim_places(casts[cast_num]["dist"], get_precision(meta), true)
                             minetest.chat_send_player(pname, "Cast "..cast_num.." logged - distance: "..cast_dist.."m")
                         end
                     end
@@ -657,7 +675,7 @@ minetest.register_tool(TOOL_NAME, {
                         local result = rangefinder_calc(meta)
                         local routine, mode = get_routine(meta), get_mode(meta)
                         if result then
-                            local round_res = round_to_decim_places(result, 1, true)
+                            local round_res = round_to_decim_places(result, get_precision(meta), true)
                             minetest.chat_send_player(pname, "Final measurement: "..round_res..ROUTINES[routine]["modes"][mode]["unit"])
                         end
                     end
