@@ -1,6 +1,6 @@
 Realm.whitelistedPrivs = {}
-local worldRealmPrivWhitelist = minetest.get_worldpath() .. "\\realmPrivilegeWhitelist.conf"
-local modRealmPrivWhitelist = mc_worldManager.path .. "\\realmPrivilegeWhitelist.conf"
+local worldRealmPrivWhitelist = minetest.get_worldpath() .. "/realmPrivilegeWhitelist.conf"
+local modRealmPrivWhitelist = mc_worldManager.path .. "/realmPrivilegeWhitelist.conf"
 
 function Realm.SetPrivWhitelist(file)
     local settings = Settings(file)
