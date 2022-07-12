@@ -64,6 +64,30 @@ function mc_worldManager.SpawnGenerated()
     return Realm.realmDict[mc_worldManager.spawnRealmID] ~= nil
 end
 
+function mc_worldManager.createInstancedRealm(player, realmName, schematic)
+
+    local realm
+    if (schematic ~= nil) then
+        realm = Realm.NewFromSchematic(realmName, schematic)
+    else
+        realm = Realm:New(realmName, { x = 80, y = 80, z = 80 })
+    end
+
+    table.insert(realm.PlayerLeaveTable, { tableName = "mc_worldManager", functionName = "InstancedDelete" })
+    local owners = realm:get_data("owner")
+    owners[player:get_player_name()] = true
+    realm:set_data("owner", owners)
+    realm:TeleportPlayer(player)
+end
+
+function mc_worldManager.InstancedDelete(player, realm)
+    local owners = realm:get_data("owner")
+
+    if (owners[player:get_player_name()] ~= nil) then
+        realm:Delete()
+    end
+end
+
 -- Registration
 schematicManager.registerSchematicPath("shack", mc_worldManager.path .. "/schematics/shack")
 
