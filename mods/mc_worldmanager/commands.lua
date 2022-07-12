@@ -246,13 +246,15 @@ commands["consolidate"] = {
 commands["help"] = {
     func = function(name, params)
 
-        if (commands[params[1]] ~= nil) then
+        local subcommand = params[1]
+
+        if (subcommand ~= nil and subcommand ~= "") then
 
             local helpString
-            if (params[1].help == "" or params[1].help == nil) then
+            if (commands[subcommand].help == "" or commands[subcommand].help == nil) then
                 helpString = "No help available for this command."
             else
-                helpString = params[1].help
+                helpString = commands[subcommand].help
             end
             return true, helpString
         end
@@ -415,10 +417,10 @@ commands["blocks"] = {
 
             local count = params[2]
 
-            if (params[3] == "true") then
-                instanced = true
-            else
+            if (mc_helpers.isNumber(tostring(params[3]))) then
                 realmID = tonumber(params[3])
+            elseif (params[3] == "true") then
+                instanced = true
             end
 
             temp = params[4]
