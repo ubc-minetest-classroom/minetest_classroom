@@ -269,28 +269,37 @@ local function update_hud(player, hud, hudname, text)
 	})
 end
 
-local function update_measurements(player)
+local function update_clinometer(player)
+	bg_angle = "0"
 	local degPlus10, degPlus20, degMinus10, degMinus20 = tostring(curr_pitch + 10), tostring(curr_pitch + 20), tostring(curr_pitch - 10), tostring(curr_pitch + 10)
 	local percPlus10, percPlus20, percPlus30, percPlus40 = tostring(curr_percent + 10), tostring(curr_percent + 20), tostring(curr_percent + 30), tostring(curr_percent + 40)
 	local percMinus10, percMinus20, percMinus30, percMinus40 = tostring(curr_percent - 10), tostring(curr_percent - 20), tostring(curr_percent - 30), tostring(curr_percent - 40)
 
 	if curr_pitch >= 70 and curr_pitch < 80 then
+		bg_angle = "70"
 		percPlus40 = ""
 	elseif curr_pitch >= 80 and curr_pitch < 89 then
+		bg_angle = "80"
 		percPlus2, percPlus30, percPlus40 = "", "", ""
 		degPlus20 = ""
 	elseif curr_pitch >= 89 then
+		bg_angle = "90"
 		percPlus10, percPlus20, percPlus30, percPlus40 = "", "", "", ""
 		degPlus10, degPlus20 = "", ""
 	elseif curr_pitch <= -70 and curr_pitch > -80 then
+		bg_angle = "70.1"
 		percMinus40 = ""
 	elseif curr_pitch <= -80 and curr_pitch > -89 then
+		bg_angle = "80.1"
 		percMinus20, percMinus30, percMinus40 = "", "", ""
 		degMinus20 = ""
 	elseif curr_pitch <= -89 then
+		bg_angle = "90.1"
 		percMinus10, percMinus20, percMinus30, percMinus40 = "", "", "", ""
 		degMinus10, degMinus20 = "", ""
 	end
+
+	update_hud(player, bgHud, "background", bg_angle) 
 
 	update_hud(player, percentPlus0Hud, "percentPlus0", tostring(curr_percent)) 
 	update_hud(player, percentPlus10Hud, "percentPlus10", percPlus10)
@@ -322,35 +331,13 @@ minetest.register_globalstep(function(dtime)
 				local pitch = -1 * math.deg(pitch_rad)
 				curr_pitch = math.floor(pitch)
 
-				if curr_pitch >= 70 then 
-					if curr_pitch < 80 then
-						bg_angle = "70"
-					elseif curr_pitch >= 80 and curr_pitch < 89 then
-						bg_angle = "80"
-					elseif curr_pitch >= 89 then
-						bg_angle = "90"
-					end
-				elseif curr_pitch <= -70 then
-					if curr_pitch > -80 then
-						bg_angle = "70.1"
-					elseif curr_pitch <= -80 and curr_pitch > -89 then
-						bg_angle = "80.1"
-					elseif curr_pitch <= -89 then
-						bg_angle = "90.1"
-					end
-				else 
-					bg_angle = "0"
-				end
-
-				update_hud(player, bgHud, "background", bg_angle) 
-
 				if curr_pitch == 90 then
 					curr_percent = math.floor(-100 * math.tan(89.999))
 				else
 					curr_percent = math.floor(-100 * math.tan(pitch_rad))
 				end
 
-				update_measurements(player)
+				update_clinometer(player)
 			end
 		end
 	end
