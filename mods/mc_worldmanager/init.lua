@@ -88,6 +88,36 @@ function mc_worldManager.InstancedDelete(player, realm)
     end
 end
 
+function mc_worldManager.GetRealmByName(realmName)
+    for _, realm in pairs(Realm.realmDict) do
+        if (realm.Name == realmName) then
+            return realm
+        end
+    end
+    return nil
+end
+
+function mc_worldManager.GetCreateInstancedRealm(realmName, player, schematic)
+
+    local pmeta = player:get_meta()
+
+    local realmKey = realmName:lower()
+
+    local realmInstanceTable = minetest.deserialize(player:get_string("mc_worldmanager_realm_instances"))
+    if (realmInstanceTable == nil) then
+        realmInstanceTable = {}
+    end
+
+    local realm = mc_worldManager.KeyIDTable[realmKey]
+
+    if (realm == nil) then
+        realm = Realm:NewFromSchematic("instanced " .. realmName .. player:get_player_name(), schematic)
+        realm:setCategoryKey("instanced")
+        realmInstanceTable[realmKey] = realm.ID
+    end
+end
+
+
 -- Registration
 schematicManager.registerSchematicPath("shack", mc_worldManager.path .. "/schematics/shack")
 
