@@ -81,13 +81,13 @@ local function constrain(min, val, max)
 end
 
 -- Returns the precision that should be used for rounding the rangefinder's output based on the least precise rangefinder measurement recorded
-local function get_precision(meta, handle_angle_as)
+local function get_precision(meta)
     local prec_table = minetest.deserialize(meta:get("precs") or minetest.serialize({}))
     local precision = 1
     local precision_map = {
         [true] = 1,
         [false] = 0,
-        ["angle"] = handle_angle_as and 1 or 0
+        ["angle"] = 1
     }
     for i,prec in ipairs(prec_table) do
         precision = precision * precision_map[prec]
@@ -95,37 +95,58 @@ local function get_precision(meta, handle_angle_as)
     return precision
 end
 
+-- Returns the precision for a single cast, as above
+local function get_single_precision(meta, cast_num)
+    local prec_table = minetest.deserialize(meta:get("precs") or minetest.serialize({}))
+    local precision_map = {
+        [true] = 1,
+        [false] = 0,
+        ["angle"] = 0
+    }
+    return precision_map[prec_table[cast_num]]
+end
+
+-- Updates the main rangefinder display's text, changing it to the given output text and description
 local function update_display(player, output, desc)
-    local output_def = {
-        hud_elem_type = "text",
-        position = {x = 0.5, y = 0.08},
-        alignment = {x = 0, y = 0},
-        offset = {x = 0, y = 0},
-        color = col or 0xFFFFFF,
-        scale = {x = 100, y = 100},
-        text = output or "-----",
-        text_scale = 8,
-        style = 5,
-        z_index = 2
-    }
-    local desc_def = {
-        hud_elem_type = "text",
-        position = {x = 0.5, y = 0.18},
-        alignment = {x = 0, y = 0},
-        offset = {x = 0, y = 0},
-        color = col or 0xFFFFFF,
-        scale = {x = 100, y = 100},
-        text = desc or "awaiting cast",
-        text_scale = 2,
-        style = 4,
-        z_index = 1
-    }
+    local function get_output_def(col, offset, z_index)
+        return {
+            hud_elem_type = "text",
+            position = {x = 0.5, y = 0.08},
+            alignment = {x = 0, y = 0},
+            offset = offset or {x = 0, y = 0},
+            color = col or 0xFFFFFF,
+            scale = {x = 100, y = 100},
+            text = output or "-----",
+            text_scale = 8,
+            style = 5,
+            z_index = z_index or 4
+        }
+    end
+    local function get_desc_def(col, offset, z_index)
+        return {
+            hud_elem_type = "text",
+            position = {x = 0.5, y = 0.16},
+            alignment = {x = 0, y = 0},
+            offset = offset or {x = 0, y = 0},
+            color = col or 0xFFFFFF,
+            scale = {x = 100, y = 100},
+            text = desc or "awaiting cast",
+            text_scale = 2,
+            style = 4,
+            z_index = z_index or 2
+        }
+    end
+
     if not hud:get(player, TOOL_NAME..":output") then
-        hud:add(player, TOOL_NAME..":output", output_def)
-        hud:add(player, TOOL_NAME..":output_desc", desc_def)
+        hud:add(player, TOOL_NAME..":output", get_output_def())
+        hud:add(player, TOOL_NAME..":output_desc", get_desc_def())
+        hud:add(player, TOOL_NAME..":output_shadow", get_output_def(0x000000, {x = 3, y = 3}, 3))
+        hud:add(player, TOOL_NAME..":output_desc_shadow", get_desc_def(0x000000, {x = 2, y = 2}, 1))
     else
-        hud:change(player, TOOL_NAME..":output", output_def)
-        hud:change(player, TOOL_NAME..":output_desc", desc_def)
+        hud:change(player, TOOL_NAME..":output", get_output_def())
+        hud:change(player, TOOL_NAME..":output_desc", get_desc_def())
+        hud:change(player, TOOL_NAME..":output_shadow", get_output_def(0x000000, {x = 3, y = 3}, 3))
+        hud:change(player, TOOL_NAME..":output_desc_shadow", get_desc_def(0x000000, {x = 2, y = 2}, 1))
     end
 end
 
@@ -265,7 +286,7 @@ local function track_raycast_hit(player, itemstack)
 
         local player_pos = vector.offset(player:get_pos(), 0, player:get_properties().eye_height, 0)
         local ray = minetest.raycast(player_pos, vector.add(player_pos, vector.multiply(player:get_look_dir(), RAY_RANGE)))
-        local cast_point, first_hit, is_accurate = ray:next(), get_first_valid_hit(ray, player:get_look_dir())
+        local cast_point, first_hit, is_precise = ray:next(), get_first_valid_hit(ray, player:get_look_dir())
 
         if not first_hit then
             -- no objects/nodes within range, note failed hit
@@ -282,7 +303,7 @@ local function track_raycast_hit(player, itemstack)
         meta:set_string("casts", minetest.serialize(cast_table))
         table.insert(mark_table, add_cast_marker(player, first_hit.intersection_point, is_angle))
         meta:set_string("marks", minetest.serialize(mark_table))
-        table.insert(prec_table, is_accurate or is_angle)
+        table.insert(prec_table, is_precise or (is_angle and "angle"))
         meta:set_string("precs", minetest.serialize(prec_table))
 
         local table_length = math.min(#cast_table, #mark_table, #prec_table)
@@ -721,7 +742,7 @@ minetest.register_tool(TOOL_NAME, {
                     if cast_num then
                         local casts = minetest.deserialize(meta:get_string("casts"))
                         if casts[cast_num] then
-                            local cast_dist = round_to_decim_places(casts[cast_num]["dist"], get_precision(meta), true)
+                            local cast_dist = round_to_decim_places(casts[cast_num]["dist"], get_single_precision(meta, cast_num), true)
                             clear_display_callback(player)
                             update_display(player, cast_dist.."m", "cast "..cast_num)
                             --minetest.chat_send_player(pname, "Cast "..cast_num.." logged - distance: "..cast_dist.."m")
@@ -738,7 +759,7 @@ minetest.register_tool(TOOL_NAME, {
                                 update_display(player, round_res..ROUTINES[routine]["modes"][mode]["unit"], "final measurement")
                             else
                                 -- store callback ID in case another mode is selected
-                                forestry_tools["rangefinder"][pname] = minetest.after(1.5, update_display, player, round_res..ROUTINES[routine]["modes"][mode]["unit"], "final measurement")
+                                forestry_tools["rangefinder"][pname] = minetest.after(1.2, update_display, player, round_res..ROUTINES[routine]["modes"][mode]["unit"], "final measurement")
                             end
                             --minetest.chat_send_player(pname, "Final measurement: "..round_res..ROUTINES[routine]["modes"][mode]["unit"])
                         end
