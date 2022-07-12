@@ -64,30 +64,6 @@ function mc_worldManager.SpawnGenerated()
     return Realm.realmDict[mc_worldManager.spawnRealmID] ~= nil
 end
 
-function mc_worldManager.createInstancedRealm(player, realmName, schematic)
-
-    local realm
-    if (schematic ~= nil) then
-        realm = Realm.NewFromSchematic(realmName, schematic)
-    else
-        realm = Realm:New(realmName, { x = 80, y = 80, z = 80 })
-    end
-
-    table.insert(realm.PlayerLeaveTable, { tableName = "mc_worldManager", functionName = "InstancedDelete" })
-    local owners = realm:get_data("owner")
-    owners[player:get_player_name()] = true
-    realm:set_data("owner", owners)
-    realm:TeleportPlayer(player)
-end
-
-function mc_worldManager.InstancedDelete(player, realm)
-    local owners = realm:get_data("owner")
-
-    if (owners[player:get_player_name()] ~= nil) then
-        realm:Delete()
-    end
-end
-
 function mc_worldManager.GetRealmByName(realmName)
     for _, realm in pairs(Realm.realmDict) do
         if (realm.Name == realmName) then
@@ -98,22 +74,44 @@ function mc_worldManager.GetRealmByName(realmName)
 end
 
 function mc_worldManager.GetCreateInstancedRealm(realmName, player, schematic)
-
     local pmeta = player:get_meta()
 
     local realmKey = realmName:lower()
 
-    local realmInstanceTable = minetest.deserialize(player:get_string("mc_worldmanager_realm_instances"))
+    local realmInstanceTable = minetest.deserialize(pmeta:get_string("mc_worldmanager_realm_instances"))
     if (realmInstanceTable == nil) then
         realmInstanceTable = {}
+    end
+
+    if (mc_worldManager.KeyIDTable == nil) then
+        mc_worldManager.KeyIDTable = {}
     end
 
     local realm = mc_worldManager.KeyIDTable[realmKey]
 
     if (realm == nil) then
-        realm = Realm:NewFromSchematic("instanced " .. realmName .. player:get_player_name(), schematic)
-        realm:setCategoryKey("instanced")
+        if (schematic ~= nil) then
+            realm = Realm:NewFromSchematic("instanced " .. realmName .. " " .. player:get_player_name(), schematic)
+        else
+            realm = Realm:New("instanced " .. realmName .. player:get_player_name(), { x = 80, y = 80, z = 80 })
+        end
+
         realmInstanceTable[realmKey] = realm.ID
+        realm:setCategoryKey("instanced")
+        realm:set_data("owner", { [player:get_player_name()] = true })
+
+        table.insert(realm.PlayerLeaveTable, { tableName = "mc_worldManager", functionName = "InstancedDelete" })
+
+    end
+
+    return realm
+end
+
+function mc_worldManager.InstancedDelete(realm, player)
+    local owners = realm:get_data("owner")
+
+    if (owners[player:get_player_name()] ~= nil) then
+        realm:Delete()
     end
 end
 

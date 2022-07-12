@@ -387,17 +387,23 @@ commands["blocks"] = {
 
 
         if (params[1] == "teleporter") then
-            local realmID = params[2]
-            local requestedRealm = Realm.GetRealm(tonumber(realmID))
-            if (requestedRealm == nil) then
-                return false, "Requested realm of ID:" .. realmID .. " does not exist."
+            local instanced = false
+            local realmID = 0
+
+            local realmName = nil
+            local schematic = nil
+
+            local count = params[2]
+
+            if (params[3] == "true") then
+                instanced = true
+                realmName = params[4]
+                schematic = params[5]
+            else
+                realmID = tonumber(params[3])
             end
 
-            local is = ItemStack({ name = "mc_worldmanager:teleporter", count = params[3], param2 = math.ceil(math.sin(realmID) * 255) })
-
-            local meta = is:get_meta()
-            meta:set_int('realm', realmID)
-            meta:set_string("description", "A teleporter to realm " .. tostring(meta:get_int("realm")) .. ".")
+            local is = mc_worldManager.GetTeleporterItemStack(count, instanced, realmID, realmName, schematic)
 
             local player = minetest.get_player_by_name(name)
 

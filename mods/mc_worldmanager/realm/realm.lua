@@ -481,12 +481,12 @@ function Realm:UpdateSpawn(spawnPos)
     return true
 end
 
-function Realm:RunFunctionFromTable(table, player, realm)
+function Realm:RunFunctionFromTable(table, player)
     if (table ~= nil) then
         for key, value in pairs(table) do
             if (value.tableName ~= nil and value.functionName ~= nil) then
                 local table = loadstring("return " .. value.tableName)
-                table()[value.functionName](self, player, realm)
+                table()[value.functionName](self, player)
             end
         end
     end
