@@ -269,54 +269,46 @@ local function update_hud(player, hud, hudname, text)
 	})
 end
 
-local function update_degrees(player)
-	if curr_pitch >= 80 and curr_pitch < 89 then
-		update_hud(player, degreePlus20Hud, "degreePlus20", "")  
-	elseif curr_pitch >= 89 then
-		update_hud(player, degreePlus10Hud, "degreePlus10", "") 
-	elseif curr_pitch <= -80 and curr_pitch > -89 then
-		update_hud(player, degreeMinus20Hud, "degreeMinus20", "") 
-	elseif curr_pitch <= -89 then
-		update_hud(player, degreeMinus10Hud, "degreeMinus10", "") 
-	else 
-		update_hud(player, degreePlus10Hud, "degreePlus10", tostring(curr_pitch + 10))
-		update_hud(player, degreePlus20Hud, "degreePlus20", tostring(curr_pitch + 20))
-		update_hud(player, degreeMinus10Hud, "degreeMinus10", tostring(curr_pitch - 10))
-		update_hud(player, degreeMinus20Hud, "degreeMinus20", tostring(curr_pitch - 20)) 
-	end
+local function update_measurements(player)
+	local degPlus10, degPlus20, degMinus10, degMinus20 = tostring(curr_pitch + 10), tostring(curr_pitch + 20), tostring(curr_pitch - 10), tostring(curr_pitch + 10)
+	local percPlus10, percPlus20, percPlus30, percPlus40 = tostring(curr_percent + 10), tostring(curr_percent + 20), tostring(curr_percent + 30), tostring(curr_percent + 40)
+	local percMinus10, percMinus20, percMinus30, percMinus40 = tostring(curr_percent - 10), tostring(curr_percent - 20), tostring(curr_percent - 30), tostring(curr_percent - 40)
 
-	update_hud(player, bgHud, "background", bg_angle) 
-	update_hud(player, degreePlus0Hud, "degreePlus0", tostring(curr_pitch)) 
-end
-
-local function update_percent(player)
 	if curr_pitch >= 70 and curr_pitch < 80 then
-		update_hud(player, percentPlus40Hud, "percentPlus40", "")
+		percPlus40 = ""
 	elseif curr_pitch >= 80 and curr_pitch < 89 then
-		update_hud(player, percentPlus20Hud, "percentPlus20", "")
-		update_hud(player, percentPlus30Hud, "percentPlus30", "")
+		percPlus2, percPlus30, percPlus40 = "", "", ""
+		degPlus20 = ""
 	elseif curr_pitch >= 89 then
-		update_hud(player, percentPlus10Hud, "percentPlus10", "")
+		percPlus10, percPlus20, percPlus30, percPlus40 = "", "", "", ""
+		degPlus10, degPlus20 = "", ""
 	elseif curr_pitch <= -70 and curr_pitch > -80 then
-		update_hud(player, percentMinus40Hud, "percentMinus40", "")
+		percMinus40 = ""
 	elseif curr_pitch <= -80 and curr_pitch > -89 then
-		update_hud(player, percentMinus20Hud, "percentMinus20", "")
-		update_hud(player, percentMinus30Hud, "percentMinus30", "")
+		percMinus20, percMinus30, percMinus40 = "", "", ""
+		degMinus20 = ""
 	elseif curr_pitch <= -89 then
-		update_hud(player, percentMinus10Hud, "percentMinus10", "")
-	else
-		update_hud(player, percentPlus10Hud, "percentPlus10", tostring(curr_percent + 10))
-		update_hud(player, percentPlus20Hud, "percentPlus20", tostring(curr_percent + 20))
-		update_hud(player, percentPlus30Hud, "percentPlus30", tostring(curr_percent + 30))
-		update_hud(player, percentPlus40Hud, "percentPlus40", tostring(curr_percent + 40))
-		update_hud(player, percentMinus10Hud, "percentMinus10", tostring(curr_percent - 10))
-		update_hud(player, percentMinus20Hud, "percentMinus20", tostring(curr_percent - 20)) 
-		update_hud(player, percentMinus30Hud, "percentMinus30", tostring(curr_percent - 30)) 
-		update_hud(player, percentMinus40Hud, "percentMinus40", tostring(curr_percent - 40)) 
+		percMinus10, percMinus20, percMinus30, percMinus40 = "", "", "", ""
+		degMinus10, degMinus20 = "", ""
 	end
 
 	update_hud(player, percentPlus0Hud, "percentPlus0", tostring(curr_percent)) 
+	update_hud(player, percentPlus10Hud, "percentPlus10", percPlus10)
+	update_hud(player, percentPlus20Hud, "percentPlus20", percPlus20)
+	update_hud(player, percentPlus30Hud, "percentPlus30", percPlus30)
+	update_hud(player, percentPlus40Hud, "percentPlus40", percPlus40)
+	update_hud(player, percentMinus10Hud, "percentMinus10", percMinus10)
+	update_hud(player, percentMinus20Hud, "percentMinus20", percMinus20) 
+	update_hud(player, percentMinus30Hud, "percentMinus30", percMinus30) 
+	update_hud(player, percentMinus40Hud, "percentMinus40", percMinus40)
+
+	update_hud(player, degreePlus0Hud, "degreePlus0", tostring(curr_pitch)) 
+	update_hud(player, degreePlus10Hud, "degreePlus10", degPlus10)
+	update_hud(player, degreePlus20Hud, "degreePlus20", degPlus20)
+	update_hud(player, degreeMinus10Hud, "degreeMinus10", degMinus10)
+	update_hud(player, degreeMinus20Hud, "degreeMinus20", degMinus20) 
 end
+
 
 minetest.register_globalstep(function(dtime)
 	local players  = minetest.get_connected_players()
@@ -350,7 +342,7 @@ minetest.register_globalstep(function(dtime)
 					bg_angle = "0"
 				end
 
-				update_degrees(player) 
+				update_hud(player, bgHud, "background", bg_angle) 
 
 				if curr_pitch == 90 then
 					curr_percent = math.floor(-100 * math.tan(89.999))
@@ -358,7 +350,7 @@ minetest.register_globalstep(function(dtime)
 					curr_percent = math.floor(-100 * math.tan(pitch_rad))
 				end
 
-				update_percent(player)
+				update_measurements(player)
 			end
 		end
 	end
