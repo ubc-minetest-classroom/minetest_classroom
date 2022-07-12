@@ -44,6 +44,7 @@ minetest.register_node("mc_worldmanager:teleporter", {
         if (instanced) then
             local realmObject = mc_worldManager.GetCreateInstancedRealm(realmName, clicker, realmSchematic, temp)
 
+            realmObject:CreateTeleporter()
             realmObject:TeleportPlayer(clicker)
 
         else
@@ -53,6 +54,7 @@ minetest.register_node("mc_worldmanager:teleporter", {
                 return nil
             end
 
+            realmObject:CreateTeleporter()
             realmObject:TeleportPlayer(clicker)
         end
 
