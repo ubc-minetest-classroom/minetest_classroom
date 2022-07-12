@@ -1,3 +1,35 @@
+local function getDescription(instanced, temp, realmID, name, schematic)
+    local descriptionString = "Teleporter Node "
+
+    if (instanced == "true") then
+        descriptionString = descriptionString .. "[Instanced] "
+    end
+
+    if (temp == "true") then
+        descriptionString = descriptionString .. "[Temp] "
+    end
+
+    if (schematic ~= nil and schematic ~= "") then
+        descriptionString = descriptionString .. "[" .. schematic .. "]"
+    end
+
+    if (realmID == 0) then
+        descriptionString = descriptionString .. "(Spawn)"
+    elseif (name ~= nil and name ~= "") then
+        descriptionString = descriptionString .. "(" .. name .. ")"
+    else
+        local realm = Realm.GetRealm(tonumber(realmID))
+        local realmName = "unknown"
+        if (realm ~= nil) then
+            realmName = realm.Name
+        end
+        descriptionString = descriptionString .. "(" .. realmName .. ")"
+    end
+
+    return descriptionString
+end
+
+
 minetest.register_node("mc_worldmanager:teleporter", {
     description = "Teleporter Node",
     tiles = { { name = "mc_worldmanager_teleporter.png", color = "white" } },
@@ -21,42 +53,43 @@ minetest.register_node("mc_worldmanager:teleporter", {
             realmSchematic = nil
         end
 
-        -- Special case so that we can have teleporters that always point towards spawn.
-        if (realmID == 0 and realmName == "spawn" and not instanced) then
+
+        -- If our realmID is set to 0 and we're not instanced, teleport to spawn!
+        if (realmID == 0 and not instanced) then
             local spawn = mc_worldManager.GetSpawnRealm()
             spawn:TeleportPlayer(clicker)
-            return
-        end
-
-        if (realmID == 0 and not instanced) then
-            minetest.chat_send_player(clicker:get_player_name(), "This teleporter is not linked to a realm. Linking to this realm...")
-            realmID = Realm.GetRealmFromPlayer(clicker).ID
-
-            meta:set_int("realm", realmID)
-
-            meta:set_string("instanced", "false")
-
-            minetest.swap_node(pos, { name = "mc_worldmanager:teleporter", param2 = math.ceil(math.sin(realmID) * 255) })
 
             return nil
         end
 
+        -- We now need to figure out where we are teleporting players
+        local realmObject = nil
+
+        -- If we are an instanced realm, we let our realm instancing logic take care of this; Otherwise we will use the realm ID to get the realm.
         if (instanced) then
-            local realmObject = mc_worldManager.GetCreateInstancedRealm(realmName, clicker, realmSchematic, temp)
-
-            realmObject:CreateTeleporter()
-            realmObject:TeleportPlayer(clicker)
-
+            realmObject = mc_worldManager.GetCreateInstancedRealm(realmName, clicker, realmSchematic, temp)
         else
-            local realmObject = Realm.GetRealm(realmID)
+            realmObject = Realm.GetRealm(realmID)
 
+            -- If we couldn't find the realm, we will create a new one if there is a schematic associated with this teleporter.
             if (realmObject == nil) then
-                return nil
+                if (realmSchematic ~= nil) then
+                    realmObject = Realm:NewFromSchematic(realmName, realmSchematic)
+                else
+                    return nil
+                end
+
+                meta:set_int("realm", realmObject.ID)
+                minetest.swap_node(pos, { name = "mc_worldmanager:teleporter", param2 = math.ceil(math.sin(realmObject.ID) * 255) })
             end
 
-            realmObject:CreateTeleporter()
-            realmObject:TeleportPlayer(clicker)
         end
+
+        -- Create a teleporter for the realm so that players can get back easier
+        realmObject:CreateTeleporter()
+
+        -- Teleport the player to the realm
+        realmObject:TeleportPlayer(clicker)
 
         return nil
     end,
@@ -76,13 +109,8 @@ minetest.register_node("mc_worldmanager:teleporter", {
         meta:set_string("schematic", schematic)
         meta:set_string("temp", temp)
 
-        if (instanced == "true") then
-            meta:set_string("description", "A teleporter linked to the realm " .. name .. ".")
-        elseif (realmID ~= 0 and realmID ~= "") then
-            meta:set_string("description", "A teleporter linked to the realm " .. Realm.GetRealm(realmID).Name .. ".")
-        else
-            meta:set_string("description", "A teleporter not linked to any realm.")
-        end
+        meta:set_string("description", getDescription(instanced, temp, realmID, name, schematic))
+
     end,
 
     after_place_node = function(pos, placer, itemstack, pointed_thing)
@@ -111,28 +139,42 @@ function mc_worldManager.GetTeleporterItemStack(count, instanced, temp, realmID,
     local item = ItemStack({ name = "mc_worldmanager:teleporter", count = count })
     local itemMeta = item:get_meta()
 
-    if (realmID == nil) then
+    if (count == nil or count == "") then
+        count = 1
+    end
+
+    if (instanced == nil or count == "") then
+        instanced = "true"
+    end
+
+    if (temp == nil or temp == "") then
+        temp = "true"
+    end
+
+    if (realmID == nil or realmID == "") then
         realmID = 0
     end
 
-    if (name == nil) then
+    if (name == nil or name == "") then
         name = "Unnamed Realm"
     end
 
-    if (instanced) then
-        itemMeta:set_string("instanced", "true")
-
-        if (temp) then
-            itemMeta:set_string("temp", "true")
-        end
-
-        itemMeta:set_string("name", name)
+    if (schematic ~= nil or schematic == "") then
         itemMeta:set_string("schematic", schematic)
-        itemMeta:set_string("description", "A teleporter linked to an instanced realm.")
-    else
-        itemMeta:set_int("realm", realmID)
-        itemMeta:set_string("description", "A teleporter linked to the realm " .. Realm.GetRealm(realmID).Name .. ".")
     end
+
+    if (instanced == "true") then
+        itemMeta:set_string("instanced", "true")
+        itemMeta:set_string("name", name)
+    else
+        itemMeta:set_int("realm", tonumber(realmID))
+    end
+
+    if (temp == "true") then
+        itemMeta:set_string("temp", "true")
+    end
+
+    itemMeta:set_string("description", getDescription(instanced, temp, realmID, name, schematic))
 
     return item
 end

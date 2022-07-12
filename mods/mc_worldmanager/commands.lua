@@ -19,6 +19,7 @@ minetest.register_chatcommand("localPos", {
         local position = requestedRealm:WorldToLocalPosition(player:get_pos())
         return true, "Your position in the local space of realm " .. param .. " is x: " .. position.x .. " y: " .. position.y .. " z: " .. position.z
     end,
+    help = "Get your local position in the current realm",
 })
 
 commands["new"] = {
@@ -44,7 +45,8 @@ commands["new"] = {
         newRealm:CreateBarriers()
 
         return true, "created new realm with ID: " .. newRealm.ID
-    end }
+    end,
+    help = "realm new [name] [sizeX] [sizeY] [sizeZ] - Create a new realm", }
 
 commands["delete"] = {
     func = function(name, params)
@@ -63,7 +65,8 @@ commands["delete"] = {
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
         requestedRealm:Delete()
-    end }
+    end,
+    help = "realm delete <realmID> - Delete a realm", }
 
 commands["list"] = {
     func = function(name, params)
@@ -206,17 +209,17 @@ commands["setspawnrealm"] = {
         else
             return false, "something went wrong... could not update the spawn realm."
         end
-    end }
+    end,
+    help = "realm setspawnrealm <realmID> - Sets the spawn realm to the realm with the given ID." }
 
 commands["category"] = {
     func = function(name, params)
-        local realmID = tonumber(params[1])
+        local subcommand = tostring(params[1])
+        local realmID = tonumber(params[2])
         local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
             return false, "Requested realm of ID:" .. tostring(realmID) .. " does not exist."
         end
-
-        local subcommand = tostring(params[2])
 
         if (string.lower(subcommand) == "set") then
             local category = tostring(params[3])
@@ -228,23 +231,40 @@ commands["category"] = {
         end
 
 
-    end }
+    end,
+    help = "realm category set <realmID> <category>"
+}
 
 commands["consolidate"] = {
     func = function(name, params)
         Realm.consolidateEmptySpace()
         Realm.SaveDataToStorage()
         return true, "consolidated realms"
-    end }
+    end,
+    help = "consolidate realms" }
 
 commands["help"] = {
     func = function(name, params)
+
+        if (commands[params[1]] ~= nil) then
+
+            local helpString
+            if (params[1].help == "" or params[1].help == nil) then
+                helpString = "No help available for this command."
+            else
+                helpString = params[1].help
+            end
+            return true, helpString
+        end
+
         local helpString = ""
         for k, v in pairs(commands) do
             helpString = helpString .. k .. " | "
         end
         return true, helpString
-    end }
+    end,
+    help = "help [command] - displays help for a command. If no command is specified, displays a list of commands."
+}
 
 commands["define"] = {
     func = function(name, params)
@@ -379,13 +399,12 @@ commands["players"] = {
         end
 
         return false, "unknown sub-command."
-    end
+    end,
+    help = "players <list | scan> - lists all players in a realm. 'players scan' will re-associate players with realms."
 }
 
 commands["blocks"] = {
     func = function(name, params)
-
-
         if (params[1] == "teleporter") then
             local instanced = false
             local temp = false
@@ -398,12 +417,13 @@ commands["blocks"] = {
 
             if (params[3] == "true") then
                 instanced = true
-                temp = params[4]
-                realmName = params[5]
-                schematic = params[6]
             else
                 realmID = tonumber(params[3])
             end
+
+            temp = params[4]
+            realmName = params[5]
+            schematic = params[6]
 
             local is = mc_worldManager.GetTeleporterItemStack(count, instanced, temp, realmID, realmName, schematic)
 
@@ -414,7 +434,9 @@ commands["blocks"] = {
         end
 
         return false, "unknown sub-command."
-    end
+    end,
+    help = "realm blocks <block> <count> <instancedRealm | realmID> <tempRealm> <realmName> <schematic>"
+
 }
 
 minetest.register_chatcommand("realm", {
