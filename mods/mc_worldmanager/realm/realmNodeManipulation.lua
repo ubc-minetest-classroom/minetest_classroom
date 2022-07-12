@@ -130,11 +130,9 @@ function Realm:CleanNodes()
 end
 
 function Realm:CreateTeleporter()
-    local pos = v.copy(self.StartPos)
+    minetest.set_node(self.StartPos, { name = "mc_worldmanager:teleporter" })
 
-    minetest.set_node(pos, { name = "mc_worldmanager:teleporter", param2 = math.ceil(math.sin(realmID) * 255) })
-
-    local nodeMeta = minetest.get_meta(pos)
+    local nodeMeta = minetest.get_meta(self.StartPos)
 
     nodeMeta:set_int('realm', 0)
     nodeMeta:set_string("instanced", "false")

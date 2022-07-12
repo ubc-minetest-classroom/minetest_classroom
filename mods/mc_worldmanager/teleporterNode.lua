@@ -12,6 +12,7 @@ minetest.register_node("mc_worldmanager:teleporter", {
 
         local realmID = meta:get_int("realm")
         local instanced = (meta:get_string("instanced") == "true")
+        local temp = (meta:get_string("temp") == "true")
 
         local realmName = (meta:get_string("name"))
         local realmSchematic = (meta:get_string("schematic"))
@@ -41,7 +42,7 @@ minetest.register_node("mc_worldmanager:teleporter", {
         end
 
         if (instanced) then
-            local realmObject = mc_worldManager.GetCreateInstancedRealm(realmName, clicker, realmSchematic)
+            local realmObject = mc_worldManager.GetCreateInstancedRealm(realmName, clicker, realmSchematic, temp)
 
             realmObject:TeleportPlayer(clicker)
 
@@ -65,11 +66,13 @@ minetest.register_node("mc_worldmanager:teleporter", {
         local instanced = oldmeta["instanced"]
         local name = oldmeta["name"]
         local schematic = oldmeta["schematic"]
+        local temp = oldmeta["temp"]
 
         meta:set_int('realm', realmID)
         meta:set_string("instanced", instanced)
         meta:set_string("name", name)
         meta:set_string("schematic", schematic)
+        meta:set_string("temp", temp)
 
         if (instanced == "true") then
             meta:set_string("description", "A teleporter linked to the realm " .. name .. ".")
@@ -90,17 +93,19 @@ minetest.register_node("mc_worldmanager:teleporter", {
         local instanced = itemMeta:get_string("instanced")
         local name = itemMeta:get_string("name")
         local schematic = itemMeta:get_string("schematic")
+        local temp = itemMeta:get_string("temp")
 
         nodeMeta:set_int('realm', realmID)
         nodeMeta:set_string("instanced", instanced)
         nodeMeta:set_string("name", name)
         nodeMeta:set_string("schematic", schematic)
+        nodeMeta:set_string("temp", temp)
 
         minetest.swap_node(pos, { name = "mc_worldmanager:teleporter", param2 = math.ceil(math.sin(realmID) * 255) })
     end
 })
 
-function mc_worldManager.GetTeleporterItemStack(count, instanced, realmID, name, schematic)
+function mc_worldManager.GetTeleporterItemStack(count, instanced, temp, realmID, name, schematic)
     local item = ItemStack({ name = "mc_worldmanager:teleporter", count = count })
     local itemMeta = item:get_meta()
 
@@ -114,11 +119,15 @@ function mc_worldManager.GetTeleporterItemStack(count, instanced, realmID, name,
 
     if (instanced) then
         itemMeta:set_string("instanced", "true")
+
+        if (temp) then
+            itemMeta:set_string("temp", "true")
+        end
+
         itemMeta:set_string("name", name)
         itemMeta:set_string("schematic", schematic)
         itemMeta:set_string("description", "A teleporter linked to an instanced realm.")
     else
-        itemMeta:set_string("instanced", "false")
         itemMeta:set_int("realm", realmID)
         itemMeta:set_string("description", "A teleporter linked to the realm " .. Realm.GetRealm(realmID).Name .. ".")
     end

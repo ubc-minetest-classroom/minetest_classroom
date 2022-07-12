@@ -74,7 +74,7 @@ function mc_worldManager.GetRealmByName(realmName)
     return nil
 end
 
-function mc_worldManager.GetCreateInstancedRealm(realmName, player, schematic)
+function mc_worldManager.GetCreateInstancedRealm(realmName, player, schematic, temporary)
     local pmeta = player:get_meta()
 
     local realmKey = realmName:lower()
@@ -101,7 +101,13 @@ function mc_worldManager.GetCreateInstancedRealm(realmName, player, schematic)
         realm:setCategoryKey("instanced")
         realm:set_data("owner", { [player:get_player_name()] = true })
 
-        table.insert(realm.PlayerLeaveTable, { tableName = "mc_worldManager", functionName = "InstancedDelete" })
+        if (temporary == nil) then
+            temporary = false
+        end
+
+        if (temporary) then
+            table.insert(realm.PlayerLeaveTable, { tableName = "mc_worldManager", functionName = "InstancedDelete" })
+        end
 
     end
 

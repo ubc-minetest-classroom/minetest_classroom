@@ -52,11 +52,13 @@ function Realm:Save_Schematic(author, mode)
     fileName = fileName .. os.date(" %Y%m%d %H%M")
 
     local filepath = folderpath .. "\\" .. fileName
-    
+
     --minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
 
     local file, err = io.open(filepath .. ".mts", "wb")
-    if err then return 0 end
+    if err then
+        return 0
+    end
     local schematic, count = worldedit.serialize(self.StartPos, self.EndPos)
     file:write(schematic)
     file:close()
@@ -193,6 +195,8 @@ function Realm:NewFromSchematic(name, key)
         -- Need to emerge chunks as we create barriers
         newRealm:CreateBarriers()
     end
+
+    -- Realm:CreateTeleporter()
 
     return newRealm
 end

@@ -388,6 +388,7 @@ commands["blocks"] = {
 
         if (params[1] == "teleporter") then
             local instanced = false
+            local temp = false
             local realmID = 0
 
             local realmName = nil
@@ -397,13 +398,14 @@ commands["blocks"] = {
 
             if (params[3] == "true") then
                 instanced = true
-                realmName = params[4]
-                schematic = params[5]
+                temp = params[4]
+                realmName = params[5]
+                schematic = params[6]
             else
                 realmID = tonumber(params[3])
             end
 
-            local is = mc_worldManager.GetTeleporterItemStack(count, instanced, realmID, realmName, schematic)
+            local is = mc_worldManager.GetTeleporterItemStack(count, instanced, temp, realmID, realmName, schematic)
 
             local player = minetest.get_player_by_name(name)
 
