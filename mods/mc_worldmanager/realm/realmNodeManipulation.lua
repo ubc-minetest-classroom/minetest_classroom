@@ -128,15 +128,3 @@ function Realm:CleanNodes()
     vm:write_to_map()
     return count
 end
-
-function Realm:CreateTeleporter()
-    minetest.set_node(self.StartPos, { name = "mc_worldmanager:teleporter" })
-
-    local nodeMeta = minetest.get_meta(self.StartPos)
-
-    nodeMeta:set_int('realm', 0)
-    nodeMeta:set_string("instanced", "false")
-    nodeMeta:set_string("name", "spawn")
-
-
-end

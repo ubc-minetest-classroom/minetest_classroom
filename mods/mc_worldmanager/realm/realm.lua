@@ -34,7 +34,11 @@ end
 ---@param name string The name of the realm
 ---@param area table Size of the realm in {x,y,z} format
 ---@return table a new "Realm" table object / class.
-function Realm:New(name, area)
+function Realm:New(name, area, callbacks)
+
+    if (callbacks == nil) then
+        callbacks = true
+    end
 
     if (area.x == nil or area.x == 0) then
         area.x = 80
@@ -90,7 +94,9 @@ function Realm:New(name, area)
 
     Realm.SaveDataToStorage()
 
-    this:CallOnCreateCallbacks()
+    if (callbacks) then
+        this:CallOnCreateCallbacks()
+    end
 
     return this
 end

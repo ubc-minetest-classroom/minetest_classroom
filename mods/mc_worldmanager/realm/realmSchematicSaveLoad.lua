@@ -187,7 +187,7 @@ function Realm:NewFromSchematic(name, key)
         name = config.name
     end
 
-    local newRealm = Realm:New(name, config.schematicSize)
+    local newRealm = Realm:New(name, config.schematicSize, false)
     newRealm:Load_Schematic(schematic, config)
 
     if (config.format ~= "procedural") then
@@ -197,6 +197,9 @@ function Realm:NewFromSchematic(name, key)
     end
 
     -- Realm:CreateTeleporter()
+
+
+    newRealm:CallOnCreateCallbacks()
 
     return newRealm
 end

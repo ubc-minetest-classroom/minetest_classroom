@@ -89,9 +89,6 @@ minetest.register_node("mc_worldmanager:teleporter", {
 
         end
 
-        -- Create a teleporter for the realm so that players can get back easier
-        realmObject:CreateTeleporter()
-
         -- Teleport the player to the realm
         realmObject:TeleportPlayer(clicker)
 
@@ -174,3 +171,15 @@ function mc_worldManager.GetTeleporterItemStack(count, instanced, temp, realmID,
 
     return item
 end
+
+Realm.RegisterOnCreateCallback(function(realm)
+    Debug.log("OnCreateCallback")
+
+    --TODO FIx this not working
+    local position = { x = realm.StartPos.x, y = realm.StartPos.y + 1, z = realm.StartPos.z }
+    minetest.set_node(position, { name = "mc_worldmanager:teleporter" })
+    local nodeMeta = minetest.get_meta(position)
+    nodeMeta:set_int('realm', 0)
+    nodeMeta:set_string("instanced", "false")
+    nodeMeta:set_string("name", "spawn")
+end)
