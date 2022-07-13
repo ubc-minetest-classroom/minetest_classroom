@@ -27,7 +27,7 @@ local ROUTINES = {
         [2] = {key = "VD", unit = "m"},
         [3] = {key = "HD", unit = "m"},
         [4] = {key = "INC", unit = "%"},
-        --[5] = {key = "AZ", unit = "°"}
+        [5] = {key = "AZ", unit = "°"}
     }},
     [2] = {key = "HT", casts = 3, desc = "height", modes = {
         [1] = {key = "HT", unit = "m"}
@@ -37,7 +37,7 @@ local ROUTINES = {
         [2] = {key = "VD", unit = "m"},
         [3] = {key = "HD", unit = "m"},
         [4] = {key = "INC", unit = "%"},
-        --[5] = {key = "AZ", unit = "°"}
+        [5] = {key = "AZ", unit = "°"}
     }}
 }
 local MRHUD_POS = {x = 0.0725, y = 0.857}
@@ -574,7 +574,7 @@ local function cosine_law(a, b, theta)
 end
 
 -- Calculates the final output for the rangefinder to display
-local function rangefinder_calc(meta)
+local function rangefinder_calc(meta, pmeta)
     local casts = minetest.deserialize(meta:get_string("casts"))
     local routine, mode = get_routine(meta), get_mode(meta)
     if not casts or #casts < ROUTINES[routine]["casts"] then
@@ -607,7 +607,11 @@ local function rangefinder_calc(meta)
                 return 100 * verti_dist / horiz_dist
             end,
             [5] = function() -- AZ
-                return routine..":"..mode -- stub
+                local slope_dir = casts[1]["dir"]
+                local declination = pmeta:get_int("declination") -- magnetic declination value from compass
+                local yaw = vector.rotate(vector.new(slope_dir.x, 0, slope_dir.z), vector.new(0, math.rad(declination), 0))
+                local theta = math.deg(vector.angle(vector.new(0, 0, 1), yaw))
+                return math.sign(yaw.x) == -1 and (360 - theta) or theta
             end
         },
         [2] = { -- height (HT)
@@ -653,7 +657,13 @@ local function rangefinder_calc(meta)
                 return 100 * verti_dist / horiz_dist
             end,
             [5] = function() -- AZ
-                return routine..":"..mode -- stub
+                local vect_a = vector.multiply(casts[1]["dir"], casts[1]["dist"])
+                local vect_b = vector.multiply(casts[2]["dir"], casts[2]["dist"])
+                local slope_vect = vector.subtract(vect_b, vect_a)
+                local declination = pmeta:get_int("declination") -- magnetic declination value from compass
+                local yaw = vector.rotate(vector.new(slope_vect.x, 0, slope_vect.z), vector.new(0, math.rad(declination), 0))
+                local theta = math.deg(vector.angle(vector.new(0, 0, 1), yaw))
+                return math.sign(yaw.x) == -1 and (360 - theta) or theta
             end
         }
     }
@@ -702,7 +712,7 @@ local function rangefinder_mode_switch(itemstack, player, pointed_thing)
     if cur_routine ~= new_routine then
         clear_saved_casts(player, itemstack)
     else
-        local result = rangefinder_calc(meta)
+        local result = rangefinder_calc(meta, player:get_meta())
         if result then
             local round_res = round_to_decim_places(result, get_precision(meta), true)
             clear_display_callback(player)
@@ -750,7 +760,7 @@ minetest.register_tool(TOOL_NAME, {
                     end
                     -- perform and log calculation
                     if cast_complete then
-                        local result = rangefinder_calc(meta)
+                        local result = rangefinder_calc(meta, player:get_meta())
                         local routine, mode = get_routine(meta), get_mode(meta)
                         if result then
                             local round_res = round_to_decim_places(result, get_precision(meta), true)
