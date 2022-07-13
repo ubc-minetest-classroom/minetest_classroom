@@ -58,11 +58,9 @@ minetest.register_node("mc_worldmanager:teleporter", {
 
 
         -- If our realmID is set to 0 and we're not instanced, teleport to spawn!
-        if (instanced ~= "true" and realmID == 0) then
-            Debug.log("Teleporting to spawn")
+        if (realmName == "spawn") then
             local spawn = mc_worldManager.GetSpawnRealm()
             spawn:TeleportPlayer(clicker)
-
             return nil
         end
 
@@ -80,7 +78,7 @@ minetest.register_node("mc_worldmanager:teleporter", {
                 if (realmSchematic ~= nil) then
                     realmObject = Realm:NewFromSchematic(realmName, realmSchematic)
                 else
-                    return nil
+                    realmObject = Realm:New(realmName, { x = 80, y = 80, z = 80 }, true)
                 end
 
                 meta:set_int("realm", realmObject.ID)
@@ -91,6 +89,7 @@ minetest.register_node("mc_worldmanager:teleporter", {
 
         -- Teleport the player to the realm
         realmObject:TeleportPlayer(clicker)
+        minetest.chat_send_player(clicker:get_player_name(), "teleporting to " .. realmObject.Name .. ".")
 
         return nil
     end,
@@ -123,6 +122,10 @@ minetest.register_node("mc_worldmanager:teleporter", {
         local realmID = itemMeta:get_int("realm")
         local name = itemMeta:get_string("name")
         local schematic = itemMeta:get_string("schematic")
+
+        if (name == "" or name == nil) then
+            name = "spawn"
+        end
 
         nodeMeta:set_string("instanced", instanced)
         nodeMeta:set_string("temp", temp)
@@ -175,8 +178,7 @@ end
 Realm.RegisterOnCreateCallback(function(realm)
     Debug.log("OnCreateCallback")
 
-    --TODO FIx this not working
-    local position = { x = realm.StartPos.x, y = realm.StartPos.y + 1, z = realm.StartPos.z }
+    local position = { x = realm.SpawnPoint.x, y = realm.SpawnPoint.y - 1, z = realm.SpawnPoint.z }
     minetest.set_node(position, { name = "mc_worldmanager:teleporter" })
     local nodeMeta = minetest.get_meta(position)
     nodeMeta:set_int('realm', 0)
