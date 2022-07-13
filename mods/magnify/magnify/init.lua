@@ -1,6 +1,6 @@
 -- Clear + reinitialize database to remove any unregistered plant species
-magnify_plants = minetest.get_mod_storage()
-magnify_plants:from_table(nil)
+magnify_plants = {ref = minetest.get_mod_storage(), node = {}}
+magnify_plants.ref:from_table(nil)
 
 dofile(minetest.get_modpath("magnify") .. "/api.lua")
 
@@ -97,7 +97,7 @@ minetest.register_craft({
 --- @return string
 --- @see magnify.get_all_registered_species()
 local function get_species_ref(i_to_ref, index)
-    return "ref_"..i_to_ref[index]
+    return i_to_ref[index]
 end
 
 --- Dynamically creates a square table of node images
@@ -311,7 +311,7 @@ sfinv.register_page("magnify:compendium", {
             -- log which species are present in the menu
             context.species_i_to_ref = {}
             for i,ref in pairs(ref_list) do
-                context.species_i_to_ref[i] = tonumber(string.sub(ref, 5))
+                context.species_i_to_ref[i] = tonumber(ref)
             end
             -- create menu
             return sfinv.make_formspec(player, context, get_compendium_formspec(species_list, context), false)

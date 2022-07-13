@@ -8,16 +8,16 @@ magnify = {}
 --- @param nodes Table of stringified nodes the species corresponds to in the MineTest world
 --- @see README.md > API > Registration
 function magnify.register_plant(def_table, nodes)
-    local ref = magnify_plants:get("count") or 1
+    local ref = magnify_plants.ref:get("count") or 1
     def_table["origin"] = minetest.get_current_modname()
 
     local serial_table = minetest.serialize(def_table)
-    magnify_plants:set_string("ref_"..ref, serial_table)
+    magnify_plants.ref:set_string(ref, serial_table)
     for k,v in pairs(nodes) do
-        magnify_plants:set_string("node_"..v, "ref_"..ref)
+        magnify_plants.node[v] = ref
     end
 
-    magnify_plants:set_int("count", ref + 1)
+    magnify_plants.ref:set_int("count", ref + 1)
 end
 
 --- @public
@@ -25,17 +25,22 @@ end
 --- @param node Stringified node
 --- @return string or nil
 function magnify.get_ref(node)
-    return magnify_plants:get("node_"..node)
+    return magnify_plants.node[node]
 end
 
 --- @public
 --- Clears a plant species and all its associated nodes from the `magnify` plant database
 --- @param ref Reference key of the plant species to clear
 function magnify.clear_ref(ref)
-    local storage_data = magnify_plants:to_table()
+    local storage_data = magnify_plants.ref:to_table()
     for k,v in pairs(storage_data.fields) do
         if k == ref or v == ref then
-            magnify_plants:set_string(k, "")
+            magnify_plants.ref:set_string(k, "")
+        end
+    end
+    for k,v in pairs(magnify_plants.node) do
+        if k == ref or v == ref then
+            magnify_plants.node[k] = nil
         end
     end
 end
@@ -46,7 +51,7 @@ end
 --- @return string or nil
 local function clear_node_key(node)
     old_ref = magnify.get_ref(node)
-    magnify_plants:set_string("node_"..node, "")
+    magnify_plants.node[node] = nil
     return old_ref
 end
 
@@ -61,9 +66,8 @@ function magnify.clear_nodes(nodes)
         table.insert(changed_refs, clear_node_key(node))
     end
 
-    -- check affected refs to ensure that node still point to them
-    local storage_data = magnify_plants:to_table()
-    for k,v in pairs(storage_data.fields) do
+    -- check affected refs to ensure that nodes still point to them
+    for k,v in pairs(magnify_plants.node) do
         for i,ref in pairs(changed_refs) do
             if v == ref then
                 changed_refs[i] = nil
@@ -82,15 +86,14 @@ end
 --- @param ref Reference key of the plant species
 --- @return table, table or nil
 function magnify.get_species_from_ref(ref)
-    local storage_data = magnify_plants:to_table()
     local output_nodes = {}
   
-    if magnify_plants:get(ref) then
-        local data = minetest.deserialize(magnify_plants:get_string(ref))
+    if magnify_plants.ref:get(ref) then
+        local data = minetest.deserialize(magnify_plants.ref:get_string(ref))
         if data then
-            for k,v in pairs(storage_data.fields) do
+            for k,v in pairs(magnify_plants.node) do
                 if v == ref then
-                    table.insert(output_nodes, string.sub(k, 6))
+                    table.insert(output_nodes, k)
                 end
             end
             return data,output_nodes
@@ -132,18 +135,15 @@ end
 --- Each species and its corresponding reference key will be at the same index in both lists
 --- @return table, table
 function magnify.get_all_registered_species()
-    local storage_data = magnify_plants:to_table()
+    local storage_data = magnify_plants.ref:to_table()
     local raw_name_table = {}
     local ref_keys = {}
 
     for k,v in pairs(storage_data.fields) do
-        if string.sub(k, 1, 4) == "ref_" then
-            local info = minetest.deserialize(v)
-            if info then
-                --local ref_num = string.sub(k, 5)
-                raw_name_table[k]  = info.com_name .. " (" .. info.sci_name .. ")"
-                table.insert(ref_keys, k)
-            end
+        local info = minetest.deserialize(v)
+        if info then
+            raw_name_table[k]  = info.com_name .. " (" .. info.sci_name .. ")"
+            table.insert(ref_keys, k)
         end
     end
 
@@ -236,7 +236,7 @@ end
 --- @param is_inv true if the formspec is being used in the player inventory, false otherwise
 --- @return (formspec string, formspec "size[]" string) or nil
 function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
-    local info = minetest.deserialize(magnify_plants:get(ref))
+    local info = minetest.deserialize(magnify_plants.ref:get(ref))
     
     -- TODO: create V1 and V2 formtables
     if info ~= nil then
