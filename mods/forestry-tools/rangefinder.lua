@@ -802,7 +802,6 @@ minetest.register_alias("rangefinder", TOOL_NAME)
 
 minetest.register_globalstep(function(dtime)
     local online_players = minetest.get_connected_players()
-
     if #online_players == 0 then
         return
     end
@@ -814,13 +813,14 @@ minetest.register_globalstep(function(dtime)
                 update_rf_mode_hud(player, wield)
                 local meta = wield:get_meta()
                 local mark_table = minetest.deserialize(meta:get("marks") or minetest.serialize({}))
-                --[[for i,mark in pairs(mark_table) do
-                    local mark_id = (type(mark) == "table" and mark.id) or mark -- compatibility
-                    if hud:get(player, mark_id) then
-                        hud:remove(player, mark_id)
+                for i,mark in ipairs(mark_table) do
+                    if type(mark) == "table" then
+                        mark_table[i] = add_cast_marker(player, mark.pos, mark.is_angle)
                     end
-                end]]
+                end
+                meta:set_string("marks", minetest.serialize(mark_table))
                 update_display(player, meta, meta:get("display_output"), meta:get("display_desc"))
+                player:set_wielded_item(wield)
             end
             local keys = player:get_player_control()
             if keys.zoom then
