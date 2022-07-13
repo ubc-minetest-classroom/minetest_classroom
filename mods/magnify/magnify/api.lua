@@ -1,5 +1,21 @@
--- EXPORTED MAGNIFY FUNCTIONS
-magnify = {}
+--- @private
+--- Searches for a reference key with information matching the information in def_table, and returns it if found. Otherwise, returns the next unused reference key
+--- @param def_table Plant species definition table
+--- @return number
+local function find_registration_ref(def_table)
+    -- search for a matching scientific name
+    local storage_data = magnify_plants.ref:to_table()
+    for k,v in pairs(storage_data.fields) do
+        local data = minetest.deserialize(v)
+        if type(data) == "table" and def_table.sci_name and (def_table.sci_name == data.sci_name) then
+            return tonumber(k)
+        end
+    end
+
+    local count = tonumber(magnify_plants.ref:get("count") or 1)
+    magnify_plants.ref:set_int("count", count + 1)
+    return count
+end
 
 --- @public
 --- Registers a plant species in the `magnify` plant database
@@ -8,7 +24,7 @@ magnify = {}
 --- @param nodes Table of stringified nodes the species corresponds to in the MineTest world
 --- @see README.md > API > Registration
 function magnify.register_plant(def_table, nodes)
-    local ref = magnify_plants.ref:get("count") or 1
+    local ref = find_registration_ref(def_table)
     def_table["origin"] = minetest.get_current_modname()
 
     local serial_table = minetest.serialize(def_table)
@@ -16,14 +32,12 @@ function magnify.register_plant(def_table, nodes)
     for k,v in pairs(nodes) do
         magnify_plants.node[v] = ref
     end
-
-    magnify_plants.ref:set_int("count", ref + 1)
 end
 
 --- @public
 --- Returns the reference key associated with `node` in the `magnify` plant database
 --- @param node Stringified node
---- @return string or nil
+--- @return number or nil
 function magnify.get_ref(node)
     return magnify_plants.node[node]
 end
@@ -88,8 +102,8 @@ end
 function magnify.get_species_from_ref(ref)
     local output_nodes = {}
   
-    if magnify_plants.ref:get(ref) then
-        local data = minetest.deserialize(magnify_plants.ref:get_string(ref))
+    if magnify_plants.ref:get(tostring(ref)) then
+        local data = minetest.deserialize(magnify_plants.ref:get_string(tostring(ref)))
         if data then
             for k,v in pairs(magnify_plants.node) do
                 if v == ref then

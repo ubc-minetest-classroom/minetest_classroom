@@ -1,8 +1,11 @@
 -- Clear + reinitialize database to remove any unregistered plant species
+magnify = {
+    path = minetest.get_modpath("magnify"),
+    S = minetest.get_translator("magnify")
+}
 magnify_plants = {ref = minetest.get_mod_storage(), node = {}}
-magnify_plants.ref:from_table(nil)
 
-dofile(minetest.get_modpath("magnify") .. "/api.lua")
+dofile(magnify.path.."/api.lua")
 
 -- constants
 local tool_name = "magnify:magnifying_tool"
@@ -215,7 +218,7 @@ local function get_expanded_species_formspec(ref)
             "formspec_version[5]", size,
             "box[0,0;12.2,0.8;#9192a3]",
             "label[4.8,0.2;Technical Information]",
-            "label[0,1;", minetest.formspec_escape(info.com_name) or minetest.formspec_escape(info.sci_name) or "Unknown", " @ ", minetest.formspec_escape(ref), "]",
+            "label[0,1;", minetest.formspec_escape(info.com_name) or minetest.formspec_escape(info.sci_name) or "Unknown", " @ ref ", minetest.formspec_escape(ref), "]",
             "textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
             "label[0,1.6;Associated nodes:]",
             "button[6.2,6.2;6.2,0.6;back;Back]",
@@ -379,3 +382,23 @@ sfinv.register_page("magnify:compendium", {
         return check_perm(player)
     end
 })
+
+-- Storage cleanup function: removes any registered species that do not have any nodes associated with them
+minetest.register_on_mods_loaded(function()
+    local ref_list = {}
+    local storage_data = magnify_plants.ref:to_table()
+    -- collect all refs
+    for ref,_ in pairs(storage_data.fields) do
+        if tonumber(ref) ~= nil then
+            ref_list[tostring(ref)] = true
+        end
+    end
+    -- check that some node is still asociated with each ref
+    for _,ref in pairs(magnify_plants.node) do
+        ref_list[tostring(ref)] = nil
+    end
+    -- remove all refs that are not associated with any nodes
+    for ref,_ in pairs(ref_list) do
+        magnify.clear_ref(ref)
+    end
+end)
