@@ -1,6 +1,6 @@
 local closed_HUD_showing, open_HUD_showing = false, false
 local mag_declination, azimuth, curr_azimuth = 0, 0, 0
-local curr_needle, curr_bezel = "needle_0.png", "bezel_0.png"
+local curr_needle, curr_bezel = "needle_0.png", "bezel_0.png" 
 
 ---------------------------
 --- FORMSPEC MANAGEMENT ---
@@ -132,8 +132,8 @@ local function show_closed_hud(player)
 	closedHud:add(player, "closed", {
 		hud_elem_type = "image",
 		text = "compass_closed.png",
-		position = {x = 0.5, y = 0.5}, 
-		scale = {x = 9, y = 9},
+		position = {x = 0.5, y = 0.45}, 
+		scale = {x = 5, y = 5},
 		offset = {x = -4, y = -4}
 	})
 
@@ -145,10 +145,10 @@ local function show_needle_hud(player)
 	needleHud:add(player, "needle", {
 		hud_elem_type = "image",
 		text = "needle_0.png",
-		position = {x = 0.5285, y = 0.405}, 
-		scale = {x = 10.3, y = 10.3},
+		position = {x = 0.5, y = 0.45}, 
+		scale = {x = 5, y = 5},
 		offset = {x = -4, y = -4},
-		alignment = {x = 0, y = 0}
+		alignment = {x = "centre", y = "centre"}
 	})
 
 	open_HUD_showing = true
@@ -159,10 +159,10 @@ local function show_bezel_hud(player)
 	bezelHud:add(player, "bezel", {
 		hud_elem_type = "image",
 		text = "bezel_0.png",
-		position = {x = 0.525, y = 0.4}, 
-		scale = {x = 10.2, y = 10.2},
+		position = {x = 0.5, y = 0.45}, 
+		scale = {x = 5, y = 5},
 		offset = {x = -4, y = -4},
-		alignment = {x = 0, y = 0}
+		alignment = {x = "centre", y = "centre"}
 	})
 end
 
@@ -171,15 +171,15 @@ local function show_mirror_hud(player)
 	mirrorHud:add(player, "mirror", {
 		hud_elem_type = "image",
 		text = "compass_mirror.png",
-		position = {x = 0.5, y = 0.5}, 
-		scale = {x = 10, y = 10},
+		position = {x = 0.5, y = 0.45}, 
+		scale = {x = 5, y = 5},
 		offset = {x = -4, y = -4}
 	})
 end
 
 minetest.register_tool("forestry_tools:compass" , {
 	description = "Compass",
-	inventory_image = "needle_0.png",
+	inventory_image = "compass_icon.png",
     stack_max = 1,
 	liquids_pointable = true,
 	_mc_tool_privs = forestry_tools.priv_table,
@@ -196,9 +196,9 @@ minetest.register_tool("forestry_tools:compass" , {
 			closedHud:remove_all(player)
 			closed_HUD_showing = false
 
+			show_mirror_hud(player)
 			show_needle_hud(player)
 			show_bezel_hud(player)
-			show_mirror_hud(player)
 		else
 			needleHud:remove_all()
 			bezelHud:remove_all()
@@ -264,7 +264,7 @@ minetest.register_globalstep(function(dtime)
 				curr_azimuth = 360 - angle_relative
 
 				-- Needle rotation
-				local needle_text = rotate_image(player, "needle", angle_relative)
+				local needle_text = rotate_texture(player, needleHud, "needle", angle_relative)
 				curr_needle = needle_text
 				needleHud:change(player, "needle", {
 					text = needle_text
@@ -280,7 +280,7 @@ minetest.register_globalstep(function(dtime)
 					shed_angle = mag_declination + (360 - azimuth)
 				end
 
-				local bezel_text = rotate_image(player, "bezel", shed_angle)
+				local bezel_text = rotate_texture(player, bezelHud, "bezel", shed_angle)
 				curr_bezel = bezel_text
 				bezelHud:change(player, "bezel", {
 					text = bezel_text
@@ -295,52 +295,31 @@ end)
 -- Returns the name of the corresponding texture
 local prev_bez_rotation = 0
 
-function rotate_image(player, hudName, referenceAngle) 
+function rotate_texture(player, hud, hudName, referenceAngle) 
 	local adjustment, transformation, imgIndex
-	local bx, by, nx, ny = -4, -4, -4, -4
+	local x, y
 
 	if referenceAngle < 90 or referenceAngle == 360 then
 		adjustment = 0
 		transformation = 0
-
-		if referenceAngle == 0 or referenceAngle == 360 then
-			if prev_bez_rotation == 270 then
-				bx = -10
-			elseif prev_bez_rotation == 180 then
-				bx, by = -10, -8
-			elseif prev_bez_rotation == 90 then
-				bx, by = -6, -12
-			end
-		end	
+		x, y = -4, -4
 	elseif referenceAngle < 180 then
 		adjustment = 90
 		transformation = 270
-		bx, nx = -1, -10
+		x, y = 90, 91
 	elseif referenceAngle < 270 then
 		adjustment = 180
 		transformation = 180
-		by, ny, nx = -1, -8, -12
+		x, y = -5, 185
 	elseif referenceAngle < 360 then
 		adjustment = 270
 		transformation = 90
-		bx, ny, nx = -10, -13, -8
+		x, y = -99, 91
 	end
 
-	if hudName == "bezel" then
-		prev_bez_rotation = transformation
-
-		if bx ~= -4 or by ~= -4 then
-			bezelHud:change(player, "bezel", {
-				offset = {x = bx, y = by}
-			})
-		end
-
-		if nx ~= -4 or ny ~= -4 then
-			needleHud:change(player, "needle", {
-				offset = {x = nx, y = ny}
-			})
-		end
-	end
+	hud:change(player, hudName, {
+		offset = {x = x, y = y}
+	})
 
 	if math.floor(referenceAngle % 45) <= 4 and not (math.floor(referenceAngle % 90) <= 9) then
 		imgIndex = 4.5

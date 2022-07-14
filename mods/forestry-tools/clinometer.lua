@@ -1,4 +1,3 @@
-local S = forestry_tools.S
 local HUD_showing = false
 local curr_pitch, curr_percent = 0
 local bg_angle
