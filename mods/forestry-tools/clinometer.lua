@@ -271,16 +271,36 @@ end
 
 local function update_clinometer(player)
 	bg_angle = "0"
-	local degPlus10, degPlus20, degMinus10, degMinus20 = tostring(curr_pitch + 10), tostring(curr_pitch + 20), tostring(curr_pitch - 10), tostring(curr_pitch + 10)
+	local degPlus10, degPlus20, degMinus10, degMinus20 = tostring(curr_pitch + 10), tostring(curr_pitch + 20), tostring(curr_pitch - 10), tostring(curr_pitch - 20)
 	local percPlus10, percPlus20, percPlus30, percPlus40 = tostring(curr_percent + 10), tostring(curr_percent + 20), tostring(curr_percent + 30), tostring(curr_percent + 40)
 	local percMinus10, percMinus20, percMinus30, percMinus40 = tostring(curr_percent - 10), tostring(curr_percent - 20), tostring(curr_percent - 30), tostring(curr_percent - 40)
+
+	if (curr_percent + 40) < -1000 then
+		percPlus10, percPlus20, percPlus30, percPlus40 = "∞", "∞", "∞", "∞"
+	elseif (curr_percent + 30) < -1000 then
+		percPlus10, percPlus20, percPlus30 = "∞", "∞", "∞"
+	elseif (curr_percent + 20) < -1000 then
+		percPlus10, percPlus20 = "∞", "∞"
+	elseif (curr_percent + 10) > 1000 or (curr_percent + 10) < -1000 then
+		percPlus10 = "∞"
+	end
+
+	if (curr_percent - 40) > 1000 then
+		percMinus10, percMinus20, percMinus30, percMinus40 = "∞", "∞", "∞", "∞"
+	elseif (curr_percent - 30) > 1000 then
+		percMinus10, percMinus20, percMinus30 = "∞", "∞", "∞"
+	elseif (curr_percent - 20) > 1000 then
+		percMinus10, percMinus20 = "∞", "∞"
+	elseif (curr_percent - 10) > 1000 or (curr_percent - 10) < -1000 then
+		percMinus10 = "∞"
+	end
 
 	if curr_pitch >= 70 and curr_pitch < 80 then
 		bg_angle = "70"
 		percPlus40 = ""
 	elseif curr_pitch >= 80 and curr_pitch < 89 then
 		bg_angle = "80"
-		percPlus2, percPlus30, percPlus40 = "", "", ""
+		percPlus20, percPlus30, percPlus40 = "", "", ""
 		degPlus20 = ""
 	elseif curr_pitch >= 89 then
 		bg_angle = "90"
@@ -301,7 +321,12 @@ local function update_clinometer(player)
 
 	update_hud(player, bgHud, "background", bg_angle) 
 
-	update_hud(player, percentPlus0Hud, "percentPlus0", tostring(curr_percent)) 
+	if curr_percent > 1000 or curr_percent < -1000 then
+		update_hud(player, percentPlus0Hud, "percentPlus0", "∞") 
+	else
+		update_hud(player, percentPlus0Hud, "percentPlus0", tostring(curr_percent)) 
+	end
+
 	update_hud(player, percentPlus10Hud, "percentPlus10", percPlus10)
 	update_hud(player, percentPlus20Hud, "percentPlus20", percPlus20)
 	update_hud(player, percentPlus30Hud, "percentPlus30", percPlus30)
@@ -331,213 +356,11 @@ minetest.register_globalstep(function(dtime)
 				local pitch = -1 * math.deg(pitch_rad)
 				curr_pitch = math.floor(pitch)
 
-				if curr_pitch == 90 then
-					curr_percent = math.floor(-100 * math.tan(89.999))
-				else
-					curr_percent = math.floor(-100 * math.tan(pitch_rad))
-				end
+				curr_percent = math.floor(-100 * math.tan(pitch_rad))
 
 				update_clinometer(player)
 			end
 		end
 	end
 end)
-
-
-
--- -- IN-PROGRESS: show yaw (horizontal angle) and pitch (vertical viewing angle) in degrees.
-
--- -- <!> This is important, since calls to S() are made in this file - without this, the game will crash
--- local S = forestry_tools.S
--- local HUD_showing = false; 
-
-
-
--- minetest.register_tool("forestry_tools:clinometer", {
--- 	description = S("Yaw (horizontal) and Sextant (vertical)"),
--- 	_tt_help = S("Shows your pitch"),
--- 	_doc_items_longdesc = S("It shows your pitch (vertical viewing angle) in degrees. and your sextant (horizontal viewing angle) in degrees"),
--- 	_doc_items_usagehelp = use,
--- 	wield_image = "clinometer.png",
--- 	inventory_image = "clinometer.png",
--- 	groups = { disable_repair = 1 },
--- 	_mc_tool_privs = forestry_tools.priv_table,
-
-			
--- 		-- On left-click
---     on_use = function(itemstack, player, pointed_thing)
--- 		if HUD_showing then
--- 			clinHud:remove_all()
--- 			HUD_showing = false
--- 		else
--- 			show_clin_hud(player)
--- 		end
--- 	end,
-		
---     	-- Destroy the item on_drop to keep things tidy
--- 	on_drop = function (itemstack, dropper, pos)
--- 	end
--- })
-
-
-
--- minetest.register_alias("clinometer", "forestry_tools:clinometer")
--- clinometer = minetest.registered_aliases[clinometer] or clinometer
-
-
-
-
-
-
-	
--- -- minetest.register_on_newplayer(clin_hud.init_hud)
--- -- minetest.register_on_joinplayer(clin_hud.init_hud)
-
--- -- minetest.register_on_leaveplayer(function(player)
--- -- 	clin_hud.playerhuds[player:get_player_name()] = nil
--- -- end)
-
-
--- local clinHud = mhud.init()
--- local function show_clin_hud(player)
--- 	clinHud:add(player, "clinometer", {
--- 		hud_elem_type = "text",
--- 		text = "",
--- 		number =  "0xFF0000",
--- 		position={x = 0.5, y = 0}, 
--- 		scale={x = 10, y = 10},
--- 		offset = {x = 0, y = 15},
--- 		z_index = 0,
-			
--- 	})
--- end
-
-
-
--- function update_hud_displays(player)
--- 	local toDegrees = 180/math.pi
--- 	local name = player:get_player_name()
--- 	local clinometer
--- 	local pos = vector.round(player:get_pos())
-	
-	
--- 	if tool_active(player, "forestry_tools:clinometer") then 
--- 		clinometer = true 
--- 	end 
-	
-	
-	
--- 	-- Minetest goes counter clokwise
--- 	local yaw = 360 - player:get_look_horizontal()*toDegrees
--- 	local pitch = player:get_look_vertical()*toDegrees
-	
--- 	if (clinometer) then
--- 		str_angles = S("Yaw: @1°, pitch: @2°", string.format("%.1f", yaw), string.format("%.1f", pitch))
--- 	end
-	
-
--- 	if str_angles ~= "" then 
--- 		player:hud_change(name, "text", strs_angles)
--- 	end
--- end
-	
--- 	-- issues w updating HUD 
-	  
-
-
--- minetest.register_globalstep(function(dtime)
--- 	local players  = minetest.get_connected_players()
--- 	for i,player in ipairs(players) do
-
--- 		if HUD_showing then
--- 			-- Remove HUD when player is no longer wielding the clinometer
--- 			if player:get_wielded_item():get_name() ~= "forestry_tools:clinometer" then
--- 				clinHud:remove_all()
--- 				HUD_showing = false
--- 			else
-				
-
--- 			-- not sure(?)
--- 			update_hud_displays(player)
-    
--- 		end
-
-			
--- 		end
--- 	end
-	
--- end)
-	
-	
--- -- have to account for change of player FOV, direction, update HUD to display
-
--- -- <!> These two lines currently crash the game - please replace with functions if they are intended to be used
--- --minetest.register_on_newplayer(clinHud)
--- --minetest.register_on_joinplayer(clinHud)
-
-
-
--- -- local clin_hud = {}
--- -- clin_hud.playerhuds = {}
--- -- clin_hud.settings = {}
--- -- clin_hud.settings.hud_pos = { x = 0.5, y = 0 }
--- -- clin_hud.settings.hud_offset = { x = 0, y = 15 }
--- -- clin_hud.settings.hud_alignment = { x = 0, y = 0 }
-
--- -- local set = tonumber(minetest.settings:get("clin_hud_pos_x"))
--- -- if set then clin_hud.settings.hud_pos.x = set end
--- -- set = tonumber(minetest.settings:get("clin_hud_pos_y"))
--- -- if set then clin_hud.settings.hud_pos.y = set end
--- -- set = tonumber(minetest.settings:get("clin_hud_offset_x"))
--- -- if set then clin_hud.settings.hud_offset.x = set end
--- -- set = tonumber(minetest.settings:get("clin_hud_offset_y"))
--- -- if set then clin_hud.settings.hud_offset.y = set end
--- -- set = minetest.settings:get("clin_hud_alignment")
--- -- if set == "left" then
--- -- 	clin_hud.settings.hud_alignment.x = 1
--- -- elseif set == "center" then
--- -- 	clin_hud.settings.hud_alignment.x = 0
--- -- elseif set == "right" then
--- -- 	clin_hud.settings.hud_alignment.x = -1
--- -- end
-
--- -- local lines = 4 -- # of HUD Lines
-
-
--- -- DIsplay player horizontal and vertical It shows you your pitch (vertical viewing angle) in degrees.
-
-
-
--- -- function init_hud(player)
--- -- 	update_automapper(player)
--- -- 	local name = player:get_player_name()
--- -- 	playerhuds[name] = {}
--- -- 	for i=1, o_lines do
--- -- 			playerhuds[name]["o_line"..i] = player:hud_add({
--- -- 			hud_elem_type = "text",
--- -- 			text = "",
--- -- 			position = clin_hud.settings.hud_pos,
--- -- 			offset = { x = clin_hud.settings.hud_offset.x, y = clin_hud.settings.hud_offset.y + 20*(i-1) },
--- -- 			alignment = clin_hud.settings.hud_alignment,
--- -- 			number = 0xFFFFFF,
--- -- 			scale= { x = 100, y = 20 },
--- -- 			z_index = 0,
--- -- 		})
--- -- 	end
--- -- end
-
-
--- -- function clin_hud.update_automapper(player)
--- -- 	if clin_hud.tool_active(player, "forestry_tools:clinometer") or minetest.is_creative_enabled(player:get_player_name()) then
--- -- 		player:hud_set_flags({minimap = true, minimap_radar = true})
-	
--- -- 	else
--- -- 		player:hud_set_flags({minimap = false, minimap_radar = false})
--- -- 	end
--- -- end
-
-	
-
-
-
 
