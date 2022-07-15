@@ -36,7 +36,7 @@ function Realm:AddPlayerAreaByName(playerName)
 
     if (playerArea == nil) then
         Debug.log(realmArea)
-        self.MetaStorage.areas[player:get_player_name()] = areas:add(playerName, playerName .. " Zone in " .. self.Name, self.StartPos, self.EndPos, realmArea)
+        self.MetaStorage.areas[playerName] = areas:add(playerName, playerName .. " Zone in " .. self.Name, self.StartPos, self.EndPos, realmArea)
         areas:save()
     end
 end

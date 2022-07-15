@@ -429,8 +429,10 @@ commands["blocks"] = {
             realmName = tostring(params[5])
             schematic = tostring(params[6])
 
-            if (schematicManager.getSchematic(schematic) == nil) then
-                return false, "schematic " .. schematic .. " does not exist."
+            if (schematic == "" or schematic == nil) then
+                schematic = nil
+            elseif (schematicManager.getSchematic(schematic) == nil) then
+                return false, "schematic " .. tostring(schematic) .. " does not exist."
             end
 
             local is = mc_worldManager.GetTeleporterItemStack(count, instanced, temp, realmID, realmName, schematic)
@@ -443,7 +445,7 @@ commands["blocks"] = {
 
         return false, "unknown sub-command."
     end,
-    help = "realm blocks <block> <count> (<instancedRealm | realmID>) <tempRealm> <realmName> <schematic>"
+    help = "realm blocks <block> <count> <instancedRealm (true / false) | realmID> <tempRealm (true / false)> <realmName> <schematic>"
 
 }
 
