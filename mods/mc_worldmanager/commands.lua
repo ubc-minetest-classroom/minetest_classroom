@@ -419,15 +419,15 @@ commands["blocks"] = {
 
             if (mc_helpers.isNumber(tostring(params[3]))) then
                 realmID = tonumber(params[3])
-            elseif (string.lower(params[3]) == "true") then
+            elseif (string.lower(tostring(params[3])) == "true") then
                 instanced = true
             end
 
-            if (string.lower(params[4]) == "true") then
+            if (string.lower(tostring(params[4])) == "true") then
                 temp = true
             end
-            realmName = params[5]
-            schematic = params[6]
+            realmName = tostring(params[5])
+            schematic = tostring(params[6])
 
             local is = mc_worldManager.GetTeleporterItemStack(count, instanced, temp, realmID, realmName, schematic)
 
@@ -439,7 +439,7 @@ commands["blocks"] = {
 
         return false, "unknown sub-command."
     end,
-    help = "realm blocks <block> <count> <instancedRealm | realmID> <tempRealm> <realmName> <schematic>"
+    help = "realm blocks <block> <count> (<instancedRealm | realmID>) <tempRealm> <realmName> <schematic>"
 
 }
 

@@ -88,7 +88,6 @@ minetest.register_node("mc_worldmanager:teleporter", {
             else
                 minetest.chat_send_player(clicker:get_player_name(), "This teleporter is broken. Please contact an instructor for assistance.")
             end
-
         end
 
         -- Teleport the player to the realm
