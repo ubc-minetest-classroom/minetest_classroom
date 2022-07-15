@@ -429,6 +429,10 @@ commands["blocks"] = {
             realmName = tostring(params[5])
             schematic = tostring(params[6])
 
+            if (schematicManager.getSchematic(schematic) == nil) then
+                return false, "schematic " .. schematic .. " does not exist."
+            end
+
             local is = mc_worldManager.GetTeleporterItemStack(count, instanced, temp, realmID, realmName, schematic)
 
             local player = minetest.get_player_by_name(name)
