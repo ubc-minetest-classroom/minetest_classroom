@@ -635,15 +635,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     -- Menu
     if formname == "mc_teacher:menu" then
         if fields.spawn then
-            -- Temporary patch to stop server from crashing
-            --local spawnRealm = mc_worldManager.GetSpawnRealm()
-            --spawnRealm:TeleportPlayer(player)
-            local spawn_pos = {
-                x = 1426,
-                y = 92,
-                z = 1083,
-            }
-            player:set_pos(spawn_pos)
+
+            local spawnRealm = mc_worldManager.GetSpawnRealm()
+            spawnRealm:TeleportPlayer(player)
+
         elseif fields.tasks then
             show_tasks(player)
         elseif fields.lessons then
@@ -852,6 +847,7 @@ function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
         access_num = tostring(math.floor(math.random() * 100000))
 
         local newRealm = Realm:NewFromSchematic(cc .. sn .. map, map)
+        newRealm:setCategoryKey("classroom")
 
         if temp == nil then
             -- Build the new classroom table entry
