@@ -18,22 +18,25 @@ Registers a plant species in the `magnify` plant database
 
     ```lua
     local def_table = {
-      sci_name = "",        -- Scientific name of species
-      com_name = "",        -- Common name of species
-      fam_name = "",        -- Family name of species
-      cons_status = "",     -- Conservation status of species
-      status_col = "",      -- Hex colour of status box ("#000000")
-      height = "",          -- Plant height
-      bloom = "",           -- The way the plant blooms
-      region = "",          -- Native region/range of plant (displayed as "Found in [region]")
-      texture = "",         -- Image of plant (in `mod/textures`)
-      model_obj = "",       -- Model file (in `mod/models`)
-      model_rot_x = 0,      -- Initial rotation of model about x-axis (in degrees; defaults to 0)
-      model_rot_y = 0,      -- Initial rotation of model about y-axis (in degrees; defaults to 180)
-      more_info = "",       -- Description of plant
-      external_link = "",   -- Link to page with more plant information
-      img_copyright = "",   -- Copyright owner of plant image (displayed as "Image (c) [img_copyright]")
-      img_credit = ""       -- Author of plant image (displayed as "Image courtesy of [img_credit]")
+        sci_name = "",        -- Scientific name of species
+        com_name = "",        -- Common name of species
+        fam_name = "",        -- Family name of species
+        cons_status = {       -- Conservation statuses of species
+            ns_global = "",       -- NatureServe global status
+            ns_bc = "",           -- NatureServe BC status
+            bc_list = ""          -- BC List (Red Blue List) status
+        },
+        height = "",          -- Species height
+        bloom = "",           -- The way the species blooms
+        region = "",          -- Native region/range of species (displayed as "Found in [region]")
+        texture = {""},       -- Images of species (in `mod/textures`) - can be a string if only one image
+        model_obj = "",       -- Model file (in `mod/models`)
+        model_rot_x = 0,      -- Initial rotation of model about x-axis (in degrees; defaults to 0)
+        model_rot_y = 0,      -- Initial rotation of model about y-axis (in degrees; defaults to 180)
+        more_info = "",       -- Extended description of species
+        external_link = "",   -- Link to page with more species information
+        img_copyright = "",   -- Copyright owner of species image (displayed as "Image (c) [img_copyright]")
+        img_credit = ""       -- Author of species image (displayed as "Image courtesy of [img_credit]")
     }
     ```
 

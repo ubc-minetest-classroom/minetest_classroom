@@ -3,21 +3,24 @@ local template = {
     sci_name = "",        -- Scientific name of species
     com_name = "",        -- Common name of species
     fam_name = "",        -- Family name of species
-    cons_status = "",     -- Conservation status of species
-    status_col = "",      -- Hex colour of status box ("#000000")
-    height = "",          -- Plant height
-    bloom = "",           -- The way the plant blooms
-    region = "",          -- Native region/range of plant (displayed as "Found in [region]")
-    texture = {""},       -- Images of plant (in `mod/textures`) - can be a string if only one image
+    cons_status = {       -- Conservation statuses of species
+        ns_global = "",       -- NatureServe global status
+        ns_bc = "",           -- NatureServe BC status
+        bc_list = ""          -- BC List (Red Blue List) status
+    },
+    height = "",          -- Species height
+    bloom = "",           -- The way the species blooms
+    region = "",          -- Native region/range of species (displayed as "Found in [region]")
+    texture = {""},       -- Images of species (in `mod/textures`) - can be a string if only one image
     model_obj = "",       -- Model file (in `mod/models`)
     model_rot_x = 0,      -- Initial rotation of model about x-axis (in degrees; defaults to 0)
     model_rot_y = 0,      -- Initial rotation of model about y-axis (in degrees; defaults to 180)
-    more_info = "",       -- Description of plant
-    external_link = "",   -- Link to page with more plant information
-    img_copyright = "",   -- Copyright owner of plant image (displayed as "Image (c) [img_copyright]")
-    img_credit = ""       -- Author of plant image (displayed as "Image courtesy of [img_credit]")
+    more_info = "",       -- Extended description of species
+    external_link = "",   -- Link to page with more species information
+    img_copyright = "",   -- Copyright owner of species image (displayed as "Image (c) [img_copyright]")
+    img_credit = ""       -- Author of species image (displayed as "Image courtesy of [img_credit]")
 }
--- Plant registration call
+-- Species registration call
 magnify.register_plant(template, {"mod:node", "mod:another_node", "other_mod:other_node"})
 ]]
 
@@ -26,8 +29,7 @@ local black_lily = {
     sci_name = "Fritillaria affinis",
     com_name = "Chocolate Lily",
     fam_name = "Liliaceae (Lily Family)",
-    cons_status = "S5 - Demonstrably widespread, abundant, and secure",
-    status_col = "#666ae3", -- S5
+    cons_status = {ns_bc = "S5"},
     height = "20 to 80 centimeters tall",
     bloom = "Blooms with a single bell-like flower or with 2-5 flowers in a cluster",
     region = "Southern BC, Washington, Oregon and California",
@@ -43,8 +45,7 @@ local camas = {
     sci_name = "Camassia leichtlinii",
     com_name = "Great Camas",
     fam_name = "Asparagaceae (Asparagus Family)",
-    cons_status = "S4 - Apparently secure",
-    status_col = "#4fbdf0", -- S4
+    cons_status = {ns_bc = "S4"},
     height = "20 to 100 centimeters tall",
     bloom = "Blooms in groups of 5 or more flowers, ranging from pale to deep blue",
     region = "Southern BC, Washington, Oregon and California",
@@ -60,8 +61,7 @@ local clover = {
     sci_name = "Trifolium cyathiferum",
     com_name = "Cup Clover",
     fam_name = "Fabaceae (Pea family)",
-    cons_status = "S3 - Special concern, vulnerable to extirpation or extinction",
-    status_col = "#e0dd10", -- S3
+    cons_status = {ns_bc = "S3"},
     height = "10 to 50 centimeters tall",
     bloom = "Blooms with a hemispherical, axillary head of 5 to 30 green pea-like flowers",
     region = "Southern BC and Western USA",
@@ -77,8 +77,7 @@ local rose = {
     sci_name = "Castilleja miniata",
     com_name = "Scarlet Paintbrush",
     fam_name = "Orobanchaceae (Broom-rape family)",
-    cons_status = "S5 - Demonstrably widespread, abundant, and secure",
-    status_col = "#666ae3", -- S5
+    cons_status = {ns_bc = "S5"},
     height = "20 to 80 centimeters tall",
     bloom = "Blooms with a bracted terminal spike, with red, scarlet, or orange bracts",
     region = "BC and Western USA",
@@ -94,8 +93,7 @@ local poppy = {
     sci_name = "Eschscholzia californica",
     com_name = "California poppy",
     fam_name = "Papaveraceae (Fumitory family)",
-    cons_status = "Exotic - Conservation status not applicable",
-    status_col = "#f772e9", -- Exotic
+    cons_status = {ns_bc = "Exotic"},
     height = "10 to 50 centimeters tall",
     bloom = "Blooms with orange-yellow saucer-shaped flowers, either axillary or terminal",
     region = "USA and Mexico, found worldwide",
@@ -111,8 +109,7 @@ local viola = {
     sci_name = "Plectritis congesta",
     com_name = "Shortspur Seablush",
     fam_name = "Caprifoliaceae (Valerian family)",
-    cons_status = "S5 - Demonstrably widespread, abundant, and secure",
-    status_col = "#666ae3", -- S5
+    cons_status = {ns_bc = "S5"},
     height = "10 to 60 centimeters tall",
     bloom = "Blooms with a round cluster of small white or pink flowers",
     region = "Southern BC, Washington, Oregon and California",
@@ -128,8 +125,7 @@ local pearl = {
     sci_name = "Anaphalis margaritacea",
     com_name = "Pearly Everlasting",
     fam_name = "Asteraceae (Aster Family)",
-    cons_status = "S5 - Demonstrably widespread, abundant, and secure",
-    status_col = "#666ae3", -- S5
+    cons_status = {ns_bc = "S5"},
     height = "20 to 90 centimeters tall",
     bloom = "Blooms with a dense cluster of disc-like flowers, forming a flat top",
     region = "various countries, including Canada, the USA, Mexico, and Japan",
@@ -145,8 +141,7 @@ local susan = {
     sci_name = "Gaillardia aristata",
     com_name = "Brown Eyed Susan",
     fam_name = "Asteraceae (Aster Family)",
-    cons_status = "S5 - Demonstrably widespread, abundant, and secure",
-    status_col = "#666ae3", -- S5
+    cons_status = {ns_bc = "S5"},
     height = "20 to 70 centimeters tall",
     bloom = "Blooms with solitary or few ray and disk flowers, all with purplish bases",
     region = "BC, Alberta, Saskatchewan, Manitoba, and Northwest USA",
@@ -162,8 +157,7 @@ local brown_mushroom = {
     sci_name = "Boletus edulis",
     com_name = "King bolete",
     fam_name = "Boletaceae",
-    cons_status = "Unranked",
-    status_col = "#808080", -- Unranked
+    cons_status = {ns_bc = "NR"},
     height = "8 to 25 centimeters tall",
     bloom = "The caps might have a white bloom on them - a dusty white powdered substance that easily brushes off",         
     region = "the Pacific Northwest, often in hemlock (Tsuga heterophylla), spruce (Picea sitchensis), pine (Pinus spp.) and fir (Abies spp.) forests",        
@@ -179,8 +173,7 @@ local waterlily = {
     sci_name = "Nuphar polysepala",
     com_name = "Rocky Mountain pond-lily",
     fam_name = "Nymphaeaceae (Water-lily family)",
-    cons_status = "S5 - Demonstrably widespread, abundant, and secure",
-    status_col = "#666ae3", -- S5
+    cons_status = {ns_bc = "S5"},
     height = "1 to 2 meters long",
     bloom = "Blooms with solitary, waxy, floating yellow flowers stemming from a rhizome",
     region = "BC, Yukon, Northwest USA and Alaska",
@@ -197,8 +190,7 @@ local agaric = {
     sci_name = "Amanita muscaria",
     com_name = "Fly agaric",
     fam_name = "Amanitaceae",
-    cons_status = "Unlisted",
-    --status_col = "", -- default
+    cons_status = {ns_bc = "Unlisted"},
     height = "7 to 20 centimeters tall",
     bloom = "Produces smooth, white, ellipsoid, inamyloid spores",
     region = "various areas in the Northern Hemisphere, including California",

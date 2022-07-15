@@ -1,11 +1,12 @@
--- Clear + reinitialize database to remove any unregistered plant species
 magnify = {
     path = minetest.get_modpath("magnify"),
-    S = minetest.get_translator("magnify")
+    S = minetest.get_translator("magnify"),
+    species = {ref = minetest.get_mod_storage(), node = {}},
+    map = {}
 }
-magnify_plants = {ref = minetest.get_mod_storage(), node = {}}
 
 dofile(magnify.path.."/api.lua")
+dofile(magnify.path.."/map.lua")
 
 -- constants
 local tool_name = "magnify:magnifying_tool"
@@ -48,7 +49,7 @@ minetest.register_tool(tool_name, {
                     minetest.show_formspec(pname, "magnifying_tool:identify", species_formspec)
                 else
                     -- bad: display corrupted node message in chat
-                    minetest.chat_send_player(pname, "An entry for this item exists, but could not be found in the plant database.\nPlease contact an administrator and ask them to check your server's plant database files to ensure all plants were registered properly.")
+                    minetest.chat_send_player(pname, "An entry for this item exists, but could not be found in the species database.\nPlease contact an administrator and ask them to check your server's species database files to ensure all species were registered properly.")
                 end
             else
                 -- bad: display failure message in chat
@@ -207,7 +208,7 @@ local function search_for_nearby_node(player, context, nodes)
 end
 
 --- Return the technical formspec for a species
---- @param ref Reference key of plant species
+--- @param ref Reference key of species
 --- @return formspec string, size
 local function get_expanded_species_formspec(ref)
     local info,nodes = magnify.get_species_from_ref(ref)
@@ -354,7 +355,7 @@ sfinv.register_page("magnify:compendium", {
                         context.species_view = TECH_VIEW
                     end
                 else
-                    minetest.chat_send_player(pname, "An entry for this species exists, but could not be found in the plant database.\nPlease contact an administrator and ask them to check your server's plant database files to ensure all plants were registered properly.")
+                    minetest.chat_send_player(pname, "An entry for this species exists, but could not be found in the species database.\nPlease contact an administrator and ask them to check your server's species database files to ensure all species were registered properly.")
                 end
 
                 -- refresh inventory formspec
@@ -386,7 +387,7 @@ sfinv.register_page("magnify:compendium", {
 -- Storage cleanup function: removes any registered species that do not have any nodes associated with them
 minetest.register_on_mods_loaded(function()
     local ref_list = {}
-    local storage_data = magnify_plants.ref:to_table()
+    local storage_data = magnify.species.ref:to_table()
     -- collect all refs
     for ref,_ in pairs(storage_data.fields) do
         if tonumber(ref) ~= nil then
@@ -394,7 +395,7 @@ minetest.register_on_mods_loaded(function()
         end
     end
     -- check that some node is still asociated with each ref
-    for _,ref in pairs(magnify_plants.node) do
+    for _,ref in pairs(magnify.species.node) do
         ref_list[tostring(ref)] = nil
     end
     -- remove all refs that are not associated with any nodes
