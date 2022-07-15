@@ -848,6 +848,7 @@ function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
 
         local newRealm = Realm:NewFromSchematic(cc .. sn .. map, map)
         newRealm:setCategoryKey("classroom")
+        newRealm:set_data("owner", { [pname] = true })
 
         if temp == nil then
             -- Build the new classroom table entry

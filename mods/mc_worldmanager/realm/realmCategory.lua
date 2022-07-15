@@ -22,10 +22,10 @@ end
 Realm.RegisterCategory({
     key = "default",
     visible = function(realm, player)
-        return false, "this realm is not visible."
+        return true, "Default realms are visible to all players."
     end,
     joinable = function(realm, player)
-        return false, "this realm is not joinable."
+        return true, "Default realms are joinable by all players."
     end
 })
 
@@ -39,14 +39,25 @@ Realm.RegisterCategory({
     end
 })
 
---TODO: integrate into the mc_teachers mod.
 Realm.RegisterCategory({
     key = "classroom",
     visible = function(realm, player)
-        return true
+        if (realm:get_data("students")[player:get_player_name()] ~= nil) then
+            return true, "You are a student in this realm."
+        elseif (realm:get_data("owner")[player:get_player_name()] ~= nil) then
+            return true, "You are an owner of this realm."
+        else
+            return false, "You are not a student in this realm."
+        end
     end,
     joinable = function(realm, player)
-        return true
+        if (realm:get_data("students")[player:get_player_name()] ~= nil) then
+            return true, "You are a student in this realm."
+        elseif (realm:get_data("owner")[player:get_player_name()] ~= nil) then
+            return true, "You are an owner of this realm."
+        else
+            return false, "You are not a student in this realm."
+        end
     end
 })
 
@@ -54,14 +65,14 @@ Realm.RegisterCategory({
     key = "instanced",
     visible = function(realm, player)
         if (realm:get_data("owner")[player:get_player_name()] ~= nil) then
-            return true
+            return true, "You are an owner of this realm."
         end
 
         return false
     end,
     joinable = function(realm, player)
         if (realm:get_data("owner")[player:get_player_name()] ~= nil) then
-            return true
+            return true, "You are an owner of this realm."
         end
         return false
     end
