@@ -27,6 +27,10 @@ function Realm:AddOwner(ownerName)
 
     owners[ownerName] = true
     self:set_data("owner", owners)
+
+    if (areas ~= nil) then
+        self:AddPlayerAreaByName(ownerName)
+    end
 end
 
 function Realm:RemoveOwner(ownerName)
@@ -37,6 +41,10 @@ function Realm:RemoveOwner(ownerName)
 
     owners[ownerName] = nil
     self:set_data("owner", owners)
+
+    if (areas ~= nil) then
+        self:RemovePlayerAreaByName(ownerName)
+    end
 end
 
 Realm.RegisterCategory({
