@@ -253,6 +253,25 @@ local function read_obj_textures(target_obj)
     return textures
 end
 
+--- @private
+--- Gets the description for a conservation status and returns it as a string, and returns the colour associated with that status
+--- @param cons_status Plant definition cons_status field
+--- @return string, string
+local function get_cons_status_info(cons_status)
+    if cons_status then
+        local status = (type(cons_status) == "table" and cons_status.ns_bc) or cons_status
+        local status_info = magnify.map.ns_bc[status]
+        if status_info then
+            local desc = status_info["desc"]
+            return status..(desc and desc ~= "" and " - "..desc or ""), status_info["col"]
+        else
+            return status
+        end
+    else
+        return nil
+    end
+end
+
 --- @public
 --- Builds the general species information formspec for the species indexed at `ref` in the `magnify` species database 
 --- @param ref Reference key of the species
@@ -266,6 +285,7 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
     if info ~= nil then
         -- entry good, return formspec
         local model_spec_loc = (info.model_obj and info.origin) and get_obj_directory(info.origin, info.model_obj)
+        local cons_status_desc, status_col = get_cons_status_info(info.cons_status)
         if model_spec_loc then
             -- v2: model and image
             local model_spec = read_obj_textures(model_spec_loc)
@@ -273,17 +293,17 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
             local formtable_v2 = {
                 "formspec_version[5]", size,
 
-                "box[", (is_inv and "0,0;10,1.6") or "0.4,0.4;12,1.6", ";", minetest.formspec_escape(info.status_col or "#9192A3"), "]",
+                "box[", (is_inv and "0,0;10,1.6") or "0.4,0.4;12,1.6", ";", minetest.formspec_escape(status_col or "#9192A3"), "]",
                 "textarea[", (is_inv and "0.45,0.08;10.4,0.7") or "0.45,0.45;12.4,0.7", ";;;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
                 "textarea[", (is_inv and "0.45,0.59;10.4,0.7") or "0.45,0.96;12.4,0.7", ";;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
-                "textarea[", (is_inv and "0.45,1.1;10.4,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
+                "textarea[", (is_inv and "0.45,1.1;10.4,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
 
                 "image[", (is_inv and "10.3,0") or "12.8,0.4", ";4.2,4.2;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
                 "box[", (is_inv and "10.3,3.7;3.35,3.65") or "12.8,4.7;4.2,4.2", ";#789cbf]",
                 "model[", (is_inv and "10.3,3.7") or "12.8,4.7", ";4.2,4.2;plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";", info.model_rot_x or "0", ",", info.model_rot_y or "180", ";false;true;;]",
 
                 "textarea[", (is_inv and "0.3,1.8;10.45,4.7") or "0.35,2.3;12.4,4.7", ";;;", -- info area
-                "- ", minetest.formspec_escape((type(info.cons_status) == "table" and info.cons_status.ns_bc) or info.cons_status or "Conservation status unknown"), "\n",
+                "- ", minetest.formspec_escape(cons_status_desc or "Conservation status unknown"), "\n",
                 "- ", minetest.formspec_escape((info.region and "Found in "..info.region) or "Location range unknown"), "\n",
                 "- ", minetest.formspec_escape(info.height or "Height unknown"), "\n",
                 "\n",
@@ -301,14 +321,14 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
             local formtable_v1 = {  
                 "formspec_version[5]", size,
                 
-                "box[", (is_inv and "0,0;9.6,1.6") or "0.4,0.4;11.6,1.6", ";", minetest.formspec_escape(info.status_col or "#9192a3"), "]",
+                "box[", (is_inv and "0,0;9.6,1.6") or "0.4,0.4;11.6,1.6", ";", minetest.formspec_escape(status_col or "#9192a3"), "]",
                 "textarea[", (is_inv and "0.45,0.08;10,0.7") or "0.45,0.45;12.4,0.7", ";;;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
                 "textarea[", (is_inv and "0.45,0.59;10,0.7") or "0.45,0.96;12.4,0.7", ";;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
-                "textarea[", (is_inv and "0.45,1.1;10,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
+                "textarea[", (is_inv and "0.45,1.1;10,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
                 "image[", (is_inv and "9.9,0") or "12.4,0.4", ";5.7,5.7;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
     
                 "textarea[", (is_inv and "0.3,1.8;10.05,4.3") or "0.35,2.3;12,4.4", ";;;", -- info area
-                "- ", minetest.formspec_escape((type(info.cons_status) == "table" and info.cons_status.ns_bc) or info.cons_status or "Conservation status unknown"), "\n",
+                "- ", minetest.formspec_escape(cons_status_desc or "Conservation status unknown"), "\n",
                 "- ", minetest.formspec_escape((info.region and "Found in "..info.region) or "Location range unknown"), "\n",
                 "- ", minetest.formspec_escape(info.height or "Height unknown"), "\n",
                 "\n",

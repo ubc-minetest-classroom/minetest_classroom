@@ -28,7 +28,7 @@ magnify.register_plant(template, {"mod:node", "mod:another_node", "other_mod:oth
 local aspen = {
     sci_name = "Populus tremuloides",
     com_name = "Trembling Aspen",
-    fam_name = "Salicaceae (Willow family)",
+    fam_name = "Salicaceae",
     cons_status = {ns_bc = "S5"},
     height = "Grows up to 25 meters tall",
     bloom = "Has smooth, round to triangular-shaped leaves with a flattened stalk",
@@ -44,7 +44,7 @@ magnify.register_plant(aspen, {"default:aspen_tree", "default:aspen_wood", "defa
 local pine = {
     sci_name = "Pinus contorta var. latifolia",
     com_name = "Lodgepole Pine",
-    fam_name = "Pinaceae (Pine family)",
+    fam_name = "Pinaceae",
     cons_status = {ns_bc = "S5"},
     height = "21 to 24 meters tall",
     bloom = "Produces yellowish pollen from May to July, depending on the elevation",
@@ -59,15 +59,15 @@ magnify.register_plant(pine, {"default:pine_tree", "default:pine_wood", "default
 
 local AppleTree = {
     sci_name = "Malus fusca",
-    com_name = "Pacific crab apple (Oregon crabapple)",
-    fam_name = "Rosaceae (Rose family)",
+    com_name = "Pacific crab apple",
+    fam_name = "Rosaceae",
     cons_status = {ns_bc = "S5"},
     height = "2 to 12 meters tall",
     bloom = "Has bright, fragrant clusters of 5-12 white/pink flowers on its branch ends",
     region = "BC, Alaska, Washington, Oregon and California",
     texture = "magnify_default_malus_fusca.jpg",
     model_obj = "magnify_default_malus_fusca.obj",
-    more_info = "Bears very crisp, medium-sized, semi-sweet fruit with a thin, red-striped skin that is very aromatic",
+    more_info = "Bears very crisp, medium-sized, semi-sweet fruit with a thin, red-striped skin that is very aromatic. Also known as the Oregon crabapple",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Malus%20fusca",
     img_copyright = "Ross Mounce, licensed under CC BY 4.0"
 }
@@ -76,7 +76,7 @@ magnify.register_plant(AppleTree, {"default:tree", "default:apple", "default:app
 local JungleTree = {
     sci_name = "Alnus rubra",
     com_name = "Red alder",
-    fam_name = "Betulaceae (Birch family)", 
+    fam_name = "Betulaceae", 
     cons_status = {ns_bc = "S5"},
     height = "Grows up to 24 meters tall",
     bloom = "Produces male flowers in long, droopy, reddish catkins or female flowers in short, woody, brown cones",
@@ -92,7 +92,7 @@ magnify.register_plant(JungleTree, {"default:jungletree","default:junglewood","d
 local Kelp = {
     sci_name = "Desmarestia ligulata",
     com_name = "Flattened acid kelp" ,
-    fam_name = "Desmarestiaceae (Brown algae family)",
+    fam_name = "Desmarestiaceae",
     cons_status = {ns_bc = "Unlisted"},
     height = "40 to 80 centimeters tall",
     bloom = "Blooms are caused by excess silicate in a body of water, where a type of algae called “diatoms” thrive", 
@@ -108,7 +108,7 @@ magnify.register_plant(Kelp, {"default:sand_with_kelp"})
 local blueberry = {
     sci_name = "Vaccinium ovatum",
     com_name = "Evergreen Huckleberry",
-    fam_name = "Ericaceae (Crowberry family)",
+    fam_name = "Ericaceae",
     cons_status = {ns_bc = "S5"},
     bloom = "Blooms with pinkish red flowers from April to May",
     region = "Southwest BC and West Coast USA",
@@ -123,7 +123,7 @@ magnify.register_plant(blueberry, {"default:blueberry_bush_leaves", "default:blu
 local Bush = {
     sci_name = "Physocarpus capitatus",
     com_name = "Pacific ninebark",
-    fam_name = "Rosaceae (Rose family)",
+    fam_name = "Rosaceae",
     cons_status = {ns_bc = "S5"},
     height = "1 to 4 meters tall",
     bloom = "Blooms with half-rounded clusters of showy, white saucer-shaped flowers",
@@ -139,7 +139,7 @@ magnify.register_plant(Bush, {"default:bush_leaves", "default:bush_stem", "defau
 local Acacia = {
     sci_name = "Quercus garryana",
     com_name = "Garry Oak",
-    fam_name = "Fagaceae (Beech family)",
+    fam_name = "Fagaceae",
     cons_status = {ns_bc = "S5"},
     height = "Grows up to 25 metres tall",
     bloom = "Female flowers clustered on same tree, male flowers numerous in catkins",
@@ -155,7 +155,7 @@ magnify.register_plant(Acacia, {"default:acacia_tree", "default:acacia_wood", "d
 local Cactus = {
     sci_name = "Opuntia fragilis",
     com_name = "Brittle Prickly-pear Cactus",
-    fam_name = "Cactaceae (Cactus family)",
+    fam_name = "Cactaceae",
     cons_status = {ns_bc = "S5"},
     height = "5 to 20 centimeters tall",
     bloom = "Blooms with paper-thin petals, yelllow, 3-5 centimeters across with reddish stalks",
@@ -171,7 +171,7 @@ magnify.register_plant(Cactus, {"default:cactus", "default:large_cactus_seedling
 local Papyrus = {
     sci_name = "Equisetum telmateia",
     com_name = "Giant Horsetail",
-    fam_name = "Equisetaceae (Horsetail family)",
+    fam_name = "Equisetaceae",
     cons_status = {ns_bc = "S5"},
     height = "15-150 cm tall",
     bloom = "Non-flowering",
@@ -187,7 +187,7 @@ magnify.register_plant(Papyrus, {"default:papyrus"})
 local Fern = {
     sci_name = "Struthiopteris spicant",
     com_name = "Deer Fern",
-    fam_name = "Blechnaceae (Chain Fern family)",
+    fam_name = "Blechnaceae",
     cons_status = {ns_bc = "S5"},
     height = "Grows to 20 inches tall at maturity",
     bloom = "No bloom pattern",
@@ -203,7 +203,7 @@ magnify.register_plant(Fern, {"default:fern_1", "default:fern_2", "default:fern_
 local arbutus = {
     sci_name = "Arbutus menziesii",
     com_name = "Arbutus",
-    fam_name = "Ericaceae (Crowberry family)",
+    fam_name = "Ericaceae",
     cons_status = {ns_bc = "S5"},
     height = "6 to 30 meters tall",
     bloom = "Blooms with large clusters of drooping, urn-shaped white or pink corollas",
@@ -219,7 +219,7 @@ magnify.register_plant(arbutus, {"default:acacia_bush_stem", "default:acacia_bus
 local mannagrass = {
     sci_name = "Glyceria striata",
     com_name = "Fowl Mannagrass",
-    fam_name = "Poaceae (Grass family)",
+    fam_name = "Poaceae",
     cons_status = {ns_bc = "S5"},
     height = "30 to 80 centimeters tall",
     bloom = "Blooms with slender green panicles of egg-shaped flowers in the early summer",
@@ -235,7 +235,7 @@ magnify.register_plant(mannagrass, {"default:junglegrass"})
 local Marram_Grass = {
     sci_name = "Achnatherum hymenoides",
     com_name = "Sand Ricegrass",
-    fam_name = "Poaceae (Grass family)",
+    fam_name = "Poaceae",
     cons_status = {ns_bc = "S5"},
     height = "25 to 70 centimeters tall",
     bloom = "Yellow/Green colour that arrives from June-September",
@@ -251,7 +251,7 @@ magnify.register_plant(Marram_Grass, {"default:marram_grass_1"; "default:marram_
 local Savanna_Grass = {
     sci_name = "Pseudoroegneria spicata",
     com_name = "Bluebunch Wheatgrass",
-    fam_name = "Poaceae (Grass family)",
+    fam_name = "Poaceae",
     cons_status = {ns_bc = "S5"},
     height = "60 to 100 centimeters tall, with up to 100 centimeters of spread",
     bloom = "3 to 4 inch long, fluffy plumes of ruby pink flowers, slowly fading to creamy white",
@@ -283,7 +283,7 @@ magnify.register_plant(PineBushNeedles_Stem, {"default:pine_bush_stem", "default
 local Grass = {
     sci_name = "Calamagrostis rubescens",
     com_name = "Pinegrass",
-    fam_name = "Poaceae (Grass family)",
+    fam_name = "Poaceae",
     cons_status = {ns_bc = "S5"},
     height = "60 to 100 centimeters tall",
     bloom = "Blooms with yellow flower clusters in late spring",

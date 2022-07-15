@@ -28,7 +28,7 @@ magnify.register_plant(template, {"mod:node", "mod:another_node", "other_mod:oth
 local black_lily = {
     sci_name = "Fritillaria affinis",
     com_name = "Chocolate Lily",
-    fam_name = "Liliaceae (Lily Family)",
+    fam_name = "Liliaceae",
     cons_status = {ns_bc = "S5"},
     height = "20 to 80 centimeters tall",
     bloom = "Blooms with a single bell-like flower or with 2-5 flowers in a cluster",
@@ -44,7 +44,7 @@ magnify.register_plant(black_lily, {"flowers:tulip_black"})
 local camas = {
     sci_name = "Camassia leichtlinii",
     com_name = "Great Camas",
-    fam_name = "Asparagaceae (Asparagus Family)",
+    fam_name = "Asparagaceae",
     cons_status = {ns_bc = "S4"},
     height = "20 to 100 centimeters tall",
     bloom = "Blooms in groups of 5 or more flowers, ranging from pale to deep blue",
@@ -60,7 +60,7 @@ magnify.register_plant(camas, {"flowers:geranium"})
 local clover = {
     sci_name = "Trifolium cyathiferum",
     com_name = "Cup Clover",
-    fam_name = "Fabaceae (Pea family)",
+    fam_name = "Fabaceae",
     cons_status = {ns_bc = "S3"},
     height = "10 to 50 centimeters tall",
     bloom = "Blooms with a hemispherical, axillary head of 5 to 30 green pea-like flowers",
@@ -76,7 +76,7 @@ magnify.register_plant(clover, {"flowers:chrysanthemum_green"})
 local rose = {
     sci_name = "Castilleja miniata",
     com_name = "Scarlet Paintbrush",
-    fam_name = "Orobanchaceae (Broom-rape family)",
+    fam_name = "Orobanchaceae",
     cons_status = {ns_bc = "S5"},
     height = "20 to 80 centimeters tall",
     bloom = "Blooms with a bracted terminal spike, with red, scarlet, or orange bracts",
@@ -92,7 +92,7 @@ magnify.register_plant(rose, {"flowers:rose"})
 local poppy = {
     sci_name = "Eschscholzia californica",
     com_name = "California poppy",
-    fam_name = "Papaveraceae (Fumitory family)",
+    fam_name = "Papaveraceae",
     cons_status = {ns_bc = "Exotic"},
     height = "10 to 50 centimeters tall",
     bloom = "Blooms with orange-yellow saucer-shaped flowers, either axillary or terminal",
@@ -108,7 +108,7 @@ magnify.register_plant(poppy, {"flowers:tulip"})
 local viola = {
     sci_name = "Plectritis congesta",
     com_name = "Shortspur Seablush",
-    fam_name = "Caprifoliaceae (Valerian family)",
+    fam_name = "Caprifoliaceae",
     cons_status = {ns_bc = "S5"},
     height = "10 to 60 centimeters tall",
     bloom = "Blooms with a round cluster of small white or pink flowers",
@@ -124,7 +124,7 @@ magnify.register_plant(viola, {"flowers:viola"})
 local pearl = {
     sci_name = "Anaphalis margaritacea",
     com_name = "Pearly Everlasting",
-    fam_name = "Asteraceae (Aster Family)",
+    fam_name = "Asteraceae",
     cons_status = {ns_bc = "S5"},
     height = "20 to 90 centimeters tall",
     bloom = "Blooms with a dense cluster of disc-like flowers, forming a flat top",
@@ -140,7 +140,7 @@ magnify.register_plant(pearl, {"flowers:dandelion_white"})
 local susan = {
     sci_name = "Gaillardia aristata",
     com_name = "Brown Eyed Susan",
-    fam_name = "Asteraceae (Aster Family)",
+    fam_name = "Asteraceae",
     cons_status = {ns_bc = "S5"},
     height = "20 to 70 centimeters tall",
     bloom = "Blooms with solitary or few ray and disk flowers, all with purplish bases",
@@ -172,7 +172,7 @@ magnify.register_plant(brown_mushroom, {"flowers:mushroom_brown"})
 local waterlily = {
     sci_name = "Nuphar polysepala",
     com_name = "Rocky Mountain pond-lily",
-    fam_name = "Nymphaeaceae (Water-lily family)",
+    fam_name = "Nymphaeaceae",
     cons_status = {ns_bc = "S5"},
     height = "1 to 2 meters long",
     bloom = "Blooms with solitary, waxy, floating yellow flowers stemming from a rhizome",
