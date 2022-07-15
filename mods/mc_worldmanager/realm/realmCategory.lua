@@ -19,6 +19,26 @@ function Realm:getCategory()
     return categoryObject
 end
 
+function Realm:AddOwner(ownerName)
+    local owners = self:get_data("owner")
+    if (owners == nil) then
+        owners = {}
+    end
+
+    owners[ownerName] = true
+    self:set_data("owner", owners)
+end
+
+function Realm:RemoveOwner(ownerName)
+    local owners = self:get_data("owner")
+    if (owners == nil) then
+        owners = {}
+    end
+
+    owners[ownerName] = nil
+    self:set_data("owner", owners)
+end
+
 Realm.RegisterCategory({
     key = "default",
     visible = function(realm, player)

@@ -99,7 +99,8 @@ function mc_worldManager.GetCreateInstancedRealm(realmName, player, schematic, t
 
         realmInstanceTable[realmKey] = realm.ID
         realm:setCategoryKey("instanced")
-        realm:set_data("owner", { [player:get_player_name()] = true })
+
+        realm:AddOwner(player:get_player_name())
 
         if (temporary == nil) then
             temporary = false
