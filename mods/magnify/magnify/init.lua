@@ -4,6 +4,8 @@ magnify = {
     species = {ref = minetest.get_mod_storage(), node = {}},
     map = {}
 }
+-- DATABASE HARD RESET SNIPPET: ONLY USE FOR DEBUGGING PURPOSES
+--magnify.species.ref:from_table(nil)
 
 dofile(magnify.path.."/api.lua")
 dofile(magnify.path.."/map.lua")

@@ -21,7 +21,7 @@ local template = {
     img_credit = ""       -- Author of species image (displayed as "Image courtesy of [img_credit]")
 }
 -- Species registration call
-magnify.register_plant(template, {"mod:node", "mod:another_node", "other_mod:other_node"})
+magnify.register_species(template, {"mod:node", "mod:another_node", "other_mod:other_node"})
 ]]
 
 -- TASK: finish tables
@@ -39,7 +39,7 @@ local black_lily = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Fritillaria%20affinis",
     img_copyright = "Jackie Chambers, licensed under CC BY-NC-SA 4.0"
 }
-magnify.register_plant(black_lily, {"flowers:tulip_black"})
+magnify.register_species(black_lily, {"flowers:tulip_black"})
 
 local camas = {
     sci_name = "Camassia leichtlinii",
@@ -55,7 +55,7 @@ local camas = {
     external_link = "http://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Camassia%20leichtlinii"
     --img_copyright or img_credit = ""
 }
-magnify.register_plant(camas, {"flowers:geranium"})
+magnify.register_species(camas, {"flowers:geranium"})
 
 local clover = {
     sci_name = "Trifolium cyathiferum",
@@ -71,7 +71,7 @@ local clover = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Trifolium%20cyathiferum",
     img_credit = "Mary Winter, via Wikimedia Commons"
 }
-magnify.register_plant(clover, {"flowers:chrysanthemum_green"})
+magnify.register_species(clover, {"flowers:chrysanthemum_green"})
 
 local rose = {
     sci_name = "Castilleja miniata",
@@ -87,7 +87,7 @@ local rose = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Castilleja%20miniata%20var.%20miniata",
     img_copyright = "Thayne Tuason, licensed under CC BY-SA 4.0"
 }
-magnify.register_plant(rose, {"flowers:rose"})
+magnify.register_species(rose, {"flowers:rose"})
 
 local poppy = {
     sci_name = "Eschscholzia californica",
@@ -103,7 +103,7 @@ local poppy = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Eschscholzia%20californica",
     img_credit = "the UBC Botanical Garden"
 }
-magnify.register_plant(poppy, {"flowers:tulip"})
+magnify.register_species(poppy, {"flowers:tulip"})
 
 local viola = {
     sci_name = "Plectritis congesta",
@@ -119,7 +119,7 @@ local viola = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Plectritis%20congesta"--,
     --img_copyright or img_credit = ""
 }
-magnify.register_plant(viola, {"flowers:viola"})
+magnify.register_species(viola, {"flowers:viola"})
 
 local pearl = {
     sci_name = "Anaphalis margaritacea",
@@ -135,7 +135,7 @@ local pearl = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Anaphalis%20margaritacea",
     img_credit = "Wikimedia Commons"
 }
-magnify.register_plant(pearl, {"flowers:dandelion_white"})
+magnify.register_species(pearl, {"flowers:dandelion_white"})
 
 local susan = {
     sci_name = "Gaillardia aristata",
@@ -151,7 +151,7 @@ local susan = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Gaillardia%20aristata"--,
     --img_copyright or img_credit = ""
 }
-magnify.register_plant(susan, {"flowers:dandelion_yellow"})
+magnify.register_species(susan, {"flowers:dandelion_yellow"})
 
 local brown_mushroom = {
     sci_name = "Boletus edulis",
@@ -167,7 +167,7 @@ local brown_mushroom = {
     external_link = "https://www.zoology.ubc.ca/~biodiv/mushroom/B_edulis.html",  
     img_credit = "",  
 }
-magnify.register_plant(brown_mushroom, {"flowers:mushroom_brown"})
+magnify.register_species(brown_mushroom, {"flowers:mushroom_brown"})
 
 local waterlily = {
     sci_name = "Nuphar polysepala",
@@ -184,7 +184,7 @@ local waterlily = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Nuphar%20polysepala",
     img_copyright = "Marshal Hedin, licensed under CC BY 2.0"
 }
-magnify.register_plant(waterlily, {"flowers:waterlily"})
+magnify.register_species(waterlily, {"flowers:waterlily"})
 
 local agaric = {
     sci_name = "Amanita muscaria",
@@ -201,4 +201,4 @@ local agaric = {
     --img_copyright = "",
     img_credit = ""
 }
-magnify.register_plant(agaric, {"flowers:mushroom_red"})
+magnify.register_species(agaric, {"flowers:mushroom_red"})

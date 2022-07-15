@@ -21,7 +21,7 @@ local template = {
     img_credit = ""       -- Author of species image (displayed as "Image courtesy of [img_credit]")
 }
 -- Plant registration call
-magnify.register_plant(template, {"mod:node", "mod:another_node", "other_mod:other_node"})
+magnify.register_species(template, {"mod:node", "mod:another_node", "other_mod:other_node"})
 ]]
 
 -- TASK: finish tables
@@ -39,7 +39,7 @@ local aspen = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Populus%20tremuloides",
     img_copyright = "Tewy, licensed under CC BY-SA 3.0"
 }
-magnify.register_plant(aspen, {"default:aspen_tree", "default:aspen_wood", "default:aspen_leaves", "default:aspen_sapling"})
+magnify.register_species(aspen, {"default:aspen_tree", "default:aspen_wood", "default:aspen_leaves", "default:aspen_sapling"})
 
 local pine = {
     sci_name = "Pinus contorta var. latifolia",
@@ -55,7 +55,7 @@ local pine = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Pinus%20contorta", 
     img_copyright = "Walter Siegmund, licensed under CC BY-SA 3.0"
 }
-magnify.register_plant(pine, {"default:pine_tree", "default:pine_wood", "default:pine_needles", "default:pine_sapling"})
+magnify.register_species(pine, {"default:pine_tree", "default:pine_wood", "default:pine_needles", "default:pine_sapling"})
 
 local AppleTree = {
     sci_name = "Malus fusca",
@@ -71,7 +71,7 @@ local AppleTree = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Malus%20fusca",
     img_copyright = "Ross Mounce, licensed under CC BY 4.0"
 }
-magnify.register_plant(AppleTree, {"default:tree", "default:apple", "default:apple_mark", "default:leaves", "default:sapling", "default:wood"})
+magnify.register_species(AppleTree, {"default:tree", "default:apple", "default:apple_mark", "default:leaves", "default:sapling", "default:wood"})
 
 local JungleTree = {
     sci_name = "Alnus rubra",
@@ -87,7 +87,7 @@ local JungleTree = {
     external_link = "https://www.for.gov.bc.ca/hfd/library/documents/treebook/redalder.htm"--,
     --img_copyright or img_credit = ""
 }
-magnify.register_plant(JungleTree, {"default:jungletree","default:junglewood","default:jungleleaves","default:junglesapling","default:emergent_jungle_sapling"})
+magnify.register_species(JungleTree, {"default:jungletree","default:junglewood","default:jungleleaves","default:junglesapling","default:emergent_jungle_sapling"})
 
 local Kelp = {
     sci_name = "Desmarestia ligulata",
@@ -103,7 +103,7 @@ local Kelp = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Desmarestia%20ligulata"--,
     --img_copyright or img_credit = ""
 }
-magnify.register_plant(Kelp, {"default:sand_with_kelp"})
+magnify.register_species(Kelp, {"default:sand_with_kelp"})
 
 local blueberry = {
     sci_name = "Vaccinium ovatum",
@@ -118,7 +118,7 @@ local blueberry = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Vaccinium%20ovatum",
     img_credit = "Gordon Leppig & Andrea J. Pickart"
 }
-magnify.register_plant(blueberry, {"default:blueberry_bush_leaves", "default:blueberry_bush_leaves_with_berries", "default:blueberries"})
+magnify.register_species(blueberry, {"default:blueberry_bush_leaves", "default:blueberry_bush_leaves_with_berries", "default:blueberries"})
 
 local Bush = {
     sci_name = "Physocarpus capitatus",
@@ -134,7 +134,7 @@ local Bush = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Physocarpus%20capitatus",
     img_copyright = "Walter Siegmund, licensed under CC BY 2.5"
 }
-magnify.register_plant(Bush, {"default:bush_leaves", "default:bush_stem", "default:bush_sapling"})
+magnify.register_species(Bush, {"default:bush_leaves", "default:bush_stem", "default:bush_sapling"})
 
 local Acacia = {
     sci_name = "Quercus garryana",
@@ -150,7 +150,7 @@ local Acacia = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Quercus%20garryana"
     --img_copyright or img_credit = ""
 }
-magnify.register_plant(Acacia, {"default:acacia_tree", "default:acacia_wood", "default:acacia_leaves", "default:acacia_sapling", "default:dry_shrub"})
+magnify.register_species(Acacia, {"default:acacia_tree", "default:acacia_wood", "default:acacia_leaves", "default:acacia_sapling", "default:dry_shrub"})
 
 local Cactus = {
     sci_name = "Opuntia fragilis",
@@ -166,7 +166,7 @@ local Cactus = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Opuntia%20fragilis"--,
     --img_copyright = ""
 }
-magnify.register_plant(Cactus, {"default:cactus", "default:large_cactus_seedling"})
+magnify.register_species(Cactus, {"default:cactus", "default:large_cactus_seedling"})
 
 local Papyrus = {
     sci_name = "Equisetum telmateia",
@@ -182,7 +182,7 @@ local Papyrus = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Equisetum%20telmateia"--,
     --img_copyright or img_credit = ""
 }
-magnify.register_plant(Papyrus, {"default:papyrus"})
+magnify.register_species(Papyrus, {"default:papyrus"})
 
 local Fern = {
     sci_name = "Struthiopteris spicant",
@@ -198,7 +198,7 @@ local Fern = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Blechnum%20spicant",
     img_copyright = "Daniel Mosquin, licensed under CC BY-NC-SA 4.0"
 }
-magnify.register_plant(Fern, {"default:fern_1", "default:fern_2", "default:fern_3"})
+magnify.register_species(Fern, {"default:fern_1", "default:fern_2", "default:fern_3"})
 
 local arbutus = {
     sci_name = "Arbutus menziesii",
@@ -214,7 +214,7 @@ local arbutus = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Arbutus%20menziesii",
     img_copyright = ""
 }
-magnify.register_plant(arbutus, {"default:acacia_bush_stem", "default:acacia_bush_leaves", "default:acacia_bush_sapling"})
+magnify.register_species(arbutus, {"default:acacia_bush_stem", "default:acacia_bush_leaves", "default:acacia_bush_sapling"})
 
 local mannagrass = {
     sci_name = "Glyceria striata",
@@ -230,7 +230,7 @@ local mannagrass = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Glyceria%20striata",
     img_copyright = "Jason Hollinger, licensed under CC BY 2.0" 
 }
-magnify.register_plant(mannagrass, {"default:junglegrass"})
+magnify.register_species(mannagrass, {"default:junglegrass"})
 
 local Marram_Grass = {
     sci_name = "Achnatherum hymenoides",
@@ -246,7 +246,7 @@ local Marram_Grass = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Achnatherum%20hymenoides",
     img_credit = ""      
 }
-magnify.register_plant(Marram_Grass, {"default:marram_grass_1"; "default:marram_grass_2", "default:marram_grass_3"})
+magnify.register_species(Marram_Grass, {"default:marram_grass_1"; "default:marram_grass_2", "default:marram_grass_3"})
 
 local Savanna_Grass = {
     sci_name = "Pseudoroegneria spicata",
@@ -262,7 +262,7 @@ local Savanna_Grass = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Pseudoroegneria%20spicata",
     img_credit = ""       
 }
-magnify.register_plant(Savanna_Grass, {"default:dirt_with_dry_grass", "default:dry_dirt","default:dry_dirt_with_dry_grass", "default:dry_grass_1", "default:dry_grass_2", "default:dry_grass_3", "default:dry_grass_4", "default:dry_grass_5"})
+magnify.register_species(Savanna_Grass, {"default:dirt_with_dry_grass", "default:dry_dirt","default:dry_dirt_with_dry_grass", "default:dry_grass_1", "default:dry_grass_2", "default:dry_grass_3", "default:dry_grass_4", "default:dry_grass_5"})
 
 local PineBushNeedles_Stem = {
     sci_name = "Taxus brevifolia",   
@@ -278,7 +278,7 @@ local PineBushNeedles_Stem = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Taxus%20brevifolia",
     img_credit = ""
 }
-magnify.register_plant(PineBushNeedles_Stem, {"default:pine_bush_stem", "default:pine_bush_needles", "default:pine_bush_sapling"})
+magnify.register_species(PineBushNeedles_Stem, {"default:pine_bush_stem", "default:pine_bush_needles", "default:pine_bush_sapling"})
 
 local Grass = {
     sci_name = "Calamagrostis rubescens",
@@ -294,4 +294,4 @@ local Grass = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Calamagrostis%20rubescens",
     img_copyright = "",
 }
-magnify.register_plant(Grass, {"default:grass_1", "default:grass_2", "default:grass_3", "default:grass_4", "default:grass_5", "default:dirt_with_grass", "default:dirt_with_grass_footsteps"})
+magnify.register_species(Grass, {"default:grass_1", "default:grass_2", "default:grass_3", "default:grass_4", "default:grass_5", "default:dirt_with_grass", "default:dirt_with_grass_footsteps"})

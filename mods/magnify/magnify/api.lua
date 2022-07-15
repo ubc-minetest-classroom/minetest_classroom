@@ -18,13 +18,30 @@ local function find_registration_ref(def_table)
 end
 
 --- @public
---- Registers a species in the `magnify` species database
---- Should only be called on mod load-in 
---- @param def_table Species definition table
---- @param nodes Table of stringified nodes the species corresponds to in the MineTest world
---- @see magnify.register_species
-function magnify.register_plant(def_table, nodes)
-    magnify.register_species(def_table, nodes)
+--- Returns true if `table` has at least one defined key-value pair, false if not, nil if `table` is not a table
+--- @param table Table to check
+--- @return boolean or nil
+function magnify.table_has_pairs(table)
+    if type(table) ~= "table" then
+        return nil
+    end
+    for _ in pairs(table) do
+        return true
+    end
+    return false
+end
+
+--- @public
+--- Returns true if any of the keys or values in `table` match `val`, false otherwise
+--- @param table The table to check
+--- @param val The key/value to check for
+--- @return boolean
+function magnify.table_has(table, val)
+    if not table or not val then return false end
+    for k,v in pairs(table) do
+        if k == val or v == val then return true end
+    end
+    return false
 end
 
 --- @public
@@ -32,9 +49,25 @@ end
 --- Should only be called on mod load-in 
 --- @param def_table Species definition table
 --- @param nodes Table of stringified nodes the species corresponds to in the MineTest world
+--- @return string
+--- @deprecated use magnify.register_species instead
+function magnify.register_plant(def_table, nodes)
+    return magnify.register_species(def_table, nodes)
+end
+
+--- @public
+--- Registers a species in the `magnify` species database
+--- Should only be called on mod load-in 
+--- @param def_table Species definition table
+--- @param nodes Table of stringified nodes the species corresponds to in the MineTest world
+--- @return string or nil
 --- @see README.md > API > Registration
 function magnify.register_species(def_table, nodes)
-    local ref = find_registration_ref(def_table)
+    if not magnify.table_has_pairs(nodes) then
+        return nil -- no nodes given
+    end
+
+    local ref = tostring(find_registration_ref(def_table))
     def_table["origin"] = minetest.get_current_modname()
 
     local serial_table = minetest.serialize(def_table)
@@ -42,14 +75,16 @@ function magnify.register_species(def_table, nodes)
     for k,v in pairs(nodes) do
         magnify.species.node[v] = ref
     end
+
+    return ref
 end
 
 --- @public
 --- Returns the reference key associated with `node` in the `magnify` species database
 --- @param node Stringified node
---- @return number or nil
+--- @return string or nil
 function magnify.get_ref(node)
-    return magnify.species.node[node]
+    return tostring(magnify.species.node[node])
 end
 
 --- @public
@@ -58,12 +93,12 @@ end
 function magnify.clear_ref(ref)
     local storage_data = magnify.species.ref:to_table()
     for k,v in pairs(storage_data.fields) do
-        if k == ref or v == ref then
+        if tostring(k) == tostring(ref) then
             magnify.species.ref:set_string(k, "")
         end
     end
     for k,v in pairs(magnify.species.node) do
-        if k == ref or v == ref then
+        if tostring(v) == tostring(ref) then
             magnify.species.node[k] = nil
         end
     end
@@ -80,8 +115,8 @@ local function clear_node_key(node)
 end
 
 --- @public
---- Clears the nodes in `nodes` from the `magnify` species database
---- Then, clears any species that are no longer associated with any nodes as a result of clearing the nodes in `nodes`
+--- Clears the nodes in `nodes` from the `magnify` species database,
+--- then clears any species that are no longer associated with any nodes as a result of clearing the nodes in `nodes`
 --- @param nodes Table of stringified nodes to clear
 function magnify.clear_nodes(nodes)
     -- remove node keys
@@ -116,7 +151,7 @@ function magnify.get_species_from_ref(ref)
         local data = minetest.deserialize(magnify.species.ref:get_string(tostring(ref)))
         if data then
             for k,v in pairs(magnify.species.node) do
-                if v == ref then
+                if tostring(v) == tostring(ref) then
                     table.insert(output_nodes, k)
                 end
             end
@@ -373,16 +408,3 @@ textarea[0.35,2.3;12,4.4;;;"add the original giant text box here"]
 textarea[0.35,6.9;11.6,0.7;;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]
 button[12.4,6.4;5.4,0.9;back;Back]
 ]]
-
---- @public
---- Returns true if any of the keys or values in `table` match `val`, false otherwise
---- @param table The table to check
---- @param val The key/value to check for
---- @return boolean
-function magnify.table_has(table, val)
-    if not table or not val then return false end
-    for k,v in pairs(table) do
-        if k == val or v == val then return true end
-    end
-    return false
-end
