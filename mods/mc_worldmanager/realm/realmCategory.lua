@@ -62,6 +62,15 @@ Realm.RegisterCategory({
 Realm.RegisterCategory({
     key = "classroom",
     visible = function(realm, player)
+
+        if (realm:get_data("students") == nil) then
+            realm:set_data("students", {})
+        end
+
+        if (realm:get_data("owner") == nil) then
+            realm:set_data("owner", {})
+        end
+
         if (realm:get_data("students")[player:get_player_name()] ~= nil) then
             return true, "You are a student in this realm."
         elseif (realm:get_data("owner")[player:get_player_name()] ~= nil) then
@@ -71,6 +80,15 @@ Realm.RegisterCategory({
         end
     end,
     joinable = function(realm, player)
+
+        if (realm:get_data("students") == nil) then
+            realm:set_data("students", {})
+        end
+
+        if (realm:get_data("owner") == nil) then
+            realm:set_data("owner", {})
+        end
+
         if (realm:get_data("students")[player:get_player_name()] ~= nil) then
             return true, "You are a student in this realm."
         elseif (realm:get_data("owner")[player:get_player_name()] ~= nil) then
@@ -84,6 +102,11 @@ Realm.RegisterCategory({
 Realm.RegisterCategory({
     key = "instanced",
     visible = function(realm, player)
+
+        if (realm:get_data("owner") == nil) then
+            realm:set_data("owner", {})
+        end
+
         if (realm:get_data("owner")[player:get_player_name()] ~= nil) then
             return true, "You are an owner of this realm."
         end
@@ -91,6 +114,11 @@ Realm.RegisterCategory({
         return false
     end,
     joinable = function(realm, player)
+
+        if (realm:get_data("owner") == nil) then
+            realm:set_data("owner", {})
+        end
+
         if (realm:get_data("owner")[player:get_player_name()] ~= nil) then
             return true, "You are an owner of this realm."
         end
