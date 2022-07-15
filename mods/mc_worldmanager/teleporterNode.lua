@@ -1,11 +1,11 @@
 local function getDescription(instanced, temp, realmID, name, schematic)
     local descriptionString = "Teleporter Node "
 
-    if (instanced == "true") then
+    if (instanced == true) then
         descriptionString = descriptionString .. "[Instanced] "
     end
 
-    if (temp == "true") then
+    if (temp == true) then
         descriptionString = descriptionString .. "[Temp] "
     end
 
@@ -13,7 +13,7 @@ local function getDescription(instanced, temp, realmID, name, schematic)
         descriptionString = descriptionString .. "[" .. schematic .. "]"
     end
 
-    if (instanced ~= "true" and realmID == 0) then
+    if (instanced == false and realmID == 0) then
         descriptionString = descriptionString .. "(Spawn)"
     elseif (name ~= nil and name ~= "") then
         descriptionString = descriptionString .. "(" .. name .. ")"
@@ -41,11 +41,11 @@ minetest.register_node("mc_worldmanager:teleporter", {
 
         local meta = minetest.get_meta(pos)
 
-        local instanced = (meta:get_string("instanced"))
+        local instanced = string.lower(meta:get_string("instanced")) == "true"
+
+        local temp = string.lower(meta:get_string("temp")) == "true"
 
         local realmID = meta:get_int("realm")
-
-        local temp = (meta:get_string("temp") == "true")
 
         local realmName = (meta:get_string("name"))
         local realmSchematic = (meta:get_string("schematic"))
@@ -68,7 +68,7 @@ minetest.register_node("mc_worldmanager:teleporter", {
         local realmObject = nil
 
         -- If we are an instanced realm, we let our realm instancing logic take care of this; Otherwise we will use the realm ID to get the realm.
-        if (instanced == "true") then
+        if (instanced == true) then
             realmObject = mc_worldManager.GetCreateInstancedRealm(realmName, clicker, realmSchematic, temp)
         else
             realmObject = Realm.GetRealm(realmID)
@@ -78,11 +78,15 @@ minetest.register_node("mc_worldmanager:teleporter", {
                 if (realmSchematic ~= nil) then
                     realmObject = Realm:NewFromSchematic(realmName, realmSchematic)
                 else
-                    realmObject = Realm:New(realmName, { x = 80, y = 80, z = 80 }, true)
+                    realmObject = Realm:New(realmName, { x = 80, y = 80, z = 80 })
+                    realmObject:CreateGround()
+                    realmObject:CreateBarriersFast()
                 end
 
                 meta:set_int("realm", realmObject.ID)
                 minetest.swap_node(pos, { name = "mc_worldmanager:teleporter", param2 = math.ceil(math.sin(realmObject.ID) * 255) })
+            else
+                minetest.chat_send_player(clicker:get_player_name(), "This teleporter is broken. Please contact an instructor for assistance.")
             end
 
         end
@@ -161,10 +165,10 @@ function mc_worldManager.GetTeleporterItemStack(count, instanced, temp, realmID,
         name = "Unnamed Realm"
     end
 
-    itemMeta:set_string("instanced", instanced)
-    itemMeta:set_string("temp", temp)
-    itemMeta:set_int("realm", realmID)
-    itemMeta:set_string("name", name)
+    itemMeta:set_string("instanced", tostring(instanced))
+    itemMeta:set_string("temp", tostring(temp))
+    itemMeta:set_int("realm", tonumber(realmID))
+    itemMeta:set_string("name", tostring(name))
 
     if (schematic ~= nil or schematic == "") then
         itemMeta:set_string("schematic", schematic)
@@ -178,7 +182,7 @@ end
 Realm.RegisterOnCreateCallback(function(realm)
     Debug.log("OnCreateCallback")
 
-    local position = { x = realm.SpawnPoint.x, y = realm.SpawnPoint.y - 1, z = realm.SpawnPoint.z }
+    local position = { x = realm.SpawnPoint.x, y = math.floor(realm.SpawnPoint.y) - 1, z = realm.SpawnPoint.z }
     minetest.set_node(position, { name = "mc_worldmanager:teleporter" })
     local nodeMeta = minetest.get_meta(position)
     nodeMeta:set_int('realm', 0)

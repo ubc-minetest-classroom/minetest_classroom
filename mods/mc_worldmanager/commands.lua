@@ -419,11 +419,13 @@ commands["blocks"] = {
 
             if (mc_helpers.isNumber(tostring(params[3]))) then
                 realmID = tonumber(params[3])
-            elseif (params[3] == "true") then
+            elseif (string.lower(params[3]) == "true") then
                 instanced = true
             end
 
-            temp = params[4]
+            if (string.lower(params[4]) == "true") then
+                temp = true
+            end
             realmName = params[5]
             schematic = params[6]
 
