@@ -17,8 +17,9 @@ local adjustments_menu = {
 	"button[0.5,3.3;3.5,0.8;getAzimuth;Get Current Azimuth]",
 	"box[0.5,4.2;5,0.5;#808080]",
 	"textarea[0.5,4.2;5,0.5;;;]",
-	"image[7.5,1.73;4,3.3;needle_0.png]",
-	"image[6.9,1.1;5.2,4.3;bezel_0.png]"
+	"image[4.5,-2;10,10;compass_mirror.png]",
+	"image[4.5,-2;10,10;needle_0.png]",
+	"image[4.5,-2;10,10;bezel_0.png]"
 }
 
 -- gives the appearance that the formspec remembers the previously set value for the given field
@@ -35,24 +36,36 @@ local function show_adjustments_menu(player)
 end
 
 local function update_formspec_needle(player)
-	adjustments_menu[11] = "image[7.7,1.7;3.8,3.2;" .. curr_needle .. "]"
+	local preText = "image[4.5,-2;10,10;"
+
+	if string.len(curr_needle) > 12 then 
+		if string.sub(curr_needle, 13, 27) == "^[transformR90" or string.sub(curr_needle, 15, 29) == "^[transformR90" then
+			preText = "image[3.75,-1.26;10,10;"
+		elseif string.sub(curr_needle, 13, 27) == "^[transformR180" or string.sub(curr_needle, 15, 29) == "^[transformR180" then
+			preText = "image[4.5,-0.55;10,10;"
+		elseif string.sub(curr_needle, 13, 27) == "^[transformR270" or string.sub(curr_needle, 15, 29) == "^[transformR270" then
+			preText = "image[5.26,-1.26;10,10;"
+		end
+	end
+
+	adjustments_menu[12] = preText .. curr_needle .. "]"
 	show_adjustments_menu(player)
 end
 
 local function update_formspec_bezel(player)
-	local preText = "image[6.9,1.1;5.2,4.3;"
+	local preText = "image[4.5,-2;10,10;"
 
 	if string.len(curr_bezel) > 11 then 
 		if string.sub(curr_bezel, 12, 25) == "^[transformR90" or string.sub(curr_bezel, 14, 27) == "^[transformR90" then
-			preText = "image[6.95,1.2;5.2,4.3;"
+			preText = "image[3.75,-1.26;10,10;"
 		elseif string.sub(curr_bezel, 12, 26) == "^[transformR180" or string.sub(curr_bezel, 14, 28) == "^[transformR180" then
-			preText = "image[7.1,1.2;5.2,4.3;"
+			preText = "image[4.5,-0.55;10,10;"
 		elseif string.sub(curr_bezel, 12, 26) == "^[transformR270" or string.sub(curr_bezel, 14, 28) == "^[transformR270" then
-			preText = "image[7.05,1.1;5.2,4.3;"
+			preText = "image[5.26,-1.26;10,10;"
 		end
 	end
 
-	adjustments_menu[12] = preText .. curr_bezel .. "]"
+	adjustments_menu[13] = preText .. curr_bezel .. "]"
 	show_adjustments_menu(player)
 end
 
@@ -86,7 +99,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - magnetic declination set to " .. fields.declination .. "°"))
 
-						minetest.after(0.1, update_formspec_needle, player)
+						minetest.after(0.1, uupdate_formspec_needle, player)
 						minetest.after(0.1, update_formspec_bezel, player)
 					end
 				else 
@@ -114,7 +127,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				end
 			end
 
-			if tonumber(fields.declination) ~= 0 and string.sub(adjustments_menu[10], 25, 26) ~= "]" then
+			if tonumber(fields.declination) ~= 0 and string.sub(adjustments_menu[11], 25, 26) ~= "]" then
 				adjustments_menu[10] = "textarea[0.5,4.2;5,0.5;;;]"
 				show_adjustments_menu(player)
 			end
