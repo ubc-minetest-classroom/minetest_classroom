@@ -11,7 +11,7 @@ local data
 
 minetest.register_on_joinplayer(function(player)
 	local pmeta = player:get_meta()
-	
+
 	data = {
 		pos1 = {x=0, y=0, z=0},
 		pos2 = {x=0, y=0, z=0},
@@ -139,10 +139,12 @@ function mark_pos2(player, pos)
 				newPos = changePos(newPos, "y", i, player)
 			end
 
-			data.tape_nodes[i] = newPos
-			data.orig_nodes[i] = minetest.get_node(newPos)
-			pmeta:set_string("measuring_tape", minetest.serialize(data))
-			minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+			if newPos.x ~= pos1.x or newPos.y ~= pos1.y or newPos.z ~= pos1.z then
+				data.tape_nodes[i] = newPos
+				data.orig_nodes[i] = minetest.get_node(newPos)
+				pmeta:set_string("measuring_tape", minetest.serialize(data))
+				minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+			end
 		end
 
 		tell_player(pname, "Distance: " .. minetest.colorize("#FFFF00", distance) .. "m")
@@ -206,15 +208,16 @@ function tell_player(player_name, msg)
 	minetest.chat_send_player(player_name, "Measuring Tape - " .. msg)	
 end
 
--- minetest.register_on_leaveplayer(reset)
+minetest.register_on_leaveplayer(reset)
 
--- minetest.register_on_shutdown(function(player)
--- 	local players = minetest.get_connected_players()
+-- Included because on_leaveplayer doesn't work in singeplayer mode
+minetest.register_on_shutdown(function(player)
+	local players = minetest.get_connected_players()
 
--- 	for _,player in pairs(players) do
--- 		reset(player)
--- 	end
--- end)
+	for _,player in pairs(players) do
+		reset(player)
+	end
+end)
 
 minetest.register_tool("forestry_tools:measuringTape" , {
 	description = "Measuring Tape",
