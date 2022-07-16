@@ -43,6 +43,21 @@ minetest.register_node("forestry_tools:measure_pos2", {
 	groups = {not_in_creative_inventory, immortal}
 })
 
+-- Hud displaying distance between player and pos1
+local hud = mhud.init()
+local function create_hud(player, pos)
+	local pmeta = player:get_meta()
+	local data = minetest.deserialize(pmeta:get_string("measuring_tape"))
+
+	hud:add(player, "measuring_tape:current_distance", {
+		hud_elem_type = "waypoint",
+		name = "Distance: ",
+		text = "m",
+		world_pos = data.pos1,
+		color = 0x000000
+	})
+end
+
 -- Marks pos1 and starts auto-reset counter
 function mark_pos1(player, pos)
 	local pname = player:get_player_name()
@@ -108,6 +123,7 @@ function mark_pos2(player, pos)
 	tell_player(pname, "End position marked")
 	data.mark_status = "pos2_set"
 	pmeta:set_string("measuring_tape", minetest.serialize(data))
+	hud:remove_all()
 	
 	-- Calculate the distance and display output
 	distance = math.floor(vector.distance(pos1, pos2) + 0.5)
@@ -244,6 +260,7 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 			-- If pos1 not marked, mark pos1
 			if mark_status == "none_set" then
 				mark_pos1(placer, pointed_thing.under)
+				create_hud(placer, pointed_thing.under)
 			
 			-- If pos1 marked, mark pos2 perform calculations, and trigger auto-reset
 			elseif mark_status == "pos1_set" then
