@@ -273,7 +273,6 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 
 	-- Destroy the item on_drop to keep things tidy
 	on_drop = function (itemstack, dropper, pos)
-		minetest.set_node(pos, {name="air"})
 	end,
 })
 
