@@ -42,7 +42,7 @@ commands["new"] = {
         end
         local newRealm = Realm:New(realmName, { x = sizeX, y = sizeY, z = sizeZ })
         newRealm:CreateGround()
-        newRealm:CreateBarriers()
+        newRealm:CreateBarriersFast()
 
         return true, "created new realm with ID: " .. newRealm.ID
     end,
@@ -126,8 +126,102 @@ commands["walls"] = {
             return false, "Requested realm of ID:" .. realmID .. " does not exist."
         end
 
-        requestedRealm:CreateBarriers()
+        if (params[2] ~= nil and params[2] == "fast") then
+            requestedRealm:CreateBarriersFast()
+        else
+            requestedRealm:CreateBarriers()
+        end
+
+        return true, "created walls in realm: " .. tostring(realmID)
     end }
+
+commands["gen"] = {
+    func = function(name, params)
+        local realmID = params[1]
+        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        if (requestedRealm == nil) then
+            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+        end
+
+        local seaLevel = math.floor((requestedRealm.EndPos.y - requestedRealm.StartPos.y) * 0.4) + requestedRealm.StartPos.y
+        Debug.log("Sea level:" .. seaLevel)
+
+        local heightGen = params[2]
+        local decGen = params[3]
+
+        local seed = tonumber(params[4])
+        if (seed == nil) then
+            seed = math.random(1, 1000)
+        end
+
+        local seaLevel = requestedRealm.StartPos.y
+        if (params[5] == "" or params[5] == nil) then
+            seaLevel = seaLevel + 30
+        else
+            seaLevel = seaLevel + tonumber(params[5])
+        end
+
+        if (heightGen == "" or heightGen == nil) then
+            heightGen = "default"
+        end
+
+        if (requestedRealm:GenerateTerrain(seed, seaLevel, heightGen, decGen) == false) then
+            return false, "Failed to generate terrain"
+        end
+
+        Debug.log("Creating barrier...")
+        requestedRealm:CreateBarriersFast()
+
+        return true
+    end }
+
+commands["regen"] = {
+    func = function(name, params)
+        local realmID = params[1]
+        local requestedRealm = Realm.realmDict[tonumber(realmID)]
+        if (requestedRealm == nil) then
+            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+        end
+
+        local seaLevel = math.floor((requestedRealm.EndPos.y - requestedRealm.StartPos.y) * 0.4) + requestedRealm.StartPos.y
+        Debug.log("Sea level:" .. seaLevel)
+
+        local seed = requestedRealm:get_data("worldSeed")
+        local seaLevel = requestedRealm:get_data("worldSeaLevel")
+        local heightGen = requestedRealm:get_data("worldMapGenerator")
+        local decGen = requestedRealm:get_data("worldDecoratorName")
+
+        if (seed == nil or seed == "nil") then
+            return false, "Realm does not have any saved seed information."
+        end
+
+        if (heightGen == nil or heightGen == "") then
+            return false, "Realm does not have any saved height generator information. Please try to manually regenerate world with gen command and seed " .. tostring(seed)
+        end
+
+        if (decGen == nil or decGen == "") then
+            return false, "Realm does not have any saved decorator information. Please try to manually regenerate world with gen command, seed " .. tostring(seed) .. " and height generator name " .. tostring(heightGen)
+        end
+
+        requestedRealm:GenerateTerrain(seed, seaLevel, heightGen, decGen)
+
+        Debug.log("Creating barrier...")
+        requestedRealm:CreateBarriersFast()
+
+        return true
+    end }
+
+commands["seed"] = { func = function(name, params)
+    local realmID = params[1]
+    local requestedRealm = Realm.GetRealm(tonumber(realmID))
+    if (requestedRealm == nil) then
+        return false, "Requested realm of ID:" .. realmID .. " does not exist."
+    end
+
+    local seed = requestedRealm:get_data("worldSeed")
+
+    return true, "World Seed for Realm: " .. tostring(seed)
+end }
 
 commands["schematic"] = {
     func = function(name, params)
