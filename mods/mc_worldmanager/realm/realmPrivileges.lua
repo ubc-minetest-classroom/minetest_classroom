@@ -61,7 +61,6 @@ end
 function Realm:ApplyPrivileges(player)
     local name = player:get_player_name()
     local pmeta = player:get_meta()
-
     local privs = minetest.get_player_privs(name)
 
 
@@ -72,6 +71,11 @@ function Realm:ApplyPrivileges(player)
 
     -- Add the universal privileges that a player has access to.
     local defaultPerms = minetest.deserialize(pmeta:get_string("universalPrivs"))
+
+    if (defaultPerms == nil) then
+        defaultPerms = {}
+    end
+
     for k, v in pairs(defaultPerms) do
         privs[k] = v
     end
