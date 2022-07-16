@@ -34,7 +34,7 @@ function mc_toolhandler.create_tool_inventory(player)
 
     -- clear existing store list
     store_inv:set_list(list_name, {})
-    local tools_to_check = table.insert_all(table.copy(mc_toolhandler.reg_tools), mc_toolhandler.reg_group_tools)
+    local tools_to_check = table.insert_all(mc_helpers.shallowCopy(mc_toolhandler.reg_tools), mc_toolhandler.reg_group_tools)
     local count = 0
 
     -- add items to store

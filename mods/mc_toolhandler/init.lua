@@ -246,7 +246,7 @@ local reg_tools_from = {}
 local settings = Settings(minetest.get_modpath("mc_toolhandler") .. "/mod.conf")
 local mods = string.split(settings:get("optional_depends"), ",")
 for _,mod in pairs(mods) do
-    table.insert(reg_tools_from, string.trim(mod))
+    table.insert(reg_tools_from, mc_helpers.trim(mod))
 end
 
 -- Register give/take callbacks for all MineTest classroom tools

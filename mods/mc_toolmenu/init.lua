@@ -44,7 +44,7 @@ end)
 
 minetest.register_allow_player_inventory_action(function(player, action, inventory, inv_info)
     -- initial check
-    list_info = inv_info.listname or (inv_info.to_list == "mc_toolmenu:tools" and inv_info.to_list or inv_info.from_list)
+    local list_info = inv_info.listname or (inv_info.to_list == "mc_toolmenu:tools" and inv_info.to_list or inv_info.from_list)
     if list_info ~= "mc_toolmenu:tools" then
         return -- toolbox not affected, ignore
     end
@@ -74,7 +74,7 @@ end)
 
 minetest.register_on_player_inventory_action(function(player, action, inventory, inv_info)
     -- initial check
-    list_info = inv_info.listname or (inv_info.to_list == "mc_toolmenu:tools" and inv_info.to_list or inv_info.from_list)
+    local list_info = inv_info.listname or (inv_info.to_list == "mc_toolmenu:tools" and inv_info.to_list or inv_info.from_list)
     if list_info ~= "mc_toolmenu:tools" then
         return -- toolbox not affected, ignore
     end
