@@ -11,6 +11,7 @@ schematicManager.schematics = {}
 ---@param key string the key to associate with the schematic path.
 ---@param rootPath string the path to a schematic and config file.
 function schematicManager.registerSchematicPath(key, rootPath)
+    key = string.lower(key)
 
     -- Sanity checking our schematic registration to ensure we don't enter an invalid state.
     if (key == nil) then
@@ -35,6 +36,8 @@ end
 ---@return string path to the schematic; or nil if the key is invalid.
 ---@return table schematic configuration containing Author, Name, spawnPoint, and size; or nil if the key is invalid.
 function schematicManager.getSchematic(key)
+    key = string.lower(key)
+
     local rootPath = schematicManager.schematics[key]
 
     if (rootPath == nil) then
