@@ -1,8 +1,16 @@
 ---@public
 ---TeleportPlayer
 ---Teleports a player to this realm.
----@param player objectRef
+---@param player
 function Realm:TeleportPlayer(player)
+    local realmCategory = self:getCategory()
+
+    local joinable, reason = realmCategory.joinable(self, player)
+
+    if (not joinable and not minetest.check_player_privs(player, { teacher = true })) then
+        return false, "Player does not have permission to join this realm."
+    end
+
     local newRealmID, OldRealmID = self:UpdatePlayerMetaData(player)
 
     if (OldRealmID ~= nil) then
@@ -20,6 +28,8 @@ function Realm:TeleportPlayer(player)
     self:RegisterPlayer(player)
     mc_worldManager.updateHud(player)
     self:ApplyPrivileges(player)
+
+    return true, "Successfully teleported to realm."
 end
 
 ---@private
@@ -60,7 +70,7 @@ function Realm:RegisterPlayer(player)
 end
 
 ---@private
----@param player objectRef
+---@param player
 function Realm:DeregisterPlayer(player)
     local table = self:get_tmpData("Inhabitants")
     if (table == nil) then
