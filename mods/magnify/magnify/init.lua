@@ -221,7 +221,7 @@ local function get_expanded_species_formspec(ref)
             "formspec_version[5]", size,
             "box[0,0;12.2,0.8;#9192a3]",
             "label[4.8,0.2;Technical Information]",
-            "label[0,1;", minetest.formspec_escape(info.com_name) or minetest.formspec_escape(info.sci_name) or "Unknown", " @ ref ", minetest.formspec_escape(ref), "]",
+            "label[0,1;", minetest.formspec_escape(info.com_name) or minetest.formspec_escape(info.sci_name) or "Unknown", " @ ref. ", minetest.formspec_escape(ref), "]",
             "textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
             "label[0,1.6;Associated nodes:]",
             "button[6.2,6.2;6.2,0.6;back;Back]",

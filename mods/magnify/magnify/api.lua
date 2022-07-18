@@ -1,21 +1,6 @@
---- @private
---- Searches for a reference key with information matching the information in def_table, and returns it if found. Otherwise, returns the next unused reference key
---- @param def_table Species definition table
---- @return number
-local function find_registration_ref(def_table)
-    -- search for a matching scientific name
-    local storage_data = magnify.species.ref:to_table()
-    for k,v in pairs(storage_data.fields) do
-        local data = minetest.deserialize(v)
-        if type(data) == "table" and def_table.sci_name and (def_table.sci_name == data.sci_name) then
-            return tonumber(k)
-        end
-    end
-
-    local count = tonumber(magnify.species.ref:get("count") or 1)
-    magnify.species.ref:set_int("count", count + 1)
-    return count
-end
+-----------------------
+---     HELPERS     ---
+-----------------------
 
 --- @public
 --- Returns true if `table` has at least one defined key-value pair, false if not, nil if `table` is not a table
@@ -44,6 +29,34 @@ function magnify.table_has(table, val)
     return false
 end
 
+-----------------------
+---     GENERAL     ---
+-----------------------
+
+--- @private
+--- Searches for a reference key with information matching the information in def_table, and returns it if found, along with a string indicating the format of the reference key
+--- Otherwise, returns the next unused reference key
+--- @param def_table Species definition table
+--- @return string, string
+local function find_registration_ref(def_table)
+    -- search for a matching scientific name
+    local storage_data = magnify.species.ref:to_table()
+    for k,v in pairs(storage_data.fields) do
+        local data = minetest.deserialize(v)
+        if type(data) == "table" and def_table.sci_name and (def_table.sci_name == data.sci_name) then
+            if string.sub(tostring(k), 1, 4) == "ref_" then
+                return tostring(k), "v1"
+            else
+                return tostring(k), "v2"
+            end
+        end
+    end
+
+    local count = tonumber(magnify.species.ref:get("count") or 1)
+    magnify.species.ref:set_int("count", count + 1)
+    return tostring(count), "v2"
+end
+
 --- @public
 --- Registers a species in the `magnify` species database
 --- Should only be called on mod load-in 
@@ -67,8 +80,18 @@ function magnify.register_species(def_table, nodes)
         return nil -- no nodes given
     end
 
-    local ref = tostring(find_registration_ref(def_table))
+    local ref, format = find_registration_ref(def_table)
     def_table["origin"] = minetest.get_current_modname()
+
+    -- migrate old format reference keys
+    if format ~= "v2" then
+        if format == "v1" then
+            magnify.species.ref:set_string(ref, "")
+            ref = string.sub(ref, 5)
+        else
+            return nil -- could not determine ref key
+        end
+    end
 
     local serial_table = minetest.serialize(def_table)
     magnify.species.ref:set_string(ref, serial_table)
