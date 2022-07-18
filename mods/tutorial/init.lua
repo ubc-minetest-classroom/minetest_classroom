@@ -11,9 +11,41 @@
 ----- add option to display a message after completing a specific action, like "now do this next"\
 ----- refactor global recording-specific variables such as tutorial.recordingActive into player-dependent tables so that multiple players can record different tutorials at once
 
-tutorial = {}
-tutorial.path = minetest.get_modpath("tutorial")
-tutorial.tutorials = minetest.get_mod_storage()
+tutorial = {
+    path = minetest.get_modpath("tutorial"),
+    tutorials = minetest.get_mod_storage()
+}
+
+-- Store and load default settings in the tutorial_settings.conf file
+local settings = Settings(tutorial.path .. "/tutorial_settings.conf")
+function tutorial.fetch_setting(name)
+    local sname = "tutorial." .. name
+    return settings and settings:get(sname) or minetest.settings:get(sname)
+end
+function tutorial.fetch_setting_table(name)
+    local setting_string = tutorial.fetch_setting(name)
+    local table = mc_helpers.split(setting_string, ",")
+    for i,v in ipairs(table) do
+        table[i] = v:trim()
+    end
+    return table
+end
+function tutorial.fetch_setting_privtable(name)
+    local output = {}
+    for _,priv in pairs(tutorial.fetch_setting_table(name) or {}) do
+        output[priv] = true
+    end
+    return output
+end
+
+tutorial.player_priv_table = tutorial.fetch_setting_privtable("player_priv_table") or {interact = true}
+tutorial.recorder_priv_table = tutorial.fetch_setting_privtable("recorder_priv_table") or {teacher = true, interact = true}
+tutorial.check_interval = tutorial.fetch_setting("check_interval") or 1
+tutorial.check_dir_tolerance = tutorial.fetch_setting("check_dir_tolerance") or 0.01745
+local tolerance_table = tutorial.fetch_setting_table("check_pos_tolerance") or {4, 4, 4}
+tutorial.check_pos_x_tolerance = tonumber(tolerance_table[1]) * tutorial.check_interval
+tutorial.check_pos_y_tolerance = tonumber(tolerance_table[2]) * tutorial.check_interval
+tutorial.check_pos_z_tolerance = tonumber(tolerance_table[3]) * tutorial.check_interval
 
 -- Load other scripts
 dofile(tutorial.path .. "/functions.lua")
@@ -25,37 +57,25 @@ tutorial.recordingActive = false
 tutorial.instancedTutorial = true
 tutorial.editingTutorial = false
 
--- Store and load default settings in the tutorial_settings.conf file
-function tutorial.fetch_setting(name)
-    local sname = "tutorial." .. name
-    return settings and settings:get(sname) or minetest.settings:get(sname)
-end
-local settings = Settings(tutorial.path .. "/tutorial_settings.conf")
-tutorial.player_priv_table = tutorial.fetch_setting("player_priv_table")
-tutorial.recorder_priv_table = tutorial.fetch_setting("recorder_priv_table")
-tutorial.check_interval = tutorial.fetch_setting("check_interval")
-tutorial.check_pos_x_tolerance = tutorial.fetch_setting("check_pos_x_tolerance")
-tutorial.check_pos_y_tolerance = tutorial.fetch_setting("check_pos_y_tolerance")
-tutorial.check_pos_z_tolerance = tutorial.fetch_setting("check_pos_z_tolerance")
-tutorial.check_dir_tolerance = tutorial.fetch_setting("check_dir_tolerance")
-
 minetest.register_on_joinplayer(function(player)
     -- Load player meta
     pmeta = player:get_meta()
-    pdata = minetest.deserialize(pmeta:get_string("tutorials"))
+    pdata = minetest.deserialize(pmeta:get_string("tutorial:tutorials"))
     if pdata == nil or next(pdata) == nil then
         -- Nothing to see here so initialize and serialize a table to hold everything
-        pdata = {}
-        pdata.tutorials = {
-            activeTutorial = {},
-            playerSequence = {},
-            completedTutorials = {}, -- TODO: use this to change the tutorial_fs to indicate tutorials that are completed
-            weildedThingListener = false,
-            keyStrikeListener = false,
+        pdata = {
+            tutorials = {
+                activeTutorial = {},
+                playerSequence = {},
+                completedTutorials = {}, -- TODO: use this to change the tutorial_fs to indicate tutorials that are completed
+                weildedThingListener = false,
+                keyStrikeListener = false,
+            }
         }
-        pmeta:set_string("tutorials", minetest.serialize(pdata))
+        pmeta:set_string("tutorial:tutorials", minetest.serialize(pdata))
     end
 
+    --[[
     -- When a player joins, check if they have the correct priv and then give the tutorialbook and/or the recording tool
 	local inv = player:get_inventory()
 	-- tutorialbook
@@ -85,7 +105,7 @@ minetest.register_on_joinplayer(function(player)
 		else
 			return
 		end
-	end
+	end]]
 end)
 
 function tutorial.show_record_fs(player)
@@ -104,7 +124,7 @@ function tutorial.show_record_fs(player)
         }
 
         -- If there is at least one other tutorial recorded, then present the option to modify dependencies
-        local tutorials = minetest.deserialize(tutorial.tutorials:get_string("tutorials"))
+        local tutorials = minetest.deserialize(tutorial.tutorials:get_string("tutorial:tutorials"))
         if tutorials ~= nil and next(tutorials) ~= nil then
             record_fs[#record_fs + 1] = "button_exit[1.1,10.9;5.8,0.8;dependence;Select Tutorial Dependencies]"
             record_fs[#record_fs + 1] = "label[7.2,11.3;OR]" 
@@ -292,7 +312,7 @@ function tutorial.show_tutorials(player)
     tutorials_fs[#tutorials_fs + 1] = "button_exit[11.3,8.9;1.5,0.8;exit;Exit]"
 
     -- Get the stored tutorials available for any player
-    local tutorials = minetest.deserialize(tutorial.tutorials:get_string("tutorials"))
+    local tutorials = minetest.deserialize(tutorial.tutorials:get_string("tutorial:tutorials"))
     if tutorials ~= nil and tutorials[1] ~= nil then
         tutorials_fs[#tutorials_fs + 1] = "box[0.1,8.8;5.7,1;#00FF00]"
         tutorials_fs[#tutorials_fs + 1] = "button_exit[0.2,8.9;5.5,0.8;start;Start Tutorial]"
@@ -333,7 +353,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 	-- Manage recorded tutorials
     if formname == "tutorial:tutorials" then
-        local tutorials = minetest.deserialize(tutorial.tutorials:get_string("tutorials"))
+        local tutorials = minetest.deserialize(tutorial.tutorials:get_string("tutorial:tutorials"))
         if fields.tutoriallist then
             local event = minetest.explode_textlist_event(fields.tutoriallist)
             if event.type == "CHG" then
@@ -345,7 +365,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 if tutorial.tutorial_selected == nil then tutorial.tutorial_selected = 1 end
                 if tutorials ~= nil then
                     table.remove(tutorials,tutorial.tutorial_selected)
-                    tutorial.tutorials:set_string("tutorials", minetest.serialize(tutorials))
+                    tutorial.tutorials:set_string("tutorial:tutorials", minetest.serialize(tutorials))
                     tutorial.tutorial_selected = 1
                     tutorial.show_tutorials(player)
                 else
@@ -369,9 +389,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if tutorial.tutorial_selected == nil then tutorial.tutorial_selected = 1 end
             if tutorials[tutorial.tutorial_selected] then
                 pmeta = player:get_meta()
-                pdata = minetest.deserialize(pmeta:get_string("tutorials"))
+                pdata = minetest.deserialize(pmeta:get_string("tutorial:tutorials"))
                 pdata.tutorials.activeTutorial = tutorials[tutorial.tutorial_selected]
-                pmeta:set_string("tutorials", minetest.serialize(pdata))
+                pmeta:set_string("tutorial:tutorials", minetest.serialize(pdata))
                 minetest.chat_send_player(pname,pname.." [Tutorial] Tutorial has started: "..pdata.tutorials.activeTutorial.title)
                 -- Check if there is an action in the tutorialSequence that requires the tutorial_progress_listener
                 -- This saves us from unnecessarily burning cycles server-side
@@ -597,11 +617,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     }
 
                     -- Send to mod storage
-                    local tutorials = minetest.deserialize(tutorial.tutorials:get_string("tutorials"))
+                    local tutorials = minetest.deserialize(tutorial.tutorials:get_string("tutorial:tutorials"))
                     if tutorials == nil or next(tutorials) == nil then
                         local tutorials = {}
                         table.insert(tutorials, recordTutorial)
-                        tutorial.tutorials:set_string("tutorials", minetest.serialize(tutorials))
+                        tutorial.tutorials:set_string("tutorial:tutorials", minetest.serialize(tutorials))
                     else
                         if tutorial.editingTutorial then
                             -- We are editing an existing tutorial
@@ -610,7 +630,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                             -- We are apending a new tutorial
                             table.insert(tutorials, recordTutorial)
                         end
-                        tutorial.tutorials:set_string("tutorials", minetest.serialize(tutorials))
+                        tutorial.tutorials:set_string("tutorial:tutorials", minetest.serialize(tutorials))
                     end
                     minetest.chat_send_player(pname,pname.." [Tutorial] Your tutorial was successfully recorded!")
                 else
@@ -637,9 +657,9 @@ end)
 
 minetest.register_on_leaveplayer(function(player)
     pmeta = player:get_meta()
-    pdata = minetest.deserialize(pmeta:get_string("tutorials"))
+    pdata = minetest.deserialize(pmeta:get_string("tutorial:tutorials"))
     pdata.tutorials.activeTutorial.continueTutorial = false
-    pmeta:set_string("tutorials", minetest.serialize(pdata))
+    pmeta:set_string("tutorial:tutorials", minetest.serialize(pdata))
 end)
 
 -- TODO: other possible callbacks
@@ -652,7 +672,7 @@ minetest.register_chatcommand("clearTutorials", {
 	description = "Clear all tutorials from mod storage.",
 	privs = tutorial.recorder_priv_table,
 	func = function(name, param)
-        tutorial.tutorials:set_string("tutorials", nil)
+        tutorial.tutorials:set_string("tutorial:tutorials", nil)
         minetest.chat_send_all("[Tutorial] All tutorials have been cleared from memory.")
 	end
 })
@@ -661,7 +681,7 @@ minetest.register_chatcommand("listTutorials", {
 	description = "List titles of all stored tutorials.",
 	privs = tutorial.recorder_priv_table,
 	func = function(name, param)
-        local tutorials = minetest.deserialize(tutorial.tutorials:get_string("tutorials"))
+        local tutorials = minetest.deserialize(tutorial.tutorials:get_string("tutorial:tutorials"))
         if tutorials ~= nil then
             minetest.chat_send_all("[Tutorial] Recorded tutorials:")
             for _,thisTutorial in pairs(tutorials) do
@@ -677,7 +697,7 @@ minetest.register_chatcommand("dumpTutorials", {
 	description = "Dumps tutorials mod storage table.",
 	privs = tutorial.recorder_priv_table,
 	func = function(name, param)
-        tutorials = minetest.deserialize(tutorial.tutorials:get_string("tutorials"))
+        tutorials = minetest.deserialize(tutorial.tutorials:get_string("tutorial:tutorials"))
         minetest.chat_send_all(tostring(_G.dump(tutorials)))
 	end
 })
@@ -688,7 +708,7 @@ minetest.register_chatcommand("dumppdata", {
 	func = function(name, param)
         player = minetest.get_player_by_name(name)
         pmeta = player:get_meta()
-        pdata = minetest.deserialize(pmeta:get_string("tutorials"))
+        pdata = minetest.deserialize(pmeta:get_string("tutorial:tutorials"))
         minetest.chat_send_all(tostring(_G.dump(pdata)))
 	end
 })
