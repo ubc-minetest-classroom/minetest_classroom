@@ -20,6 +20,21 @@ minetest.register_tool("tutorial:tutorialbook" , {
 minetest.register_alias("tutorialbook", "tutorial:tutorialbook")
 tutorial.tutorialbook = minetest.registered_aliases[tutorialbook] or tutorial.tutorialbook
 
+local function open_recording_menu(itemstack, placer, pointed_thing)
+    local pname = placer:get_player_name()
+    if not tutorial.checkPrivs(placer,tutorial.recorder_priv_table) then
+        minetest.chat_send_player(pname, "[Tutorial] You do not have privileges to use this tool.")
+        return nil
+    else
+        if not tutorial.record.active[pname] then
+            minetest.chat_send_player(pname, "[Tutorial] You need to start an active recording first by left-clicking with the tool.")
+            return nil
+        else
+            tutorial.show_record_options_fs(placer)
+        end
+    end
+end
+
 -- The tutorial recording tool
 minetest.register_tool("tutorial:recording_tool", {
     description = "Tutorial Recording Tool",
@@ -58,20 +73,8 @@ minetest.register_tool("tutorial:recording_tool", {
         end
     end,
 
-    on_place = function(itemstack, placer, pointed_thing)
-        local pname = placer:get_player_name()
-        if not tutorial.checkPrivs(placer,tutorial.recorder_priv_table) then
-            minetest.chat_send_player(pname, "[Tutorial] You do not have privileges to use this tool.")
-            return nil
-        else
-            if not tutorial.record.active[pname] then
-                minetest.chat_send_player(pname, "[Tutorial] You need to start an active recording first by left-clicking with the tool.")
-                return nil
-            else
-                tutorial.show_record_options_fs(placer)
-            end
-        end
-    end,
+    on_secondary_use = open_recording_menu,
+    on_place = open_recording_menu,
 
     -- makes the tool undroppable
     on_drop = function (itemstack, dropper, pos)
