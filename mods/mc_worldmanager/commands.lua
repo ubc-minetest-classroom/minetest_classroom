@@ -46,7 +46,7 @@ commands["new"] = {
 
         return true, "created new realm with ID: " .. newRealm.ID
     end,
-    help = "realm new [name] [sizeX] [sizeY] [sizeZ] - Create a new realm", }
+    help = "realm new [name] ([<sizeX>] [<sizeY>] [<sizeZ>]) - Create a new realm", }
 
 commands["delete"] = {
     func = function(name, params)
@@ -140,7 +140,7 @@ commands["gen"] = {
         local realmID = params[1]
         local requestedRealm = Realm.realmDict[tonumber(realmID)]
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
         end
 
         local seaLevel = math.floor((requestedRealm.EndPos.y - requestedRealm.StartPos.y) * 0.4) + requestedRealm.StartPos.y
