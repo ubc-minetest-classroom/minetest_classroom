@@ -1,187 +1,66 @@
 local HUD_showing = false
 local curr_pitch, curr_percent = 0
 local bg_angle
+local degreePlus0Hud, degreePlus10Hud, degreePlus20Hud, degreeMinus10Hud, degreeMinus20Hud = mhud.init(), mhud.init(), mhud.init(), mhud.init(), mhud.init()
+local percentPlus0Hud, percentPlus10Hud, percentPlus20Hud, percentPlus30Hud, percentPlus40Hud = mhud.init(), mhud.init(), mhud.init(), mhud.init(), mhud.init()
+local percentMinus10Hud, percentMinus20Hud, percentMinus30Hud, percentMinus40Hud = mhud.init(), mhud.init(), mhud.init(), mhud.init()
 
-----------------------------
---- HUDS FOR DEGREE SIDE ---
-----------------------------
+-- local measurementHuds = {}
 
-local degreePlus0Hud = mhud.init()
-local function show_degree_plus_0_hud(player)
-	degreePlus0Hud:add(player, "degreePlus0", {
+-- table.insert(measurementHuds, { hudObject = degreePlus0Hud, string = "degreePlus0", xAlignment = "left", xOffset = -40, yOffset = -4 })
+-- table.insert(measurementHuds, { hudObject = degreePlus10Hud, string = "degreePlus10", xAlignment = "left", xOffset = -40, yOffset = -70 })
+-- table.insert(measurementHuds, { hudObject = degreePlus20Hud, string = "degreePlus20", xAlignment = "left", xOffset = -40, yOffset = -135 })
+-- table.insert(measurementHuds, { hudObject = degreeMinus10Hud, string = "degreeMinus10", xAlignment = "left", xOffset = -40, yOffset = 62 })
+-- table.insert(measurementHuds, { hudObject = degreeMinus20Hud, string = "degreeMinus20", xAlignment = "left", xOffset = -40, yOffset = 125 })
+
+-- local degreeHuds = {
+-- 	plus0 = {
+-- 		hudObject = degreePlus0Hud,
+-- 		title = "degreePlus0",
+-- 		xAlignment = "left",
+-- 		xOffset = -40,
+-- 		yOffset = -4
+-- 	},
+-- 	plus10 = {
+-- 		hudObject = degreePlus10Hud,
+-- 		title = "degreePlus10",
+-- 		xAlignment = "left",
+-- 		xOffset = -40,
+-- 		yOffset = -70
+-- 	},
+-- 	plus20 = {
+-- 		hudObject = degreePlus20Hud,
+-- 		title = "degreePlus20",
+-- 		xAlignment = "left",
+-- 		xOffset = -40,
+-- 		yOffset = -135
+-- 	},
+-- 	minus10 = {
+-- 		hudObject = degreeMinus10Hud,
+-- 		title = "degreeMinus10",
+-- 		xAlignment = "left",
+-- 		xOffset = -40,
+-- 		yOffset = 62
+-- 	},
+-- 	minus20 = {
+-- 		hudObject = degreeMinus20Hud,
+-- 		title = "degreeMinus20",
+-- 		xAlignment = "left",
+-- 		xOffset = -40,
+-- 		yOffset = 125
+-- 	}
+-- }
+
+local function show_measurement_hud(player, hudName, string, xAlignment, xOffset, yOffset)
+	hudName:add(player, string, {
 		hud_elem_type = "text",
 		text = "",
-		alignment = {x = "left", y = "centre"},
+		alignment = {x = xAlignment, y = "centre"},
 		position = {x = 0.7, y = 0.5}, 
 		scale = {x = 6.5, y = 6.5},
-		offset = {x = -40, y = -4}
+		offset = {x = xOffset, y = yOffset}
 	})
 end
-
-local degreePlus10Hud = mhud.init()
-local function show_degree_plus_10_hud(player)
-	degreePlus10Hud:add(player, "degreePlus10", {
-		hud_elem_type = "text",
-		text = "",
-		alignment = {x = "left", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = -40, y = -70}
-	})
-end
-
-local degreePlus20Hud = mhud.init()
-local function show_degree_plus_20_hud(player)
-	degreePlus20Hud:add(player, "degreePlus20", {
-		hud_elem_type = "text",
-		text = "",
-		alignment = {x = "left", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = -40, y = -135}
-	})
-end
-
-local degreeMinus10Hud = mhud.init()
-local function show_degree_minus_10_hud(player)
-	degreeMinus10Hud:add(player, "degreeMinus10", {
-		hud_elem_type = "text",
-		text = "",
-		alignment = {x = "left", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = -40, y = 62}
-	})
-end
-
-local degreeMinus20Hud = mhud.init()
-local function show_degree_minus_20_hud(player)
-	degreeMinus20Hud:add(player, "degreeMinus20", {
-		hud_elem_type = "text",
-		text = "",
-		alignment = {x = "left", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = -40, y = 125}
-	})
-end
-
------------------------------
---- HUDS FOR PERCENT SIDE ---
------------------------------
-
-local percentPlus0Hud = mhud.init()
-local function show_percent_plus_0_hud(player)
-	percentPlus0Hud:add(player, "percentPlus0", {
-		hud_elem_type = "text",
-		text = "test0",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = -4}
-	})
-end
-
-local percentPlus10Hud = mhud.init()
-local function show_percent_plus_10_hud(player)
-	percentPlus10Hud:add(player, "percentPlus10", {
-		hud_elem_type = "text",
-		text = "test10",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = -43}
-	})
-end
-
-local percentPlus20Hud = mhud.init()
-local function show_percent_plus_20_hud(player)
-	percentPlus20Hud:add(player, "percentPlus20", {
-		hud_elem_type = "text",
-		text = "test20",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = -83}
-	})
-end
-
-local percentPlus30Hud = mhud.init()
-local function show_percent_plus_30_hud(player)
-	percentPlus30Hud:add(player, "percentPlus30", {
-		hud_elem_type = "text",
-		text = "test30",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = -120}
-	})
-end
-
-local percentPlus40Hud = mhud.init()
-local function show_percent_plus_40_hud(player)
-	percentPlus40Hud:add(player, "percentPlus40", {
-		hud_elem_type = "text",
-		text = "test40",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = -160}
-	})
-end
-
-local percentMinus10Hud = mhud.init()
-local function show_percent_minus_10_hud(player)
-	percentMinus10Hud:add(player, "percentMinus10", {
-		hud_elem_type = "text",
-		text = "test-10",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = 37}
-	})
-end
-
-local percentMinus20Hud = mhud.init()
-local function show_percent_minus_20_hud(player)
-	percentMinus20Hud:add(player, "percentMinus20", {
-		hud_elem_type = "text",
-		text = "test-20",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = 75}
-	})
-end
-
-local percentMinus30Hud = mhud.init()
-local function show_percent_minus_30_hud(player)
-	percentMinus30Hud:add(player, "percentMinus30", {
-		hud_elem_type = "text",
-		text = "test-30",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = 115}
-	})
-end
-
-local percentMinus40Hud = mhud.init()
-local function show_percent_minus_40_hud(player)
-	percentMinus40Hud:add(player, "percentMinus40", {
-		hud_elem_type = "text",
-		text = "test-40",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = 153}
-	})
-end
-
-
-----------------------
---- HUD MANAGEMENT ---
-----------------------
 
 local bgHud = mhud.init()
 local function show_bg_hud(player)
@@ -196,22 +75,28 @@ local function show_bg_hud(player)
 	HUD_showing = true
 end
 
-local function show_huds(player)
+local function show_all_huds(player)
 	show_bg_hud(player)
-	show_degree_plus_0_hud(player)
-	show_degree_plus_10_hud(player)
-	show_degree_plus_20_hud(player)
-	show_degree_minus_10_hud(player)
-	show_degree_minus_20_hud(player)
-	show_percent_plus_0_hud(player)
-	show_percent_plus_10_hud(player)
-	show_percent_plus_20_hud(player)
-	show_percent_plus_30_hud(player)
-	show_percent_plus_40_hud(player)
-	show_percent_minus_10_hud(player)
-	show_percent_minus_20_hud(player)
-	show_percent_minus_30_hud(player)
-	show_percent_minus_40_hud(player)
+
+	-- for _,hud in ipairs(degreeHuds) do
+	-- 	show_measurement_hud(player, hud.hudObject, hud.title, hud.xAlignment, hud.xOffset, hud.yOffset)
+	-- end
+
+	show_measurement_hud(player, degreePlus0Hud, "degreePlus0", "left", -40, -4)
+	show_measurement_hud(player, degreePlus10Hud, "degreePlus10", "left", -40, -70)
+	show_measurement_hud(player, degreePlus20Hud, "degreePlus20", "left", -40, -135)
+	show_measurement_hud(player, degreeMinus10Hud, "degreeMinus10", "left", -40, 62)
+	show_measurement_hud(player, degreeMinus20Hud, "degreeMinus20", "left", -40, 125)
+
+	show_measurement_hud(player, percentPlus0Hud, "percentPlus0", "right", 35, -4)
+	show_measurement_hud(player, percentPlus10Hud, "percentPlus10", "right", 35, -43)
+	show_measurement_hud(player, percentPlus20Hud, "percentPlus20", "right", 35, -83)
+	show_measurement_hud(player, percentPlus30Hud, "percentPlus30", "right", 35, -120)
+	show_measurement_hud(player, percentPlus40Hud, "percentPlus40", "right", 35, -160)
+	show_measurement_hud(player, percentMinus10Hud, "percentMinus10", "right", 35, 37)
+	show_measurement_hud(player, percentMinus20Hud, "percentMinus20", "right", 35, 75)
+	show_measurement_hud(player, percentMinus30Hud, "percentMinus30", "right", 35, 115)
+	show_measurement_hud(player, percentMinus40Hud, "percentMinus40", "right", 35, 153)
 	HUD_showing = true
 end
 
@@ -246,7 +131,7 @@ minetest.register_tool("forestry_tools:clinometer" , {
 		if HUD_showing then
 			hide_huds()
 		else
-			show_huds(player)
+			show_all_huds(player)
 		end
 	end,
 
