@@ -554,10 +554,11 @@ commands["blocks"] = {
             if (string.lower(tostring(params[4])) == "true") then
                 temp = true
             end
+
             realmName = tostring(params[5])
             schematic = tostring(params[6])
 
-            if (schematic == "" or schematic == nil) then
+            if (schematic == "" or schematic == "nil") then
                 schematic = nil
             elseif (schematicManager.getSchematic(schematic) == nil) then
                 return false, "schematic " .. tostring(schematic) .. " does not exist."
@@ -573,7 +574,7 @@ commands["blocks"] = {
 
         return false, "For help, execute /realm help blocks."
     end,
-    help = "realm blocks <block> <count> <instancedRealm (true / false) | realmID> <tempRealm (true / false)> <realmName> <schematic>"
+    help = "realm blocks <block> <count> (<instanced: true | false> | <realmID>) <temporary: true | false> <realmName> <schematic>"
 
 }
 
