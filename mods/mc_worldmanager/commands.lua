@@ -342,24 +342,36 @@ commands["setspawnrealm"] = {
 commands["category"] = {
     func = function(name, params)
         local subcommand = tostring(params[1])
-        local realmID = tonumber(params[2])
-        local requestedRealm = Realm.GetRealm(tonumber(realmID))
-        if (requestedRealm == nil) then
-            return false, "Requested realm of ID:" .. tostring(realmID) .. " does not exist."
-        end
 
         if (string.lower(subcommand) == "set") then
+            local realmID = tonumber(params[2])
+            local requestedRealm = Realm.GetRealm(tonumber(realmID))
+            if (requestedRealm == nil) then
+                return false, "Requested realm of ID:" .. tostring(realmID) .. " does not exist."
+            end
+
             local category = tostring(params[3])
 
             requestedRealm:setCategoryKey(category)
             return true, "Updated category for realm with ID: " .. realmID .. " to " .. category
+        elseif (string.lower(subcommand) == "list") then
+
+            minetest.chat_send_player(name, "=======================")
+            minetest.chat_send_player(name, "Valid Realm Categories")
+            minetest.chat_send_player(name, "=======================")
+            local categories = Realm.getRegisteredCategories()
+            for key, value in pairs(categories) do
+                minetest.chat_send_player(name, value)
+            end
+            minetest.chat_send_player(name, "=======================")
+            return true, "Listed all valid realm categories."
         else
             return false, "unknown subcommand. Try realm category set <category>"
         end
 
 
     end,
-    help = "realm category set <realmID> <category>"
+    help = "realm category (set <realmID> <category>) | (list) - Set the category of a realm or list all valid categories.",
 }
 
 commands["consolidate"] = {
