@@ -4,16 +4,21 @@
 ---@public
 ---Save_Schematic
 ---@return string, boolean The filepath of the schematic; whether the settings file wrote succesfully.
-function Realm:Save_Schematic(author, mode)
+function Realm:Save_Schematic(schematicName, author, mode)
+
+    if (schematicName == nil or schematicName == "nil" or schematicName == "") then
+        schematicName = self.Name
+    end
+
     author = author or "unknown"
     mode = mode or "old"
 
-    local folderpath = minetest.get_worldpath() .. "/realmSchematics/"
+    local folderpath = minetest.get_worldpath() .. "\\realmSchematics\\"
 
     minetest.mkdir(folderpath)
 
-    local fileName = "Realm " .. self.ID .. " " .. math.random(0, 9999) .. os.date(" %Y%m%d %H%M%S")
-    local filepath = folderpath .. "/" .. fileName
+    local fileName = schematicName
+    local filepath = folderpath .. fileName
 
     if (mode == "exschem") then
         exschem.save(self.StartPos, self.EndPos, false, 40, filepath, 0,
@@ -48,20 +53,6 @@ function Realm:Save_Schematic(author, mode)
         self:CleanNodes()
         minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
     end
-
-    fileName = fileName .. os.date(" %Y%m%d %H%M")
-
-    local filepath = folderpath .. "\\" .. fileName
-
-    --minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
-
-    local file, err = io.open(filepath .. ".mts", "wb")
-    if err then
-        return 0
-    end
-    local schematic, count = worldedit.serialize(self.StartPos, self.EndPos)
-    file:write(schematic)
-    file:close()
 
     local settings = Settings(filepath .. ".conf")
     settings:set("author", author)

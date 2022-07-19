@@ -242,13 +242,19 @@ commands["schematic"] = {
                 return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
             end
 
-            local subparam = params[2]
+            local schemName = tostring(params[2])
+            Debug.log(schemName)
 
-            if (subparam == "" or subparam == nil) then
+
+            local subparam = tostring(params[3])
+
+            if (subparam == "" or subparam == "nil") then
                 subparam = "old"
             end
 
-            local path = requestedRealm:Save_Schematic(name, subparam)
+
+
+            local path = requestedRealm:Save_Schematic(schemName, name, subparam)
             return true, "Saved realm with ID " .. realmID .. " at path: " .. path
         elseif (params[1] == "load") then
             table.remove(params, 1)
