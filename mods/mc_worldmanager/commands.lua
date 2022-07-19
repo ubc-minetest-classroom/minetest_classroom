@@ -503,7 +503,7 @@ commands["privs"] = {
             local privsTable = {}
             privsTable[privilege] = false
 
-            requestedRealm:UpdateRealmPrivilege()
+            requestedRealm:UpdateRealmPrivilege(privsTable)
             return true, "Removed permission: " .. privilege .. " from realm " .. tostring(realmID)
         end
     end,
