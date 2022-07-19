@@ -76,7 +76,8 @@ commands["list"] = {
         end
 
         return true
-    end }
+    end,
+    help = "realm list - List all realms", }
 
 commands["info"] = {
     func = function(name, params)
@@ -96,7 +97,8 @@ commands["info"] = {
                 .. "x:" .. tostring(startPos.x) .. " y:" .. tostring(startPos.y) .. " z:" .. tostring(startPos.z)
                 .. "; endPos of "
                 .. "x:" .. tostring(endPos.x) .. " y:" .. tostring(endPos.y) .. " z:" .. tostring(endPos.z)
-    end }
+    end,
+    help = "realm info <realmID> - Get info about a realm", }
 
 commands["tp"] = {
     privs = { teleport = true },
@@ -116,7 +118,8 @@ commands["tp"] = {
         local success, reason = requestedRealm:TeleportPlayer(player)
 
         return success, reason
-    end }
+    end,
+    help = "realm tp <realmID> - Teleport to a realm.", }
 
 commands["walls"] = {
     func = function(name, params)
@@ -133,10 +136,36 @@ commands["walls"] = {
         end
 
         return true, "created walls in realm: " .. tostring(realmID)
-    end }
+    end,
+    help = "realm walls <realmID> [<fast>] - Create walls in a realm", }
 
 commands["gen"] = {
     func = function(name, params)
+
+        if (not mc_helpers.isNumber(params[1])) then
+            if (params[1] ~= nil and params[1] == "list") then
+
+
+                minetest.chat_send_player(name, "Generator Key")
+
+                local heightmapGen = Realm.WorldGen.GetHeightmapGenerators()
+                for k, v in pairs(heightmapGen) do
+                    minetest.chat_send_player(name, v)
+                end
+
+                minetest.chat_send_player(name, "==============================")
+
+                minetest.chat_send_player(name, "Decorator Key")
+
+                local terrainDecorator = Realm.WorldGen.GetTerrainDecorator()
+                for k, v in pairs(terrainDecorator) do
+                    minetest.chat_send_player(name, v)
+                end
+
+                return true, "Listed an terrain generators and decorators."
+            end
+        end
+
         local realmID = params[1]
         local requestedRealm = Realm.realmDict[tonumber(realmID)]
         if (requestedRealm == nil) then
@@ -149,16 +178,16 @@ commands["gen"] = {
         local heightGen = params[2]
         local decGen = params[3]
 
-        local seed = tonumber(params[4])
+        local seed = tonumber(params[5])
         if (seed == nil) then
             seed = math.random(1, 1000)
         end
 
         local seaLevel = requestedRealm.StartPos.y
-        if (params[5] == "" or params[5] == nil) then
+        if (params[4] == "" or params[4] == nil) then
             seaLevel = seaLevel + 30
         else
-            seaLevel = seaLevel + tonumber(params[5])
+            seaLevel = seaLevel + tonumber(params[4])
         end
 
         if (heightGen == "" or heightGen == nil) then
@@ -173,7 +202,8 @@ commands["gen"] = {
         requestedRealm:CreateBarriersFast()
 
         return true
-    end }
+    end,
+    help = "realm gen <list> | (<realmID> <heightGenKey> [<terrainDecKey>] ([<seaLevel>] [<seed>]) - Generate a realm", }
 
 commands["regen"] = {
     func = function(name, params)
@@ -209,7 +239,8 @@ commands["regen"] = {
         requestedRealm:CreateBarriersFast()
 
         return true
-    end }
+    end,
+    help = "realm regen <realmID> - Regenerates the terrain of a realm.", }
 
 commands["seed"] = { func = function(name, params)
     local realmID = params[1]
@@ -221,7 +252,8 @@ commands["seed"] = { func = function(name, params)
     local seed = requestedRealm:get_data("worldSeed")
 
     return true, "World Seed for Realm: " .. tostring(seed)
-end }
+end,
+                     help = "realm seed <realmID> - Get the seed of a realm.", }
 
 commands["schematic"] = {
     func = function(name, params)
@@ -286,7 +318,8 @@ commands["setspawn"] = {
         requestedRealm:UpdateSpawn(position)
 
         return true, "Updated spawnpoint for realm with ID: " .. requestedRealm.ID
-    end }
+    end,
+    help = "realm setspawn <realmID> - Set the spawnpoint of a realm.", }
 
 commands["setspawnrealm"] = {
     func = function(name, params)
@@ -335,7 +368,7 @@ commands["consolidate"] = {
         Realm.SaveDataToStorage()
         return true, "consolidated realms"
     end,
-    help = "consolidate realms" }
+    help = "consolidate realm placement information." }
 
 commands["help"] = {
     func = function(name, params)
@@ -405,15 +438,15 @@ commands["privs"] = {
         local privilege = tostring(params[3])
 
         if (operation == "nil" or operation == "") then
-            return false, "Incorrect parameter... Missing realm privilege operation. Usage: realm privs [<grant> | <revoke>] <realmID> <privilege>"
+            return false, "Incorrect parameter... Missing realm privilege operation. Execute 'realm help privs' for help."
         end
 
         if (operation == "help") then
-            return true, "Usage: 'realm privs [grant | list | revoke] <realmID> <privilege>'; 'realm privs help' for help."
+            return true, "execute 'realm help privs' for help."
         end
 
         if (realmID == nil or realmID == "") then
-            return false, "Incorrect parameter... Missing realm ID. Usage: realm privs [grant | list | revoke] <realmID> <privilege>"
+            return false, "Incorrect parameter... Missing realm ID. Execute 'realm help privs' for help."
         end
 
         local requestedRealm = Realm.realmDict[realmID]
@@ -435,7 +468,7 @@ commands["privs"] = {
         end
 
         if (privilege == "nil" or privilege == "") then
-            return false, "Incorrect parameter... Missing realm privilege to add or revoke. Usage: realm privs [grant | list | revoke] <realmID> <privilege>"
+            return false, "Incorrect parameter... Missing realm privilege to add or revoke. Execute 'realm help privs' for help."
         end
 
         if (operation == "grant") then
@@ -461,7 +494,8 @@ commands["privs"] = {
             requestedRealm:UpdateRealmPrivilege()
             return true, "Removed permission: " .. privilege .. " from realm " .. tostring(realmID)
         end
-    end
+    end,
+    help = "realm privs (grant | list | revoke) <realmID> <privilege>"
 }
 
 commands["players"] = {
@@ -537,7 +571,7 @@ commands["blocks"] = {
             return true, "added teleporter to inventory."
         end
 
-        return false, "unknown sub-command."
+        return false, "For help, execute /realm help blocks."
     end,
     help = "realm blocks <block> <count> <instancedRealm (true / false) | realmID> <tempRealm (true / false)> <realmName> <schematic>"
 

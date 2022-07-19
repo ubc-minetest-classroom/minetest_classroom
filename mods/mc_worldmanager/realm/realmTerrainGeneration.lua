@@ -14,6 +14,22 @@ function Realm.WorldGen.RegisterHeightMapGenerator(name, heightMapGeneratorFunct
     heightMapGenerator[name] = heightMapGeneratorFunction
 end
 
+function Realm.WorldGen.GetHeightmapGenerators()
+    local keyset={}
+    for k,v in pairs(heightMapGenerator) do
+        keyset[#keyset+1]=k
+    end
+    return keyset
+end
+
+function Realm.WorldGen.GetTerrainDecorator()
+    local keyset={}
+    for k,v in pairs(MapDecorator) do
+        keyset[#keyset+1]=k
+    end
+    return keyset
+end
+
 function Realm.WorldGen.RegisterMapDecorator(name, NodeDecoratorFunction, VegetationDecoratorFunction)
     if (MapDecorator[name] ~= nil) then
         Debug.log("MapDecorator " .. name .. " already exists.")
