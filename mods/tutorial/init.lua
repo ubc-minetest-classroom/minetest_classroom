@@ -9,11 +9,20 @@
 ----- need a way for the player to access the pdata.tutorials.activeTutorial instructions and possibly accompanying item_images and models
 ----- update the record_fs menu so that on_completion items and tools are displayed in an inventory and the number of items given can be set by the palyer recording the tutorial
 ----- add option to display a message after completing a specific action, like "now do this next"\
------ refactor global recording-specific variables such as tutorial.recordingActive into player-dependent tables so that multiple players can record different tutorials at once
+----- fix tutorial wield/key listener
 
 tutorial = {
     path = minetest.get_modpath("tutorial"),
-    tutorials = minetest.get_mod_storage()
+    tutorials = minetest.get_mod_storage(),
+    record = {
+        active = {},
+        temp = {},
+        edit = {},
+        listener = {
+            wield = {},
+            key = {}
+        }
+    }
 }
 
 -- Store and load default settings in the tutorial_settings.conf file
@@ -42,20 +51,14 @@ tutorial.player_priv_table = tutorial.fetch_setting_privtable("player_priv_table
 tutorial.recorder_priv_table = tutorial.fetch_setting_privtable("recorder_priv_table") or {teacher = true, interact = true}
 tutorial.check_interval = tutorial.fetch_setting("check_interval") or 1
 tutorial.check_dir_tolerance = tutorial.fetch_setting("check_dir_tolerance") or 0.01745
-local tolerance_table = tutorial.fetch_setting_table("check_pos_tolerance") or {4, 4, 4}
-tutorial.check_pos_x_tolerance = tonumber(tolerance_table[1]) * tutorial.check_interval
-tutorial.check_pos_y_tolerance = tonumber(tolerance_table[2]) * tutorial.check_interval
-tutorial.check_pos_z_tolerance = tonumber(tolerance_table[3]) * tutorial.check_interval
+tutorial.check_pos_x_tolerance = tonumber(tutorial.fetch_setting("check_pos_x_tolerance") or 4) * tutorial.check_interval
+tutorial.check_pos_y_tolerance = tonumber(tutorial.fetch_setting("check_pos_y_tolerance") or 4) * tutorial.check_interval
+tutorial.check_pos_z_tolerance = tonumber(tutorial.fetch_setting("check_pos_z_tolerance") or 4) * tutorial.check_interval
 
 -- Load other scripts
 dofile(tutorial.path .. "/functions.lua")
 dofile(tutorial.path .. "/tools.lua")
 dofile(tutorial.path .. "/callbacks.lua")
-
--- Initialize default booleans
-tutorial.recordingActive = false
-tutorial.instancedTutorial = true
-tutorial.editingTutorial = false
 
 minetest.register_on_joinplayer(function(player)
     -- Load player meta
@@ -131,22 +134,22 @@ function tutorial.show_record_fs(player)
         end
 
         -- If the tutorial has already been registered then populate the fields with the values
-        if tutorial.tutorialTemp.title then 
-            record_fs[#record_fs + 1] = "field[0.5,0.7;11,0.8;title;Title;"..tutorial.tutorialTemp.title.."]"
+        if tutorial.record.temp[pname].title then 
+            record_fs[#record_fs + 1] = "field[0.5,0.7;11,0.8;title;Title;"..tutorial.record.temp[pname].title.."]"
         else
             record_fs[#record_fs + 1] = "field[0.5,0.7;11,0.8;title;Title;]"
         end
-        if tutorial.tutorialTemp.on_completion.message then 
-            record_fs[#record_fs + 1] = "field[0.4,8.4;11.1,0.7;message;Message;"..tutorial.tutorialTemp.on_completion.message.."]"
+        if tutorial.record.temp[pname].on_completion.message then 
+            record_fs[#record_fs + 1] = "field[0.4,8.4;11.1,0.7;message;Message;"..tutorial.record.temp[pname].on_completion.message.."]"
         else
             record_fs[#record_fs + 1] = "field[0.4,8.4;11.1,0.7;message;Message;]"
         end
 
-        if tutorial.tutorialTemp.itemImages then
+        if tutorial.record.temp[pname].itemImages then
             -- TODO: handle item images
         else
-            if tutorial.tutorialTemp.description then 
-                record_fs[#record_fs + 1] = "field[0.5,2;11,1.5;description;Description;"..tutorial.tutorialTemp.description.."]"
+            if tutorial.record.temp[pname].description then 
+                record_fs[#record_fs + 1] = "field[0.5,2;11,1.5;description;Description;"..tutorial.record.temp[pname].description.."]"
             else
                 record_fs[#record_fs + 1] = "field[0.5,2;11,1.5;description;Description;]"
             end
@@ -193,14 +196,14 @@ function tutorial.show_record_fs(player)
 
         -- Add last recorded tutorial sequence
         record_fs[#record_fs + 1] = "textlist[0.5,4.2;11,1.6;eventlist;"
-        for k,action in pairs(tutorial.tutorialTemp.tutorialSequence.action) do
+        for k,action in pairs(tutorial.record.temp[pname].tutorialSequence.action) do
 
             -- Node was recorded
-            if tutorial.tutorialTemp.tutorialSequence.node[k] ~= "" then
-                record_fs[#record_fs + 1] = action .. " " .. tutorial.tutorialTemp.tutorialSequence.node[k]
+            if tutorial.record.temp[pname].tutorialSequence.node[k] ~= "" then
+                record_fs[#record_fs + 1] = action .. " " .. tutorial.record.temp[pname].tutorialSequence.node[k]
                 -- Tool was recorded (only used with nodes)
-                if tutorial.tutorialTemp.tutorialSequence.tool[k] ~= "" then
-                    record_fs[#record_fs + 1] = " with " .. tutorial.tutorialTemp.tutorialSequence.tool[k]
+                if tutorial.record.temp[pname].tutorialSequence.tool[k] ~= "" then
+                    record_fs[#record_fs + 1] = " with " .. tutorial.record.temp[pname].tutorialSequence.tool[k]
                     record_fs[#record_fs + 1] = ","
                 else
                     record_fs[#record_fs + 1] = ","
@@ -208,33 +211,33 @@ function tutorial.show_record_fs(player)
             end
             
             -- Position was recorded
-            if next(tutorial.tutorialTemp.tutorialSequence.pos[k]) ~= nil then
-                local pos = tutorial.tutorialTemp.tutorialSequence.pos[k]
+            if next(tutorial.record.temp[pname].tutorialSequence.pos[k]) ~= nil then
+                local pos = tutorial.record.temp[pname].tutorialSequence.pos[k]
                 record_fs[#record_fs + 1] = action .. " x=" .. tostring(pos.x) .. " y=" .. tostring(pos.y) .. " z=" .. tostring(pos.z)
                 record_fs[#record_fs + 1] = ","
             end
 
             -- Direction was recorded
-            if tutorial.tutorialTemp.tutorialSequence.dir[k] ~= -1 then
-                record_fs[#record_fs + 1] = action .. " " .. tostring(tutorial.tutorialTemp.tutorialSequence.dir[k])
+            if tutorial.record.temp[pname].tutorialSequence.dir[k] ~= -1 then
+                record_fs[#record_fs + 1] = action .. " " .. tostring(tutorial.record.temp[pname].tutorialSequence.dir[k])
                 record_fs[#record_fs + 1] = ","
             end
 
             -- Key strike was recorded
-            if next(tutorial.tutorialTemp.tutorialSequence.key[k]) ~= nil then
+            if next(tutorial.record.temp[pname].tutorialSequence.key[k]) ~= nil then
                 record_fs[#record_fs + 1] = action .. " "
-                for _,v in pairs(tutorial.tutorialTemp.tutorialSequence.key[k]) do record_fs[#record_fs + 1] = v .. " " end
+                for _,v in pairs(tutorial.record.temp[pname].tutorialSequence.key[k]) do record_fs[#record_fs + 1] = v .. " " end
                 record_fs[#record_fs + 1] = ","
             end
 
         end
         record_fs[#record_fs] = ""
         record_fs[#record_fs + 1] = ";1;false]"
-        if tutorial.tutorialTemp.length > 0 then 
+        if tutorial.record.temp[pname].length > 0 then 
             record_fs[#record_fs + 1] = "button[0.5,6;2.5,0.7;delete;Delete event]"
         end
         record_fs[#record_fs + 1] = "label[3.2,6.3;Total events: "
-        record_fs[#record_fs + 1] = tostring(tutorial.tutorialTemp.length)
+        record_fs[#record_fs + 1] = tostring(tutorial.record.temp[pname].length)
         record_fs[#record_fs + 1] = "]"
 
         -- Add tooltips
@@ -400,9 +403,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         elseif fields.edit then
             if tutorial.tutorial_selected == nil then tutorial.tutorial_selected = 1 end
             if tutorial.checkPrivs(player,tutorial.recorder_priv_table) then
-                tutorial.tutorialTemp = tutorials[tutorial.tutorial_selected]
-                tutorial.editingTutorial = true
-                if tutorial.tutorialTemp then
+                tutorial.record.temp[pname] = tutorials[tutorial.tutorial_selected]
+                tutorial.record.edit[pname] = true
+                if tutorial.record.temp[pname] then
                     tutorial.show_record_fs(player)
                 end
             else
@@ -435,11 +438,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 ----- put something into or modify inventory player:get_inventory() inv:contains_item() inv:is_empty() ItemStack:get_count()
                 ----- press keys player:get_player_control() or player:get_player_control_bits()
         
-        if tutorial.checkPrivs(player,tutorial.recorder_priv_table) and tutorial.recordingActive then
+        if tutorial.checkPrivs(player,tutorial.recorder_priv_table) and tutorial.record.active[pname] then
             -- Check if the tutorial has already been instanced by another callback
-            if tutorial.instancedTutorial then
+            if not tutorial.record.temp[pname] then
                 -- this is the first entry for the tutorial, apply default values
-                tutorial.tutorialTemp = {
+                tutorial.record.temp[pname] = {
                     tutorialDependency = {}, -- table of tutorialIDs that must be compeleted before the player can attempt this tutorial
                     tutorialSequence = {
                         action = {}, -- string
@@ -458,71 +461,68 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         grantpriv = {}
                     }
                 }
-                tutorial.instancedTutorial = false
             end
         end
 
         if fields.getpos then
             local pos = player:get_pos()
-            table.insert(tutorial.tutorialTemp.tutorialSequence.action, "current position")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.tool, "")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.node, "")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.pos, pos)
-            table.insert(tutorial.tutorialTemp.tutorialSequence.dir, -1)
-            table.insert(tutorial.tutorialTemp.tutorialSequence.key, {})
-            minetest.chat_send_player(pname,pname.." [Tutorial] Your current position was recorded. Continue to record new actions or left-click the tool to end the recording.")
-            tutorial.tutorialTemp.length = tutorial.tutorialTemp.length + 1
+            table.insert(tutorial.record.temp[pname].tutorialSequence.action, "current position")
+            table.insert(tutorial.record.temp[pname].tutorialSequence.tool, "")
+            table.insert(tutorial.record.temp[pname].tutorialSequence.node, "")
+            table.insert(tutorial.record.temp[pname].tutorialSequence.pos, pos)
+            table.insert(tutorial.record.temp[pname].tutorialSequence.dir, -1)
+            table.insert(tutorial.record.temp[pname].tutorialSequence.key, {})
+            minetest.chat_send_player(pname, "[Tutorial] Your current position was recorded. Continue to record new actions or left-click the tool to end the recording.")
+            tutorial.record.temp[pname].length = tutorial.record.temp[pname].length + 1
         end
         
         if fields.getlookdir then
             local lookdir = player:get_look_dir()
-            table.insert(tutorial.tutorialTemp.tutorialSequence.action, "look direction")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.tool, "")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.node, "")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.pos, {})
-            table.insert(tutorial.tutorialTemp.tutorialSequence.dir, lookdir)
-            table.insert(tutorial.tutorialTemp.tutorialSequence.key, {})
-            minetest.chat_send_player(pname,pname.." [Tutorial] Your current look direction was recorded. Continue to record new actions or left-click the tool to end the recording.")
-            tutorial.tutorialTemp.length = tutorial.tutorialTemp.length + 1
+            table.insert(tutorial.record.temp[pname].tutorialSequence.action, "look direction")
+            table.insert(tutorial.record.temp[pname].tutorialSequence.tool, "")
+            table.insert(tutorial.record.temp[pname].tutorialSequence.node, "")
+            table.insert(tutorial.record.temp[pname].tutorialSequence.pos, {})
+            table.insert(tutorial.record.temp[pname].tutorialSequence.dir, lookdir)
+            table.insert(tutorial.record.temp[pname].tutorialSequence.key, {})
+            minetest.chat_send_player(pname, "[Tutorial] Your current look direction was recorded. Continue to record new actions or left-click the tool to end the recording.")
+            tutorial.record.temp[pname].length = tutorial.record.temp[pname].length + 1
         end
 
         if fields.lookvertical then
             local lookv = player:get_look_vertical()
-            table.insert(tutorial.tutorialTemp.tutorialSequence.action, "look pitch")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.tool, "")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.node, "")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.pos, {})
-            table.insert(tutorial.tutorialTemp.tutorialSequence.dir, lookv)
-            table.insert(tutorial.tutorialTemp.tutorialSequence.key, {})
-            minetest.chat_send_player(pname,pname.." [Tutorial] Your current look pitch (radians) was recorded. Continue to record new actions or left-click the tool to end the recording.")
-            tutorial.tutorialTemp.length = tutorial.tutorialTemp.length + 1
+            table.insert(tutorial.record.temp[pname].tutorialSequence.action, "look pitch")
+            table.insert(tutorial.record.temp[pname].tutorialSequence.tool, "")
+            table.insert(tutorial.record.temp[pname].tutorialSequence.node, "")
+            table.insert(tutorial.record.temp[pname].tutorialSequence.pos, {})
+            table.insert(tutorial.record.temp[pname].tutorialSequence.dir, lookv)
+            table.insert(tutorial.record.temp[pname].tutorialSequence.key, {})
+            minetest.chat_send_player(pname, "[Tutorial] Your current look pitch (radians) was recorded. Continue to record new actions or left-click the tool to end the recording.")
+            tutorial.record.temp[pname].length = tutorial.record.temp[pname].length + 1
         end
 
         if fields.lookhorizontal then
             local lookh = player:get_look_horizontal()
-            table.insert(tutorial.tutorialTemp.tutorialSequence.action, "look yaw")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.tool, "")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.node, "")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.pos, {})
-            table.insert(tutorial.tutorialTemp.tutorialSequence.dir, lookh)
-            table.insert(tutorial.tutorialTemp.tutorialSequence.key, {})
-            minetest.chat_send_player(pname,pname.." [Tutorial] Your current look yaw (radians) was recorded. Continue to record new actions or left-click the tool to end the recording.")
-            tutorial.tutorialTemp.length = tutorial.tutorialTemp.length + 1
+            table.insert(tutorial.record.temp[pname].tutorialSequence.action, "look yaw")
+            table.insert(tutorial.record.temp[pname].tutorialSequence.tool, "")
+            table.insert(tutorial.record.temp[pname].tutorialSequence.node, "")
+            table.insert(tutorial.record.temp[pname].tutorialSequence.pos, {})
+            table.insert(tutorial.record.temp[pname].tutorialSequence.dir, lookh)
+            table.insert(tutorial.record.temp[pname].tutorialSequence.key, {})
+            minetest.chat_send_player(pname, "[Tutorial] Your current look yaw (radians) was recorded. Continue to record new actions or left-click the tool to end the recording.")
+            tutorial.record.temp[pname].length = tutorial.record.temp[pname].length + 1
         end
 
         if fields.wieldeditem then
             -- TODO: add HUD or chat message to indicate timer
             -- TODO: possibly identify an alternative method for setting the weilded item that does not make use of a timed listener
-            minetest.chat_send_player(pname,pname.." [Tutorial] Make a selection from your inventory to set the wield item.")
-            tutorial.recordingPlayer = player
-            tutorial.wieldThingListener = true
+            minetest.chat_send_player(pname, "[Tutorial] Make a selection from your inventory to set the wield item.")
+            tutorial.record.listener.wield[pname] = true
             return
         end
 
         if fields.playercontrol then
-            minetest.chat_send_player(pname,pname.." [Tutorial] Press the player control key that you want to be recorded.")
-            tutorial.recordingPlayer = player
-            tutorial.keyStrikeListener = true
+            minetest.chat_send_player(pname, "[Tutorial] Press the player control key that you want to be recorded.")
+            tutorial.record.listener.key[pname] = true
             return
         end
 
@@ -546,7 +546,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
             for i,itemstring in ipairs(tools) do
                 if i+1 == tutorial.selected_tool then
-                    tutorial.tutorialTemp.on_completion.givetool = itemstring
+                    tutorial.record.temp[pname].on_completion.givetool = itemstring
                 end
             end
         end
@@ -557,7 +557,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
             for i,itemstring in ipairs(items) do
                 if i+1 == tutorial.selected_item then
-                    tutorial.tutorialTemp.on_completion.giveitem = itemstring
+                    tutorial.record.temp[pname].on_completion.giveitem = itemstring
                 end
             end
         end
@@ -568,24 +568,24 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
             for i,privv in ipairs(privs) do
                 if i+1 == tutorial.selected_privt then
-                    tutorial.tutorialTemp.on_completion.grantpriv = privv
+                    tutorial.record.temp[pname].on_completion.grantpriv = privv
                 end
             end
         end
         if fields.delete then
             if tutorial.selected_event == nil then tutorial.selected_event = 1 end
-            table.remove(tutorial.tutorialTemp.tutorialSequence.action,tutorial.selected_event)
-            table.remove(tutorial.tutorialTemp.tutorialSequence.tool,tutorial.selected_event)
-            table.remove(tutorial.tutorialTemp.tutorialSequence.node,tutorial.selected_event)
-            table.remove(tutorial.tutorialTemp.tutorialSequence.pos, tutorial.selected_event)
-            table.remove(tutorial.tutorialTemp.tutorialSequence.dir, tutorial.selected_event)
-            table.remove(tutorial.tutorialTemp.tutorialSequence.key, tutorial.selected_event)
-            tutorial.tutorialTemp.length = tutorial.tutorialTemp.length - 1
+            table.remove(tutorial.record.temp[pname].tutorialSequence.action,tutorial.selected_event)
+            table.remove(tutorial.record.temp[pname].tutorialSequence.tool,tutorial.selected_event)
+            table.remove(tutorial.record.temp[pname].tutorialSequence.node,tutorial.selected_event)
+            table.remove(tutorial.record.temp[pname].tutorialSequence.pos, tutorial.selected_event)
+            table.remove(tutorial.record.temp[pname].tutorialSequence.dir, tutorial.selected_event)
+            table.remove(tutorial.record.temp[pname].tutorialSequence.key, tutorial.selected_event)
+            tutorial.record.temp[pname].length = tutorial.record.temp[pname].length - 1
             tutorial.show_record_fs(player)
         end
         if fields.finish then
-            if tutorial.tutorialTemp then
-                if tutorial.tutorialTemp.length > 0 then
+            if tutorial.record.temp[pname] then
+                if tutorial.record.temp[pname].length > 0 then
                     if fields.title == "" then 
                         tutorialTitle = "Untitled" 
                     else 
@@ -603,39 +603,39 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     end
                     
                     -- Quick check to make sure we are not writing invalid entries on_completion
-                    if tutorial.tutorialTemp.on_completion.givetool == "None" and tutorial.tutorialTemp.on_completion.givetool == "" then
-                        tutorial.tutorialTemp.on_completion.giveitem = nil
+                    if tutorial.record.temp[pname].on_completion.givetool == "None" and tutorial.record.temp[pname].on_completion.givetool == "" then
+                        tutorial.record.temp[pname].on_completion.giveitem = nil
                     end
-                    if tutorial.tutorialTemp.on_completion.giveitem == "None" and tutorial.tutorialTemp.on_completion.giveitem == "" then
-                        tutorial.tutorialTemp.on_completion.giveitem = nil
+                    if tutorial.record.temp[pname].on_completion.giveitem == "None" and tutorial.record.temp[pname].on_completion.giveitem == "" then
+                        tutorial.record.temp[pname].on_completion.giveitem = nil
                     end
-                    if tutorial.tutorialTemp.on_completion.grantpriv == "None" and tutorial.tutorialTemp.on_completion.grantpriv == "" then
-                        tutorial.tutorialTemp.on_completion.grantpriv = nil
+                    if tutorial.record.temp[pname].on_completion.grantpriv == "None" and tutorial.record.temp[pname].on_completion.grantpriv == "" then
+                        tutorial.record.temp[pname].on_completion.grantpriv = nil
                     end
 
                     -- Build the tutorial table to send to mod storage
                     local recordTutorial = {
                         tutorialDependency = {}, -- table of tutorialIDs that must be compeleted before the player can attempt this tutorial
                         title = tutorialTitle,
-                        length = tutorial.tutorialTemp.length,
+                        length = tutorial.record.temp[pname].length,
                         searchIndex = 1, -- default search always starts on the first element in the sequence
                         continueTutorial = true, -- default starting state of tutorial is true to automatically continue
                         completed = 0, -- default completed actions starts at zero
                         description = tutorialDescription,
                         tutorialSequence = {
-                            action = tutorial.tutorialTemp.tutorialSequence.action,
-                            tool = tutorial.tutorialTemp.tutorialSequence.tool,
-                            node = tutorial.tutorialTemp.tutorialSequence.node,
-                            pos = tutorial.tutorialTemp.tutorialSequence.pos,
-                            dir = tutorial.tutorialTemp.tutorialSequence.dir,
-                            key = tutorial.tutorialTemp.tutorialSequence.key,
+                            action = tutorial.record.temp[pname].tutorialSequence.action,
+                            tool = tutorial.record.temp[pname].tutorialSequence.tool,
+                            node = tutorial.record.temp[pname].tutorialSequence.node,
+                            pos = tutorial.record.temp[pname].tutorialSequence.pos,
+                            dir = tutorial.record.temp[pname].tutorialSequence.dir,
+                            key = tutorial.record.temp[pname].tutorialSequence.key,
                             actionMessage = {} -- table of strings displayed to player when an action is completed
                         },
                         on_completion = {
                             message = tutorialMessage,
-                            givetool = tutorial.tutorialTemp.on_completion.givetool,
-                            giveitem = tutorial.tutorialTemp.on_completion.giveitem,
-                            grantpriv = tutorial.tutorialTemp.on_completion.grantpriv
+                            givetool = tutorial.record.temp[pname].on_completion.givetool,
+                            giveitem = tutorial.record.temp[pname].on_completion.giveitem,
+                            grantpriv = tutorial.record.temp[pname].on_completion.grantpriv
                         }
                     }
 
@@ -646,7 +646,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         table.insert(tutorials, recordTutorial)
                         tutorial.tutorials:set_string("tutorial:tutorials", minetest.serialize(tutorials))
                     else
-                        if tutorial.editingTutorial then
+                        if tutorial.record.edit[pname] then
                             -- We are editing an existing tutorial
                             tutorials[tutorial.tutorial_selected] = recordTutorial
                         else
@@ -661,10 +661,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
 
                 -- Ensure global tutorialTemp is recycled
-                tutorial.tutorialTemp = nil
-
-                -- Reset tutorial instancing to allow recording the next tutorial
-                tutorial.instancedTutorial = true
+                tutorial.record.temp[pname] = nil
             else 
                 return
             end

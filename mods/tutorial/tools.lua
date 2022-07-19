@@ -36,22 +36,23 @@ minetest.register_tool("tutorial:recording_tool", {
     on_use = function(itemstack, user, pointed_thing)
         local pname = user:get_player_name()
         if not tutorial.checkPrivs(user,tutorial.recorder_priv_table) then
-            minetest.chat_send_player(pname,pname.." [Tutorial] You do not have privileges to use this tool.")
+            minetest.chat_send_player(pname, "[Tutorial] You do not have privileges to use this tool.")
             return nil
         else
-            if not tutorial.recordingActive then
+            if not tutorial.record.active[pname] then
                 -- start the recording
-                tutorial.recordingActive = true
-                minetest.chat_send_player(pname,pname.." [Tutorial] Recording has started! Any actions will now be recorded. Right-click to see more recording options.")
+                tutorial.record.active[pname] = true
+                minetest.chat_send_player(pname, "[Tutorial] Recording has started! Any actions will now be recorded. Right-click to see more recording options.")
             else
                 -- stop the recording and save to mod storage
-                tutorial.recordingActive = false
-                tutorial.wieldedThingListener = false
-                if tutorial.tutorialTemp then
+                tutorial.record.active[pname] = nil
+                tutorial.record.listener.wield[pname] = nil
+                tutorial.record.listener.key[pname] = nil
+                if tutorial.record.temp[pname] then
                     tutorial.show_record_fs(user)
-                    minetest.chat_send_player(pname,pname.." [Tutorial] Recording has ended!")
+                    minetest.chat_send_player(pname, "[Tutorial] Recording has ended!")
                 else
-                    minetest.chat_send_player(pname,pname.." [Tutorial] No actions were recorded.")
+                    minetest.chat_send_player(pname, "[Tutorial] No actions were recorded.")
                 end
             end
         end
@@ -60,11 +61,11 @@ minetest.register_tool("tutorial:recording_tool", {
     on_place = function(itemstack, placer, pointed_thing)
         local pname = placer:get_player_name()
         if not tutorial.checkPrivs(placer,tutorial.recorder_priv_table) then
-            minetest.chat_send_player(pname,pname.." [Tutorial] You do not have privileges to use this tool.")
+            minetest.chat_send_player(pname, "[Tutorial] You do not have privileges to use this tool.")
             return nil
         else
-            if not tutorial.recordingActive then
-                minetest.chat_send_player(pname,pname.." [Tutorial] You need to start an active recording first by left-clicking with the tool.")
+            if not tutorial.record.active[pname] then
+                minetest.chat_send_player(pname, "[Tutorial] You need to start an active recording first by left-clicking with the tool.")
                 return nil
             else
                 tutorial.show_record_options_fs(placer)

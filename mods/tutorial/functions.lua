@@ -18,10 +18,12 @@ function tutorial.register_tutorial_action(player,action,tool,node,pos,dir,key)
     local pos = pos or {}
     local dir = dir or -1
     local key = key or {}
-    if tutorial.checkPrivs(player,tutorial.recorder_priv_table) and tutorial.recordingActive then
-        if tutorial.instancedTutorial then
+    local pname = player:get_player_name()
+
+    if tutorial.checkPrivs(player,tutorial.recorder_priv_table) and tutorial.record.active[pname] then
+        if not tutorial.record.temp[pname] then
             -- This is the first entry for the tutorial, apply default values
-            tutorial.tutorialTemp = {
+            tutorial.record.temp[pname] = {
                 tutorialID = 0, -- integer key used to identify thisTutorial
                 tutorialDependency = {}, -- table of tutorialIDs that must be compeleted before the player can attempt this tutorial
                 tutorialSequence = {
@@ -41,16 +43,15 @@ function tutorial.register_tutorial_action(player,action,tool,node,pos,dir,key)
                     grantpriv = {}
                 }
             }
-            tutorial.instancedTutorial = false
         end
         -- Populate the tutorialSequence
-        table.insert(tutorial.tutorialTemp.tutorialSequence.action, action)
-        table.insert(tutorial.tutorialTemp.tutorialSequence.tool, tool)
-        table.insert(tutorial.tutorialTemp.tutorialSequence.node, node)
-        table.insert(tutorial.tutorialTemp.tutorialSequence.pos, pos)
-        table.insert(tutorial.tutorialTemp.tutorialSequence.dir, dir)
-        table.insert(tutorial.tutorialTemp.tutorialSequence.key, key)
-        tutorial.tutorialTemp.length = tutorial.tutorialTemp.length + 1
+        table.insert(tutorial.record.temp[pname].tutorialSequence.action, action)
+        table.insert(tutorial.record.temp[pname].tutorialSequence.tool, tool)
+        table.insert(tutorial.record.temp[pname].tutorialSequence.node, node)
+        table.insert(tutorial.record.temp[pname].tutorialSequence.pos, pos)
+        table.insert(tutorial.record.temp[pname].tutorialSequence.dir, dir)
+        table.insert(tutorial.record.temp[pname].tutorialSequence.key, key)
+        tutorial.record.temp[pname].length = tutorial.record.temp[pname].length + 1
     end
 end
 
@@ -60,10 +61,11 @@ end
 -- if the action matches the expected value, then the listener registers the completed action.
 -- Once activeTutorial.continueTutorial = false (i.e., the tutorial is completed), the listener turns off.
 function tutorial.tutorial_progress_listener(player)
-    pmeta = player:get_meta()
-    pdata = minetest.deserialize(pmeta:get_string("tutorials"))
+    local pmeta = player:get_meta()
+    local pdata = minetest.deserialize(pmeta:get_string("tutorials"))
+    local pname = player:get_player_name()
     
-    if pdata.tutorials.activeTutorial and pdata.tutorials.activeTutorial.continueTutorial and not tutorial.recordingActive then
+    if pdata.tutorials.activeTutorial and pdata.tutorials.activeTutorial.continueTutorial and not tutorial.record.active[pname] then
         -- Figure out the type of action to call the correct listener
         if pdata.tutorials.activeTutorial.tutorialSequence.action[pdata.tutorials.activeTutorial.searchIndex] == "current position" then
             pdata.tutorials.playerSequence.pos = player:get_pos()
@@ -112,8 +114,8 @@ end
 -- If tutorial is completed, then initiate the on_complettion callbacks: give tool, give item, grant priv.
 function tutorial.completed_action(player)
     local pname = player:get_player_name()
-    pmeta = player:get_meta()
-    pdata = minetest.deserialize(pmeta:get_string("tutorials"))
+    local pmeta = player:get_meta()
+    local pdata = minetest.deserialize(pmeta:get_string("tutorials"))
     
     -- Action was successfully completed, so update the searchIndex and completed
     if pdata.tutorials.activeTutorial.searchIndex <= pdata.tutorials.activeTutorial.length then 
@@ -126,22 +128,19 @@ function tutorial.completed_action(player)
         -- on_completion callbacks here
         minetest.chat_send_player(pname,"[Tutorial] "..pdata.tutorials.activeTutorial.on_completion.message)
         pdata.tutorials.activeTutorial.continueTutorial = false
-        pdata.tutorials.wieldedThingListener = false
+        pdata.tutorials.wieldThingListener = false
         pmeta:set_string("tutorials", minetest.serialize(pdata))
+
         local inv = player:get_inventory()
         -- Check if the player already has the tool
         if pdata.tutorials.activeTutorial.on_completion.givetool then
-            if inv:contains_item("main", ItemStack(pdata.tutorials.activeTutorial.on_completion.givetool)) then
-                return
-            else
+            if not mc_helpers.getInventoryItemLocation(inv, pItemStack(pdata.tutorials.activeTutorial.on_completion.givetool)) then
                 inv:add_item("main", pdata.tutorials.activeTutorial.on_completion.givetool)
             end
         end
         if pdata.tutorials.activeTutorial.on_completion.giveitem then
             -- Check if the player already has the item
-            if inv:contains_item("main", ItemStack(pdata.tutorials.activeTutorial.on_completion.giveitem)) then
-                return
-            else
+            if not mc_helpers.getInventoryItemLocation(inv, ItemStack(pdata.tutorials.activeTutorial.on_completion.giveitem)) then
                 inv:add_item("main", pdata.tutorials.activeTutorial.on_completion.giveitem)
             end
         end
@@ -154,11 +153,11 @@ end
 -- This function is used specifically with defined callbacks (punch, dig, place) and therefore only checks for action, tool, and node
 function tutorial.check_tutorial_progress(player,action,tool,node)
     local pname = player:get_player_name()
-    pmeta = player:get_meta()
-    pdata = minetest.deserialize(pmeta:get_string("tutorials"))
+    local pmeta = player:get_meta()
+    local pdata = minetest.deserialize(pmeta:get_string("tutorials"))
     -- TODO: retrieve pdata.tutorials.activeTutorial from player meta
     -- any player can complete a tutorial, but don't attempt a tutorial if one is being recorded
-    if pdata.tutorials.activeTutorial and pdata.tutorials.activeTutorial.continueTutorial and not tutorial.recordingActive then
+    if pdata.tutorials.activeTutorial and pdata.tutorials.activeTutorial.continueTutorial and not tutorial.record.active[pname] then
         if action then
             pdata.tutorials.playerSequence.action = action
             pdata.tutorials.playerSequence.tool = tool or ""

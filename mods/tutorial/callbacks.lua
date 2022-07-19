@@ -41,51 +41,72 @@ end)
 -- Listener for wield and player control (key strike)
 local timer = 0 
 minetest.register_globalstep(function(dtime)
+    local reset_timer = false
     timer = timer + dtime
 
     -- Listen for wieldedThing
-    if timer > 5 and tutorial and tutorial.recordingActive and tutorial.wieldThingListener then
-        timer = 0
-        local pname = tutorial.recordingPlayer:get_player_name()
-        local wieldedThing = tutorial.recordingPlayer:get_wielded_item():get_name()
-        if wieldedThing ~= "tutorial:recording_tool" then
-            if wieldedThing == "" then wieldedThing = "bare hands" end -- This is needed because no wielded item is an empty string, which conflcits with the default value of tutorialSequence.node
-            minetest.chat_send_player(pname,pname.." [Tutorial] Wielded item "..wieldedThing.." was recorded.")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.action, "wield")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.tool, "")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.node, wieldedThing)
-            table.insert(tutorial.tutorialTemp.tutorialSequence.pos, {})
-            table.insert(tutorial.tutorialTemp.tutorialSequence.dir, -1)
-            table.insert(tutorial.tutorialTemp.tutorialSequence.key, {})
-            tutorial.tutorialTemp.length = tutorial.tutorialTemp.length + 1
-            tutorial.wieldThingListener = false
+    if tutorial and #tutorial.record.active > 0 then
+        if timer > 5 then
+            reset_timer = true
+            for pname,_ in pairs(tutorial.record.active) do
+                if tutorial.record.listener.wield[pname] then
+                    local player = minetest.get_player_by_name(pname)
+                    local wieldedThing = player:get_wielded_item():get_name()
+
+                    if wieldedThing ~= "tutorial:recording_tool" then
+                        -- This is needed because no wielded item is an empty string, which conflcits with the default value of tutorialSequence.node
+                        if wieldedThing == "" then
+                            wieldedThing = "bare hands"
+                        end 
+                        minetest.chat_send_player(pname, "[Tutorial] Wielded item "..wieldedThing.." was recorded.")
+                        table.insert(tutorial.record.temp[pname].tutorialSequence.action, "wield")
+                        table.insert(tutorial.record.temp[pname].tutorialSequence.tool, "")
+                        table.insert(tutorial.record.temp[pname].tutorialSequence.node, wieldedThing)
+                        table.insert(tutorial.record.temp[pname].tutorialSequence.pos, {})
+                        table.insert(tutorial.record.temp[pname].tutorialSequence.dir, -1)
+                        table.insert(tutorial.record.temp[pname].tutorialSequence.key, {})
+                        tutorial.record.temp[pname].length = tutorial.record.temp[pname].length + 1
+                        tutorial.record.listener.wield[pname] = nil
+                    end
+                end
+            end
+        end
+
+        -- Listen for keyStrike
+        if timer > 1 then
+            reset_timer = true
+
+            for pname,_ in pairs(tutorial.record.active) do
+                if tutorial.record.listener.key[pname] then
+                    minetest.chat_send_player(pname, tostring(os.clock()).."[Tutorial] Listening for keystrike, press a player control key now.")
+                    local player = minetest.get_player_by_name(pname)
+                    local keyStrike = player:get_player_control()
+
+                    if keyStrike.up or keyStrike.down or keyStrike.right or keyStrike.left or keyStrike.aux1 or keyStrike.jump or keyStrike.sneak then
+                        tutorial.record.temp[pname].keys = {}
+                        for k,v in pairs(keyStrike) do
+                            if v then table.insert(tutorial.record.temp[pname].keys, k) end
+                        end
+                        --minetest.chat_send_all(tostring(_G.dump(keys)))
+                        local msg = "[Tutorial] Key strike "..table.concat(tutorial.record.temp[pname].keys, " + ").." was recorded."
+                        --for _,v in pairs(tutorial.record.temp[pname].keys) do msg = msg .. v .. " " end
+                        --local msg = msg .. "was recorded."
+                        minetest.chat_send_player(pname, msg)
+                        table.insert(tutorial.record.temp[pname].tutorialSequence.action, "player control")
+                        table.insert(tutorial.record.temp[pname].tutorialSequence.tool, "")
+                        table.insert(tutorial.record.temp[pname].tutorialSequence.node, "")
+                        table.insert(tutorial.record.temp[pname].tutorialSequence.pos, {})
+                        table.insert(tutorial.record.temp[pname].tutorialSequence.dir, -1)
+                        table.insert(tutorial.record.temp[pname].tutorialSequence.key, tutorial.record.temp[pname].keys)
+                        tutorial.record.temp[pname].length = tutorial.record.temp[pname].length + 1
+                        tutorial.record.listener.key[pname] = nil
+                    end
+                end
+            end
         end
     end
 
-    -- Listen for keyStrike
-    if timer > 1 and tutorial and tutorial.recordingActive and tutorial.keyStrikeListener then
-        minetest.chat_send_all(tostring(os.clock()).."[Tutorial] Listening for keystrike, press a player control key now.")
+    if reset_timer then
         timer = 0
-        local pname = tutorial.recordingPlayer:get_player_name()
-        local keyStrike = tutorial.recordingPlayer:get_player_control()
-        if keyStrike.up or keyStrike.down or keyStrike.right or keyStrike.left or keyStrike.aux1 or keyStrike.jump or keyStrike.sneak then
-            tutorial.tutorialTemp.keys = {}
-            for k,v in pairs(keyStrike) do
-                if v then table.insert(tutorial.tutorialTemp.keys,k) end
-            end
-            --minetest.chat_send_all(tostring(_G.dump(keys)))
-            local msg = pname.." [Tutorial] Key strike "
-            for _,v in pairs(tutorial.tutorialTemp.keys) do msg = msg .. v .. " " end
-            local msg = msg .. "was recorded."
-            minetest.chat_send_player(pname,msg)
-            table.insert(tutorial.tutorialTemp.tutorialSequence.action, "player control")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.tool, "")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.node, "")
-            table.insert(tutorial.tutorialTemp.tutorialSequence.pos, {})
-            table.insert(tutorial.tutorialTemp.tutorialSequence.dir, -1)
-            table.insert(tutorial.tutorialTemp.tutorialSequence.key, tutorial.tutorialTemp.keys)
-            tutorial.tutorialTemp.length = tutorial.tutorialTemp.length + 1
-            tutorial.keyStrikeListener = false
-        end
     end
 end)
