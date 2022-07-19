@@ -19,27 +19,6 @@ minetest.register_on_joinplayer(function(player)
 		orig_nodes = {},
 		mark_status = none_set
 	}
-
-    local inv = player:get_inventory()
-    if inv:contains_item("main", ItemStack("forestry_tools:measuringTape")) then
-        -- Player has the measuring tape
-        if check_perm(player) then
-            -- The player should have the measuring tape
-            return
-        else   
-            -- The player should not have the measuring tape
-            player:get_inventory():remove_item('main', "forestry_tools:measuringTape")
-        end
-    else
-        -- Player does not have the measuring tape
-        if check_perm(player) then
-            -- The player should have the measuring tape
-            player:get_inventory():add_item('main', "forestry_tools:measuringTape")
-        else
-            -- The player should not have the measuring tape
-            return
-        end     
-    end
 end)
 
 
@@ -197,6 +176,7 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 	inventory_image = "measuring_tape.png",
     stack_max = 1,
 	liquids_pointable = true,
+	_mc_tool_privs = forestry_tools.priv_table,
 
 	-- On left-click
     on_use = function(itemstack, placer, pointed_thing)

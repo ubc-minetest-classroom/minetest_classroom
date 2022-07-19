@@ -1,4 +1,5 @@
-mc_toolhandler = {reg_tools = {}}
+mc_toolhandler = {reg_tools = {}, reg_group_tools = {}}
+dofile(minetest.get_modpath("mc_toolhandler") .. "/api.lua")
 
 -- Returns name of list item is in, if it is in player's inventory
 local function get_player_item_location(player, itemstack)
@@ -100,8 +101,9 @@ local function register_callbacks(tool_name, data)
             player:get_inventory():add_item("main", tool_name)
         elseif not mc_helpers.checkPrivs(player, data._mc_tool_privs) then
             -- Player has the tool but should not: remove all copies
+            local inv = player:get_inventory()
             while list do
-                player:get_inventory():remove_item(list, tool_name)
+                inv:remove_item(list, tool_name)
                 list = get_player_item_location(player, stack)
             end
         else
@@ -158,8 +160,9 @@ local function register_callbacks(tool_name, data)
     
         if list and not mc_helpers.checkPrivs(player, data._mc_tool_privs) then
             -- Player has the tool but should not: remove all copies
+            local inv = player:get_inventory()
             while list do
-                player:get_inventory():remove_item(list, tool_name)
+                inv:remove_item(list, tool_name)
                 list = get_player_item_location(player, stack)
             end
         end
@@ -180,8 +183,9 @@ local function register_group_callbacks(tool_name, data)
             player:get_inventory():add_item("main", tool_name)
         elseif not mc_helpers.checkPrivs(player, data._mc_tool_privs) then
             -- Player has the tool but should not: remove all copies
+            local inv = player:get_inventory()
             while list do
-                player:get_inventory():set_stack(list, i, ItemStack(nil))
+                inv:set_stack(list, i, ItemStack(nil))
                 list,i = get_player_item_group_location(player, data._mc_tool_group)
             end
         else
@@ -227,8 +231,9 @@ local function register_group_callbacks(tool_name, data)
     
         if list and not mc_helpers.checkPrivs(player, data._mc_tool_privs) then
             -- Player has the tool but should not: remove all copies
+            local inv = player:get_inventory()
             while list do
-                player:get_inventory():set_stack(list, i, ItemStack(nil))
+                inv:set_stack(list, i, ItemStack(nil))
                 list,i = get_player_item_group_location(player, data._mc_tool_group)
             end
         end
@@ -236,22 +241,12 @@ local function register_group_callbacks(tool_name, data)
     end)
 end
 
--- Open and read mod.conf file from iterator
+-- Open and read mod.conf settings file
 local reg_tools_from = {}
-local conf_reader = io.lines(minetest.get_modpath("mc_toolhandler") .. "/mod.conf")
-elem = conf_reader()
-while elem do
-    -- Manage tools for all optional dependencies 
-    local match = string.match(elem, "^optional_depends = (.*)")
-    if match then
-        local mods = string.split(match, ",")
-        for _,mod in pairs(mods) do
-            table.insert(reg_tools_from, string.trim(mod))
-        end
-    end
-    -- get next element, break from loop if none
-    elem = conf_reader()
-    if not elem then break end
+local settings = Settings(minetest.get_modpath("mc_toolhandler") .. "/mod.conf")
+local mods = string.split(settings:get("optional_depends"), ",")
+for _,mod in pairs(mods) do
+    table.insert(reg_tools_from, string.trim(mod))
 end
 
 -- Register give/take callbacks for all MineTest classroom tools
@@ -268,32 +263,168 @@ for name,data in pairs(minetest.registered_tools) do
                     -- tool group registration
                     register_group_callbacks(name, data)
                     table.insert(mc_toolhandler.reg_tools, "group:"..data._mc_tool_group)
+                    table.insert(mc_toolhandler.reg_group_tools, name)
                 end
             end
         end
     end
 end
 
--- Removes duplicate copies of registered items
-local function remove_reg_duplications(player, stack, i, list)
-    if mc_helpers.tableHas(mc_toolhandler.reg_tools, stack:get_name()) and player_has_multiple_copies(player, stack) then
-        remove_item_copies_except(player, stack, i, list)
+--- Abstract function for checking if a player's inventory contains a tool, and if they have the necessary privileges to use it
+--- @param player Player to check
+--- @param stack Tool to check for
+--- @param abstract Function table defining functions to call for various check results
+--- Standard tool branch:
+---  - Initial check:
+---    - t_np(t_np_p): player does not have privileges
+---    - t_pm(t_pm_p): player has privileges and multiple copies of tool
+---    - t_else(t_else_p): player has privileges and 0-1 copies of tool
+---  - t_final(t_final_p): final call on branch regardless of outcome
+--- Tool group branch:
+---  - Initial check:
+---    - g_np(g_np_p): player does not have privileges
+---    - g_pm(g_pm_p): player has privileges and multiple copies of tool
+---    - g_else(g_else_p): player has privileges and 0-1 copies of tool
+---  - g_final(g_final_p): final call on branch regardless of outcome
+--- @return first return from called functions
+local function tool_perm_check_abstract(player, stack, abstract)
+    local func_return = nil
+    if mc_helpers.tableHas(mc_toolhandler.reg_tools, stack:get_name()) then 
+        if not mc_helpers.checkPrivs(player, stack:get_definition()._mc_tool_privs) then
+            func_return = abstract.t_np and abstract.t_np(unpack(abstract.t_np_p or {})) or func_return
+        elseif player_has_multiple_copies(player, stack) then
+            func_return = abstract.t_pm and abstract.t_pm(unpack(abstract.t_pm_p or {})) or func_return
+        else
+            func_return = abstract.t_else and abstract.t_else(unpack(abstract.t_else_p or {})) or func_return
+        end
+        func_return = abstract.t_final and abstract.t_final(unpack(abstract.t_final_p or {})) or func_return
     else
         local mc_tool_group = stack:get_definition()._mc_tool_group
-        if mc_tool_group and mc_helpers.tableHas(mc_toolhandler.reg_tools, "group:"..mc_tool_group) and player_has_multiple_group_copies(player, mc_tool_group) then
-            remove_item_group_copies_except(player, mc_tool_group, i, list)
+        if mc_tool_group and mc_helpers.tableHas(mc_toolhandler.reg_tools, "group:"..mc_tool_group) then
+            if not mc_helpers.checkPrivs(player, stack:get_definition()._mc_tool_privs) then
+                func_return = abstract.g_np and abstract.g_np(unpack(abstract.g_np_p or {})) or func_return
+            elseif player_has_multiple_group_copies(player, mc_tool_group) then
+                func_return = abstract.g_pm and abstract.g_pm(unpack(abstract.g_pm_p or {})) or func_return
+            else
+                func_return = abstract.g_else and abstract.g_else(unpack(abstract.g_else_p or {})) or func_return
+            end
+            func_return = abstract.g_final and abstract.g_final(unpack(abstract.g_final_p or {})) or func_return
         end
     end
+    return func_return
 end
 
--- Register callback for removing duplicate tools
+-- Removes duplicate copies of registered items and items the player does not have privileges to use
+local function remove_prohibited_items(player, stack, i, list)
+    tool_perm_check_abstract(player, stack, {
+        t_np = function(player, stack, i, list)
+            -- Player should not have the tool: remove all copies
+            local inv = player:get_inventory()
+            if not list then
+                list = get_player_item_location(player, stack)
+            end
+            while list do
+                inv:remove_item(list, stack:get_name())
+                list = get_player_item_location(player, stack)
+            end
+        end,
+        t_np_p = {player, stack, i, list},
+
+        t_pm = remove_item_copies_except,
+        t_pm_p = {player, stack, i, list},
+
+        g_np = function(player, stack, i, list)
+            -- Player does not have privileges to use item: remove all copies
+            local inv = player:get_inventory()
+            if not list then
+                list,i = get_player_item_location(player, stack)
+            end
+            while list do
+                inv:set_stack(list, i, ItemStack(nil))
+                list,i = get_player_item_group_location(player, data._mc_tool_group)
+            end
+        end,
+        g_np_p = {player, stack, i, list},
+
+        g_pm = remove_item_group_copies_except,
+        g_pm_p = {player, stack:get_definition()._mc_tool_group, i, list}
+    })
+end
+
+-- Register callbacks for preventing specified tools from being taken
+minetest.register_allow_player_inventory_action(function(player, action, inventory, inv_info)
+    if action == "take" then
+        local def = inv_info.stack:get_definition()
+        if not def._mc_tool_allow_take then
+            if mc_helpers.tableHas(mc_toolhandler.reg_tools, inv_info.stack:get_name()) or (def._mc_tool_group and mc_helpers.tableHas(mc_toolhandler.reg_tools, "group:"..def._mc_tool_group)) then
+                return 0 -- do not allow item to be taken
+            end
+        end
+    end
+    return -- ignore
+end)
+
+-- Register callbacks for removing duplicate tools and items player should not have
 minetest.register_on_player_inventory_action(function(player, action, inventory, inv_info)
     if action == "put" or action == "take" then
-        remove_reg_duplications(player, inv_info.stack, inv_info.index, inv_info.listname)
+        remove_prohibited_items(player, inv_info.stack, inv_info.index, inv_info.listname)
     elseif action == "move" then
         local stack_1 = inventory:get_stack(inv_info.to_list, inv_info.to_index)
-        remove_reg_duplications(player, stack_1, inv_info.to_index, inv_info.to_list)
+        remove_prohibited_items(player, stack_1, inv_info.to_index, inv_info.to_list)
         local stack_2 = inventory:get_stack(inv_info.from_list, inv_info.from_index)
-        remove_reg_duplications(player, stack_2, inv_info.from_index, inv_info.from_list)
+        remove_prohibited_items(player, stack_2, inv_info.from_index, inv_info.from_list)
+    end
+end)
+
+minetest.register_on_chatcommand(function(name, command, params)
+    if command == "give" or command == "giveme" then
+        local p_table = string.split(params, " ")
+        if not p_table[1] or (command == "give" and not p_table[2]) then return end -- missing params, skip
+
+        local player = (command == "giveme" and minetest.get_player_by_name(name)) or minetest.get_player_by_name(p_table[1])
+        if not player then return end -- player not found, skip
+
+        local stack_name = (command == "giveme" and p_table[1]) or p_table[2]
+        local stack = ItemStack(stack_name)
+
+        local function fail_and_send_item_privs(name, stack)
+            local stack_privs = stack:get_definition()._mc_tool_privs or {teacher = true}
+            local keys = {}
+            for k,v in pairs(stack_privs) do
+                table.insert(keys, k)
+            end
+            minetest.chat_send_player(name, "Target player is missing privileges required for item use: "..table.concat(keys, ", ")..".")
+            return true
+        end
+
+        return tool_perm_check_abstract(player, stack, {
+            t_np = fail_and_send_item_privs,
+            t_np_p = {name, stack},
+
+            t_pm = remove_prohibited_items,
+            t_pm_p = {player, stack},
+
+            t_final = function(player, stack_name, name)
+                if get_player_item_location(player, stack_name) then
+                    minetest.chat_send_player(name, "Target player already has the specified item.")
+                    return true
+                end
+            end,
+            t_final_p = {player, stack_name, name},
+
+            g_np = fail_and_send_item_privs,
+            g_np_p = {name, stack},
+
+            g_pm = remove_prohibited_items,
+            g_pm_p = {player, stack},
+
+            g_final = function(player, stack, name)
+                if get_player_item_group_location(player, stack:get_definition()._mc_tool_group) then
+                    minetest.chat_send_player(name, "Target player already has the specified item.")
+                    return true
+                end
+            end,
+            g_final_p = {player, stack, name}
+        })
     end
 end)

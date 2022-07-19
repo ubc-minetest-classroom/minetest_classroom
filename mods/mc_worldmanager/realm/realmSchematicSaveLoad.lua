@@ -52,11 +52,13 @@ function Realm:Save_Schematic(author, mode)
     fileName = fileName .. os.date(" %Y%m%d %H%M")
 
     local filepath = folderpath .. "\\" .. fileName
-    
+
     --minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
 
     local file, err = io.open(filepath .. ".mts", "wb")
-    if err then return 0 end
+    if err then
+        return 0
+    end
     local schematic, count = worldedit.serialize(self.StartPos, self.EndPos)
     file:write(schematic)
     file:close()
@@ -87,7 +89,29 @@ function Realm:Load_Schematic(schematic, config)
 
     --TODO: Add code to check if the realm is large enough to support the schematic; If not, create a new realm that can;
     local schematicEndPos = self:LocalToWorldPosition(config.schematicSize)
-    self.EndPos = schematicEndPos
+
+    if (schematicEndPos.x > self.EndPos.x or schematicEndPos.y > self.EndPos.y or schematicEndPos.z > self.EndPos.z) then
+        Debug.log("Schematic is too large for realm")
+    else
+        if (schematicEndPos.x == nil or schematicEndPos == 0) then
+            schematicEndPos.x = 80
+            Debug.log("Schematic size x is 0, setting to 80")
+        end
+
+        if (schematicEndPos.y == nil or schematicEndPos == 0) then
+            schematicEndPos.y = 80
+            Debug.log("Schematic size y is 0, setting to 80")
+        end
+
+        if (schematicEndPos.z == nil or schematicEndPos == 0) then
+            schematicEndPos.z = 80
+            Debug.log("Schematic size z is 0, setting to 80")
+        end
+
+        self.EndPos = schematicEndPos
+    end
+
+
 
 
     --exschem is having issues loading random chunks, need to debug
@@ -163,7 +187,7 @@ function Realm:NewFromSchematic(name, key)
         name = config.name
     end
 
-    local newRealm = Realm:New(name, config.schematicSize)
+    local newRealm = Realm:New(name, config.schematicSize, false)
     newRealm:Load_Schematic(schematic, config)
 
     if (config.format ~= "procedural") then
@@ -171,6 +195,11 @@ function Realm:NewFromSchematic(name, key)
         -- Need to emerge chunks as we create barriers
         newRealm:CreateBarriers()
     end
+
+    -- Realm:CreateTeleporter()
+
+
+    newRealm:CallOnCreateCallbacks()
 
     return newRealm
 end
