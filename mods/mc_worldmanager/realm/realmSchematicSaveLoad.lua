@@ -8,7 +8,7 @@ function Realm:Save_Schematic(author, mode)
     author = author or "unknown"
     mode = mode or "old"
 
-    local folderpath = minetest.get_worldpath() .. "/schematics/"
+    local folderpath = minetest.get_worldpath() .. "/realmSchematics/"
 
     minetest.mkdir(folderpath)
 
