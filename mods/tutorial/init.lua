@@ -21,7 +21,8 @@ tutorial = {
         listener = {
             wield = {},
             key = {}
-        }
+        },
+        timer = {}
     }
 }
 
@@ -71,44 +72,12 @@ minetest.register_on_joinplayer(function(player)
                 activeTutorial = {},
                 playerSequence = {},
                 completedTutorials = {}, -- TODO: use this to change the tutorial_fs to indicate tutorials that are completed
-                weildedThingListener = false,
+                wieldThingListener = false,
                 keyStrikeListener = false,
             }
         }
         pmeta:set_string("tutorial:tutorials", minetest.serialize(pdata))
     end
-
-    --[[
-    -- When a player joins, check if they have the correct priv and then give the tutorialbook and/or the recording tool
-	local inv = player:get_inventory()
-	-- tutorialbook
-    if inv:contains_item("main", ItemStack("tutorial:tutorialbook")) then
-		if tutorial.checkPrivs(player,tutorial.player_priv_table) then
-			return
-		else
-			inv:remove_item('main', 'tutorial:tutorialbook')
-		end
-	else
-		if tutorial.checkPrivs(player,tutorial.player_priv_table) then
-			inv:add_item('main', 'tutorial:tutorialbook')
-		else
-			return
-		end
-	end
-    -- recording_tool
-    if inv:contains_item("main", ItemStack("tutorial:recording_tool")) then
-		if tutorial.checkPrivs(player,tutorial.recorder_priv_table) then
-			return
-		else
-			inv:remove_item('main', 'tutorial:recording_tool')
-		end
-	else
-		if tutorial.checkPrivs(player,tutorial.recorder_priv_table) then
-			inv:add_item('main', 'tutorial:recording_tool')
-		else
-			return
-		end
-	end]]
 end)
 
 function tutorial.show_record_fs(player)
@@ -423,7 +392,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 -- This saves us from unnecessarily burning cycles server-side
                 for _,action in ipairs(pdata.tutorials.activeTutorial.tutorialSequence.action) do
                     if action == "current position" or action == "look direction" or action == "look pitch" or action == "look yaw" or action == "wield" or action == "player control" then
-                        tutorial.tutorial_progress_listener()
+                        tutorial.tutorial_progress_listener(player)
                     end
                 end
                 -- TODO: add HUD and/or formspec to display the instructions for the tutorial
@@ -521,7 +490,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
 
         if fields.playercontrol then
-            minetest.chat_send_player(pname, "[Tutorial] Press the player control key that you want to be recorded.")
+            minetest.chat_send_player(pname, "[Tutorial] Press and hold the player control keys that you want to be recorded.")
             tutorial.record.listener.key[pname] = true
             return
         end
