@@ -69,6 +69,12 @@ function Realm:Save_Schematic(schematicName, author, mode)
 
     local settingsWrote = settings:write()
 
+    if (settingsWrote == false) then
+        Debug.log("Unable to save realm; Settings did not write correctly...")
+    end
+
+    schematicManager.registerSchematicPath(schematicName, filepath)
+
     return filepath, settingsWrote
 end
 
