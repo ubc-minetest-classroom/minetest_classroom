@@ -305,10 +305,10 @@ minetest.register_chatcommand("whitelist", {
 			local ipv4 = minetest.get_player_ip(pname)
 			networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
 			if not networking.ipv4_whitelist[ipv4] then
+				minetest.chat_send_player(pname,"[networking] WARNING: You need to join from a whitelisted IP address before you can enable the whitelist otherwise you will be locked out of the server.")
+			else
 				networking.storage:set_string("enabled", minetest.serialize(false))
 				minetest.chat_send_player(pname,"[networking] Whitelist is now disabled.")
-			else
-				minetest.chat_send_player(pname,"[networking] WARNING: You need to join from a whitelisted IP address before you can enable the whitelist otherwise you will be locked out of the server.")
 			end
         else
         end
