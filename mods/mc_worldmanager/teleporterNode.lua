@@ -85,8 +85,6 @@ minetest.register_node("mc_worldmanager:teleporter", {
 
                 meta:set_int("realm", realmObject.ID)
                 minetest.swap_node(pos, { name = "mc_worldmanager:teleporter", param2 = math.ceil(math.sin(realmObject.ID) * 255) })
-            else
-                minetest.chat_send_player(clicker:get_player_name(), "This teleporter is broken. Please contact an instructor for assistance.")
             end
         end
 
