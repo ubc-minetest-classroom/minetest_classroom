@@ -308,7 +308,8 @@ minetest.register_chatcommand("whitelist", {
 				minetest.chat_send_player(pname,"[networking] WARNING: You need to join from a whitelisted IP address before you can enable the whitelist otherwise you will be locked out of the server.")
 			else
 				networking.storage:set_string("enabled", minetest.serialize(false))
-				minetest.chat_send_player(pname,"[networking] Whitelist is now disabled.")
+				minetest.chat_send_player(pname,"[networking] Whitelist is now enabled.")
+				minetest.chat_send_player(pname,"[networking] Whitelist is now enabled.")
 			end
         end
 	end
