@@ -19,6 +19,15 @@ function Realm:getCategory()
     return categoryObject
 end
 
+function Realm.getRegisteredCategories()
+    local categories = {}
+    for key, value in pairs(Realm.categories) do
+        table.insert(categories, key)
+    end
+
+    return categories
+end
+
 function Realm:AddOwner(ownerName)
     local owners = self:get_data("owner")
     if (owners == nil) then
