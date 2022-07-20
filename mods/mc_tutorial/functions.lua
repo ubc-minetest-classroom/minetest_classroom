@@ -1,4 +1,4 @@
-function mc_tutorial.checkPrivs(player,priv_table)
+function mc_tutorial.check_privs(player, priv_table)
     local priv_table = priv_table or {interact = true}
     local name = player:get_player_name()
     return minetest.check_player_privs(name, priv_table)
@@ -31,18 +31,18 @@ function mc_tutorial.get_temp_shell()
     }
 end
 
-function mc_tutorial.register_tutorial_action(player,action,tool,node,pos,dir,key)
+function mc_tutorial.register_tutorial_action(player, action, tool, node, pos, dir, key)
     -- Every entry must have an action
     if not action then return false end
     -- Handle other optional arguments (default values)
-    local tool = tool or ""
-    local node = node or ""
-    local pos = pos or {}
-    local dir = dir or -1
-    local key = key or {}
+    local tool = tool or false
+    local node = node or false
+    local pos = pos or false
+    local dir = dir or false
+    local key = key or false
     local pname = player:get_player_name()
 
-    if mc_tutorial.checkPrivs(player,mc_tutorial.recorder_priv_table) and mc_tutorial.record.active[pname] then
+    if mc_tutorial.check_privs(player,mc_tutorial.recorder_priv_table) and mc_tutorial.record.active[pname] then
         if not mc_tutorial.record.temp[pname] then
             -- This is the first entry for the tutorial, apply default values
             mc_tutorial.record.temp[pname] = mc_tutorial.get_temp_shell()
@@ -65,7 +65,7 @@ end
 -- Once activeTutorial.continueTutorial = false (i.e., the tutorial is completed), the listener turns off.
 function mc_tutorial.tutorial_progress_listener(player)
     local pmeta = player:get_meta()
-    local pdata = minetest.deserialize(pmeta:get_string("tutorials"))
+    local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial"))
     local pname = player:get_player_name()
     
     if pdata.tutorials.activeTutorial and pdata.tutorials.activeTutorial.continueTutorial and not mc_tutorial.record.active[pname] then
@@ -74,6 +74,7 @@ function mc_tutorial.tutorial_progress_listener(player)
             pdata.tutorials.playerSequence.pos = player:get_pos()
             check_pos = pdata.tutorials.activeTutorial.sequence.pos[pdata.tutorials.activeTutorial.searchIndex]
             -- minetest.get_objects_inside_radius(pos, radius) may be better here?
+            -- minetest.get_objects_in_area(pos1, pos2) would also work
             if (pdata.tutorials.playerSequence.pos.x >= check_pos.x - mc_tutorial.check_pos_x_tolerance) and (pdata.tutorials.playerSequence.pos.x <= check_pos.x + mc_tutorial.check_pos_x_tolerance) and (pdata.tutorials.playerSequence.pos.y >= check_pos.y - mc_tutorial.check_pos_y_tolerance) and (pdata.tutorials.playerSequence.pos.y <= check_pos.y + mc_tutorial.check_pos_y_tolerance) and (pdata.tutorials.playerSequence.pos.z >= check_pos.z - mc_tutorial.check_pos_z_tolerance) and (pdata.tutorials.playerSequence.pos.z <= check_pos.z + mc_tutorial.check_pos_z_tolerance) then
                 mc_tutorial.completed_action(player)
             end
@@ -118,7 +119,7 @@ end
 function mc_tutorial.completed_action(player)
     local pname = player:get_player_name()
     local pmeta = player:get_meta()
-    local pdata = minetest.deserialize(pmeta:get_string("tutorials"))
+    local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial"))
     
     -- Action was successfully completed, so update the searchIndex and completed
     if pdata.tutorials.activeTutorial.searchIndex <= pdata.tutorials.activeTutorial.length then 
@@ -129,10 +130,10 @@ function mc_tutorial.completed_action(player)
     -- Check if tutorial is completed
     if pdata.tutorials.activeTutorial.completed >= pdata.tutorials.activeTutorial.length then
         -- on_completion callbacks here
-        minetest.chat_send_player(pname,"[Tutorial] "..pdata.tutorials.activeTutorial.on_completion.message)
+        minetest.chat_send_player(pname, "[Tutorial] "..pdata.tutorials.activeTutorial.on_completion.message)
         pdata.tutorials.activeTutorial.continueTutorial = false
         pdata.tutorials.wieldThingListener = false
-        pmeta:set_string("tutorials", minetest.serialize(pdata))
+        pmeta:set_string("mc_tutorial", minetest.serialize(pdata))
 
         local inv = player:get_inventory()
         -- Check if the player already has the tool
@@ -157,14 +158,14 @@ end
 function mc_tutorial.check_tutorial_progress(player,action,tool,node)
     local pname = player:get_player_name()
     local pmeta = player:get_meta()
-    local pdata = minetest.deserialize(pmeta:get_string("tutorials"))
+    local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial"))
     -- TODO: retrieve pdata.tutorials.activeTutorial from player meta
     -- any player can complete a tutorial, but don't attempt a tutorial if one is being recorded
     if pdata.tutorials.activeTutorial and pdata.tutorials.activeTutorial.continueTutorial and not mc_tutorial.record.active[pname] then
         if action then
             pdata.tutorials.playerSequence.action = action
-            pdata.tutorials.playerSequence.tool = tool or ""
-            pdata.tutorials.playerSequence.node = node or ""
+            pdata.tutorials.playerSequence.tool = tool or false
+            pdata.tutorials.playerSequence.node = node or false
         else return false end
 
         -- match the action first since this callback might not even be relevant

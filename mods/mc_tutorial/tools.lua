@@ -1,13 +1,13 @@
 -- The tutorial book for accessing tutorials
 minetest.register_tool("mc_tutorial:tutorialbook" , {
 	description = "Tutorial book",
-	inventory_image = "tutorialbook.png",
+	inventory_image = "mc_tutorial_tutorialbook.png",
     _mc_tool_privs = mc_tutorial.player_priv_table,
 	-- Left-click the tool activates the tutorial menu
 	on_use = function (itemstack, user, pointed_thing)
         local pname = user:get_player_name()
 		-- Check for privileges
-		if mc_tutorial.checkPrivs(user,mc_tutorial.player_priv_table) then
+		if mc_tutorial.check_privs(user,mc_tutorial.player_priv_table) then
 			mc_tutorial.show_tutorials(user)
 		end
 	end,
@@ -22,7 +22,7 @@ mc_tutorial.tutorialbook = minetest.registered_aliases[tutorialbook] or mc_tutor
 
 local function open_recording_menu(itemstack, placer, pointed_thing)
     local pname = placer:get_player_name()
-    if not mc_tutorial.checkPrivs(placer,mc_tutorial.recorder_priv_table) then
+    if not mc_tutorial.check_privs(placer,mc_tutorial.recorder_priv_table) then
         minetest.chat_send_player(pname, "[Tutorial] You do not have privileges to use this tool.")
         return nil
     else
@@ -45,12 +45,12 @@ minetest.register_tool("mc_tutorial:recording_tool", {
     tool_capabilities = {},
     range = 100,
     groups = { disable_repair = 1 }, 
-    wield_image = "recording_tool.png",
-    inventory_image = "recording_tool.png",
+    wield_image = "mc_tutorial_recording_tool.png",
+    inventory_image = "mc_tutorial_recording_tool.png",
     liquids_pointable = false,
     on_use = function(itemstack, user, pointed_thing)
         local pname = user:get_player_name()
-        if not mc_tutorial.checkPrivs(user,mc_tutorial.recorder_priv_table) then
+        if not mc_tutorial.check_privs(user,mc_tutorial.recorder_priv_table) then
             minetest.chat_send_player(pname, "[Tutorial] You do not have privileges to use this tool.")
             return nil
         else

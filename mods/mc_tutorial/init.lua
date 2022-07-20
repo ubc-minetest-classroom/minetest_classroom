@@ -24,8 +24,32 @@ mc_tutorial = {
         },
         timer = {}
     },
-    fs_context = {}
+    fs_context = {},
+    active = {},
+
+    ACTION = { -- action constants
+        PUNCH = 1,
+        DIG = 2,
+        PLACE = 3,
+        WIELD = 4,
+        KEY = 5,
+        LOOK_YAW = 6,
+        LOOK_PITCH = 7,
+        LOOK_DIR = 8,
+        POS = 9
+    }
 }
+
+local function get_context(player)
+    local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name()) or ""
+    return mc_tutorial.fs_context[pname] or {}
+end
+local function save_context(player, context)
+    local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name())
+    if pname then
+        mc_tutorial.fs_context[pname] = context
+    end
+end
 
 -- Store and load default settings in the tutorial_settings.conf file
 local settings = Settings(mc_tutorial.path .. "/tutorial_settings.conf")
@@ -142,37 +166,45 @@ image_button[5.3,8.8;0.8,0.8;blank.png;depend_search_x;X;false;true]
 
 function mc_tutorial.show_record_fs(player)
     local pname = player:get_player_name()
-	if mc_tutorial.checkPrivs(player, mc_tutorial.recorder_priv_table) then
+	if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
         -- Tutorial formspec for recording a tutorial
-        local context = mc_tutorial.fs_context[pname] or {}
+        local context = get_context(pname)
         local temp = mc_tutorial.record.temp[pname] or {}
 
         local record_formtable = {
             "formspec_version[6]",
             "size[12.7,10]",
-            "tabheader[0,0;record_nav;Overview,Events,Rewards", next(mc_tutorial.tutorials:to_table()) and ",Dependencies" or "", ";", context.selection or 1, ";false;false]"
+            "tabheader[0,0;record_nav;Overview,Events,Rewards", next(mc_tutorial.tutorials:to_table()) and ",Dependencies" or "", ";", context.tab or "1", ";false;false]"
         }
         local tab_map = {
-            [1] = { -- OVERVIEW
+            ["1"] = { -- OVERVIEW
                 "field[0.4,0.7;11.9,0.7;title;Title;", temp.title or "", "]",
                 "textarea[0.4,1.9;11.9,1.3;description;Description;", temp.description or "", "]",
                 "textarea[0.4,3.7;11.9,1.3;message;Completion message;", temp.on_completion and temp.on_completion.message or "", "]",
                 "textarea[0.4,5.5;11.9,3.2;;Tutorial summary;", minetest.formspec_escape("[TBD]"), "]",
                 "button_exit[0.4,8.8;11.9,0.8;finish;Finish and save]",
             },
-            [2] = { -- EVENTS
+            ["2"] = { -- EVENTS
                 "textlist[0.4,0.8;11.9,7.2;eventlist;;1;false]",
                 "label[0.4,0.6;Recorded events]",
-                "image_button[0.4,8.2;1.4,1.4;blank.png;eventlist_add_event;Add event;false;true]",
-                "image_button[3.4,8.2;1.4,1.4;blank.png;eventlist_delete;Delete;false;true]",
-                "image_button[4.9,8.2;1.4,1.4;blank.png;eventlist_duplicate;Duplicate;false;true]",
-                "image_button[7.9,8.2;1.4,1.4;blank.png;eventlist_move_up;Move up;false;true]",
-                "image_button[9.4,8.2;1.4,1.4;blank.png;eventlist_move_down;Move down;false;true]",
-                "image_button[6.4,8.2;1.4,1.4;blank.png;eventlist_move_top;Move to top;false;true]",
-                "image_button[10.9,8.2;1.4,1.4;blank.png;eventlist_move_bottom;Move to bottom;false;true]",
-                "image_button[1.9,8.2;1.4,1.4;blank.png;eventlist_add_group;Add group;false;true]",
+                "image_button[0.4,8.2;1.4,1.4;mc_tutorial_add_event.png;eventlist_add_event;;false;true]",
+                "image_button[1.9,8.2;1.4,1.4;mc_tutorial_add_group.png;eventlist_add_group;;false;true]",
+                "image_button[3.4,8.2;1.4,1.4;mc_tutorial_delete.png;eventlist_delete;;false;true]",
+                "image_button[4.9,8.2;1.4,1.4;mc_tutorial_duplicate.png;eventlist_duplicate;;false;true]",
+                "image_button[6.4,8.2;1.4,1.4;mc_tutorial_move_top.png;eventlist_move_top;;false;true]",
+                "image_button[7.9,8.2;1.4,1.4;mc_tutorial_move_up.png;eventlist_move_up;;false;true]",
+                "image_button[9.4,8.2;1.4,1.4;mc_tutorial_move_down.png;eventlist_move_down;;false;true]",
+                "image_button[10.9,8.2;1.4,1.4;mc_tutorial_move_bottom.png;eventlist_move_bottom;;false;true]",
+                "tooltip[eventlist_add_event;Add new event]",
+                "tooltip[eventlist_add_group;Add new group]",
+                "tooltip[eventlist_delete;Delete]",
+                "tooltip[eventlist_duplicate;Duplicate]",
+                "tooltip[eventlist_move_top;Move to top]",
+                "tooltip[eventlist_move_up;Move up 1]",
+                "tooltip[eventlist_move_down;Move down 1]",
+                "tooltip[eventlist_move_bottom;Move to bottom]",
             },
-            [3] = { -- REWARDS
+            ["3"] = { -- REWARDS
                 "label[0.4,0.6;Available items/privileges to reward]",
                 "label[6.8,0.6;Selected rewards]",
                 "textlist[0.4,0.8;5.5,8.8;reward_list;;1;false]",
@@ -185,7 +217,7 @@ function mc_tutorial.show_record_fs(player)
                 "image_button[10.7,8.8;0.8,0.8;blank.png;reward_search_go;Go!;false;true]",
                 "image_button[11.5,8.8;0.8,0.8;blank.png;reward_search_x;X;false;true]",
             },
-            [4] = { -- DEPENDENCIES
+            ["4"] = { -- DEPENDENCIES
                 "label[0.4,0.6;Available tutorials]",
                 "label[6.5,0.6;Dependencies (required BEFORE)]",
                 "label[6.5,5.3;Dependents (unlocked AFTER)]",
@@ -201,7 +233,7 @@ function mc_tutorial.show_record_fs(player)
                 "image_button[5.3,8.8;0.8,0.8;blank.png;depend_search_x;X;false;true]",
             },
         }
-        table.insert(record_formtable, table.concat(tab_map[context.selection or 1], ""))
+        table.insert(record_formtable, table.concat(tab_map[context.tab or "1"], ""))
 
 		minetest.show_formspec(pname, "mc_tutorial:record_fs", table.concat(record_formtable, ""))
 		return true
@@ -353,7 +385,7 @@ function mc_tutorial.show_record_options_fs(player)
         "button_exit[3.7,3.7;3,0.8;exit;Nevermind!]"
     }
     local pname = player:get_player_name()
-	minetest.show_formspec(pname, "mc_tutorial:record_options_fs", table.concat(record_options_fs,""))
+	minetest.show_formspec(pname, "mc_tutorial:record_options_fs", table.concat(record_options_fs, ""))
 	return true
 end
 
@@ -387,7 +419,7 @@ function mc_tutorial.show_tutorials(player)
         end
 
         -- Add edit/delete options for those privileged
-        if mc_tutorial.checkPrivs(player,mc_tutorial.recorder_priv_table) then 
+        if mc_tutorial.check_privs(player,mc_tutorial.recorder_priv_table) then 
             tutorials_fs[#tutorials_fs + 1] = "box[5.9,8.8;5.2,1;#FF0000]"
             tutorials_fs[#tutorials_fs + 1] = "button[6,8.9;2.3,0.8;delete;Delete]"
             tutorials_fs[#tutorials_fs + 1] = "button[8.6,8.9;2.4,0.8;edit;Edit]"
@@ -404,6 +436,7 @@ end
 -- REWORK
 minetest.register_on_player_receive_fields(function(player, formname, fields)
     local pname = player:get_player_name()
+    local context = get_context(pname)
 	mc_tutorial.wait(0.05) --popups don't work without this
 
 	-- Manage recorded tutorials
@@ -416,7 +449,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
             mc_tutorial.show_tutorials(player)
         elseif fields.delete then
-            if mc_tutorial.checkPrivs(player, mc_tutorial.recorder_priv_table) then
+            if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
                 if mc_tutorial.tutorial_selected == nil then mc_tutorial.tutorial_selected = 1 end
                 if tutorials ~= nil then
                     table.remove(tutorials, mc_tutorial.tutorial_selected)
@@ -431,14 +464,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         elseif fields.edit then
             if mc_tutorial.tutorial_selected == nil then mc_tutorial.tutorial_selected = 1 end
-            if mc_tutorial.checkPrivs(player, mc_tutorial.recorder_priv_table) then
+            if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
                 mc_tutorial.record.temp[pname] = tutorials[mc_tutorial.tutorial_selected]
                 mc_tutorial.record.edit[pname] = true
                 if mc_tutorial.record.temp[pname] then
                     mc_tutorial.show_record_fs(player)
                 end
             else
-                minetest.chat_send_player(pname,pname.." [Tutorial] You do not have sufficient privileges to edit tutorials.")
+                minetest.chat_send_player(pname, "[Tutorial] You do not have sufficient privileges to edit tutorials.")
             end
         elseif fields.start then
             if mc_tutorial.tutorial_selected == nil then mc_tutorial.tutorial_selected = 1 end
@@ -467,60 +500,52 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 ----- put something into or modify inventory player:get_inventory() inv:contains_item() inv:is_empty() ItemStack:get_count()
                 ----- press keys player:get_player_control() or player:get_player_control_bits()
         
-        if mc_tutorial.checkPrivs(player, mc_tutorial.recorder_priv_table) and mc_tutorial.record.active[pname] then
+        --[[if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) and mc_tutorial.record.active[pname] then
             -- Check if the tutorial has already been instanced by another callback
             if not mc_tutorial.record.temp[pname] then
                 -- this is the first entry for the tutorial, apply default values
                 mc_tutorial.record.temp[pname] = mc_tutorial.get_temp_shell()
             end
-        end
+        end]]
 
         if fields.getpos then
             local pos = player:get_pos()
-            table.insert(mc_tutorial.record.temp[pname].sequence.action, "current position")
-            table.insert(mc_tutorial.record.temp[pname].sequence.tool, "")
-            table.insert(mc_tutorial.record.temp[pname].sequence.node, "")
-            table.insert(mc_tutorial.record.temp[pname].sequence.pos, pos)
-            table.insert(mc_tutorial.record.temp[pname].sequence.dir, -1)
-            table.insert(mc_tutorial.record.temp[pname].sequence.key, {})
-            minetest.chat_send_player(pname, "[Tutorial] Your current position was recorded. Continue to record new actions or left-click the tool to end the recording.")
-            mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length + 1
+            local reg_success = mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.POS, nil, nil, pos)
+            if reg_success ~= false then
+                minetest.chat_send_player(pname, "[Tutorial] Your current position was recorded. Continue to record new actions or left-click the tool to end the recording.")
+            else
+                minetest.chat_send_player(pname, "[Tutorial] Your current position could not be recorded, please try again.")
+            end
         end
         
         if fields.getlookdir then
-            local lookdir = player:get_look_dir()
-            table.insert(mc_tutorial.record.temp[pname].sequence.action, "look direction")
-            table.insert(mc_tutorial.record.temp[pname].sequence.tool, "")
-            table.insert(mc_tutorial.record.temp[pname].sequence.node, "")
-            table.insert(mc_tutorial.record.temp[pname].sequence.pos, {})
-            table.insert(mc_tutorial.record.temp[pname].sequence.dir, lookdir)
-            table.insert(mc_tutorial.record.temp[pname].sequence.key, {})
-            minetest.chat_send_player(pname, "[Tutorial] Your current look direction was recorded. Continue to record new actions or left-click the tool to end the recording.")
-            mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length + 1
+            local dir = player:get_look_dir()
+            local reg_success = mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.LOOK_DIR, nil, nil, nil, dir)
+            if reg_success ~= false then
+                minetest.chat_send_player(pname, "[Tutorial] Your current look direction was recorded. Continue to record new actions or left-click the tool to end the recording.")
+            else
+                minetest.chat_send_player(pname, "[Tutorial] Your current look direction could not be recorded, please try again.")
+            end
         end
 
         if fields.lookvertical then
-            local lookv = player:get_look_vertical()
-            table.insert(mc_tutorial.record.temp[pname].sequence.action, "look pitch")
-            table.insert(mc_tutorial.record.temp[pname].sequence.tool, "")
-            table.insert(mc_tutorial.record.temp[pname].sequence.node, "")
-            table.insert(mc_tutorial.record.temp[pname].sequence.pos, {})
-            table.insert(mc_tutorial.record.temp[pname].sequence.dir, lookv)
-            table.insert(mc_tutorial.record.temp[pname].sequence.key, {})
-            minetest.chat_send_player(pname, "[Tutorial] Your current look pitch (radians) was recorded. Continue to record new actions or left-click the tool to end the recording.")
-            mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length + 1
+            local pitch = player:get_look_vertical()
+            local reg_success = mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.LOOK_PITCH, nil, nil, nil, pitch)
+            if reg_success ~= false then
+                minetest.chat_send_player(pname, "[Tutorial] Your current look pitch was recorded. Continue to record new actions or left-click the tool to end the recording.")
+            else
+                minetest.chat_send_player(pname, "[Tutorial] Your current look pitch could not be recorded, please try again.")
+            end
         end
 
         if fields.lookhorizontal then
-            local lookh = player:get_look_horizontal()
-            table.insert(mc_tutorial.record.temp[pname].sequence.action, "look yaw")
-            table.insert(mc_tutorial.record.temp[pname].sequence.tool, "")
-            table.insert(mc_tutorial.record.temp[pname].sequence.node, "")
-            table.insert(mc_tutorial.record.temp[pname].sequence.pos, {})
-            table.insert(mc_tutorial.record.temp[pname].sequence.dir, lookh)
-            table.insert(mc_tutorial.record.temp[pname].sequence.key, {})
-            minetest.chat_send_player(pname, "[Tutorial] Your current look yaw (radians) was recorded. Continue to record new actions or left-click the tool to end the recording.")
-            mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length + 1
+            local yaw = player:get_look_horizontal()
+            local reg_success = mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.LOOK_YAW, nil, nil, nil, yaw)
+            if reg_success ~= false then
+                minetest.chat_send_player(pname, "[Tutorial] Your current look yaw was recorded. Continue to record new actions or left-click the tool to end the recording.")
+            else
+                minetest.chat_send_player(pname, "[Tutorial] Your current look yaw could not be recorded, please try again.")
+            end
         end
 
         if fields.wieldeditem then
@@ -544,16 +569,21 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
     -- Complete the recording
 	if formname == "mc_tutorial:record_fs" then
-        if fields.eventlist then
+        if fields.record_nav then
+            context.tab = fields.record_nav
+            save_context(player, context)
+            mc_tutorial.show_record_fs(player)
+        end
+        --[[if fields.eventlist then
             local event = minetest.explode_textlist_event(fields.eventlist)
             if event.type == "CHG" then
-                mc_tutorial.selected_event = event.index
+                context.event_selected = event.index
             end
         end
         if fields.givetool then
             local event = minetest.explode_textlist_event(fields.givetool)
             if event.type == "CHG" then
-                mc_tutorial.selected_tool = event.index
+                --mc_tutorial.selected_tool = event.index
             end
             for i,itemstring in ipairs(tools) do
                 if i+1 == mc_tutorial.selected_tool then
@@ -564,10 +594,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.giveitem then
             local event = minetest.explode_textlist_event(fields.giveitem)
             if event.type == "CHG" then
-                mc_tutorial.selected_item = event.index
+                --mc_tutorial.selected_item = event.index
             end
             for i,itemstring in ipairs(items) do
-                if i+1 == mc_tutorial.selected_item then
+                --[[if i+1 == mc_tutorial.selected_item then
                     mc_tutorial.record.temp[pname].on_completion.giveitem = itemstring
                 end
             end
@@ -575,28 +605,32 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.grantpriv then
             local event = minetest.explode_textlist_event(fields.grantpriv)
             if event.type == "CHG" then
-                mc_tutorial.selected_priv = event.index
+                --mc_tutorial.selected_priv = event.index
             end
-            for i,privv in ipairs(privs) do
-                if i+1 == mc_tutorial.selected_privt then
-                    mc_tutorial.record.temp[pname].on_completion.grantpriv = privv
+            for i,priv in ipairs(privs) do
+                if i+1 == mc_tutorial.selected_priv then
+                    mc_tutorial.record.temp[pname].on_completion.grantpriv = priv
                 end
             end
-        end
+        end]]
         if fields.delete then
-            if mc_tutorial.selected_event == nil then mc_tutorial.selected_event = 1 end
-            table.remove(mc_tutorial.record.temp[pname].sequence.action,mc_tutorial.selected_event)
-            table.remove(mc_tutorial.record.temp[pname].sequence.tool,mc_tutorial.selected_event)
-            table.remove(mc_tutorial.record.temp[pname].sequence.node,mc_tutorial.selected_event)
-            table.remove(mc_tutorial.record.temp[pname].sequence.pos, mc_tutorial.selected_event)
-            table.remove(mc_tutorial.record.temp[pname].sequence.dir, mc_tutorial.selected_event)
-            table.remove(mc_tutorial.record.temp[pname].sequence.key, mc_tutorial.selected_event)
-            mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length - 1
-            mc_tutorial.show_record_fs(player)
+            if context.selected_event then
+                table.remove(mc_tutorial.record.temp[pname].sequence.action, context.selected_event)
+                table.remove(mc_tutorial.record.temp[pname].sequence.tool, context.selected_event)
+                table.remove(mc_tutorial.record.temp[pname].sequence.node, context.selected_event)
+                table.remove(mc_tutorial.record.temp[pname].sequence.pos, context.selected_event)
+                table.remove(mc_tutorial.record.temp[pname].sequence.dir, context.selected_event)
+                table.remove(mc_tutorial.record.temp[pname].sequence.key, context.selected_event)
+                mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length - 1
+                mc_tutorial.show_record_fs(player)
+            end
         end
         if fields.finish then
             if mc_tutorial.record.temp[pname] then
                 if mc_tutorial.record.temp[pname].length > 0 then
+                    -- debug
+                    minetest.log(minetest.serialize(mc_tutorial.record.temp[pname]))
+
                     tutorialTitle = (fields.title ~= "" and fields.title) or "Untitled"
                     tutorialDescription = (fields.description ~= "" and fields.description) or "No description provided" 
                     tutorialMessage = (fields.message ~= "" and fields.message) or "You completed the tutorial!"
@@ -656,7 +690,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     end
                     minetest.chat_send_player(pname, "[Tutorial] Your tutorial was successfully recorded!")
                 else
-                    minetest.chat_send_player(pname, "[Tutorial] No mc_tutorial was recorded.")
+                    minetest.chat_send_player(pname, "[Tutorial] No tutorial was recorded.")
                 end
 
                 -- Ensure global tutorialTemp is recycled
@@ -686,7 +720,8 @@ end)
 --minetest.register_on_craft(func(itemstack, player, old_craft_grid, craft_inv))
 --minetest.register_on_receiving_chat_messages(function(message))
 
--- below commands for debudding only
+-- below commands for debugging only
+-- consider consolidating into single tutorial command with subcommand options or removing
 minetest.register_chatcommand("clearTutorials", {
 	description = "Clear all tutorials from mod storage.",
 	privs = mc_tutorial.recorder_priv_table,
