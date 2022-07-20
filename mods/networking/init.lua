@@ -310,7 +310,6 @@ minetest.register_chatcommand("whitelist", {
 				networking.storage:set_string("enabled", minetest.serialize(false))
 				minetest.chat_send_player(pname,"[networking] Whitelist is now disabled.")
 			end
-        else
         end
 	end
 })
