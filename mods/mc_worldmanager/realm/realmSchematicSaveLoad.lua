@@ -193,7 +193,7 @@ function Realm:NewFromSchematic(name, key)
     if (config.format ~= "procedural") then
         --TODO: temporarily disabled for UBC because it doesn't work with super large worlds;
         -- Need to emerge chunks as we create barriers
-        newRealm:CreateBarriers()
+        newRealm:CreateBarriersFast()
     end
 
     -- Realm:CreateTeleporter()
