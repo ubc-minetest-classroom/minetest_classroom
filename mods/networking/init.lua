@@ -298,11 +298,19 @@ minetest.register_chatcommand("whitelist", {
 	func = function(pname, _)
         local state = minetest.deserialize(networking.storage:get_string("enabled"))
         if state then
-            networking.storage:set_string("enabled", minetest.serialize(false))
-            minetest.chat_send_player(pname,"[networking] Whitelist is now disabled.")
+			networking.storage:set_string("enabled", minetest.serialize(false))
+			minetest.chat_send_player(pname,"[networking] Whitelist is now disabled.")
         else
-            networking.storage:set_string("enabled", minetest.serialize(true))
-            minetest.chat_send_player(pname,"[networking] Whitelist is now enabled.")
+			-- Quick check to ensure current admin player is connected from a whitelisted IP to avoid unintentional lock-out
+			local ipv4 = minetest.get_player_ip(pname)
+			networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+			if not networking.ipv4_whitelist[ipv4] then
+				networking.storage:set_string("enabled", minetest.serialize(false))
+				minetest.chat_send_player(pname,"[networking] Whitelist is now disabled.")
+			else
+				minetest.chat_send_player(pname,"[networking] WARNING: You need to join from a whitelisted IP address before you can enable the whitelist otherwise you will be locked out of the server.")
+			end
+        else
         end
 	end
 })
