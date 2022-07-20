@@ -9,6 +9,28 @@ function mc_tutorial.wait(seconds)
     while os.clock() - t < seconds do end
 end
 
+function mc_tutorial.get_temp_shell()
+    return {
+        dependencies = {}, -- table of tutorial IDs that must be compeleted before the player can attempt this tutorial
+        dependents = {}, -- table of tutorial IDs that completing this tutorial unlocks
+        sequence = {
+            action = {}, -- string
+            tool = {}, -- string
+            node = {}, -- string
+            pos = {}, -- table
+            dir = {}, -- integer 
+            key = {}, -- table
+            actionMessage = {} -- table of strings displayed to player when an action is completed
+        },
+        length = 0,
+        on_completion = {
+            message = "",
+            give_items = {},
+            grant_privs = {}
+        }
+    }
+end
+
 function mc_tutorial.register_tutorial_action(player,action,tool,node,pos,dir,key)
     -- Every entry must have an action
     if not action then return false end
@@ -23,41 +45,22 @@ function mc_tutorial.register_tutorial_action(player,action,tool,node,pos,dir,ke
     if mc_tutorial.checkPrivs(player,mc_tutorial.recorder_priv_table) and mc_tutorial.record.active[pname] then
         if not mc_tutorial.record.temp[pname] then
             -- This is the first entry for the tutorial, apply default values
-            mc_tutorial.record.temp[pname] = {
-                tutorialID = 0, -- integer key used to identify thisTutorial
-                tutorialDependency = {}, -- table of tutorialIDs that must be compeleted before the player can attempt this tutorial
-                tutorialSequence = {
-                    action = {}, -- string
-                    tool = {}, -- string
-                    node = {}, -- string
-                    pos = {}, -- table
-                    dir = {}, -- integer
-                    key = {}, -- table
-                    actionMessage = {} -- table of strings displayed to player when an action is completed
-                },
-                length = 0,
-                on_completion = {
-                    message = "",
-                    givetool = {},
-                    giveitem = {},
-                    grantpriv = {}
-                }
-            }
+            mc_tutorial.record.temp[pname] = mc_tutorial.get_temp_shell()
         end
-        -- Populate the tutorialSequence
-        table.insert(mc_tutorial.record.temp[pname].tutorialSequence.action, action)
-        table.insert(mc_tutorial.record.temp[pname].tutorialSequence.tool, tool)
-        table.insert(mc_tutorial.record.temp[pname].tutorialSequence.node, node)
-        table.insert(mc_tutorial.record.temp[pname].tutorialSequence.pos, pos)
-        table.insert(mc_tutorial.record.temp[pname].tutorialSequence.dir, dir)
-        table.insert(mc_tutorial.record.temp[pname].tutorialSequence.key, key)
+        -- Populate the sequence
+        table.insert(mc_tutorial.record.temp[pname].sequence.action, action)
+        table.insert(mc_tutorial.record.temp[pname].sequence.tool, tool)
+        table.insert(mc_tutorial.record.temp[pname].sequence.node, node)
+        table.insert(mc_tutorial.record.temp[pname].sequence.pos, pos)
+        table.insert(mc_tutorial.record.temp[pname].sequence.dir, dir)
+        table.insert(mc_tutorial.record.temp[pname].sequence.key, key)
         mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length + 1
     end
 end
 
 -- If needed, this function runs continuously after starting a mc_tutorial.
--- It listens for specific actions in the tutorialSequence that do not have callbacks (punch, dig, place).
--- If the action is heard, then it checks against th    e expected value.
+-- It listens for specific actions in the sequence that do not have callbacks (punch, dig, place).
+-- If the action is heard, then it checks against the expected value.
 -- if the action matches the expected value, then the listener registers the completed action.
 -- Once activeTutorial.continueTutorial = false (i.e., the tutorial is completed), the listener turns off.
 function mc_tutorial.tutorial_progress_listener(player)
@@ -67,41 +70,41 @@ function mc_tutorial.tutorial_progress_listener(player)
     
     if pdata.tutorials.activeTutorial and pdata.tutorials.activeTutorial.continueTutorial and not mc_tutorial.record.active[pname] then
         -- Figure out the type of action to call the correct listener
-        if pdata.tutorials.activeTutorial.tutorialSequence.action[pdata.tutorials.activeTutorial.searchIndex] == "current position" then
+        if pdata.tutorials.activeTutorial.sequence.action[pdata.tutorials.activeTutorial.searchIndex] == "current position" then
             pdata.tutorials.playerSequence.pos = player:get_pos()
-            check_pos = pdata.tutorials.activeTutorial.tutorialSequence.pos[pdata.tutorials.activeTutorial.searchIndex]
+            check_pos = pdata.tutorials.activeTutorial.sequence.pos[pdata.tutorials.activeTutorial.searchIndex]
             -- minetest.get_objects_inside_radius(pos, radius) may be better here?
             if (pdata.tutorials.playerSequence.pos.x >= check_pos.x - mc_tutorial.check_pos_x_tolerance) and (pdata.tutorials.playerSequence.pos.x <= check_pos.x + mc_tutorial.check_pos_x_tolerance) and (pdata.tutorials.playerSequence.pos.y >= check_pos.y - mc_tutorial.check_pos_y_tolerance) and (pdata.tutorials.playerSequence.pos.y <= check_pos.y + mc_tutorial.check_pos_y_tolerance) and (pdata.tutorials.playerSequence.pos.z >= check_pos.z - mc_tutorial.check_pos_z_tolerance) and (pdata.tutorials.playerSequence.pos.z <= check_pos.z + mc_tutorial.check_pos_z_tolerance) then
                 mc_tutorial.completed_action(player)
             end
-        elseif pdata.tutorials.activeTutorial.tutorialSequence.action[pdata.tutorials.activeTutorial.searchIndex] == "look direction" then
+        elseif pdata.tutorials.activeTutorial.sequence.action[pdata.tutorials.activeTutorial.searchIndex] == "look direction" then
             -- TODO
             minetest.chat_send_player(pdata.tutorials.activeTutorial.pname,"[Tutorial] listening for look direction...")
-        elseif pdata.tutorials.activeTutorial.tutorialSequence.action[pdata.tutorials.activeTutorial.searchIndex] == "look pitch" then
+        elseif pdata.tutorials.activeTutorial.sequence.action[pdata.tutorials.activeTutorial.searchIndex] == "look pitch" then
             pdata.tutorials.playerSequence.dir = player:get_look_vertical()
-            check_dir = pdata.tutorials.activeTutorial.tutorialSequence.dir[pdata.tutorials.activeTutorial.searchIndex]
+            check_dir = pdata.tutorials.activeTutorial.sequence.dir[pdata.tutorials.activeTutorial.searchIndex]
             if (pdata.tutorials.playerSequence.dir >= check_dir - mc_tutorial.check_dir_tolerance) and (pdata.tutorials.playerSequence.dir <= check_dir + mc_tutorial.check_dir_tolerance) then
                 mc_tutorial.completed_action(player)
             end
-        elseif pdata.tutorials.activeTutorial.tutorialSequence.action[pdata.tutorials.activeTutorial.searchIndex] == "look yaw" then
+        elseif pdata.tutorials.activeTutorial.sequence.action[pdata.tutorials.activeTutorial.searchIndex] == "look yaw" then
             pdata.tutorials.playerSequence.dir = player:get_look_horizontal()
-            check_dir = pdata.tutorials.activeTutorial.tutorialSequence.dir[pdata.tutorials.activeTutorial.searchIndex]
+            check_dir = pdata.tutorials.activeTutorial.sequence.dir[pdata.tutorials.activeTutorial.searchIndex]
             if (pdata.tutorials.playerSequence.dir >= check_dir - mc_tutorial.check_dir_tolerance) and (pdata.tutorials.playerSequence.dir <= check_dir + mc_tutorial.check_dir_tolerance) then
                 mc_tutorial.completed_action(player)
             end
-        elseif pdata.tutorials.activeTutorial.tutorialSequence.action[pdata.tutorials.activeTutorial.searchIndex] == "wield" then
+        elseif pdata.tutorials.activeTutorial.sequence.action[pdata.tutorials.activeTutorial.searchIndex] == "wield" then
             pdata.tutorials.playerSequence.wieldedThing = player:get_wielded_item():get_name()
             if pdata.tutorials.playerSequence.wieldedThing == "" then pdata.tutorials.playerSequence.wieldedThing = "bare hands" end
-            if pdata.tutorials.playerSequence.wieldedThing == pdata.tutorials.activeTutorial.tutorialSequence.node[pdata.tutorials.activeTutorial.searchIndex] then
+            if pdata.tutorials.playerSequence.wieldedThing == pdata.tutorials.activeTutorial.sequence.node[pdata.tutorials.activeTutorial.searchIndex] then
                 mc_tutorial.completed_action(player)
             end
-        elseif pdata.tutorials.activeTutorial.tutorialSequence.action[pdata.tutorials.activeTutorial.searchIndex] == "player control" then
+        elseif pdata.tutorials.activeTutorial.sequence.action[pdata.tutorials.activeTutorial.searchIndex] == "player control" then
             minetest.chat_send_player(pdata.tutorials.activeTutorial.pname,"[Tutorial] listening for key strike...")
             pdata.tutorials.playerSequence.keyStrike = player:get_player_control()
             if pdata.tutorials.playerSequence.keyStrike.up or pdata.tutorials.playerSequence.keyStrike.down or pdata.tutorials.playerSequence.keyStrike.right or pdata.tutorials.playerSequence.keyStrike.left or pdata.tutorials.playerSequence.keyStrike.aux1 or pdata.tutorials.playerSequence.keyStrike.jump or pdata.tutorials.playerSequence.keyStrike.sneak then
                 pdata.tutorials.playerSequence.keys = {}
                 for k,v in pairs(pdata.tutorials.playerSequence.keyStrike) do if v then table.insert(pdata.tutorials.playerSequence.keys,k) end end
-                if table.concat(pdata.tutorials.playerSequence.keys) == table.concat(pdata.tutorials.activeTutorial.tutorialSequence.key[pdata.tutorials.activeTutorial.searchIndex]) then
+                if table.concat(pdata.tutorials.playerSequence.keys) == table.concat(pdata.tutorials.activeTutorial.sequence.key[pdata.tutorials.activeTutorial.searchIndex]) then
                     mc_tutorial.completed_action(player)
                 end
             end
@@ -165,11 +168,11 @@ function mc_tutorial.check_tutorial_progress(player,action,tool,node)
         else return false end
 
         -- match the action first since this callback might not even be relevant
-        if pdata.tutorials.playerSequence.action == pdata.tutorials.activeTutorial.tutorialSequence.action[pdata.tutorials.activeTutorial.searchIndex] then
+        if pdata.tutorials.playerSequence.action == pdata.tutorials.activeTutorial.sequence.action[pdata.tutorials.activeTutorial.searchIndex] then
             -- match the node next
-            if pdata.tutorials.playerSequence.node == pdata.tutorials.activeTutorial.tutorialSequence.node[pdata.tutorials.activeTutorial.searchIndex] then
+            if pdata.tutorials.playerSequence.node == pdata.tutorials.activeTutorial.sequence.node[pdata.tutorials.activeTutorial.searchIndex] then
                 -- finally match the tool
-                if pdata.tutorials.playerSequence.tool == pdata.tutorials.activeTutorial.tutorialSequence.tool[pdata.tutorials.activeTutorial.searchIndex] then
+                if pdata.tutorials.playerSequence.tool == pdata.tutorials.activeTutorial.sequence.tool[pdata.tutorials.activeTutorial.searchIndex] then
                     mc_tutorial.completed_action(player)
                 end
             end

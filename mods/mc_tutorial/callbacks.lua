@@ -8,8 +8,8 @@ minetest.register_on_punchnode(function(pos, node, puncher, pointed_thing)
     local pos = {}
     local dir = -1
     local key = {}
-    mc_tutorial.register_tutorial_action(puncher,action,tool,node,pos,dir,key)
-    mc_tutorial.check_tutorial_progress(puncher,action,tool,node)
+    mc_tutorial.register_tutorial_action(puncher, action, tool, node, pos, dir, key)
+    mc_tutorial.check_tutorial_progress(puncher, action, tool, node)
 end)
 
 minetest.register_on_dignode(function(pos, oldnode, digger)
@@ -21,8 +21,8 @@ minetest.register_on_dignode(function(pos, oldnode, digger)
     local pos = {}
     local dir = -1
     local key = {}
-    mc_tutorial.register_tutorial_action(digger,action,tool,node,pos,dir,key)
-    mc_tutorial.check_tutorial_progress(digger,action,tool,node)
+    mc_tutorial.register_tutorial_action(digger, action, tool, node, pos, dir, key)
+    mc_tutorial.check_tutorial_progress(digger, action, tool, node)
 end)
 
 minetest.register_on_placenode(function(pos, newnode, placer, oldnode, itemstack, pointed_thing)
@@ -34,8 +34,8 @@ minetest.register_on_placenode(function(pos, newnode, placer, oldnode, itemstack
     local pos = {}
     local dir = -1
     local key = {}
-    mc_tutorial.register_tutorial_action(placer,action,tool,node,pos,dir,key)
-    mc_tutorial.check_tutorial_progress(placer,action,tool,node)
+    mc_tutorial.register_tutorial_action(placer, action, tool, node, pos, dir, key)
+    mc_tutorial.check_tutorial_progress(placer, action, tool, node)
 end)
 
 -- Listener for wield and player control (key strike)
@@ -52,17 +52,17 @@ minetest.register_globalstep(function(dtime)
                 local wieldedThing = player:get_wielded_item():get_name()
 
                 if wieldedThing ~= "mc_tutorial:recording_tool" then
-                    -- This is needed because no wielded item is an empty string, which conflcits with the default value of tutorialSequence.node
+                    -- This is needed because no wielded item is an empty string, which conflcits with the default value of sequence.node
                     if wieldedThing == "" then
                         wieldedThing = "bare hands"
                     end 
                     minetest.chat_send_player(pname, "[Tutorial] Wielded item "..wieldedThing.." recorded.")
-                    table.insert(mc_tutorial.record.temp[pname].tutorialSequence.action, "wield")
-                    table.insert(mc_tutorial.record.temp[pname].tutorialSequence.tool, "")
-                    table.insert(mc_tutorial.record.temp[pname].tutorialSequence.node, wieldedThing)
-                    table.insert(mc_tutorial.record.temp[pname].tutorialSequence.pos, {})
-                    table.insert(mc_tutorial.record.temp[pname].tutorialSequence.dir, -1)
-                    table.insert(mc_tutorial.record.temp[pname].tutorialSequence.key, {})
+                    table.insert(mc_tutorial.record.temp[pname].sequence.action, "wield")
+                    table.insert(mc_tutorial.record.temp[pname].sequence.tool, "")
+                    table.insert(mc_tutorial.record.temp[pname].sequence.node, wieldedThing)
+                    table.insert(mc_tutorial.record.temp[pname].sequence.pos, {})
+                    table.insert(mc_tutorial.record.temp[pname].sequence.dir, -1)
+                    table.insert(mc_tutorial.record.temp[pname].sequence.key, {})
                     mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length + 1
                     mc_tutorial.record.listener.wield[pname] = nil
                 end
@@ -83,12 +83,12 @@ minetest.register_globalstep(function(dtime)
                     --for _,v in pairs(mc_tutorial.record.temp[pname].keys) do msg = msg .. v .. " " end
                     --local msg = msg .. "was recorded."
                     minetest.chat_send_player(pname, msg)
-                    table.insert(mc_tutorial.record.temp[pname].tutorialSequence.action, "player control")
-                    table.insert(mc_tutorial.record.temp[pname].tutorialSequence.tool, "")
-                    table.insert(mc_tutorial.record.temp[pname].tutorialSequence.node, "")
-                    table.insert(mc_tutorial.record.temp[pname].tutorialSequence.pos, {})
-                    table.insert(mc_tutorial.record.temp[pname].tutorialSequence.dir, -1)
-                    table.insert(mc_tutorial.record.temp[pname].tutorialSequence.key, mc_tutorial.record.temp[pname].keys)
+                    table.insert(mc_tutorial.record.temp[pname].sequence.action, "player control")
+                    table.insert(mc_tutorial.record.temp[pname].sequence.tool, "")
+                    table.insert(mc_tutorial.record.temp[pname].sequence.node, "")
+                    table.insert(mc_tutorial.record.temp[pname].sequence.pos, {})
+                    table.insert(mc_tutorial.record.temp[pname].sequence.dir, -1)
+                    table.insert(mc_tutorial.record.temp[pname].sequence.key, mc_tutorial.record.temp[pname].keys)
                     mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length + 1
                     mc_tutorial.record.listener.key[pname] = nil
                 end
