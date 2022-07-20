@@ -99,7 +99,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - magnetic declination set to " .. fields.declination .. "°"))
 
-						minetest.after(0.1, uupdate_formspec_needle, player)
+						minetest.after(0.1, update_formspec_needle, player)
 						minetest.after(0.1, update_formspec_bezel, player)
 					end
 				else 
