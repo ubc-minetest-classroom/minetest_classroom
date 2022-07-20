@@ -78,15 +78,24 @@ function schematicManager.getSchematic(key)
     local realm_create_function_name = settings:get("realm_create_function_name") or nil
     local realm_delete_function_name = settings:get("realm_delete_function_name") or nil
 
+    local utm_zone = settings:get("utm_zone") or 1
+    local utm_origin_easting = tonumber(settings:get("utm_easting")) or 0
+    local utm_origin_northing = tonumber(settings:get("utm_northing")) or 0
+
     local _spawnPoint = { x = spawn_pos_x, y = spawn_pos_y, z = spawn_pos_z }
     local _schematicSize = { x = schematic_size_x, y = schematic_size_y, z = schematic_size_z }
+    local _utmInfo = { zone = utm_zone, easting = utm_origin_easting, northing = utm_origin_northing }
 
     local config = { author = _author, name = _name, format = _format, spawnPoint = _spawnPoint, schematicSize = _schematicSize,
                      tableName = schematic_table_name, onTeleportInFunction = teleport_function_in_name, onTeleportOutFunction = teleport_function_out_name,
-                     onSchematicPlaceFunction = realm_create_function_name, onRealmDeleteFunction = realm_delete_function_name }
+                     onSchematicPlaceFunction = realm_create_function_name, onRealmDeleteFunction = realm_delete_function_name, utmInfo = _utmInfo }
 
     return schematic, config
 end
+
+
+
+
 
 
 -- Scan the world realm schematics folder and add them to the schematics list.

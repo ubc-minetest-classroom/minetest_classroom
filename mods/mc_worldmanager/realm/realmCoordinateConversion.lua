@@ -20,6 +20,18 @@ function Realm:WorldToLocalPosition(position)
     return pos
 end
 
+function Realm:LocalToUTM(position)
+    local utmInfo = self:get_data("utmInfo")
+
+    return position
+end
+
+function Realm:UTMToLocal(position)
+    local utmInfo = self:get_data("utmInfo")
+
+    return position
+end
+
 ---gridToWorldSpace
 ---@param coords table coordinates in gridspace
 ---@return table coordinates in worldspace
@@ -43,6 +55,5 @@ function Realm.worldToGridSpace(coords)
     val.z = math.ceil((tonumber(coords.z) + Realm.const.worldSize) / 80)
 
     Debug.logCoords(val, "worldToGridSpaceEnd")
-
     return val
 end

@@ -67,6 +67,16 @@ function Realm:Save_Schematic(schematicName, author, mode)
     settings:set("schematic_size_y", self.EndPos.y - self.StartPos.y)
     settings:set("schematic_size_z", self.EndPos.z - self.StartPos.z)
 
+
+    local utmInfo = self:get_data("UTMInfo")
+
+    if (utmInfo ~= nil) then
+        settings:set("utm_zone", utmInfo.zone)
+        settings:set("utm_easting", utmInfo.easting)
+        settings:set("utm_northing", utmInfo.northing)
+    end
+
+
     local settingsWrote = settings:write()
 
     if (settingsWrote == false) then
@@ -172,6 +182,12 @@ function Realm:Load_Schematic(schematic, config)
         if (config.onRealmDeleteFunction ~= nil) then
             table.insert(self.RealmDeleteTable, { tableName = config.tableName, functionName = config.onRealmDeleteFunction })
         end
+
+        if (config.utmInfo ~= nil) then
+            self:set_data("UTMInfo", config.utmInfo)
+        end
+
+
     end
 
     self:UpdateSpawn(config.spawnPoint)
