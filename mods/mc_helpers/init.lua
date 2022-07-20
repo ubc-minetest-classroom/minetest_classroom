@@ -135,6 +135,7 @@ function mc_helpers.isNumber(str)
     end
     return not (str == "" or str:match("%D"))
 end
+
 function mc_helpers.trim(s)
     return s:match( "^%s*(.-)%s*$" )
 end

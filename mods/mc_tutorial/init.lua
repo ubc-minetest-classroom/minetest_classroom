@@ -171,69 +171,142 @@ function mc_tutorial.show_record_fs(player)
         local context = get_context(pname)
         local temp = mc_tutorial.record.temp[pname] or {}
 
+        --minetest.log(minetest.serialize(mc_tutorial.tutorials:to_table()))
         local record_formtable = {
             "formspec_version[6]",
             "size[12.7,10]",
-            "tabheader[0,0;record_nav;Overview,Events,Rewards", next(mc_tutorial.tutorials:to_table()) and ",Dependencies" or "", ";", context.tab or "1", ";false;false]"
+            "tabheader[0,0;record_nav;Overview,Events,Rewards", next(mc_tutorial.tutorials:to_table().fields) and ",Dependencies" or "", ";", context.tab or "1", ";false;false]"
         }
         local tab_map = {
-            ["1"] = { -- OVERVIEW
-                "field[0.4,0.7;11.9,0.7;title;Title;", temp.title or "", "]",
-                "textarea[0.4,1.9;11.9,1.3;description;Description;", temp.description or "", "]",
-                "textarea[0.4,3.7;11.9,1.3;message;Completion message;", temp.on_completion and temp.on_completion.message or "", "]",
-                "textarea[0.4,5.5;11.9,3.2;;Tutorial summary;", minetest.formspec_escape("[TBD]"), "]",
-                "button_exit[0.4,8.8;11.9,0.8;finish;Finish and save]",
-            },
-            ["2"] = { -- EVENTS
-                "textlist[0.4,0.8;11.9,7.2;eventlist;;1;false]",
-                "label[0.4,0.6;Recorded events]",
-                "image_button[0.4,8.2;1.4,1.4;mc_tutorial_add_event.png;eventlist_add_event;;false;true]",
-                "image_button[1.9,8.2;1.4,1.4;mc_tutorial_add_group.png;eventlist_add_group;;false;true]",
-                "image_button[3.4,8.2;1.4,1.4;mc_tutorial_delete.png;eventlist_delete;;false;true]",
-                "image_button[4.9,8.2;1.4,1.4;mc_tutorial_duplicate.png;eventlist_duplicate;;false;true]",
-                "image_button[6.4,8.2;1.4,1.4;mc_tutorial_move_top.png;eventlist_move_top;;false;true]",
-                "image_button[7.9,8.2;1.4,1.4;mc_tutorial_move_up.png;eventlist_move_up;;false;true]",
-                "image_button[9.4,8.2;1.4,1.4;mc_tutorial_move_down.png;eventlist_move_down;;false;true]",
-                "image_button[10.9,8.2;1.4,1.4;mc_tutorial_move_bottom.png;eventlist_move_bottom;;false;true]",
-                "tooltip[eventlist_add_event;Add new event]",
-                "tooltip[eventlist_add_group;Add new group]",
-                "tooltip[eventlist_delete;Delete]",
-                "tooltip[eventlist_duplicate;Duplicate]",
-                "tooltip[eventlist_move_top;Move to top]",
-                "tooltip[eventlist_move_up;Move up 1]",
-                "tooltip[eventlist_move_down;Move down 1]",
-                "tooltip[eventlist_move_bottom;Move to bottom]",
-            },
-            ["3"] = { -- REWARDS
-                "label[0.4,0.6;Available items/privileges to reward]",
-                "label[6.8,0.6;Selected rewards]",
-                "textlist[0.4,0.8;5.5,8.8;reward_list;;1;false]",
-                "textlist[6.8,0.8;5.5,6;reward_selection;;1;false]",
-                "image_button[5.9,0.8;0.9,3;blank.png;reward_add;-->;false;true]",
-                "image_button[5.9,3.8;0.9,3;blank.png;button_delete;<--;false;true]",
-                "field[6.2,7.4;4.2,0.8;reward_quantity;Quantity;1]",
-                "button[10.4,7.4;1.9,0.8;reward_quantity_update;Update]",
-                "field[6.2,8.8;4.5,0.8;reward_search;Search for items/privileges;]",
-                "image_button[10.7,8.8;0.8,0.8;blank.png;reward_search_go;Go!;false;true]",
-                "image_button[11.5,8.8;0.8,0.8;blank.png;reward_search_x;X;false;true]",
-            },
-            ["4"] = { -- DEPENDENCIES
-                "label[0.4,0.6;Available tutorials]",
-                "label[6.5,0.6;Dependencies (required BEFORE)]",
-                "label[6.5,5.3;Dependents (unlocked AFTER)]",
-                "textlist[0.4,0.8;5.7,6.5;depend_tutorials;;1;false]",
-                "textlist[6.5,0.8;5.8,3.3;dependencies;;1;false]",
-                "textlist[6.5,5.5;5.8,3.3;dependents;;1;false]",
-                "button[0.4,7.4;2.8,0.8;dependencies_add;Add dependency]",
-                "button[6.5,4.1;5.8,0.8;dependencies_delete;Delete selected dependency]",
-                "button[3.3,7.4;2.8,0.8;dependents_add;Add dependent]",
-                "button[6.5,8.8;5.8,0.8;dependents_delete;Delete selected dependent]",
-                "field[0.4,8.8;4.1,0.8;depend_search;Search for tutorials;]",
-                "image_button[4.5,8.8;0.8,0.8;blank.png;depend_search_go;Go!;false;true]",
-                "image_button[5.3,8.8;0.8,0.8;blank.png;depend_search_x;X;false;true]",
-            },
+            ["1"] = function() -- OVERVIEW
+                return {
+                    "field[0.4,0.7;11.9,0.7;title;Title;", temp.title or "", "]",
+                    "textarea[0.4,1.9;11.9,1.3;description;Description;", temp.description or "", "]",
+                    "textarea[0.4,3.7;11.9,1.3;message;Completion message;", temp.on_completion and temp.on_completion.message or "", "]",
+                    "textarea[0.4,5.5;11.9,3.2;;Tutorial summary;", minetest.formspec_escape("[TBD]"), "]",
+                    "button_exit[0.4,8.8;11.9,0.8;finish;Finish and save]",
+                }
+            end,
+            ["2"] = function() -- EVENTS
+                local events = {}
+                --for i,action in ipairs(mc_tutorial.record.temp[pname].sequence.action)
+
+                --[[
+                    for k,action in pairs(mc_tutorial.record.temp[pname].sequence.action) do
+
+            -- Node was recorded
+            if mc_tutorial.record.temp[pname].sequence.node[k] ~= "" then
+                record_fs[#record_fs + 1] = action .. " " .. mc_tutorial.record.temp[pname].sequence.node[k]
+                -- Tool was recorded (only used with nodes)
+                if mc_tutorial.record.temp[pname].sequence.tool[k] ~= "" then
+                    record_fs[#record_fs + 1] = " with " .. mc_tutorial.record.temp[pname].sequence.tool[k]
+                    record_fs[#record_fs + 1] = ","
+                else
+                    record_fs[#record_fs + 1] = ","
+                end
+            end
+            
+            -- Position was recorded
+            if next(mc_tutorial.record.temp[pname].sequence.pos[k]) ~= nil then
+                local pos = mc_tutorial.record.temp[pname].sequence.pos[k]
+                record_fs[#record_fs + 1] = action .. " x=" .. tostring(pos.x) .. " y=" .. tostring(pos.y) .. " z=" .. tostring(pos.z)
+                record_fs[#record_fs + 1] = ","
+            end
+
+            -- Direction was recorded
+            if mc_tutorial.record.temp[pname].sequence.dir[k] ~= -1 then
+                record_fs[#record_fs + 1] = action .. " " .. tostring(mc_tutorial.record.temp[pname].sequence.dir[k])
+                record_fs[#record_fs + 1] = ","
+            end
+
+            -- Key strike was recorded
+            if next(mc_tutorial.record.temp[pname].sequence.key[k]) ~= nil then
+                record_fs[#record_fs + 1] = action .. " "
+                for _,v in pairs(mc_tutorial.record.temp[pname].sequence.key[k]) do record_fs[#record_fs + 1] = v .. " " end
+                record_fs[#record_fs + 1] = ","
+            end
+
+        end
+                ]]
+
+                return { 
+                    "textlist[0.4,0.8;11.9,7.2;eventlist;", table.concat(events, ","), ";1;false]",
+                    "label[0.4,0.6;Recorded events]",
+                    "image_button[0.4,8.2;1.4,1.4;mc_tutorial_add_event.png;eventlist_add_event;;false;true]",
+                    "image_button[1.9,8.2;1.4,1.4;mc_tutorial_add_group.png;eventlist_add_group;;false;true]",
+                    "image_button[3.4,8.2;1.4,1.4;mc_tutorial_delete.png;eventlist_delete;;false;true]",
+                    "image_button[4.9,8.2;1.4,1.4;mc_tutorial_duplicate.png;eventlist_duplicate;;false;true]",
+                    "image_button[6.4,8.2;1.4,1.4;mc_tutorial_move_top.png;eventlist_move_top;;false;true]",
+                    "image_button[7.9,8.2;1.4,1.4;mc_tutorial_move_up.png;eventlist_move_up;;false;true]",
+                    "image_button[9.4,8.2;1.4,1.4;mc_tutorial_move_down.png;eventlist_move_down;;false;true]",
+                    "image_button[10.9,8.2;1.4,1.4;mc_tutorial_move_bottom.png;eventlist_move_bottom;;false;true]",
+                    "tooltip[eventlist_add_event;Add new event]",
+                    "tooltip[eventlist_add_group;Add new group]",
+                    "tooltip[eventlist_delete;Delete]",
+                    "tooltip[eventlist_duplicate;Duplicate]",
+                    "tooltip[eventlist_move_top;Move to top]",
+                    "tooltip[eventlist_move_up;Move up 1]",
+                    "tooltip[eventlist_move_down;Move down 1]",
+                    "tooltip[eventlist_move_bottom;Move to bottom]",
+                }
+            end,
+            ["3"] = function()
+                -- TODO: limit rewards to items tutorial creator has access to in order to limit abuse?
+
+                -- Get all available rewards
+                if not context.rewards then
+                    local rewards = {}
+                    for priv,_ in pairs(minetest.registered_privileges) do
+                        table.insert(rewards, "#FFCCFF"..minetest.formspec_escape("[P] "..priv))
+                    end
+
+                    local item_map = {
+                        ["tool"] = "#CCFFFF"..minetest.formspec_escape("[T] "),
+                        ["node"] = "#CCFFCC"..minetest.formspec_escape("[N] "),
+                    }
+                    for item,def in pairs(minetest.registered_items) do
+                        table.insert(rewards, (item_map[def.type] or "#FFFFCC"..minetest.formspec_escape("[I] "))..item)
+                    end
+                    table.sort(rewards)
+                    context.rewards = rewards
+                    context.selected_rewards = {}
+                end
+                return { -- REWARDS
+                    "label[0.4,0.6;Available rewards]",
+                    "label[6.8,0.6;Selected rewards]",
+                    "textlist[0.4,0.8;5.5,8.8;reward_list;", table.concat(context.rewards, ","), ";1;false]",
+                    "textlist[6.8,0.8;5.5,6;reward_selection;", table.concat(context.selected_rewards, ","), ";1;false]",
+                    "image_button[5.9,0.8;0.9,3;mc_tutorial_reward_add.png;reward_add;;false;true]",
+                    "image_button[5.9,3.8;0.9,3;mc_tutorial_reward_delete.png;reward_delete;;false;true]",
+                    "field[6.2,7.4;4.2,0.8;reward_quantity;Quantity;1]",
+                    "button[10.4,7.4;1.9,0.8;reward_quantity_update;Update]",
+                    "field[6.2,8.8;4.5,0.8;reward_search;Search for items/privileges/nodes;]",
+                    "image_button[10.7,8.8;0.8,0.8;blank.png;reward_search_go;Go!;false;true]",
+                    "image_button[11.5,8.8;0.8,0.8;blank.png;reward_search_x;X;false;true]",
+                    "tooltip[reward_add;Add reward]",
+                    "tooltip[reward_delete;Remove reward]",
+                }
+            end,
+            ["4"] = function()
+                return { -- DEPENDENCIES
+                    "label[0.4,0.6;Available tutorials]",
+                    "label[6.5,0.6;Dependencies (required BEFORE)]",
+                    "label[6.5,5.3;Dependents (unlocked AFTER)]",
+                    "textlist[0.4,0.8;5.7,6.5;depend_tutorials;;1;false]",
+                    "textlist[6.5,0.8;5.8,3.3;dependencies;;1;false]",
+                    "textlist[6.5,5.5;5.8,3.3;dependents;;1;false]",
+                    "button[0.4,7.4;2.8,0.8;dependencies_add;Add dependency]",
+                    "button[6.5,4.1;5.8,0.8;dependencies_delete;Delete selected dependency]",
+                    "button[3.3,7.4;2.8,0.8;dependents_add;Add dependent]",
+                    "button[6.5,8.8;5.8,0.8;dependents_delete;Delete selected dependent]",
+                    "field[0.4,8.8;4.1,0.8;depend_search;Search for tutorials;]",
+                    "image_button[4.5,8.8;0.8,0.8;blank.png;depend_search_go;Go!;false;true]",
+                    "image_button[5.3,8.8;0.8,0.8;blank.png;depend_search_x;X;false;true]",
+                }
+            end,
         }
-        table.insert(record_formtable, table.concat(tab_map[context.tab or "1"], ""))
+        table.insert(record_formtable, table.concat(tab_map[context.tab or "1"](), ""))
+        save_context(player, context)
 
 		minetest.show_formspec(pname, "mc_tutorial:record_fs", table.concat(record_formtable, ""))
 		return true
