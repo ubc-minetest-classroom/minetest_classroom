@@ -62,7 +62,7 @@ commands["delete"] = {
 
         local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
         end
         requestedRealm:Delete()
     end,
@@ -111,7 +111,7 @@ commands["tp"] = {
         end
 
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
         end
 
         local player = minetest.get_player_by_name(name)
@@ -126,7 +126,7 @@ commands["walls"] = {
         local realmID = params[1]
         local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
         end
 
         if (params[2] ~= nil and params[2] == "fast") then
@@ -210,7 +210,7 @@ commands["regen"] = {
         local realmID = params[1]
         local requestedRealm = Realm.realmDict[tonumber(realmID)]
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
         end
 
         local seaLevel = math.floor((requestedRealm.EndPos.y - requestedRealm.StartPos.y) * 0.4) + requestedRealm.StartPos.y
@@ -246,7 +246,7 @@ commands["seed"] = { func = function(name, params)
     local realmID = params[1]
     local requestedRealm = Realm.GetRealm(tonumber(realmID))
     if (requestedRealm == nil) then
-        return false, "Requested realm of ID:" .. realmID .. " does not exist."
+        return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
     end
 
     local seed = requestedRealm:get_data("worldSeed")
@@ -271,16 +271,22 @@ commands["schematic"] = {
             local requestedRealm = Realm.GetRealm(tonumber(realmID))
 
             if (requestedRealm == nil) then
-                return false, "Requested realm of ID:" .. realmID .. " does not exist."
+                return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
             end
 
-            local subparam = params[2]
+            local schemName = tostring(params[2])
+            Debug.log(schemName)
 
-            if (subparam == "" or subparam == nil) then
+
+            local subparam = tostring(params[3])
+
+            if (subparam == "" or subparam == "nil") then
                 subparam = "old"
             end
 
-            local path = requestedRealm:Save_Schematic(name, subparam)
+
+
+            local path = requestedRealm:Save_Schematic(schemName, name, subparam)
             return true, "Saved realm with ID " .. realmID .. " at path: " .. path
         elseif (params[1] == "load") then
             table.remove(params, 1)
@@ -326,7 +332,7 @@ commands["setspawnrealm"] = {
         local realmID = params[1]
         local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID:" .. realmID .. " does not exist."
+            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
         end
 
         local success = mc_worldManager.SetSpawnRealm(requestedRealm)
@@ -463,7 +469,7 @@ commands["privs"] = {
 
         local requestedRealm = Realm.realmDict[realmID]
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID:" .. tostring(realmID) .. " does not exist."
+            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
         end
 
         if (operation == "list") then
@@ -518,7 +524,7 @@ commands["players"] = {
             local realmID = params[2]
             local requestedRealm = Realm.GetRealm(tonumber(realmID))
             if (requestedRealm == nil) then
-                return false, "Requested realm of ID:" .. realmID .. " does not exist."
+                return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
             end
 
             local realmPlayerList = requestedRealm:get_tmpData("Inhabitants")
@@ -714,7 +720,7 @@ minetest.register_chatcommand("teleport", {
             end
 
             if (requestedRealm == nil) then
-                return false, "Requested realm of ID:" .. realmID .. " does not exist."
+                return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
             end
 
             local player = minetest.get_player_by_name(name)
