@@ -5,6 +5,7 @@ minetest.register_on_punchnode(function(pos, node, player, pointed_thing)
         local action = mc_tutorial.ACTION.PUNCH
         local tool = player:get_wielded_item():get_name()
         local node = node.name
+
         if mc_tutorial.record.active[pname] then
             mc_tutorial.register_tutorial_action(player, action, tool, node)
         elseif mc_tutorial.active[pname] then
@@ -52,11 +53,11 @@ minetest.register_globalstep(function(dtime)
             -- Listen for wield_item
             if timer > 5 and mc_tutorial.record.listener.wield[pname] then
                 reset_timer = true
-                local wield_item = player:get_wielded_item():get_name()
+                local wield = player:get_wielded_item():get_name()
 
-                if wield_item ~= "mc_tutorial:recording_tool" then
-                    minetest.chat_send_player(pname, "[Tutorial] Wielded item "..wield_item.." recorded.")
-                    mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.WIELD, wield_item)
+                if wield ~= "mc_tutorial:recording_tool" then
+                    minetest.chat_send_player(pname, "[Tutorial] Wielded item "..wield.." recorded.")
+                    mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.WIELD, wield)
                     mc_tutorial.record.listener.wield[pname] = nil
                 end
             end

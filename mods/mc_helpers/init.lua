@@ -168,7 +168,7 @@ end
 function mc_helpers.getInventoryItemLocation(inv, itemstack)
     for list,_ in pairs(inv:get_lists()) do
         if inv:contains_item(list, itemstack) then
-            return true
+            return list
         end
     end
     return nil
