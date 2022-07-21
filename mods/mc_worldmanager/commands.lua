@@ -277,14 +277,11 @@ commands["schematic"] = {
             local schemName = tostring(params[2])
             Debug.log(schemName)
 
-
             local subparam = tostring(params[3])
 
             if (subparam == "" or subparam == "nil") then
                 subparam = "old"
             end
-
-
 
             local path = requestedRealm:Save_Schematic(schemName, name, subparam)
             return true, "Saved realm with ID " .. realmID .. " at path: " .. path
@@ -594,6 +591,36 @@ commands["blocks"] = {
     end,
     help = "realm blocks <block> <count> (<instanced: true | false> | <realmID>) <temporary: true | false> <realmName> <schematic>"
 
+}
+
+commands["coordinates"] = {
+    func = function(name, params)
+        local operation = tostring(params[1])
+        local format = tostring(params[2])
+
+        local playerRealm = Realm.GetRealmFromPlayer(minetest.get_player_by_name(name))
+
+        if (operation == "set") then
+
+        elseif (operation == "get") then
+            local rawPos = minetest.get_player_by_name(name):getpos()
+            local pos
+
+            if (format == "world") then
+                pos = rawPos
+            elseif (format == "local" or format == "nil") then
+                pos = playerRealm.WorldToLocalPosition(rawPos)
+            elseif (format == "grid") then
+                pos = Realm.worldToGridSpace(rawPos)
+            elseif (format == "utm") then
+                pos = playerRealm:WorldToUTM(rawPos)
+            end
+
+            minetest.chat_send_player(name, "Format: X: " .. tostring(pos.x) .. " Y: " .. tostring(pos.y) .. " Z: " .. tostring(pos.z))
+            return true, "command executed succesfully"
+        end
+    end,
+    help = "realm coordinates <set | get> <format>"
 }
 
 minetest.register_chatcommand("realm", {
