@@ -1,6 +1,3 @@
--- local closed_HUD_showing, open_HUD_showing = false, false
-local mag_declination, azimuth, curr_azimuth = 0, 0, 0
-local curr_needle, curr_bezel = "needle_0.png", "bezel_0.png" 
 local instances = {}
 
 minetest.register_on_joinplayer(function(player)
@@ -43,42 +40,45 @@ local function remember_field(formTableName, index, preText, newText, postText)
 end
 
 local function show_adjustments_menu(player) 
-	remember_field(adjustments_menu, 4, "textarea[0.5,1.3;5,0.5;declination;Set Magnetic Declination;", mag_declination, "]")
-	remember_field(adjustments_menu, 5, "textarea[0.5,2.5;5,0.5;azimuth;Set Azimuth;", azimuth, "]")
-	minetest.show_formspec(player:get_player_name(), "compass:adjustments_menu", table.concat(adjustments_menu, ""))
+	local pname = player:get_player_name()
+	remember_field(adjustments_menu, 4, "textarea[0.5,1.3;5,0.5;declination;Set Magnetic Declination;", instances[pname].mag_declination, "]")
+	remember_field(adjustments_menu, 5, "textarea[0.5,2.5;5,0.5;azimuth;Set Azimuth;", instances[pname].azimuth, "]")
+	minetest.show_formspec(pname, "compass:adjustments_menu", table.concat(adjustments_menu, ""))
 end
 
 local function update_formspec_needle(player)
+	local pname = player:get_player_name()
 	local preText = "image[4.5,-2;10,10;"
 
-	if string.len(curr_needle) > 12 then 
-		if string.sub(curr_needle, 13, 27) == "^[transformR90" or string.sub(curr_needle, 15, 29) == "^[transformR90" then
+	if string.len(instances[pname].curr_needle) > 12 then 
+		if string.sub(instances[pname].curr_needle, 13, 27) == "^[transformR90" or string.sub(instances[pname].curr_needle, 15, 29) == "^[transformR90" then
 			preText = "image[3.75,-1.26;10,10;"
-		elseif string.sub(curr_needle, 13, 27) == "^[transformR180" or string.sub(curr_needle, 15, 29) == "^[transformR180" then
+		elseif string.sub(instances[pname].curr_needle, 13, 27) == "^[transformR180" or string.sub(instances[pname].curr_needle, 15, 29) == "^[transformR180" then
 			preText = "image[4.5,-0.55;10,10;"
-		elseif string.sub(curr_needle, 13, 27) == "^[transformR270" or string.sub(curr_needle, 15, 29) == "^[transformR270" then
+		elseif string.sub(instances[pname].curr_needle, 13, 27) == "^[transformR270" or string.sub(instances[pname].curr_needle, 15, 29) == "^[transformR270" then
 			preText = "image[5.26,-1.26;10,10;"
 		end
 	end
 
-	adjustments_menu[12] = preText .. curr_needle .. "]"
+	adjustments_menu[12] = preText .. instances[pname].curr_needle .. "]"
 	show_adjustments_menu(player)
 end
 
 local function update_formspec_bezel(player)
+	local pname = player:get_player_name()
 	local preText = "image[4.5,-2;10,10;"
 
-	if string.len(curr_bezel) > 11 then 
-		if string.sub(curr_bezel, 12, 25) == "^[transformR90" or string.sub(curr_bezel, 14, 27) == "^[transformR90" then
+	if string.len(instances[pname].curr_bezel) > 11 then 
+		if string.sub(instances[pname].curr_bezel, 12, 25) == "^[transformR90" or string.sub(instances[pname].curr_bezel, 14, 27) == "^[transformR90" then
 			preText = "image[3.75,-1.26;10,10;"
-		elseif string.sub(curr_bezel, 12, 26) == "^[transformR180" or string.sub(curr_bezel, 14, 28) == "^[transformR180" then
+		elseif string.sub(instances[pname].curr_bezel, 12, 26) == "^[transformR180" or string.sub(instances[pname].curr_bezel, 14, 28) == "^[transformR180" then
 			preText = "image[4.5,-0.55;10,10;"
-		elseif string.sub(curr_bezel, 12, 26) == "^[transformR270" or string.sub(curr_bezel, 14, 28) == "^[transformR270" then
+		elseif string.sub(instances[pname].curr_bezel, 12, 26) == "^[transformR270" or string.sub(instances[pname].curr_bezel, 14, 28) == "^[transformR270" then
 			preText = "image[5.26,-1.26;10,10;"
 		end
 	end
 
-	adjustments_menu[13] = preText .. curr_bezel .. "]"
+	adjustments_menu[13] = preText .. instances[pname].curr_bezel .. "]"
 	show_adjustments_menu(player)
 end
 
@@ -92,14 +92,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 
 		if fields.getAzimuth then
-			adjustments_menu[10] = "textarea[0.5,4.2;5,0.5;;;" .. math.floor(curr_azimuth) .. "]"
+			adjustments_menu[10] = "textarea[0.5,4.2;5,0.5;;;" .. math.floor(instances[pname].curr_azimuth) .. "]"
 			show_adjustments_menu(player)
 		end
 
 		if fields.save then
 			local pmeta = player:get_meta()
 
-			if fields.declination ~= "" and tonumber(fields.declination) ~= mag_declination then
+			if fields.declination ~= "" and tonumber(fields.declination) ~= instances[pname].mag_declination then
 				local only_nums = tonumber(fields.declination) ~= nil
 
 				if only_nums then
@@ -107,12 +107,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					if math.abs(declination_entered) > 90 or math.abs(declination_entered) < -90 then
 						minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - magnetic declination must be a number between -90 and 90"))
 					else
-						mag_declination = declination_entered
-						pmeta:set_int("declination", mag_declination)
+						instances[pname].mag_declination = declination_entered
+						pmeta:set_int("declination", instances[pname].mag_declination)
 
 						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - magnetic declination set to " .. fields.declination .. "°"))
 
-						minetest.after(0.1, uupdate_formspec_needle, player)
+						minetest.after(0.1, update_formspec_needle, player)
 						minetest.after(0.1, update_formspec_bezel, player)
 					end
 				else 
@@ -120,7 +120,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				end
 			end
 
-			if fields.azimuth ~= "" and tonumber(fields.azimuth) ~= azimuth then
+			if fields.azimuth ~= "" and tonumber(fields.azimuth) ~= instances[pname].azimuth then
 				local only_nums = tonumber(fields.azimuth) ~= nil
 
 				if only_nums then
@@ -128,8 +128,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					if azimuth_entered > 360 or azimuth_entered < 0 then
 						minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - azimuth must be a number between 0 and 360"))
 					else
-						azimuth = azimuth_entered
-						pmeta:set_int("azimuth", azimuth)
+						instances[pname].azimuth = azimuth_entered
+						pmeta:set_int("azimuth", instances[pname].azimuth)
 
 						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - azimuth set to " .. fields.azimuth .. "°"))
 
@@ -179,7 +179,6 @@ local function show_needle_hud(player)
 	})
 
 	instances[player:get_player_name()].open_HUD_showing = true
-	-- open_HUD_showing = true
 end
 
 local bezelHud = mhud.init()
@@ -216,8 +215,8 @@ minetest.register_tool("forestry_tools:compass" , {
     on_use = function(itemstack, player, pointed_thing)
 		local pname = player:get_player_name()
 		local pmeta = player:get_meta()
-		mag_declination = pmeta:get_int("declination")
-		azimuth = pmeta:get_int("azimuth")
+		instances[pname].mag_declination = pmeta:get_int("declination")
+		instances[pname].azimuth = pmeta:get_int("azimuth")
 
 		if not instances[pname].closed_HUD_showing and not instances[pname].open_HUD_showing then
 			show_closed_hud(player)
@@ -282,36 +281,36 @@ minetest.register_globalstep(function(dtime)
 				local angle_relative = math.deg(dir)
 
 				-- Set magnetic declination
-				if mag_declination > 0 and (360 - angle_relative) <= math.abs(mag_declination) then
-					angle_relative = mag_declination - (360 - angle_relative)
-				elseif mag_declination < 0 and angle_relative <= math.abs(mag_declination) then
-					angle_relative = 360 - (math.abs(mag_declination) - angle_relative)
+				if instances[pname].mag_declination > 0 and (360 - angle_relative) <= math.abs(instances[pname].mag_declination) then
+					angle_relative = instances[pname].mag_declination - (360 - angle_relative)
+				elseif instances[pname].mag_declination < 0 and angle_relative <= math.abs(instances[pname].mag_declination) then
+					angle_relative = 360 - (math.abs(instances[pname].mag_declination) - angle_relative)
 				else 
-					angle_relative = math.deg(dir) + mag_declination
+					angle_relative = math.deg(dir) + instances[pname].mag_declination
 				end
 
 				-- Update current azimuth to direction player is facing 
-				curr_azimuth = 360 - angle_relative
+				instances[pname].curr_azimuth = 360 - angle_relative
 
 				-- Needle rotation
 				local needle_text = rotate_texture(player, needleHud, "needle", angle_relative)
-				curr_needle = needle_text
+				instances[pname].curr_needle = needle_text
 				needleHud:change(player, "needle", {
 					text = needle_text
 				})
 
 				-- Rotate bezel based on azimuth and declination set
 				local shed_angle
-				if mag_declination > 0 and azimuth < mag_declination then
-					shed_angle = mag_declination - azimuth
-				elseif mag_declination < 0 and (360 - azimuth) < math.abs(mag_declination) then
-					shed_angle = mag_declination + azimuth 
+				if instances[pname].mag_declination > 0 and instances[pname].azimuth < instances[pname].mag_declination then
+					shed_angle = instances[pname].mag_declination - instances[pname].azimuth
+				elseif instances[pname].mag_declination < 0 and (360 - instances[pname].azimuth) < math.abs(instances[pname].mag_declination) then
+					shed_angle = instances[pname].mag_declination + instances[pname].azimuth 
 				else
-					shed_angle = mag_declination + (360 - azimuth)
+					shed_angle = instances[pname].mag_declination + (360 - instances[pname].azimuth)
 				end
 
 				local bezel_text = rotate_texture(player, bezelHud, "bezel", shed_angle)
-				curr_bezel = bezel_text
+				instances[pname].curr_bezel = bezel_text
 				bezelHud:change(player, "bezel", {
 					text = bezel_text
 				})
