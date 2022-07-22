@@ -1,6 +1,19 @@
-local closed_HUD_showing, open_HUD_showing = false, false
+-- local closed_HUD_showing, open_HUD_showing = false, false
 local mag_declination, azimuth, curr_azimuth = 0, 0, 0
 local curr_needle, curr_bezel = "needle_0.png", "bezel_0.png" 
+local instances = {}
+
+minetest.register_on_joinplayer(function(player)
+	instances[player:get_player_name()] = {
+		closed_HUD_showing = false,
+		open_HUD_showing = false,
+		mag_declination = 0,
+		azimuth = 0,
+		curr_azimuth = 0,
+		curr_needle = "needle_0.png",
+		curr_bezel = "bezel_0.png"
+	}
+end)
 
 ---------------------------
 --- FORMSPEC MANAGEMENT ---
@@ -150,7 +163,8 @@ local function show_closed_hud(player)
 		offset = {x = -4, y = -4}
 	})
 
-	closed_HUD_showing = true
+	instances[player:get_player_name()].closed_HUD_showing = true
+	-- closed_HUD_showing = true
 end
 
 local needleHud = mhud.init()
@@ -164,7 +178,8 @@ local function show_needle_hud(player)
 		alignment = {x = "centre", y = "centre"}
 	})
 
-	open_HUD_showing = true
+	instances[player:get_player_name()].open_HUD_showing = true
+	-- open_HUD_showing = true
 end
 
 local bezelHud = mhud.init()
@@ -199,15 +214,16 @@ minetest.register_tool("forestry_tools:compass" , {
 
 	-- On left-click
     on_use = function(itemstack, player, pointed_thing)
+		local pname = player:get_player_name()
 		local pmeta = player:get_meta()
 		mag_declination = pmeta:get_int("declination")
 		azimuth = pmeta:get_int("azimuth")
 
-		if not closed_HUD_showing and not open_HUD_showing then
+		if not instances[pname].closed_HUD_showing and not instances[pname].open_HUD_showing then
 			show_closed_hud(player)
-		elseif closed_HUD_showing then
+		elseif instances[pname].closed_HUD_showing then
 			closedHud:remove_all(player)
-			closed_HUD_showing = false
+			instances[pname].closed_HUD_showing = false
 
 			show_mirror_hud(player)
 			show_needle_hud(player)
@@ -216,13 +232,13 @@ minetest.register_tool("forestry_tools:compass" , {
 			needleHud:remove_all()
 			bezelHud:remove_all()
 			mirrorHud:remove_all()
-			open_HUD_showing = false
+			instances[pname].open_HUD_showing = false
 		end
 	end,
 
 	-- On right-click
 	on_place = function(itemstack, placer, pointed_thing)
-		if open_HUD_showing then 
+		if instances[placer:get_player_name()].open_HUD_showing then 
 			update_formspec_needle(placer)
 			update_formspec_bezel(placer)
 			show_adjustments_menu(placer) 
@@ -230,7 +246,7 @@ minetest.register_tool("forestry_tools:compass" , {
 	end,
 
 	on_secondary_use = function(itemstack, player, pointed_thing)
-		if open_HUD_showing then 
+		if instances[player:get_player_name()].open_HUD_showing then 
 			update_formspec_needle(player)
 			update_formspec_bezel(player)
 			show_adjustments_menu(player) 
@@ -245,21 +261,22 @@ minetest.register_tool("forestry_tools:compass" , {
 minetest.register_globalstep(function(dtime)
 	local players  = minetest.get_connected_players()
 	for i,player in ipairs(players) do
+		local pname = player:get_player_name()
 
-		if closed_HUD_showing then
+		if instances[pname].closed_HUD_showing then
 			if player:get_wielded_item():get_name() ~= "forestry_tools:compass" then
 				closedHud:remove_all()
-				closed_HUD_showing = false
+				instances[pname].closed_HUD_showing = false
 			end
 		end
 
-		if open_HUD_showing then
+		if instances[pname].open_HUD_showing then
 			-- Remove HUD when player is no longer wielding the compass
 			if player:get_wielded_item():get_name() ~= "forestry_tools:compass" then
 				needleHud:remove_all()
 				bezelHud:remove_all()
 				mirrorHud:remove_all()
-				open_HUD_showing = false
+				instances[pname].open_HUD_showing = false
 			else
 				local dir = player:get_look_horizontal()
 				local angle_relative = math.deg(dir)
