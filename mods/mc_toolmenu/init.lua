@@ -84,7 +84,6 @@ minetest.register_on_player_inventory_action(function(player, action, inventory,
     if not inventory:room_for_item(mc_toolmenu.tool_inv, ItemStack("default:pick_bronze")) then
         -- Increase size of toolbox if it gets full
         local current_size = inventory:get_size(mc_toolmenu.tool_inv)
-        --local width = inventory:get_width(mc_toolmenu.tool_inv)
         inventory:set_size(mc_toolmenu.tool_inv, current_size + 8)
 
         -- refresh inventory formspec
