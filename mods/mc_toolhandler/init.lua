@@ -1,15 +1,15 @@
-mc_toolhandler = {reg_tools = {}, reg_group_tools = {}}
-dofile(minetest.get_modpath("mc_toolhandler") .. "/api.lua")
+mc_toolhandler = {
+    path = minetest.get_modpath("mc_toolhandler"),
+    reg_tools = {}, 
+    reg_group_tools = {},
+    default_inv = (minetest.get_modpath("mc_toolmenu") ~= nil and mc_toolmenu.tool_inv) or "main"
+}
+dofile(mc_toolhandler.path.."/api.lua")
 
 -- Returns name of list item is in, if it is in player's inventory
 local function get_player_item_location(player, itemstack)
     local inv = player:get_inventory()
-    for list,_ in pairs(inv:get_lists()) do
-        if inv:contains_item(list, itemstack) then
-            return list
-        end
-    end
-    return nil
+    return mc_helpers.getInventoryItemLocation(inv, itemstack)
 end
 
 -- Returns name of list and index of first item with mc_tool_group in player's inventory, if an item with mc_tool_group is in player's inventory
@@ -98,7 +98,10 @@ local function register_callbacks(tool_name, data)
 
         if not list and mc_helpers.checkPrivs(player, data._mc_tool_privs) then
             -- Player should have the tool but does not: give one copy
-            player:get_inventory():add_item("main", tool_name)
+            player:get_inventory():add_item(mc_toolhandler.default_inv, tool_name)
+            if mc_toolhandler.default_inv ~= "main" then
+                minetest.chat_send_player(player:get_player_name(), "New tool added to toolbox: "..tool_name)
+            end
         elseif not mc_helpers.checkPrivs(player, data._mc_tool_privs) then
             -- Player has the tool but should not: remove all copies
             local inv = player:get_inventory()
@@ -133,7 +136,10 @@ local function register_callbacks(tool_name, data)
         if mc_helpers.checkPrivs(player, data._mc_tool_privs) then
             if not list then
                 -- Player should have the tool but does not: give one copy
-                player:get_inventory():add_item("main", tool_name)
+                player:get_inventory():add_item(mc_toolhandler.default_inv, tool_name)
+                if mc_toolhandler.default_inv ~= "main" then
+                    minetest.chat_send_player(name, "New tool added to toolbox: "..tool_name)
+                end
             elseif player_has_multiple_copies(player, ItemStack(tool_name)) then
                 -- Player has multiple copies of the tool already: remove all but one
                 for i,item in pairs(player:get_inventory():get_list(list)) do
@@ -180,7 +186,10 @@ local function register_group_callbacks(tool_name, data)
 
         if not list and mc_helpers.checkPrivs(player, data._mc_tool_privs) then
             -- Player should have the tool but does not: give one copy
-            player:get_inventory():add_item("main", tool_name)
+            player:get_inventory():add_item(mc_toolhandler.default_inv, tool_name)
+            if mc_toolhandler.default_inv ~= "main" then
+                minetest.chat_send_player(player:get_player_name(), "New tool added to toolbox: "..tool_name)
+            end
         elseif not mc_helpers.checkPrivs(player, data._mc_tool_privs) then
             -- Player has the tool but should not: remove all copies
             local inv = player:get_inventory()
@@ -209,7 +218,10 @@ local function register_group_callbacks(tool_name, data)
         if mc_helpers.checkPrivs(player, data._mc_tool_privs) then
             if not list then
                 -- Player should have the tool but does not: give one copy
-                player:get_inventory():add_item("main", tool_name)
+                player:get_inventory():add_item(mc_toolhandler.default_inv, tool_name)
+                if mc_toolhandler.default_inv ~= "main" then
+                    minetest.chat_send_player(name, "New tool added to toolbox: "..tool_name)
+                end
             elseif player_has_multiple_group_copies(player, data._mc_tool_group) then
                 -- Player has multiple copies of the tool already: remove all but one
                 remove_item_group_copies_except(player, stack, i, list)
@@ -244,7 +256,7 @@ end
 -- Open and read mod.conf settings file
 local reg_tools_from = {}
 local settings = Settings(minetest.get_modpath("mc_toolhandler") .. "/mod.conf")
-local mods = string.split(settings:get("optional_depends"), ",")
+local mods = mc_helpers.split(settings:get("optional_depends"), ",")
 for _,mod in pairs(mods) do
     table.insert(reg_tools_from, mc_helpers.trim(mod))
 end
@@ -378,7 +390,7 @@ end)
 
 minetest.register_on_chatcommand(function(name, command, params)
     if command == "give" or command == "giveme" then
-        local p_table = string.split(params, " ")
+        local p_table = mc_helpers.split(params, " ")
         if not p_table[1] or (command == "give" and not p_table[2]) then return end -- missing params, skip
 
         local player = (command == "giveme" and minetest.get_player_by_name(name)) or minetest.get_player_by_name(p_table[1])
