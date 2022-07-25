@@ -24,9 +24,7 @@ function Realm:LocalToUTM(position)
     local utmInfo = self:get_data("UTMInfo")
 
     if (utmInfo == nil) then
-        utmInfo = {}
-        utmInfo.easting = 0
-        utmInfo.northing = 0
+        utmInfo = { zone = 0, utm_is_north = true, easting = 0, northing = 0 }
     end
 
     local x = position.x + utmInfo.easting
