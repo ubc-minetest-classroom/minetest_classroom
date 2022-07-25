@@ -162,8 +162,8 @@ end
 ]]--
 
 function Realm.UTMToLatLong(Easting, Northing, Zone, Hemisphere)
-    local DtoR = Math.PI / 180
-    local RtoD = 180 / Math.PI;
+    local DtoR = math.pi / 180
+    local RtoD = 180 / math.pi;
 
     local a = 6378137
     local f = 0.00335281066474748071984552861852
@@ -171,43 +171,54 @@ function Realm.UTMToLatLong(Easting, Northing, Zone, Hemisphere)
     local southernN0 = 10000000
     local E0 = 500000
 
+    -- Caching our Math variables for better performance
+    local Math = { }
+    Math.Pow = math.pow
+    Math.Sin = math.sin
+    Math.Cos = math.cos
+    Math.Asin = math.asin
+    Math.Atan = math.atan
+    Math.Cosh = math.cosh
+    Math.Sinh = math.sinh
 
-    n = f / (2 - f)
-    k0 = 0.9996
-    A = a * (1 + (1 / 4) * Math.Pow(n, 2) + (1 / 64) * Math.Pow(n, 4) + (1 / 256) * Math.Pow(n, 6) + (25 / 16384) * Math.Pow(n, 8) + (49 / 65536) * Math.Pow(n, 10)) / (1 + n)
+    local n = f / (2 - f)
+    local k0 = 0.9996
+    local A = a * (1 + (1 / 4) * Math.Pow(n, 2) + (1 / 64) * Math.Pow(n, 4) + (1 / 256) * Math.Pow(n, 6) + (25 / 16384) * Math.Pow(n, 8) + (49 / 65536) * Math.Pow(n, 10)) / (1 + n)
 
-    beta1 = n / 2 - (2 / 3) * Math.Pow(n, 2) + (37 / 96) * Math.Pow(n, 3) - (1 / 360) * Math.Pow(n, 4) - (81 / 512) * Math.Pow(n, 5) + (96199 / 604800) * Math.Pow(n, 6) - (5406467 / 38707200) * Math.Pow(n, 7) + (7944359 / 67737600) * Math.Pow(n, 8) - (7378753979 / 97542144000) * Math.Pow(n, 9) + (25123531261 / 804722688000) * Math.Pow(n, 10)
-    beta2 = (1 / 48) * Math.Pow(n, 2) + (1 / 15) * Math.Pow(n, 3) - (437 / 1440) * Math.Pow(n, 4) + (46 / 105) * Math.Pow(n, 5) - (1118711 / 3870720) * Math.Pow(n, 6) + (51841 / 1209600) * Math.Pow(n, 7) + (24749483 / 348364800) * Math.Pow(n, 8) - (115295683 / 1397088000) * Math.Pow(n, 9) + (5487737251099 / 51502252032000) * Math.Pow(n, 10)
-    beta3 = (17 / 480) * Math.Pow(n, 3) - (37 / 840) * Math.Pow(n, 4) - (209 / 4480) * Math.Pow(n, 5) + (5569 / 90720) * Math.Pow(n, 6) + (9261899 / 58060800) * Math.Pow(n, 7) - (6457463 / 17740800) * Math.Pow(n, 8) + (2473691167 / 9289728000) * Math.Pow(n, 9) - (852549456029 / 20922789888000) * Math.Pow(n, 10)
-    beta4 = (4397 / 161280) * Math.Pow(n, 4) - (11 / 504) * Math.Pow(n, 5) - (830251 / 7257600) * Math.Pow(n, 6) + (466511 / 2494800) * Math.Pow(n, 7) + (324154477 / 7664025600) * Math.Pow(n, 8) - (937932223 / 3891888000) * Math.Pow(n, 9) - (89112264211 / 5230697472000) * Math.Pow(n, 10)
-    beta5 = (4583 / 161280) * Math.Pow(n, 5) - (108847 / 3991680) * Math.Pow(n, 6) - (8005831 / 63866880) * Math.Pow(n, 7) + (22894433 / 124540416) * Math.Pow(n, 8) + (112731569449 / 557941063680) * Math.Pow(n, 9) - (5391039814733 / 10461394944000) * Math.Pow(n, 10)
-    beta6 = (20648693 / 638668800) * Math.Pow(n, 6) - (16363163 / 518918400) * Math.Pow(n, 7) - (2204645983 / 12915302400) * Math.Pow(n, 8) + (4543317553 / 18162144000) * Math.Pow(n, 9) + (54894890298749 / 167382319104000) * Math.Pow(n, 10)
-    beta7 = (219941297 / 5535129600) * Math.Pow(n, 7) - (497323811 / 12454041600) * Math.Pow(n, 8) - (79431132943 / 332107776000) * Math.Pow(n, 9) + (4346429528407 / 12703122432000) * Math.Pow(n, 10)
-    beta8 = (191773887257 / 3719607091200) * Math.Pow(n, 8) - (17822319343 / 336825216000) * Math.Pow(n, 9) - (497155444501631 / 1422749712384000) * Math.Pow(n, 10)
-    beta9 = (11025641854267 / 158083301376000) * Math.Pow(n, 9) - (492293158444691 / 6758061133824000) * Math.Pow(n, 10)
-    beta10 = (7028504530429621 / 72085985427456000) * Math.Pow(n, 10)
+    local beta1 = n / 2 - (2 / 3) * Math.Pow(n, 2) + (37 / 96) * Math.Pow(n, 3) - (1 / 360) * Math.Pow(n, 4) - (81 / 512) * Math.Pow(n, 5) + (96199 / 604800) * Math.Pow(n, 6) - (5406467 / 38707200) * Math.Pow(n, 7) + (7944359 / 67737600) * Math.Pow(n, 8) - (7378753979 / 97542144000) * Math.Pow(n, 9) + (25123531261 / 804722688000) * Math.Pow(n, 10)
+    local beta2 = (1 / 48) * Math.Pow(n, 2) + (1 / 15) * Math.Pow(n, 3) - (437 / 1440) * Math.Pow(n, 4) + (46 / 105) * Math.Pow(n, 5) - (1118711 / 3870720) * Math.Pow(n, 6) + (51841 / 1209600) * Math.Pow(n, 7) + (24749483 / 348364800) * Math.Pow(n, 8) - (115295683 / 1397088000) * Math.Pow(n, 9) + (5487737251099 / 51502252032000) * Math.Pow(n, 10)
+    local beta3 = (17 / 480) * Math.Pow(n, 3) - (37 / 840) * Math.Pow(n, 4) - (209 / 4480) * Math.Pow(n, 5) + (5569 / 90720) * Math.Pow(n, 6) + (9261899 / 58060800) * Math.Pow(n, 7) - (6457463 / 17740800) * Math.Pow(n, 8) + (2473691167 / 9289728000) * Math.Pow(n, 9) - (852549456029 / 20922789888000) * Math.Pow(n, 10)
+    local beta4 = (4397 / 161280) * Math.Pow(n, 4) - (11 / 504) * Math.Pow(n, 5) - (830251 / 7257600) * Math.Pow(n, 6) + (466511 / 2494800) * Math.Pow(n, 7) + (324154477 / 7664025600) * Math.Pow(n, 8) - (937932223 / 3891888000) * Math.Pow(n, 9) - (89112264211 / 5230697472000) * Math.Pow(n, 10)
+    local beta5 = (4583 / 161280) * Math.Pow(n, 5) - (108847 / 3991680) * Math.Pow(n, 6) - (8005831 / 63866880) * Math.Pow(n, 7) + (22894433 / 124540416) * Math.Pow(n, 8) + (112731569449 / 557941063680) * Math.Pow(n, 9) - (5391039814733 / 10461394944000) * Math.Pow(n, 10)
+    local beta6 = (20648693 / 638668800) * Math.Pow(n, 6) - (16363163 / 518918400) * Math.Pow(n, 7) - (2204645983 / 12915302400) * Math.Pow(n, 8) + (4543317553 / 18162144000) * Math.Pow(n, 9) + (54894890298749 / 167382319104000) * Math.Pow(n, 10)
+    local beta7 = (219941297 / 5535129600) * Math.Pow(n, 7) - (497323811 / 12454041600) * Math.Pow(n, 8) - (79431132943 / 332107776000) * Math.Pow(n, 9) + (4346429528407 / 12703122432000) * Math.Pow(n, 10)
+    local beta8 = (191773887257 / 3719607091200) * Math.Pow(n, 8) - (17822319343 / 336825216000) * Math.Pow(n, 9) - (497155444501631 / 1422749712384000) * Math.Pow(n, 10)
+    local beta9 = (11025641854267 / 158083301376000) * Math.Pow(n, 9) - (492293158444691 / 6758061133824000) * Math.Pow(n, 10)
+    local beta10 = (7028504530429621 / 72085985427456000) * Math.Pow(n, 10)
 
-    delta1 = 2 * n - (2 / 3) * Math.Pow(n, 2) - 2 * Math.Pow(n, 3)
-    delta2 = (7 / 3) * Math.Pow(n, 2) - (8 / 5) * Math.Pow(n, 3)
-    delta3 = (56 / 15) * Math.Pow(n, 3)
+    local delta1 = 2 * n - (2 / 3) * Math.Pow(n, 2) - 2 * Math.Pow(n, 3)
+    local delta2 = (7 / 3) * Math.Pow(n, 2) - (8 / 5) * Math.Pow(n, 3)
+    local delta3 = (56 / 15) * Math.Pow(n, 3)
 
-    ksi = (Northing / 100 - northernN0) / (k0 * A)
-    eta = (Easting / 100 - E0) / (k0 * A)
+    local ksi = (Northing / 100 - northernN0) / (k0 * A)
+    local eta = (Easting / 100 - E0) / (k0 * A)
 
-    ksi_prime = ksi - (beta1 * Math.Sin(2 * ksi) * Math.Cosh(2 * eta) + beta2 * Math.Sin(4 * ksi) * Math.Cosh(4 * eta) + beta3 * Math.Sin(6 * ksi) * Math.Cosh(6 * eta) + beta4 * Math.Sin(8 * ksi) * Math.Cosh(8 * eta) + beta5 * Math.Sin(10 * ksi) * Math.Cosh(10 * eta) +
-    beta6 * Math.Sin(12 * ksi) * Math.Cosh(12 * eta) + beta7 * Math.Sin(14 * ksi) * Math.Cosh(14 * eta) + beta8 * Math.Sin(16 * ksi) * Math.Cosh(16 * eta) + beta9 * Math.Sin(18 * ksi) * Math.Cosh(18 * eta) + beta10 * Math.Sin(20 * ksi) * Math.Cosh(20 * eta))
+    local ksi_prime = ksi - (beta1 * Math.Sin(2 * ksi) * Math.Cosh(2 * eta) + beta2 * Math.Sin(4 * ksi) * Math.Cosh(4 * eta) +
+            beta3 * Math.Sin(6 * ksi) * Math.Cosh(6 * eta) + beta4 * Math.Sin(8 * ksi) * Math.Cosh(8 * eta) +
+            beta5 * Math.Sin(10 * ksi) * Math.Cosh(10 * eta) + beta6 * Math.Sin(12 * ksi) * Math.Cosh(12 * eta) +
+            beta7 * Math.Sin(14 * ksi) * Math.Cosh(14 * eta) + beta8 * Math.Sin(16 * ksi) * Math.Cosh(16 * eta) +
+            beta9 * Math.Sin(18 * ksi) * Math.Cosh(18 * eta) + beta10 * Math.Sin(20 * ksi) * Math.Cosh(20 * eta))
 
-    eta_prime = eta - (beta1 * Math.Cos(2 * ksi) * Math.Sinh(2 * eta) + beta2 * Math.Cos(4 * ksi) * Math.Sinh(4 * eta) + beta3 * Math.Cos(6 * ksi) * Math.Sinh(6 * eta))
-    sigma_prime = 1 - (2 * beta1 * Math.Cos(2 * ksi) * Math.Cosh(2 * eta) + 2 * beta2 * Math.Cos(4 * ksi) * Math.Cosh(4 * eta) + 2 * beta3 * Math.Cos(6 * ksi) * Math.Cosh(6 * eta))
-    taw_prime = 2 * beta1 * Math.Sin(2 * ksi) * Math.Sinh(2 * eta) + 2 * beta2 * Math.Sin(4 * ksi) * Math.Sinh(4 * eta) + 2 * beta3 * Math.Sin(6 * ksi) * Math.Sinh(6 * eta)
+    local eta_prime = eta - (beta1 * Math.Cos(2 * ksi) * Math.Sinh(2 * eta) + beta2 * Math.Cos(4 * ksi) * Math.Sinh(4 * eta) + beta3 * Math.Cos(6 * ksi) * Math.Sinh(6 * eta))
+    local sigma_prime = 1 - (2 * beta1 * Math.Cos(2 * ksi) * Math.Cosh(2 * eta) + 2 * beta2 * Math.Cos(4 * ksi) * Math.Cosh(4 * eta) + 2 * beta3 * Math.Cos(6 * ksi) * Math.Cosh(6 * eta))
+    local taw_prime = 2 * beta1 * Math.Sin(2 * ksi) * Math.Sinh(2 * eta) + 2 * beta2 * Math.Sin(4 * ksi) * Math.Sinh(4 * eta) + 2 * beta3 * Math.Sin(6 * ksi) * Math.Sinh(6 * eta)
 
-    ki = Math.Asin(Math.Sin(ksi_prime) / Math.Cosh(eta_prime))
+    local ki = Math.Asin(Math.Sin(ksi_prime) / Math.Cosh(eta_prime))
 
-    latitude = (ki + delta1 * Math.Sin(2 * ki) + delta2 * Math.Sin(4 * ki) + delta3 * Math.Sin(6 * ki)) * RtoD
+    local latitude = (ki + delta1 * Math.Sin(2 * ki) + delta2 * Math.Sin(4 * ki) + delta3 * Math.Sin(6 * ki)) * RtoD
 
-    longitude0 = Zone * 6 * DtoR  - 183 * DtoR
-    longitude = (longitude0 + Math.Atan(Math.Sinh(eta_prime) / Math.Cos(ksi_prime))) * RtoD
-
+    local longitude0 = Zone * 6 * DtoR - 183 * DtoR
+    local longitude = (longitude0 + Math.Atan(Math.Sinh(eta_prime) / Math.Cos(ksi_prime))) * RtoD
 
     return latitude, longitude
 
