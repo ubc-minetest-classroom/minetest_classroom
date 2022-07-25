@@ -21,7 +21,7 @@ function Realm:WorldToLocalPosition(position)
 end
 
 function Realm:LocalToUTM(position)
-    local utmInfo = self:get_data("utmInfo")
+    local utmInfo = self:get_data("UTMInfo")
 
     if (utmInfo == nil) then
         utmInfo = {}
@@ -47,9 +47,7 @@ function Realm:UTMToLocal(position)
     local utmInfo = self:get_data("utmInfo")
 
     if (utmInfo == nil) then
-        utmInfo = {}
-        utmInfo.easting = 0
-        utmInfo.northing = 0
+        utmInfo = { zone = 0, utm_is_north = true, easting = 0, northing = 0 }
     end
 
     local x = position.x - utmInfo.easting
@@ -88,11 +86,33 @@ function Realm.worldToGridSpace(coords)
     return val
 end
 
-function Realm.UTMToLatLong(utmX, utmY, utmZone, utmHemisphere)
-    local diflat = -00066286966871111111111111111111111111
-    local diflon = -0.0003868060578
+function Realm:WorldToLatLong(position)
+    local utmInfo = self:get_data("UTMInfo")
+    if (utmInfo == nil) then
+        utmInfo = { zone = 0, utm_is_north = true, easting = 0, northing = 0 }
+    end
 
-    local zone = tonumber(utmZone) -- TODO
+    local position = self:WorldToUTM(position)
+
+    local latlongPosition = Realm.UTMToLatLong(position.x, position.z, utmInfo.zone, utmInfo.northernHemisphere)
+
+    return { x = latlongPosition.latitude, y = position.y, z = latlongPosition.longitude }
+end
+
+
+
+-- The following two methods are taken from the following StackOverflow post: https://stackoverflow.com/questions/2689836/converting-utm-wsg84-coordinates-to-latitude-and-longitude
+-- First method by: Playful https://stackoverflow.com/users/2255765/playful
+-- Second method by: Mohammed Sadeq https://stackoverflow.com/users/7780768/mohammed-sadeq-ale-isaac
+
+
+--[[
+
+function Realm.UTMToLatLong(utmX, utmY, utmZone, utmHemisphere)
+    local diflat = -0.00066286966871111111111111111111111111;
+    local diflon = -0.0003868060578;
+
+    local zone = tonumber(utmZone)
 
     local c_sa = 6378137.000000;
     local c_sb = 6356752.314245;
@@ -111,13 +131,13 @@ function Realm.UTMToLatLong(utmX, utmY, utmZone, utmHemisphere)
 
     local s = (zone * 6) - 183
     local lat = y / (c_sa * 0.9996);
-    local v = (c / (1 + (e2cuadrada * (cos(lat) ^ 2)) ^ 0.5)) * 0.9996;
+    local v = (c / (1 + (e2cuadrada * (math.cos(lat) ^ 2)) ^ 0.5)) * 0.9996;
     local a = x / v
     local a1 = math.sin(2 * lat)
-    local a2 = a1 * (Math.cos(lat) ^ 2)
+    local a2 = a1 * (math.cos(lat) ^ 2)
     local j2 = lat + (a1 / 2)
     local j4 = ((3 * j2) + a2) / 4
-    local j6 = ((5 * j4) + (a2 * (Math.cos(lat) ^ 2))) / 3
+    local j6 = ((5 * j4) + (a2 * (math.cos(lat) ^ 2))) / 3
     local alfa = (3 / 4) * e2cuadrada;
     local beta = (5 / 3) * (alfa ^ 2);
     local gama = (35 / 27) * (alfa ^ 3);
@@ -128,17 +148,72 @@ function Realm.UTMToLatLong(utmX, utmY, utmZone, utmHemisphere)
     local nab = (b * (1 - epsi)) + lat
     local senoheps = (math.exp(eps) - math.exp(-eps)) / 2
     local delt = math.atan(senoheps / (math.cos(nab)))
+
     local tao = math.atan(math.cos(delt) * math.tan(nab))
 
     local longitude = ((delt * (180 / math.pi)) + s) + diflon
-    local latitude = (lat + (1 + e2cuadrada * (math.cos(lat) ^ 2) - (3.0 / 2.0) * e2cuadrada * math.sin(lat) * math.cos(lat) * (tao - lat)) * (tao - lat)) * (180 / math.pi) + diflat
+    local latitude = ((lat + (1 + e2cuadrada * math.pow(math.cos(lat), 2) - (3.0 / 2.0) * e2cuadrada * math.sin(lat) * math.cos(lat) * (tao - lat)) * (tao - lat)) * (180.0 / math.pi)) + diflat;
 
     return {
-        x = longitude,
-        y = latitude
+        longitude = longitude,
+        latitude = latitude
     }
+end
+]]--
+
+function Realm.UTMToLatLong(Easting, Northing, Zone, Hemisphere)
+    local DtoR = Math.PI / 180
+    local RtoD = 180 / Math.PI;
+
+    local a = 6378137
+    local f = 0.00335281066474748071984552861852
+    local northernN0 = 0
+    local southernN0 = 10000000
+    local E0 = 500000
+
+
+    n = f / (2 - f)
+    k0 = 0.9996
+    A = a * (1 + (1 / 4) * Math.Pow(n, 2) + (1 / 64) * Math.Pow(n, 4) + (1 / 256) * Math.Pow(n, 6) + (25 / 16384) * Math.Pow(n, 8) + (49 / 65536) * Math.Pow(n, 10)) / (1 + n)
+
+    beta1 = n / 2 - (2 / 3) * Math.Pow(n, 2) + (37 / 96) * Math.Pow(n, 3) - (1 / 360) * Math.Pow(n, 4) - (81 / 512) * Math.Pow(n, 5) + (96199 / 604800) * Math.Pow(n, 6) - (5406467 / 38707200) * Math.Pow(n, 7) + (7944359 / 67737600) * Math.Pow(n, 8) - (7378753979 / 97542144000) * Math.Pow(n, 9) + (25123531261 / 804722688000) * Math.Pow(n, 10)
+    beta2 = (1 / 48) * Math.Pow(n, 2) + (1 / 15) * Math.Pow(n, 3) - (437 / 1440) * Math.Pow(n, 4) + (46 / 105) * Math.Pow(n, 5) - (1118711 / 3870720) * Math.Pow(n, 6) + (51841 / 1209600) * Math.Pow(n, 7) + (24749483 / 348364800) * Math.Pow(n, 8) - (115295683 / 1397088000) * Math.Pow(n, 9) + (5487737251099 / 51502252032000) * Math.Pow(n, 10)
+    beta3 = (17 / 480) * Math.Pow(n, 3) - (37 / 840) * Math.Pow(n, 4) - (209 / 4480) * Math.Pow(n, 5) + (5569 / 90720) * Math.Pow(n, 6) + (9261899 / 58060800) * Math.Pow(n, 7) - (6457463 / 17740800) * Math.Pow(n, 8) + (2473691167 / 9289728000) * Math.Pow(n, 9) - (852549456029 / 20922789888000) * Math.Pow(n, 10)
+    beta4 = (4397 / 161280) * Math.Pow(n, 4) - (11 / 504) * Math.Pow(n, 5) - (830251 / 7257600) * Math.Pow(n, 6) + (466511 / 2494800) * Math.Pow(n, 7) + (324154477 / 7664025600) * Math.Pow(n, 8) - (937932223 / 3891888000) * Math.Pow(n, 9) - (89112264211 / 5230697472000) * Math.Pow(n, 10)
+    beta5 = (4583 / 161280) * Math.Pow(n, 5) - (108847 / 3991680) * Math.Pow(n, 6) - (8005831 / 63866880) * Math.Pow(n, 7) + (22894433 / 124540416) * Math.Pow(n, 8) + (112731569449 / 557941063680) * Math.Pow(n, 9) - (5391039814733 / 10461394944000) * Math.Pow(n, 10)
+    beta6 = (20648693 / 638668800) * Math.Pow(n, 6) - (16363163 / 518918400) * Math.Pow(n, 7) - (2204645983 / 12915302400) * Math.Pow(n, 8) + (4543317553 / 18162144000) * Math.Pow(n, 9) + (54894890298749 / 167382319104000) * Math.Pow(n, 10)
+    beta7 = (219941297 / 5535129600) * Math.Pow(n, 7) - (497323811 / 12454041600) * Math.Pow(n, 8) - (79431132943 / 332107776000) * Math.Pow(n, 9) + (4346429528407 / 12703122432000) * Math.Pow(n, 10)
+    beta8 = (191773887257 / 3719607091200) * Math.Pow(n, 8) - (17822319343 / 336825216000) * Math.Pow(n, 9) - (497155444501631 / 1422749712384000) * Math.Pow(n, 10)
+    beta9 = (11025641854267 / 158083301376000) * Math.Pow(n, 9) - (492293158444691 / 6758061133824000) * Math.Pow(n, 10)
+    beta10 = (7028504530429621 / 72085985427456000) * Math.Pow(n, 10)
+
+    delta1 = 2 * n - (2 / 3) * Math.Pow(n, 2) - 2 * Math.Pow(n, 3)
+    delta2 = (7 / 3) * Math.Pow(n, 2) - (8 / 5) * Math.Pow(n, 3)
+    delta3 = (56 / 15) * Math.Pow(n, 3)
+
+    ksi = (Northing / 100 - northernN0) / (k0 * A)
+    eta = (Easting / 100 - E0) / (k0 * A)
+
+    ksi_prime = ksi - (beta1 * Math.Sin(2 * ksi) * Math.Cosh(2 * eta) + beta2 * Math.Sin(4 * ksi) * Math.Cosh(4 * eta) + beta3 * Math.Sin(6 * ksi) * Math.Cosh(6 * eta) + beta4 * Math.Sin(8 * ksi) * Math.Cosh(8 * eta) + beta5 * Math.Sin(10 * ksi) * Math.Cosh(10 * eta) +
+    beta6 * Math.Sin(12 * ksi) * Math.Cosh(12 * eta) + beta7 * Math.Sin(14 * ksi) * Math.Cosh(14 * eta) + beta8 * Math.Sin(16 * ksi) * Math.Cosh(16 * eta) + beta9 * Math.Sin(18 * ksi) * Math.Cosh(18 * eta) + beta10 * Math.Sin(20 * ksi) * Math.Cosh(20 * eta))
+
+    eta_prime = eta - (beta1 * Math.Cos(2 * ksi) * Math.Sinh(2 * eta) + beta2 * Math.Cos(4 * ksi) * Math.Sinh(4 * eta) + beta3 * Math.Cos(6 * ksi) * Math.Sinh(6 * eta))
+    sigma_prime = 1 - (2 * beta1 * Math.Cos(2 * ksi) * Math.Cosh(2 * eta) + 2 * beta2 * Math.Cos(4 * ksi) * Math.Cosh(4 * eta) + 2 * beta3 * Math.Cos(6 * ksi) * Math.Cosh(6 * eta))
+    taw_prime = 2 * beta1 * Math.Sin(2 * ksi) * Math.Sinh(2 * eta) + 2 * beta2 * Math.Sin(4 * ksi) * Math.Sinh(4 * eta) + 2 * beta3 * Math.Sin(6 * ksi) * Math.Sinh(6 * eta)
+
+    ki = Math.Asin(Math.Sin(ksi_prime) / Math.Cosh(eta_prime))
+
+    latitude = (ki + delta1 * Math.Sin(2 * ki) + delta2 * Math.Sin(4 * ki) + delta3 * Math.Sin(6 * ki)) * RtoD
+
+    longitude0 = Zone * 6 * DtoR  - 183 * DtoR
+    longitude = (longitude0 + Math.Atan(Math.Sinh(eta_prime) / Math.Cos(ksi_prime))) * RtoD
+
+
+    return latitude, longitude
 
 end
+
+
 
 
 

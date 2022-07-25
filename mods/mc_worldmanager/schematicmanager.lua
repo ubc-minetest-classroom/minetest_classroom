@@ -78,7 +78,7 @@ function schematicManager.getSchematic(key)
     local realm_create_function_name = settings:get("realm_create_function_name") or nil
     local realm_delete_function_name = settings:get("realm_delete_function_name") or nil
 
-    local utm_zone = settings:get("utm_zone") or 1
+    local utm_zone = tonumber(settings:get("utm_zone") or 1)
     local utm_hemisphere = settings:get("utm_hemisphere") or "N"
     local utm_origin_easting = tonumber(settings:get("utm_origin_easting")) or 0
     local utm_origin_northing = tonumber(settings:get("utm_origin_northing")) or 0

@@ -118,6 +118,9 @@ function Realm:Load_Schematic(schematic, config)
         self.EndPos = schematicEndPos
     end
 
+    if (config.utmInfo ~= nil) then
+        self:set_data("UTMInfo", config.utmInfo)
+    end
 
 
 
@@ -182,11 +185,6 @@ function Realm:Load_Schematic(schematic, config)
         if (config.onRealmDeleteFunction ~= nil) then
             table.insert(self.RealmDeleteTable, { tableName = config.tableName, functionName = config.onRealmDeleteFunction })
         end
-
-        if (config.utmInfo ~= nil) then
-            self:set_data("UTMInfo", config.utmInfo)
-        end
-
 
     end
 

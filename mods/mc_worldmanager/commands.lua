@@ -614,13 +614,47 @@ commands["coordinates"] = {
                 pos = Realm.worldToGridSpace(rawPos)
             elseif (format == "utm") then
                 pos = playerRealm:WorldToUTM(rawPos)
+                elseif (format == "latlong") then
+                pos = playerRealm:WorldToLatLong(rawPos)
+            else
+                return false, "unknown format: " .. tostring(format)
             end
 
             minetest.chat_send_player(name, "Format: X: " .. tostring(pos.x) .. " Y: " .. tostring(pos.y) .. " Z: " .. tostring(pos.z))
             return true, "command executed succesfully"
         end
+
+        return false, "unknown sub-command."
     end,
     help = "realm coordinates <set | get> <format>"
+}
+
+commands["data"] = {
+    func = function(name, params)
+        local operation = tostring(params[2])
+        local realmID = tonumber(params[1])
+        local realm = Realm.GetRealm(realmID)
+        if (realm == nil) then
+            return false, "realm " .. tostring(realmID) .. " does not exist."
+        end
+        if (operation == "get") then
+            local data = realm:get_data(tostring(params[3]))
+            if (data == nil) then
+                return false, "data " .. tostring(params[3]) .. " does not exist."
+            end
+            minetest.chat_send_player(name, "Data: " .. tostring(data))
+            return true, "command executed succesfully"
+        elseif (operation == "set") then
+            realm:set_data(tostring(params[3]), tostring(params[4]))
+            return true, "command executed succesfully"
+        elseif (operation == "dump") then
+            local data = realm.MetaStorage
+            minetest.chat_send_player(name, "Data: " .. tostring(minetest.serialize(data)))
+            return true, "command executed succesfully"
+        end
+        return false, "unknown sub-command."
+    end,
+    help = "realm data <get | set> <realmID> <dataName> <dataValue>"
 }
 
 minetest.register_chatcommand("realm", {
