@@ -601,6 +601,12 @@ commands["coordinates"] = {
         local playerRealm = Realm.GetRealmFromPlayer(minetest.get_player_by_name(name))
 
         if (operation == "set") then
+            if (format == "UTM") then
+                if (utmInfo == nil) then
+                    utmInfo = { easting = tonumber(params[3]), northing = tonumber(params[4]), zone = tonumber(params[5]), utm_is_north = tostring(params[6]) }
+                end
+                playerRealm:set_data("UTMInfo", utmInfo)
+            end
 
         elseif (operation == "get") then
             local rawPos = minetest.get_player_by_name(name):getpos()
@@ -614,7 +620,7 @@ commands["coordinates"] = {
                 pos = Realm.worldToGridSpace(rawPos)
             elseif (format == "utm") then
                 pos = playerRealm:WorldToUTM(rawPos)
-                elseif (format == "latlong") then
+            elseif (format == "latlong") then
                 pos = playerRealm:WorldToLatLong(rawPos)
             else
                 return false, "unknown format: " .. tostring(format)
