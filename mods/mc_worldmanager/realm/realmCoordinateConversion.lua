@@ -88,8 +88,7 @@ function Realm.worldToGridSpace(coords)
     return val
 end
 
-function Realm.UTMToLatLong(utmX, utmY, utmZone, latitude, longitude)
-    local isNorthernHemi = false -- TODO: get this from the utmZone
+function Realm.UTMToLatLong(utmX, utmY, utmZone, utmHemisphere)
     local diflat = -00066286966871111111111111111111111111
     local diflon = -0.0003868060578
 
@@ -104,7 +103,7 @@ function Realm.UTMToLatLong(utmX, utmY, utmZone, latitude, longitude)
     local x = utmX - 500000;
 
     local y
-    if (isNorthernHemi) then
+    if (utmHemisphere) then
         y = utmY;
     else
         y = utmY - 10000000;
@@ -115,16 +114,16 @@ function Realm.UTMToLatLong(utmX, utmY, utmZone, latitude, longitude)
     local v = (c / (1 + (e2cuadrada * (cos(lat) ^ 2)) ^ 0.5)) * 0.9996;
     local a = x / v
     local a1 = math.sin(2 * lat)
-    local a2 = a1 * (Math.cos(lat)^2)
+    local a2 = a1 * (Math.cos(lat) ^ 2)
     local j2 = lat + (a1 / 2)
     local j4 = ((3 * j2) + a2) / 4
-    local j6 = ((5 * j4) + (a2 * (Math.cos(lat)^2))) / 3
+    local j6 = ((5 * j4) + (a2 * (Math.cos(lat) ^ 2))) / 3
     local alfa = (3 / 4) * e2cuadrada;
     local beta = (5 / 3) * (alfa ^ 2);
     local gama = (35 / 27) * (alfa ^ 3);
     local bm = 0.9996 * c * (lat - alfa * j2 + beta * j4 - gama * j6)
     local b = (y - bm) / v
-    local epsi = ((e2cuadrada * (a^2)) / 2) * (math.cos(lat) ^ 2)
+    local epsi = ((e2cuadrada * (a ^ 2)) / 2) * (math.cos(lat) ^ 2)
     local eps = a * (1 - (epsi / 3))
     local nab = (b * (1 - epsi)) + lat
     local senoheps = (math.exp(eps) - math.exp(-eps)) / 2
@@ -132,7 +131,12 @@ function Realm.UTMToLatLong(utmX, utmY, utmZone, latitude, longitude)
     local tao = math.atan(math.cos(delt) * math.tan(nab))
 
     local longitude = ((delt * (180 / math.pi)) + s) + diflon
-    local latitude = (lat + (1 + e2cuadrada * (math.cos(lat)^2) - (3.0/2.0)*e2cuadrada*math.sin(lat)*math.cos(lat)*(tao-lat)) * (tao - lat)) * (180/math.pi) + diflat
+    local latitude = (lat + (1 + e2cuadrada * (math.cos(lat) ^ 2) - (3.0 / 2.0) * e2cuadrada * math.sin(lat) * math.cos(lat) * (tao - lat)) * (tao - lat)) * (180 / math.pi) + diflat
+
+    return {
+        x = longitude,
+        y = latitude
+    }
 
 end
 
