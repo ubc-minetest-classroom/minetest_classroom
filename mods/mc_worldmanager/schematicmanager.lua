@@ -11,6 +11,7 @@ schematicManager.schematics = {}
 ---@param key string the key to associate with the schematic path.
 ---@param rootPath string the path to a schematic and config file.
 function schematicManager.registerSchematicPath(key, rootPath)
+    key = string.lower(key)
 
     -- Sanity checking our schematic registration to ensure we don't enter an invalid state.
     if (key == nil) then
@@ -35,6 +36,8 @@ end
 ---@return string path to the schematic; or nil if the key is invalid.
 ---@return table schematic configuration containing Author, Name, spawnPoint, and size; or nil if the key is invalid.
 function schematicManager.getSchematic(key)
+    key = string.lower(key)
+
     local rootPath = schematicManager.schematics[key]
 
     if (rootPath == nil) then
@@ -83,4 +86,18 @@ function schematicManager.getSchematic(key)
                      onSchematicPlaceFunction = realm_create_function_name, onRealmDeleteFunction = realm_delete_function_name }
 
     return schematic, config
+end
+
+
+-- Scan the world realm schematics folder and add them to the schematics list.
+local files = minetest.get_dir_list(minetest.get_worldpath() .. "\\realmSchematics\\", false)
+for k, fileName in pairs(files) do
+    local filePath = minetest.get_worldpath() .. "\\realmSchematics\\" .. fileName
+    local ext = string.sub(filePath, -5)
+
+    if (ext == ".conf") then
+        local path = string.sub(filePath, 1, -6)
+        local key = string.sub(fileName, 1, -6)
+        schematicManager.registerSchematicPath(key, path)
+    end
 end

@@ -1,188 +1,39 @@
-local S = forestry_tools.S
 local HUD_showing = false
 local curr_pitch, curr_percent = 0
 local bg_angle
+local degreePlus0Hud, degreePlus10Hud, degreePlus20Hud, degreeMinus10Hud, degreeMinus20Hud = mhud.init(), mhud.init(), mhud.init(), mhud.init(), mhud.init()
+local percentPlus0Hud, percentPlus10Hud, percentPlus20Hud, percentPlus30Hud, percentPlus40Hud = mhud.init(), mhud.init(), mhud.init(), mhud.init(), mhud.init()
+local percentMinus10Hud, percentMinus20Hud, percentMinus30Hud, percentMinus40Hud = mhud.init(), mhud.init(), mhud.init(), mhud.init()
 
-----------------------------
---- HUDS FOR DEGREE SIDE ---
-----------------------------
+local measurementHuds = {}
 
-local degreePlus0Hud = mhud.init()
-local function show_degree_plus_0_hud(player)
-	degreePlus0Hud:add(player, "degreePlus0", {
+table.insert(measurementHuds, { hudObject = degreePlus0Hud, string = "degreePlus0", xAlignment = "left", xOffset = -40, yOffset = -4, value = 0 })
+table.insert(measurementHuds, { hudObject = degreePlus10Hud, string = "degreePlus10", xAlignment = "left", xOffset = -40, yOffset = -70, value = 0 })
+table.insert(measurementHuds, { hudObject = degreePlus20Hud, string = "degreePlus20", xAlignment = "left", xOffset = -40, yOffset = -135, value = 0 })
+table.insert(measurementHuds, { hudObject = degreeMinus10Hud, string = "degreeMinus10", xAlignment = "left", xOffset = -40, yOffset = 62, value = 0 })
+table.insert(measurementHuds, { hudObject = degreeMinus20Hud, string = "degreeMinus20", xAlignment = "left", xOffset = -40, yOffset = 125, value = 0 })
+
+table.insert(measurementHuds, { hudObject = percentPlus0Hud, string = "percentPlus0", xAlignment = "right", xOffset = 35, yOffset = -4, value = 0 })
+table.insert(measurementHuds, { hudObject = percentPlus10Hud, string = "percentPlus10", xAlignment = "right", xOffset = 35, yOffset = -43, value = 0 })
+table.insert(measurementHuds, { hudObject = percentPlus20Hud, string = "percentPlus20", xAlignment = "right", xOffset = 35, yOffset = -83, value = 0 })
+table.insert(measurementHuds, { hudObject = percentPlus30Hud, string = "percentPlus30", xAlignment = "right", xOffset = 35, yOffset = -120, value = 0 })
+table.insert(measurementHuds, { hudObject = percentPlus40Hud, string = "percentPlus40", xAlignment = "right", xOffset = 35, yOffset = -160, value = 0 })
+table.insert(measurementHuds, { hudObject = percentMinus10Hud, string = "percentMinus10", xAlignment = "right", xOffset = 35, yOffset = 37, value = 0 })
+table.insert(measurementHuds, { hudObject = percentMinus20Hud, string = "percentMinus20", xAlignment = "right", xOffset = 35, yOffset = 75, value = 0 })
+table.insert(measurementHuds, { hudObject = percentMinus30Hud, string = "percentMinus30", xAlignment = "right", xOffset = 35, yOffset = 115, value = 0 })
+table.insert(measurementHuds, { hudObject = percentMinus40Hud, string = "percentMinus40", xAlignment = "right", xOffset = 35, yOffset = 153, value = 0 })
+
+
+local function show_measurement_hud(player, hudObject, string, xAlignment, xOffset, yOffset)
+	hudObject:add(player, string, {
 		hud_elem_type = "text",
 		text = "",
-		alignment = {x = "left", y = "centre"},
+		alignment = {x = xAlignment, y = "centre"},
 		position = {x = 0.7, y = 0.5}, 
 		scale = {x = 6.5, y = 6.5},
-		offset = {x = -40, y = -4}
+		offset = {x = xOffset, y = yOffset}
 	})
 end
-
-local degreePlus10Hud = mhud.init()
-local function show_degree_plus_10_hud(player)
-	degreePlus10Hud:add(player, "degreePlus10", {
-		hud_elem_type = "text",
-		text = "",
-		alignment = {x = "left", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = -40, y = -70}
-	})
-end
-
-local degreePlus20Hud = mhud.init()
-local function show_degree_plus_20_hud(player)
-	degreePlus20Hud:add(player, "degreePlus20", {
-		hud_elem_type = "text",
-		text = "",
-		alignment = {x = "left", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = -40, y = -135}
-	})
-end
-
-local degreeMinus10Hud = mhud.init()
-local function show_degree_minus_10_hud(player)
-	degreeMinus10Hud:add(player, "degreeMinus10", {
-		hud_elem_type = "text",
-		text = "",
-		alignment = {x = "left", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = -40, y = 62}
-	})
-end
-
-local degreeMinus20Hud = mhud.init()
-local function show_degree_minus_20_hud(player)
-	degreeMinus20Hud:add(player, "degreeMinus20", {
-		hud_elem_type = "text",
-		text = "",
-		alignment = {x = "left", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = -40, y = 125}
-	})
-end
-
------------------------------
---- HUDS FOR PERCENT SIDE ---
------------------------------
-
-local percentPlus0Hud = mhud.init()
-local function show_percent_plus_0_hud(player)
-	percentPlus0Hud:add(player, "percentPlus0", {
-		hud_elem_type = "text",
-		text = "test0",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = -4}
-	})
-end
-
-local percentPlus10Hud = mhud.init()
-local function show_percent_plus_10_hud(player)
-	percentPlus10Hud:add(player, "percentPlus10", {
-		hud_elem_type = "text",
-		text = "test10",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = -43}
-	})
-end
-
-local percentPlus20Hud = mhud.init()
-local function show_percent_plus_20_hud(player)
-	percentPlus20Hud:add(player, "percentPlus20", {
-		hud_elem_type = "text",
-		text = "test20",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = -83}
-	})
-end
-
-local percentPlus30Hud = mhud.init()
-local function show_percent_plus_30_hud(player)
-	percentPlus30Hud:add(player, "percentPlus30", {
-		hud_elem_type = "text",
-		text = "test30",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = -120}
-	})
-end
-
-local percentPlus40Hud = mhud.init()
-local function show_percent_plus_40_hud(player)
-	percentPlus40Hud:add(player, "percentPlus40", {
-		hud_elem_type = "text",
-		text = "test40",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = -160}
-	})
-end
-
-local percentMinus10Hud = mhud.init()
-local function show_percent_minus_10_hud(player)
-	percentMinus10Hud:add(player, "percentMinus10", {
-		hud_elem_type = "text",
-		text = "test-10",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = 37}
-	})
-end
-
-local percentMinus20Hud = mhud.init()
-local function show_percent_minus_20_hud(player)
-	percentMinus20Hud:add(player, "percentMinus20", {
-		hud_elem_type = "text",
-		text = "test-20",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = 75}
-	})
-end
-
-local percentMinus30Hud = mhud.init()
-local function show_percent_minus_30_hud(player)
-	percentMinus30Hud:add(player, "percentMinus30", {
-		hud_elem_type = "text",
-		text = "test-30",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = 115}
-	})
-end
-
-local percentMinus40Hud = mhud.init()
-local function show_percent_minus_40_hud(player)
-	percentMinus40Hud:add(player, "percentMinus40", {
-		hud_elem_type = "text",
-		text = "test-40",
-		alignment = {x = "right", y = "centre"},
-		position = {x = 0.7, y = 0.5}, 
-		scale = {x = 6.5, y = 6.5},
-		offset = {x = 35, y = 153}
-	})
-end
-
-
-----------------------
---- HUD MANAGEMENT ---
-----------------------
 
 local bgHud = mhud.init()
 local function show_bg_hud(player)
@@ -197,41 +48,21 @@ local function show_bg_hud(player)
 	HUD_showing = true
 end
 
-local function show_huds(player)
+local function show_all_huds(player)
 	show_bg_hud(player)
-	show_degree_plus_0_hud(player)
-	show_degree_plus_10_hud(player)
-	show_degree_plus_20_hud(player)
-	show_degree_minus_10_hud(player)
-	show_degree_minus_20_hud(player)
-	show_percent_plus_0_hud(player)
-	show_percent_plus_10_hud(player)
-	show_percent_plus_20_hud(player)
-	show_percent_plus_30_hud(player)
-	show_percent_plus_40_hud(player)
-	show_percent_minus_10_hud(player)
-	show_percent_minus_20_hud(player)
-	show_percent_minus_30_hud(player)
-	show_percent_minus_40_hud(player)
+
+	for _,hud in ipairs(measurementHuds) do
+		show_measurement_hud(player, hud.hudObject, hud.string, hud.xAlignment, hud.xOffset, hud.yOffset)
+	end
 	HUD_showing = true
 end
 
 local function hide_huds()
 	bgHud:remove_all()
-	degreePlus0Hud:remove_all()
-	degreePlus10Hud:remove_all()
-	degreePlus20Hud:remove_all()
-	degreeMinus10Hud:remove_all()
-	degreeMinus20Hud:remove_all()
-	percentPlus0Hud:remove_all()
-	percentPlus10Hud:remove_all()
-	percentPlus20Hud:remove_all()
-	percentPlus30Hud:remove_all()
-	percentPlus40Hud:remove_all()
-	percentMinus10Hud:remove_all()
-	percentMinus20Hud:remove_all()
-	percentMinus30Hud:remove_all()
-	percentMinus40Hud:remove_all()
+
+	for _,hud in ipairs(measurementHuds) do
+		hud.hudObject:remove_all()
+	end
 	HUD_showing = false
 end
 
@@ -246,7 +77,7 @@ minetest.register_tool("forestry_tools:clinometer" , {
 		if HUD_showing then
 			hide_huds()
 		else
-			show_huds(player)
+			show_all_huds(player)
 		end
 	end,
 
@@ -274,51 +105,90 @@ end
 
 local function update_clinometer(player)
 	bg_angle = "0"
-	local degPlus10, degPlus20, degMinus10, degMinus20 = tostring(curr_pitch + 10), tostring(curr_pitch + 20), tostring(curr_pitch - 10), tostring(curr_pitch + 10)
-	local percPlus10, percPlus20, percPlus30, percPlus40 = tostring(curr_percent + 10), tostring(curr_percent + 20), tostring(curr_percent + 30), tostring(curr_percent + 40)
-	local percMinus10, percMinus20, percMinus30, percMinus40 = tostring(curr_percent - 10), tostring(curr_percent - 20), tostring(curr_percent - 30), tostring(curr_percent - 40)
+
+	-- degPlus0, degPlus10, degPlus20, degMinus10, degMinus20
+	measurementHuds[1].value, measurementHuds[2].value, measurementHuds[3].value, measurementHuds[4].value, measurementHuds[5].value = tostring(curr_pitch), tostring(curr_pitch + 10), tostring(curr_pitch + 20), tostring(curr_pitch - 10), tostring(curr_pitch - 20)
+	-- percentPlus0, percentPlus10, percentPlus20, percentPlus30, percentPlus40
+	measurementHuds[6].value, measurementHuds[7].value, measurementHuds[8].value, measurementHuds[9].value, measurementHuds[10].value = tostring(curr_percent), tostring(curr_percent + 10), tostring(curr_percent + 20), tostring(curr_percent + 30), tostring(curr_percent + 40)
+	-- percentMinus10, percentMinus20, percentMinus30, percentMinus40
+	measurementHuds[11].value, measurementHuds[12].value, measurementHuds[13].value, measurementHuds[14].value = tostring(curr_percent - 10), tostring(curr_percent - 20), tostring(curr_percent - 30), tostring(curr_percent - 40)
+
+
+	if (curr_percent + 40) < -1000 then
+		-- percentPlus10, percentPlus20, percentPlus30, percentPlus40
+		measurementHuds[7].value, measurementHuds[8].value, measurementHuds[9].value, measurementHuds[10].value = "∞", "∞", "∞", "∞"
+	elseif (curr_percent + 30) < -1000 then
+		-- percentPlus10, percentPlus20, percentPlus30
+		measurementHuds[7].value, measurementHuds[8].value, measurementHuds[9].value = "∞", "∞", "∞"
+	elseif (curr_percent + 20) < -1000 then
+		-- percentPlus10, percentPlus20
+		measurementHuds[7].value, measurementHuds[8].value = "∞", "∞"
+	elseif (curr_percent + 10) > 1000 or (curr_percent + 10) < -1000 then
+		-- percentPlus10
+		measurementHuds[7].value = "∞"
+	end
+
+	if (curr_percent - 40) > 1000 then
+		-- percentMinus10, percentMinus20, percentMinus30, percentMinus40
+		measurementHuds[11].value, measurementHuds[12].value, measurementHuds[13].value, measurementHuds[14].value = "∞", "∞", "∞", "∞"
+	elseif (curr_percent - 30) > 1000 then
+		-- percentMinus10, percentMinus20, percentMinus30
+		measurementHuds[11].value, measurementHuds[12].value, measurementHuds[13].value = "∞", "∞", "∞"
+	elseif (curr_percent - 20) > 1000 then
+		-- percentMinus10, percentMinus20
+		measurementHuds[11].value, measurementHuds[12].value = "∞", "∞"
+	elseif (curr_percent - 10) > 1000 or (curr_percent - 10) < -1000 then
+		-- percentMinus10
+		measurementHuds[11].value = "∞"
+	end
 
 	if curr_pitch >= 70 and curr_pitch < 80 then
 		bg_angle = "70"
-		percPlus40 = ""
+		-- percentPlus40
+		measurementHuds[10].value = ""
 	elseif curr_pitch >= 80 and curr_pitch < 89 then
 		bg_angle = "80"
-		percPlus2, percPlus30, percPlus40 = "", "", ""
-		degPlus20 = ""
+		-- percentPlus20, percentPlus30, percentPlus40
+		measurementHuds[8].value, measurementHuds[9].value, measurementHuds[10].value = "", "", ""
+		-- degreePlus20
+		measurementHuds[3].value = ""
 	elseif curr_pitch >= 89 then
 		bg_angle = "90"
-		percPlus10, percPlus20, percPlus30, percPlus40 = "", "", "", ""
-		degPlus10, degPlus20 = "", ""
+		-- percentPlus10, percentPlus20, percentPlus30, percentPlus40
+		measurementHuds[7].value, measurementHuds[8].value, measurementHuds[9].value, measurementHuds[10].value = "", "", "", ""
+		-- degreePlus10, degreePlus20
+		measurementHuds[2].value, measurementHuds[3].value = "", ""
 	elseif curr_pitch <= -70 and curr_pitch > -80 then
 		bg_angle = "70.1"
-		percMinus40 = ""
+		-- percentMinus40
+		measurementHuds[14].value = ""
 	elseif curr_pitch <= -80 and curr_pitch > -89 then
 		bg_angle = "80.1"
-		percMinus20, percMinus30, percMinus40 = "", "", ""
-		degMinus20 = ""
+		-- percentMinus20, percentMinus30, percentMinus40
+		measurementHuds[12].value, measurementHuds[13].value, measurementHuds[14].value = "", "", ""
+		-- degreeMinus20
+		measurementHuds[5].value = ""
 	elseif curr_pitch <= -89 then
 		bg_angle = "90.1"
-		percMinus10, percMinus20, percMinus30, percMinus40 = "", "", "", ""
-		degMinus10, degMinus20 = "", ""
+		-- percentMinus10, percentMinus20, percentMinus30, percentMinus40
+		measurementHuds[11].value, measurementHuds[12].value, measurementHuds[13].value, measurementHuds[14].value = "", "", "", ""
+		-- degreeMinus10, degreeMinus20
+		measurementHuds[4].value, measurementHuds[5].value = "", ""
 	end
 
 	update_hud(player, bgHud, "background", bg_angle) 
 
-	update_hud(player, percentPlus0Hud, "percentPlus0", tostring(curr_percent)) 
-	update_hud(player, percentPlus10Hud, "percentPlus10", percPlus10)
-	update_hud(player, percentPlus20Hud, "percentPlus20", percPlus20)
-	update_hud(player, percentPlus30Hud, "percentPlus30", percPlus30)
-	update_hud(player, percentPlus40Hud, "percentPlus40", percPlus40)
-	update_hud(player, percentMinus10Hud, "percentMinus10", percMinus10)
-	update_hud(player, percentMinus20Hud, "percentMinus20", percMinus20) 
-	update_hud(player, percentMinus30Hud, "percentMinus30", percMinus30) 
-	update_hud(player, percentMinus40Hud, "percentMinus40", percMinus40)
-
-	update_hud(player, degreePlus0Hud, "degreePlus0", tostring(curr_pitch)) 
-	update_hud(player, degreePlus10Hud, "degreePlus10", degPlus10)
-	update_hud(player, degreePlus20Hud, "degreePlus20", degPlus20)
-	update_hud(player, degreeMinus10Hud, "degreeMinus10", degMinus10)
-	update_hud(player, degreeMinus20Hud, "degreeMinus20", degMinus20) 
+	for i,hud in ipairs(measurementHuds) do
+		if i == 6 then
+			if curr_percent > 1000 or curr_percent < -1000 then
+				update_hud(player, hud.hudObject, hud.string, "∞") 
+			else
+				update_hud(player, hud.hudObject, hud.string, tostring(curr_percent)) 
+			end
+		else
+			update_hud(player, hud.hudObject, hud.string, hud.value)
+		end
+	end
 end
 
 
@@ -334,212 +204,10 @@ minetest.register_globalstep(function(dtime)
 				local pitch = -1 * math.deg(pitch_rad)
 				curr_pitch = math.floor(pitch)
 
-				if curr_pitch == 90 then
-					curr_percent = math.floor(-100 * math.tan(89.999))
-				else
-					curr_percent = math.floor(-100 * math.tan(pitch_rad))
-				end
+				curr_percent = math.floor(-100 * math.tan(pitch_rad))
 
 				update_clinometer(player)
 			end
 		end
 	end
 end)
-
-
-
--- -- IN-PROGRESS: show yaw (horizontal angle) and pitch (vertical viewing angle) in degrees.
-
--- -- <!> This is important, since calls to S() are made in this file - without this, the game will crash
--- local S = forestry_tools.S
--- local HUD_showing = false; 
-
-
-
--- minetest.register_tool("forestry_tools:clinometer", {
--- 	description = S("Yaw (horizontal) and Sextant (vertical)"),
--- 	_tt_help = S("Shows your pitch"),
--- 	_doc_items_longdesc = S("It shows your pitch (vertical viewing angle) in degrees. and your sextant (horizontal viewing angle) in degrees"),
--- 	_doc_items_usagehelp = use,
--- 	wield_image = "clinometer.png",
--- 	inventory_image = "clinometer.png",
--- 	groups = { disable_repair = 1 },
-
-			
--- 		-- On left-click
---     on_use = function(itemstack, player, pointed_thing)
--- 		if HUD_showing then
--- 			clinHud:remove_all()
--- 			HUD_showing = false
--- 		else
--- 			show_clin_hud(player)
--- 		end
--- 	end,
-		
---     	-- Destroy the item on_drop to keep things tidy
--- 	on_drop = function (itemstack, dropper, pos)
--- 	end
--- })
-
-
-
--- minetest.register_alias("clinometer", "forestry_tools:clinometer")
--- clinometer = minetest.registered_aliases[clinometer] or clinometer
-
-
-
-
-
-
-	
--- -- minetest.register_on_newplayer(clin_hud.init_hud)
--- -- minetest.register_on_joinplayer(clin_hud.init_hud)
-
--- -- minetest.register_on_leaveplayer(function(player)
--- -- 	clin_hud.playerhuds[player:get_player_name()] = nil
--- -- end)
-
-
--- local clinHud = mhud.init()
--- local function show_clin_hud(player)
--- 	clinHud:add(player, "clinometer", {
--- 		hud_elem_type = "text",
--- 		text = "",
--- 		number =  "0xFF0000",
--- 		position={x = 0.5, y = 0}, 
--- 		scale={x = 10, y = 10},
--- 		offset = {x = 0, y = 15},
--- 		z_index = 0,
-			
--- 	})
--- end
-
-
-
--- function update_hud_displays(player)
--- 	local toDegrees = 180/math.pi
--- 	local name = player:get_player_name()
--- 	local clinometer
--- 	local pos = vector.round(player:get_pos())
-	
-	
--- 	if tool_active(player, "forestry_tools:clinometer") then 
--- 		clinometer = true 
--- 	end 
-	
-	
-	
--- 	-- Minetest goes counter clokwise
--- 	local yaw = 360 - player:get_look_horizontal()*toDegrees
--- 	local pitch = player:get_look_vertical()*toDegrees
-	
--- 	if (clinometer) then
--- 		str_angles = S("Yaw: @1°, pitch: @2°", string.format("%.1f", yaw), string.format("%.1f", pitch))
--- 	end
-	
-
--- 	if str_angles ~= "" then 
--- 		player:hud_change(name, "text", strs_angles)
--- 	end
--- end
-	
--- 	-- issues w updating HUD 
-	  
-
-
--- minetest.register_globalstep(function(dtime)
--- 	local players  = minetest.get_connected_players()
--- 	for i,player in ipairs(players) do
-
--- 		if HUD_showing then
--- 			-- Remove HUD when player is no longer wielding the clinometer
--- 			if player:get_wielded_item():get_name() ~= "forestry_tools:clinometer" then
--- 				clinHud:remove_all()
--- 				HUD_showing = false
--- 			else
-				
-
--- 			-- not sure(?)
--- 			update_hud_displays(player)
-    
--- 		end
-
-			
--- 		end
--- 	end
-	
--- end)
-	
-	
--- -- have to account for change of player FOV, direction, update HUD to display
-
--- -- <!> These two lines currently crash the game - please replace with functions if they are intended to be used
--- --minetest.register_on_newplayer(clinHud)
--- --minetest.register_on_joinplayer(clinHud)
-
-
-
--- -- local clin_hud = {}
--- -- clin_hud.playerhuds = {}
--- -- clin_hud.settings = {}
--- -- clin_hud.settings.hud_pos = { x = 0.5, y = 0 }
--- -- clin_hud.settings.hud_offset = { x = 0, y = 15 }
--- -- clin_hud.settings.hud_alignment = { x = 0, y = 0 }
-
--- -- local set = tonumber(minetest.settings:get("clin_hud_pos_x"))
--- -- if set then clin_hud.settings.hud_pos.x = set end
--- -- set = tonumber(minetest.settings:get("clin_hud_pos_y"))
--- -- if set then clin_hud.settings.hud_pos.y = set end
--- -- set = tonumber(minetest.settings:get("clin_hud_offset_x"))
--- -- if set then clin_hud.settings.hud_offset.x = set end
--- -- set = tonumber(minetest.settings:get("clin_hud_offset_y"))
--- -- if set then clin_hud.settings.hud_offset.y = set end
--- -- set = minetest.settings:get("clin_hud_alignment")
--- -- if set == "left" then
--- -- 	clin_hud.settings.hud_alignment.x = 1
--- -- elseif set == "center" then
--- -- 	clin_hud.settings.hud_alignment.x = 0
--- -- elseif set == "right" then
--- -- 	clin_hud.settings.hud_alignment.x = -1
--- -- end
-
--- -- local lines = 4 -- # of HUD Lines
-
-
--- -- DIsplay player horizontal and vertical It shows you your pitch (vertical viewing angle) in degrees.
-
-
-
--- -- function init_hud(player)
--- -- 	update_automapper(player)
--- -- 	local name = player:get_player_name()
--- -- 	playerhuds[name] = {}
--- -- 	for i=1, o_lines do
--- -- 			playerhuds[name]["o_line"..i] = player:hud_add({
--- -- 			hud_elem_type = "text",
--- -- 			text = "",
--- -- 			position = clin_hud.settings.hud_pos,
--- -- 			offset = { x = clin_hud.settings.hud_offset.x, y = clin_hud.settings.hud_offset.y + 20*(i-1) },
--- -- 			alignment = clin_hud.settings.hud_alignment,
--- -- 			number = 0xFFFFFF,
--- -- 			scale= { x = 100, y = 20 },
--- -- 			z_index = 0,
--- -- 		})
--- -- 	end
--- -- end
-
-
--- -- function clin_hud.update_automapper(player)
--- -- 	if clin_hud.tool_active(player, "forestry_tools:clinometer") or minetest.is_creative_enabled(player:get_player_name()) then
--- -- 		player:hud_set_flags({minimap = true, minimap_radar = true})
-	
--- -- 	else
--- -- 		player:hud_set_flags({minimap = false, minimap_radar = false})
--- -- 	end
--- -- end
-
-	
-
-
-
-

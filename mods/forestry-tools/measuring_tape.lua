@@ -7,20 +7,23 @@ local distance
 local instances = {}
 local range = 30
 local timer_count = 0
+local data
 
--- Give the measuring tape to any player who joins with adequate privileges or take it away if they do not have them
 minetest.register_on_joinplayer(function(player)
-	instances[player:get_player_name()] = {
+	local pmeta = player:get_meta()
+
+	data = {
 		pos1 = {x=0, y=0, z=0},
 		pos2 = {x=0, y=0, z=0},
 		node1 = {name = ""},
 		node2 = {name = ""},
 		tape_nodes = {},
 		orig_nodes = {},
-		mark_status = none_set
+		mark_status = "none_set"
 	}
-end)
 
+	pmeta:set_string("measuring_tape", minetest.serialize(data))
+end)
 
 -- pos1 (start position) marker node
 minetest.register_node("forestry_tools:measure_pos1", {
@@ -40,14 +43,35 @@ minetest.register_node("forestry_tools:measure_pos2", {
 	groups = {not_in_creative_inventory, immortal}
 })
 
+-- Hud displaying distance between player and pos1
+local hud = mhud.init()
+local function create_hud(player, pos)
+	local pmeta = player:get_meta()
+	local data = minetest.deserialize(pmeta:get_string("measuring_tape"))
+
+	hud:add(player, "measuring_tape:current_distance", {
+		hud_elem_type = "waypoint",
+		name = "Distance: ",
+		text = "m",
+		world_pos = data.pos1,
+		color = 0x000000
+	})
+end
+
 -- Marks pos1 and starts auto-reset counter
 function mark_pos1(player, pos)
-	instances[player].pos1 = pos
-	instances[player].node1 = minetest.get_node(pos)
+	local pname = player:get_player_name()
+	local pmeta = player:get_meta()
+	local data = minetest.deserialize(pmeta:get_string("measuring_tape"))
+
+	data.pos1 = pos
+	data.node1 = minetest.get_node(pos)
+
     -- TODO: don't want it to swap just want it to place on top
 	minetest.swap_node(pos, {name = "forestry_tools:measure_pos1"})
-	tell_player(player, "Start position marked")
-	instances[player].mark_status = pos1_set
+	tell_player(pname, "Start position marked")
+	data.mark_status = "pos1_set"
+	pmeta:set_string("measuring_tape", minetest.serialize(data))
 
 	-- Reads auto-reset duration from conf, defaults to 20 seconds if setting non-existent
 	local auto_reset = tonumber(minetest.settings:get("forestry_tools.auto_reset"))
@@ -65,15 +89,19 @@ end
 
 -- Helper for laying tape between pos1 and pos2
 local function changePos(pos, plane, change, player)
+	local pmeta = player:get_meta()
+	local data = minetest.deserialize(pmeta:get_string("measuring_tape"))
+	pos1 = data.pos1
+
 	local newPos
 	if plane == "y" then
-		if pos.y > instances[player].pos1.y then change = change * -1 end
+		if pos.y > pos1.y then change = change * -1 end
 		newPos = {x = pos.x, y = pos.y + change, z = pos.z}
 	elseif plane == "x" then
-		if pos.x > instances[player].pos1.x then change = change * -1 end
+		if pos.x > pos1.x then change = change * -1 end
 		newPos = {x = pos.x + change, y = pos.y, z = pos.z}
 	else
-		if pos.z > instances[player].pos1.z then change = change * -1 end
+		if pos.z > pos1.z then change = change * -1 end
 		newPos = {x = pos.x, y = pos.y, z = pos.z + change}
 	end
 
@@ -82,32 +110,41 @@ end
 
 -- Marks pos2 and performs calculations
 function mark_pos2(player, pos)
-	instances[player].pos2 = pos
-	instances[player].node2 = minetest.get_node(pos)
+	local pname = player:get_player_name()
+	local pmeta = player:get_meta()
+	local data = minetest.deserialize(pmeta:get_string("measuring_tape"))
+	pos1 = data.pos1
+	node2 = data.node2
+
+	data.pos2 = pos
+	pos2 = data.pos2
+	data.node2 = minetest.get_node(pos)
 	minetest.swap_node(pos, {name = "forestry_tools:measure_pos2"})
-	tell_player(player, "End position marked")
-	instances[player].mark_status = pos2_set
+	tell_player(pname, "End position marked")
+	data.mark_status = "pos2_set"
+	pmeta:set_string("measuring_tape", minetest.serialize(data))
+	hud:remove_all()
 	
 	-- Calculate the distance and display output
-	distance = math.floor(vector.distance(instances[player].pos1, instances[player].pos2) + 0.5)
+	distance = math.floor(vector.distance(pos1, pos2) + 0.5)
 
 	-- If the distance is within range, lay the tape between the start and end points
 	if distance > range then
-		tell_player(player, "Out of range! Maximum distance is 30m")
+		tell_player(pname, "Out of range! Maximum distance is 30m")
 	else
 		local newPos
 		for i = 1, distance - 1 do
-			if pos.x == instances[player].pos1.x then
-				if pos.y == instances[player].pos1.y then
+			if pos.x == pos1.x then
+				if pos.y == pos1.y then
 					newPos = changePos(pos, "z", i, player)
-				elseif pos.z == instances[player].pos1.z then
+				elseif pos.z == pos1.z then
 					newPos = changePos(pos, "y", i, player)
 				else
 					newPos = changePos(pos, "y", i, player)
 					newPos = changePos(newPos, "z", i, player)
 				end
-			elseif pos.y == instances[player].pos1.y then
-				if pos.z == instances[player].pos1.z then
+			elseif pos.y == pos1.y then
+				if pos.z == pos1.z then
 					newPos = changePos(pos, "x", i, player)
 				else
 					newPos = changePos(pos, "x", i, player)
@@ -118,13 +155,15 @@ function mark_pos2(player, pos)
 				newPos = changePos(newPos, "y", i, player)
 			end
 
-
-			instances[player].tape_nodes[i] = newPos
-			instances[player].orig_nodes[i] = minetest.get_node(newPos)
-			minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+			if newPos.x ~= pos1.x or newPos.y ~= pos1.y or newPos.z ~= pos1.z then
+				data.tape_nodes[i] = newPos
+				data.orig_nodes[i] = minetest.get_node(newPos)
+				pmeta:set_string("measuring_tape", minetest.serialize(data))
+				minetest.swap_node(newPos, {name = "forestry_tools:measure_pos1"})
+			end
 		end
 
-		tell_player(player, "Distance: " .. minetest.colorize("#FFFF00", distance) .. "m")
+		tell_player(pname, "Distance: " .. minetest.colorize("#FFFF00", distance) .. "m")
 	end
 end
 
@@ -141,28 +180,42 @@ end
 
 -- Resets pos1 and pos2; replaces marker nodes with the old nodes
 function reset(player)
-	if instances[player].mark_status == none_set then
+	local pname = player:get_player_name()
+	local pmeta = player:get_meta()
+	local data = minetest.deserialize(pmeta:get_string("measuring_tape"))
+
+	local mark_status = data.mark_status
+	-- local mark_status = pmeta:get_string("mark_status")
+
+	pos1 = data.pos1
+	pos2 = data.pos2
+	node1 = data.node1
+	node2 = data.node2
+	tape_nodes = data.tape_nodes
+	orig_nodes = data.orig_nodes
+
+	if mark_status == "none_set" then
 		return
 	end
 	
-	if instances[player].mark_status == pos1_set then
-		minetest.swap_node(instances[player].pos1, instances[player].node1)
-	elseif instances[player].mark_status == pos2_set then
-		minetest.swap_node(instances[player].pos1, instances[player].node1)
-		minetest.swap_node(instances[player].pos2, instances[player].node2)
+	if mark_status == "pos1_set" then
+		minetest.swap_node(pos1, node1)
+	elseif mark_status == "pos2_set" then
+		minetest.swap_node(pos1, node1)
+		minetest.swap_node(pos2, node2)
 
-		if instances[player].tape_nodes[2] ~= nil and instances[player].orig_nodes[2] ~= nil then
+		if tape_nodes[2] ~= nil and orig_nodes[2] ~= nil then
 			for i = 1, distance - 1 do
-				minetest.swap_node(instances[player].tape_nodes[i], instances[player].orig_nodes[i])
+				minetest.swap_node(tape_nodes[i], orig_nodes[i])
 			end
 		end
 	end
 		
-	instances[player].mark_status = none_set
+	data.mark_status = "none_set"
+	pmeta:set_string("measuring_tape", minetest.serialize(data))
 	
-	
-	if minetest.get_player_by_name(player) then
-		tell_player(player, "Tape has been reset")
+	if player then
+		tell_player(pname, "Tape has been reset")
 	end
 end
 
@@ -170,6 +223,17 @@ end
 function tell_player(player_name, msg)
 	minetest.chat_send_player(player_name, "Measuring Tape - " .. msg)	
 end
+
+minetest.register_on_leaveplayer(reset)
+
+-- Included because on_leaveplayer doesn't work in singeplayer mode
+minetest.register_on_shutdown(function(player)
+	local players = minetest.get_connected_players()
+
+	for _,player in pairs(players) do
+		reset(player)
+	end
+end)
 
 minetest.register_tool("forestry_tools:measuringTape" , {
 	description = "Measuring Tape",
@@ -180,7 +244,8 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 	-- On left-click
     on_use = function(itemstack, placer, pointed_thing)
 	
-		placer = placer:get_player_name()
+		local pmeta = placer:get_meta()
+		local data = minetest.deserialize(pmeta:get_string("measuring_tape"))
 		if pointed_thing.type == "node" then
 		
 			local pointed_node = minetest.get_node(pointed_thing.under).name
@@ -188,13 +253,16 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 				reset(placer)
 				return
 			end
-					
+			
+			mark_status = data.mark_status
+
 			-- If pos1 not marked, mark pos1
-			if instances[placer].mark_status == none_set then
+			if mark_status == "none_set" then
 				mark_pos1(placer, pointed_thing.under)
+				create_hud(placer, pointed_thing.under)
 			
 			-- If pos1 marked, mark pos2 perform calculations, and trigger auto-reset
-			elseif instances[placer].mark_status == pos1_set then
+			elseif mark_status == "pos1_set" then
 				mark_pos2(placer, pointed_thing.under)
 			end
 		end
@@ -204,7 +272,6 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 
 	-- Destroy the item on_drop to keep things tidy
 	on_drop = function (itemstack, dropper, pos)
-		minetest.set_node(pos, {name="air"})
 	end,
 })
 

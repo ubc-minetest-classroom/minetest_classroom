@@ -46,6 +46,11 @@ minetest.register_on_leaveplayer(function(player, timed_out)
     mc_worldManager.RemoveHud(player)
 
     local realm = Realm.GetRealmFromPlayer(player)
+    if (realm:getCategory() == "instanced") then
+        mc_worldManager.GetSpawnRealm():TeleportPlayer(player)
+    end
+
+    realm = Realm.GetRealmFromPlayer(player)
     if (realm ~= nil) then
         realm:DeregisterPlayer(player)
     end
@@ -126,8 +131,6 @@ minetest.register_globalstep(function(deltaTime)
                 player:set_hp(0, "void")
             end
         end
-
-
     end
 
 
