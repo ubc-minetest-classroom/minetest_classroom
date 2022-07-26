@@ -6,4 +6,4 @@
 	url = https://github.com/ubc-minetest-classroom/areas.git
 [submodule "mods/living_trees"]
 	path = mods/living_trees
-	url = https://lukasdragon@github.com/ubc-minetest-classroom/living_trees.git
+	url = https://github.com/ubc-minetest-classroom/living_trees.git
