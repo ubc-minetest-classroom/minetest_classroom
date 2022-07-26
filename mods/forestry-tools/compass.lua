@@ -8,7 +8,8 @@ minetest.register_on_joinplayer(function(player)
 		azimuth = 0,
 		curr_azimuth = 0,
 		curr_needle = "needle_0.png",
-		curr_bezel = "bezel_0.png"
+		curr_bezel = "bezel_0.png",
+		curr_shed = "shed_0.png"
 	}
 end)
 
@@ -29,7 +30,8 @@ local adjustments_menu = {
 	"textarea[0.5,4.2;5,0.5;;;]",
 	"image[4.5,-2;10,10;compass_mirror.png]",
 	"image[4.5,-2;10,10;needle_0.png]",
-	"image[4.5,-2;10,10;bezel_0.png]"
+	"image[4.5,-2;10,10;bezel_0.png]",
+	"image[4.5,-2;10,10;shed_0.png]"
 }
 
 -- gives the appearance that the formspec remembers the previously set value for the given field
@@ -51,7 +53,7 @@ local function update_formspec_needle(player)
 	local preText = "image[4.5,-2;10,10;"
 
 	if string.len(instances[pname].curr_needle) > 12 then 
-		if string.sub(instances[pname].curr_needle, 13, 27) == "^[transformR90" or string.sub(instances[pname].curr_needle, 15, 29) == "^[transformR90" then
+		if string.sub(instances[pname].curr_needle, 13, 26) == "^[transformR90" or string.sub(instances[pname].curr_needle, 15, 28) == "^[transformR90" then
 			preText = "image[3.75,-1.26;10,10;"
 		elseif string.sub(instances[pname].curr_needle, 13, 27) == "^[transformR180" or string.sub(instances[pname].curr_needle, 15, 29) == "^[transformR180" then
 			preText = "image[4.5,-0.55;10,10;"
@@ -81,6 +83,24 @@ local function update_formspec_bezel(player)
 	adjustments_menu[13] = preText .. instances[pname].curr_bezel .. "]"
 	show_adjustments_menu(player)
 end
+
+local function update_formspec_shed(player)
+	local pname = player:get_player_name()
+	local preText = "image[4.5,-2;10,10;"
+
+	if string.len(instances[pname].curr_shed) > 10 then 
+		if string.sub(instances[pname].curr_shed, 11, 24) == "^[transformR90" or string.sub(instances[pname].curr_shed, 13, 26) == "^[transformR90" then
+			preText = "image[3.75,-1.26;10,10;"
+		elseif string.sub(instances[pname].curr_shed, 11, 25) == "^[transformR180" or string.sub(instances[pname].curr_shed, 13, 27) == "^[transformR180" then
+			preText = "image[4.5,-0.55;10,10;"
+		elseif string.sub(instances[pname].curr_shed, 11, 25) == "^[transformR270" or string.sub(instances[pname].curr_shed, 13, 27) == "^[transformR270" then
+			preText = "image[5.26,-1.26;10,10;"
+		end
+	end
+
+	adjustments_menu[14] = preText .. instances[pname].curr_shed .. "]"
+	show_adjustments_menu(player)
+end 
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	local pname = player:get_player_name()
@@ -113,7 +133,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - magnetic declination set to " .. fields.declination .. "°"))
 
 						minetest.after(0.1, update_formspec_needle, player)
-						minetest.after(0.1, update_formspec_bezel, player)
+						minetest.after(0.1, update_formspec_shed, player)
 					end
 				else 
 					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - magnetic declination must be a number between -90 and 90"))
@@ -134,6 +154,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						minetest.chat_send_player(pname, minetest.colorize("#00ff00", "Compass - azimuth set to " .. fields.azimuth .. "°"))
 
 						minetest.after(0.1, update_formspec_bezel, player)
+						minetest.after(0.1, update_formspec_shed, player)
 					end
 				else 
 					minetest.chat_send_player(pname, minetest.colorize("#ff0000", "Compass - azimuth must be a number between 0 and 360"))
@@ -164,7 +185,6 @@ local function show_closed_hud(player)
 	})
 
 	instances[player:get_player_name()].closed_HUD_showing = true
-	-- closed_HUD_showing = true
 end
 
 local needleHud = mhud.init()
@@ -179,6 +199,18 @@ local function show_needle_hud(player)
 	})
 
 	instances[player:get_player_name()].open_HUD_showing = true
+end
+
+local shedHud = mhud.init()
+local function show_shed_hud(player)
+	shedHud:add(player, "shed", {
+		hud_elem_type = "image",
+		text = "shed_0.png",
+		position = {x = 0.5, y = 0.45}, 
+		scale = {x = 5, y = 5},
+		offset = {x = -4, y = -4},
+		alignment = {x = "centre", y = "centre"}
+	})
 end
 
 local bezelHud = mhud.init()
@@ -226,9 +258,11 @@ minetest.register_tool("forestry_tools:compass" , {
 
 			show_mirror_hud(player)
 			show_needle_hud(player)
+			show_shed_hud(player)
 			show_bezel_hud(player)
 		else
 			needleHud:remove_all()
+			shedHud:remove_all()
 			bezelHud:remove_all()
 			mirrorHud:remove_all()
 			instances[pname].open_HUD_showing = false
@@ -240,7 +274,7 @@ minetest.register_tool("forestry_tools:compass" , {
 		if instances[placer:get_player_name()].open_HUD_showing then 
 			update_formspec_needle(placer)
 			update_formspec_bezel(placer)
-			show_adjustments_menu(placer) 
+			update_formspec_shed(placer)
 		end
 	end,
 
@@ -248,7 +282,7 @@ minetest.register_tool("forestry_tools:compass" , {
 		if instances[player:get_player_name()].open_HUD_showing then 
 			update_formspec_needle(player)
 			update_formspec_bezel(player)
-			show_adjustments_menu(player) 
+			update_formspec_shed(player)
 		end
 	end,
 
@@ -273,6 +307,7 @@ minetest.register_globalstep(function(dtime)
 			-- Remove HUD when player is no longer wielding the compass
 			if player:get_wielded_item():get_name() ~= "forestry_tools:compass" then
 				needleHud:remove_all()
+				shedHud:remove_all()
 				bezelHud:remove_all()
 				mirrorHud:remove_all()
 				instances[pname].open_HUD_showing = false
@@ -292,14 +327,14 @@ minetest.register_globalstep(function(dtime)
 				-- Update current azimuth to direction player is facing 
 				instances[pname].curr_azimuth = 360 - angle_relative
 
-				-- Needle rotation
+				-- Rotate needle based on declination and direction player is facing
 				local needle_text = rotate_texture(player, needleHud, "needle", angle_relative)
 				instances[pname].curr_needle = needle_text
 				needleHud:change(player, "needle", {
 					text = needle_text
 				})
 
-				-- Rotate bezel based on azimuth and declination set
+				-- Rotate shed based on azimuth and declination set
 				local shed_angle
 				if instances[pname].mag_declination > 0 and instances[pname].azimuth < instances[pname].mag_declination then
 					shed_angle = instances[pname].mag_declination - instances[pname].azimuth
@@ -309,7 +344,14 @@ minetest.register_globalstep(function(dtime)
 					shed_angle = instances[pname].mag_declination + (360 - instances[pname].azimuth)
 				end
 
-				local bezel_text = rotate_texture(player, bezelHud, "bezel", shed_angle)
+				local shed_text = rotate_texture(player, shedHud, "shed", shed_angle)
+				instances[pname].curr_shed = shed_text
+				shedHud:change(player, "shed", {
+					text = shed_text
+				})
+
+				-- Rotate bezel based on azimuth set
+				local bezel_text = rotate_texture(player, bezelHud, "bezel", (360 - instances[pname].azimuth))
 				instances[pname].curr_bezel = bezel_text
 				bezelHud:change(player, "bezel", {
 					text = bezel_text
