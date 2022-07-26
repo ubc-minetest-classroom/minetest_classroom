@@ -26,7 +26,7 @@ function Realm:TeleportPlayer(player)
     player:set_pos(spawn)
 
     self:RegisterPlayer(player)
-    mc_worldManager.updateHud(player)
+    mc_worldManager.UpdateRealmHud(player)
     self:ApplyPrivileges(player)
 
     return true, "Successfully teleported to realm."

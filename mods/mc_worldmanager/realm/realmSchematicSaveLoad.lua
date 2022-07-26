@@ -95,7 +95,7 @@ end
 function Realm:Load_Schematic(schematic, config)
 
     --TODO: Add code to check if the realm is large enough to support the schematic; If not, create a new realm that can;
-    local schematicEndPos = self:LocalToWorldPosition(config.schematicSize)
+    local schematicEndPos = self:LocalToWorldSpace(config.schematicSize)
 
     if (schematicEndPos.x > self.EndPos.x or schematicEndPos.y > self.EndPos.y or schematicEndPos.z > self.EndPos.z) then
         Debug.log("Schematic is too large for realm")

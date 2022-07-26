@@ -606,7 +606,9 @@ commands["coordinates"] = {
                     utmInfo = { easting = tonumber(params[3]), northing = tonumber(params[4]), zone = tonumber(params[5]), utm_is_north = tostring(params[6]) }
                 end
                 playerRealm:set_data("UTMInfo", utmInfo)
+                return true
             end
+            return false, "invalid format."
 
         elseif (operation == "get") then
             local rawPos = minetest.get_player_by_name(name):getpos()
@@ -628,11 +630,22 @@ commands["coordinates"] = {
 
             minetest.chat_send_player(name, "Format: X: " .. tostring(pos.x) .. " Y: " .. tostring(pos.y) .. " Z: " .. tostring(pos.z))
             return true, "command executed succesfully"
+
+        elseif (operation == "hud") then
+            if (mc_worldManager.positionTextFunctions[format] ~= nil) then
+                pmeta:set_string("positionHudMode", format)
+                return true, "enabled position hud element for format " .. format .. "."
+            elseif (format == "nil" or format == "none") then
+                pmeta:set_string("positionHudMode", "")
+                mc_worldManager.RemovePositionHud(minetest.get_player_by_name(name))
+                return true, "disabled position hud element."
+            end
+            return false, "invalid format."
         end
 
-        return false, "unknown sub-command."
+        return false, "unknown command parameters."
     end,
-    help = "realm coordinates <set | get> <format>"
+    help = "realm coordinates <set | get | hud> <format (world, grid, local, utm, latlong)>"
 }
 
 commands["data"] = {

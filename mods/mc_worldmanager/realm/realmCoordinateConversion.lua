@@ -1,7 +1,7 @@
----LocalToWorldPosition
+---LocalToWorldSpace
 ---@param position table coordinates
 ---@return table localspace coordinates.
-function Realm:LocalToWorldPosition(position)
+function Realm:LocalToWorldSpace(position)
     local pos = position
     pos.x = pos.x + self.StartPos.x
     pos.y = pos.y + self.StartPos.y
@@ -9,10 +9,10 @@ function Realm:LocalToWorldPosition(position)
     return pos
 end
 
----WorldToLocalPosition
+---WorldToLocalSpace
 ---@param position table coordinates in worldspace
 ---@return table worldspace coordinates
-function Realm:WorldToLocalPosition(position)
+function Realm:WorldToLocalSpace(position)
     local pos = position
     pos.x = pos.x - self.StartPos.x
     pos.y = pos.y - self.StartPos.y
@@ -20,7 +20,7 @@ function Realm:WorldToLocalPosition(position)
     return pos
 end
 
-function Realm:LocalToUTM(position)
+function Realm:LocalToUTMSpace(position)
     local utmInfo = self:get_data("UTMInfo")
 
     if (utmInfo == nil) then
@@ -31,17 +31,17 @@ function Realm:LocalToUTM(position)
     local z = position.z + utmInfo.northing
 
     return {
-        x = math.floor(x),
-        y = math.floor(position.y),
-        z = math.floor(z)
+        x = x,
+        y = position.y,
+        z = z
     }
 end
 
-function Realm:WorldToUTM(position)
-    return self:LocalToUTM(self:WorldToLocalPosition(position))
+function Realm:WorldToUTMSpace(position)
+    return self:LocalToUTMSpace(self:WorldToLocalSpace(position))
 end
 
-function Realm:UTMToLocal(position)
+function Realm:UTMToLocalSpace(position)
     local utmInfo = self:get_data("utmInfo")
 
     if (utmInfo == nil) then
@@ -84,13 +84,13 @@ function Realm.worldToGridSpace(coords)
     return val
 end
 
-function Realm:WorldToLatLong(position)
+function Realm:WorldToLatLongSpace(position)
     local utmInfo = self:get_data("UTMInfo")
     if (utmInfo == nil) then
         utmInfo = { zone = 0, utm_is_north = true, easting = 0, northing = 0 }
     end
 
-    local position = self:WorldToUTM(position)
+    local position = self:WorldToUTMSpace(position)
 
     local latlongPosition = Realm.UTMToLatLong(position.x, position.z, utmInfo.zone, utmInfo.utm_is_north)
 
