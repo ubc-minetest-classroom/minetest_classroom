@@ -7,9 +7,9 @@ minetest.register_on_punchnode(function(pos, node, player, pointed_thing)
         local node = node.name
 
         if mc_tutorial.record.active[pname] then
-            mc_tutorial.register_tutorial_action(player, action, tool, node)
+            mc_tutorial.register_tutorial_action_table(player, action, {tool = tool, node = node})
         elseif mc_tutorial.active[pname] then
-            mc_tutorial.check_tutorial_progress(player, action, tool, node)
+            mc_tutorial.check_tutorial_progress(player, action, {tool = tool, node = node})
         end
     end
 end)
@@ -21,9 +21,9 @@ minetest.register_on_dignode(function(pos, oldnode, player)
         local tool = player:get_wielded_item():get_name()
         local node = oldnode.name
         if mc_tutorial.record.active[pname] then
-            mc_tutorial.register_tutorial_action(player, action, tool, node)
+            mc_tutorial.register_tutorial_action_table(player, action, {tool = tool, node = node})
         elseif mc_tutorial.active[pname] then
-            mc_tutorial.check_tutorial_progress(player, action, tool, node)
+            mc_tutorial.check_tutorial_progress(player, action, {tool = tool, node = node})
         end
     end
 end)
@@ -35,9 +35,9 @@ minetest.register_on_placenode(function(pos, newnode, player, oldnode, itemstack
         local tool = player:get_wielded_item():get_name()
         local node = newnode.name
         if mc_tutorial.record.active[pname] then
-            mc_tutorial.register_tutorial_action(player, action, tool, node)
+            mc_tutorial.register_tutorial_action_table(player, action, {tool = tool, node = node})
         elseif mc_tutorial.active[pname] then
-            mc_tutorial.check_tutorial_progress(player, action, tool, node)
+            mc_tutorial.check_tutorial_progress(player, action, {tool = tool, node = node})
         end
     end
 end)
@@ -57,7 +57,7 @@ minetest.register_globalstep(function(dtime)
 
                 if wield ~= "mc_tutorial:recording_tool" then
                     minetest.chat_send_player(pname, "[Tutorial] Wielded item "..wield.." recorded.")
-                    mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.WIELD, wield)
+                    mc_tutorial.register_tutorial_action_table(player, mc_tutorial.ACTION.WIELD, {tool = wield})
                     mc_tutorial.record.listener.wield[pname] = nil
                 end
             end
@@ -74,7 +74,7 @@ minetest.register_globalstep(function(dtime)
                     end
                     local msg = "[Tutorial] Keystroke "..table.concat(keys, " + ").." recorded."
                     minetest.chat_send_player(pname, msg)
-                    mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.KEY, nil, nil, nil, nil, keys)
+                    mc_tutorial.register_tutorial_action_table(player, mc_tutorial.ACTION.KEY, {key = keys})
                     mc_tutorial.record.listener.key[pname] = nil
                 end
             end

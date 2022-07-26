@@ -23,9 +23,22 @@ function mc_tutorial.get_temp_shell()
     }
 end
 
+--- For compatibility
+--- @deprecated
 function mc_tutorial.register_tutorial_action(player, action, tool, node, pos, dir, key)
-    -- Every entry must have an action
-    if not action then
+    local action_table = {
+        tool = tool or nil,
+        node = node or nil,
+        pos = pos or nil,
+        dir = dir or nil,
+        key = key or nil,
+    }
+    return mc_tutorial.register_tutorial_action_table(player, action, action_table)
+end
+
+function mc_tutorial.register_tutorial_action_table(player, action, action_table)
+    -- Every entry must have an action and an action table
+    if not action or type(action_table) ~= "table" then
         return false
     end
     local pname = player:get_player_name()
@@ -35,15 +48,8 @@ function mc_tutorial.register_tutorial_action(player, action, tool, node, pos, d
             -- This is the first entry for the tutorial, apply default values
             mc_tutorial.record.temp[pname] = mc_tutorial.get_temp_shell()
         end
-        -- Populate the sequence
-        table.insert(mc_tutorial.record.temp[pname].sequence, {
-            action = action,
-            tool = tool or nil,
-            node = node or nil,
-            pos = pos or nil,
-            dir = dir or nil,
-            key = key or nil
-        })
+        action_table["action"] = action
+        table.insert(mc_tutorial.record.temp[pname].sequence, action_table)
         mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length + 1
     end
 end
