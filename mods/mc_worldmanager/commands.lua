@@ -180,7 +180,7 @@ commands["gen"] = {
 
         local seed = tonumber(params[5])
         if (seed == nil) then
-            seed = math.random(1, 1000)
+            seed = math.random(1, 999999999)
         end
 
         local seaLevel = requestedRealm.StartPos.y
@@ -201,7 +201,9 @@ commands["gen"] = {
         Debug.log("Creating barrier...")
         requestedRealm:CreateBarriersFast()
 
-        return true
+
+
+        return true, "Generated terrain in realm: " .. tostring(realmID) .. " using seed " .. tostring(seed)
     end,
     help = "realm gen <list> | (<realmID> <heightGenKey> [<terrainDecKey>] ([<seaLevel>] [<seed>]) - Generate a realm", }
 
