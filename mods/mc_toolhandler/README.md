@@ -21,6 +21,7 @@ Registers `tool` to be managed by `mc_toolhandler`
       allow_take = false          -- Whether the tool is allowed to be taken out of the player inventory or not
     }
   ```
+  
 - Usage:
 
   ```lua
