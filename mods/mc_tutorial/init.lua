@@ -1,5 +1,4 @@
 -- TODO:
------ refactor mod/table name to prevent potential mod naming conflicts
 ----- add tutorial progress and completion to player meta
 ----- get/set pdata.tutorials.activeTutorial from player meta
 ----- make tutorials dependent on other tutorials (sequence of tutorials)
@@ -39,6 +38,8 @@ mc_tutorial = {
         POS = 9
     }
 }
+-- local constants
+local RW_LIST, RW_SELECT = 1, 2
 
 local function get_context(player)
     local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name()) or ""
@@ -137,15 +138,18 @@ formspec_version[6]
 size[14.2,10]
 label[0.4,0.6;Available items/privileges to reward]
 label[7.5,0.6;Selected rewards]
-textlist[0.4,0.8;6.3,8.8;reward_list;;1;false]
+textlist[0.4,0.8;6.3,6;reward_list;;1;false]
 textlist[7.5,0.8;6.3,6;reward_selection;;1;false]
 image_button[6.7,0.8;0.8,3;blank.png;reward_add;-->;false;true]
 image_button[6.7,3.8;0.8,3;blank.png;button_delete;<--;false;true]
-field[7,7.4;4.9,0.8;reward_quantity;Quantity;1]
+field[7.5,7.4;4.4,0.8;reward_quantity;Quantity;1]
 button[11.9,7.4;1.9,0.8;reward_quantity_update;Update]
-field[7,8.8;6.8,0.8;reward_search;Search for items/privileges/nodes;]
+field[7.5,8.8;6.3,0.8;reward_search;Search for items/privileges/nodes;]
 image_button[12.2,8.8;0.8,0.8;blank.png;reward_search_go;Go!;false;false]
 image_button[13,8.8;0.8,0.8;blank.png;reward_search_x;X;false;false]
+image[0.4,7.5;2.1,2.1;blank.png]
+textarea[2.6,7.4;4.2,2.2;;;This is the info text! Lorem ipsum dolor\, sit amet.]
+label[0.4,7.2;Selected reward]
 
 DEPENDENCIES TAB:
 formspec_version[6]
@@ -192,14 +196,16 @@ function mc_tutorial.show_record_fs(player)
                     return "press key"..(event.key and (#event.key > 1 and "s " or " ")..table.concat(event.key, " + ") or " [?]")
                 end,
                 [mc_tutorial.ACTION.LOOK_YAW] = function(event)
-                    return "look horizontally at "..(event.dir or "[?]")
+                    return "look at yaw (horizontal) "..(event.dir and math.deg(event.dir).."°" or "[?]")
                 end,
                 [mc_tutorial.ACTION.LOOK_PITCH] = function(event)
-                    return "look vertically at "..(event.dir or "[?]")
+                    return "look at pitch (vertical) "..(event.dir and math.deg(event.dir).."°" or "[?]")
                 end,
                 [mc_tutorial.ACTION.LOOK_DIR] = function(event)
                     -- directional vector: simplify representation?
-                    return "look at direction "..(event.dir and event.dir.x or "[?]") -- temp fix
+                    local yaw_vect = event.dir and vector.new(event.dir.x, 0, event.dir.z)
+                    local yaw = math.deg(vector.angle(vector.new(0, 0, 1), yaw_vect or vector.new(0, 0, 1)))
+                    return "look in direction "..(event.dir and "(yaw = "..(math.sign(yaw_vect.x) == -1 and (360 - yaw) or yaw).."°, pitch = "..math.sign(event.dir.y)*math.deg(vector.angle(event.dir, yaw_vect)).."°)" or "[?]")
                 end,
                 [mc_tutorial.ACTION.POS] = function(event)
                     return "go to position "..(event.pos and "(x = "..event.pos.x..", y = "..event.pos.y..", z = "..event.pos.z..")" or "[?]")
@@ -251,7 +257,7 @@ function mc_tutorial.show_record_fs(player)
                     "button_exit[0.4,8.8;13.4,0.8;finish;Finish and save]",
                     "tooltip[title;Title of tutorial, will be listed in the tutorial book]",
                     "tooltip[message;Message sent to chat when the player completes the tutorial]",
-                    "tooltip[description;This description will be displayed in the tutorial book;]",
+                    "tooltip[description;This description will be displayed in the tutorial book]",
                 }
             end,
             ["2"] = function() -- EVENTS
@@ -280,11 +286,17 @@ function mc_tutorial.show_record_fs(player)
             end,
             ["3"] = function()
                 -- TODO: limit rewards to items tutorial creator has access to in order to limit abuse?
+                local pattern = "(.-)"..string.gsub(minetest.formspec_escape("["), "%[", "%%%[").."(%w)"..string.gsub(minetest.formspec_escape("]"), "%]", "%%%]").."(.*)"
+                context.reward_selected = context.reward_selected or {[RW_LIST] = 1, [RW_SELECT] = 1, active = RW_LIST}
+                local selection = context.reward_selected[context.reward_selected["active"]]
+                local sel_info = context.reward_selected["active"] == RW_LIST and context.rewards[selection] or context.reward_selected["active"] == RW_SELECT and context.selected_rewards[selection] or ""
+                local col, type_id, item = string.match(sel_info or "", pattern)
+
                 return { -- REWARDS
                     "label[0.4,0.6;Available rewards]",
                     "label[7.5,0.6;Selected rewards]",
-                    "textlist[0.4,0.8;6.3,8.8;reward_list;", table.concat(context.rewards, ","), ";1;false]",
-                    "textlist[7.5,0.8;6.3,6;reward_selection;", table.concat(context.selected_rewards, ","), ";1;false]",
+                    "textlist[0.4,0.8;6.3,6;reward_list;", table.concat(context.rewards, ","), ";", context.reward_selected and context.reward_selected[1] or 1, ";false]",
+                    "textlist[7.5,0.8;6.3,6;reward_selection;", table.concat(context.selected_rewards, ","), ";", context.reward_selected and context.reward_selected[2] or 1, ";false]",
                     "image_button[6.7,0.8;0.8,3;mc_tutorial_reward_add.png;reward_add;;false;true]",
                     "image_button[6.7,3.8;0.8,3;mc_tutorial_reward_delete.png;reward_delete;;false;true]",
                     "field[7,7.4;4.9,0.8;reward_quantity;Quantity;1]",
@@ -292,6 +304,9 @@ function mc_tutorial.show_record_fs(player)
                     "field[7,8.8;6.8,0.8;reward_search;Search for items/privileges/nodes;]",
                     "image_button[12.2,8.8;0.8,0.8;mc_tutorial_search.png;reward_search_go;;false;false]",
                     "image_button[13,8.8;0.8,0.8;mc_tutorial_cancel.png;reward_search_x;;false;false]",
+                    "label[0.4,7.2;Selected reward]",
+                    type_id and type_id ~= "P" and "item_" or "", "image[0.4,7.5;2.1,2.1;", type_id and (type_id ~= "P" and item and mc_helpers.trim(item) or "mc_tutorial_tutorialbook.png") or "mc_tutorial_cancel.png", "]",
+                    "textarea[2.6,7.4;4.2,2.2;;;", item and minetest.formspec_escape(mc_helpers.trim(item)).."\n".."Add text here" or "No reward selected!", "]",
                     "tooltip[reward_add;Add reward]",
                     "tooltip[reward_delete;Remove reward]",
                     "tooltip[reward_search_go;Search]",
@@ -631,7 +646,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
         if fields.getpos then
             local pos = player:get_pos()
-            local reg_success = mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.POS, nil, nil, pos)
+            local reg_success = mc_tutorial.register_tutorial_action_table(player, mc_tutorial.ACTION.POS, {pos = pos})
             if reg_success ~= false then
                 minetest.chat_send_player(pname, "[Tutorial] Your current position was recorded. Continue to record new actions or left-click the tool to end the recording.")
             else
@@ -641,7 +656,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         
         if fields.getlookdir then
             local dir = player:get_look_dir()
-            local reg_success = mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.LOOK_DIR, nil, nil, nil, dir)
+            local reg_success = mc_tutorial.register_tutorial_action_table(player, mc_tutorial.ACTION.LOOK_DIR, {dir = dir})
             if reg_success ~= false then
                 minetest.chat_send_player(pname, "[Tutorial] Your current look direction was recorded. Continue to record new actions or left-click the tool to end the recording.")
             else
@@ -651,7 +666,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
         if fields.lookvertical then
             local pitch = player:get_look_vertical()
-            local reg_success = mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.LOOK_PITCH, nil, nil, nil, pitch)
+            local reg_success = mc_tutorial.register_tutorial_action_table(player, mc_tutorial.ACTION.LOOK_PITCH, {dir = pitch})
             if reg_success ~= false then
                 minetest.chat_send_player(pname, "[Tutorial] Your current look pitch was recorded. Continue to record new actions or left-click the tool to end the recording.")
             else
@@ -661,7 +676,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
         if fields.lookhorizontal then
             local yaw = player:get_look_horizontal()
-            local reg_success = mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.LOOK_YAW, nil, nil, nil, yaw)
+            local reg_success = mc_tutorial.register_tutorial_action_table(player, mc_tutorial.ACTION.LOOK_YAW, {dir = yaw})
             if reg_success ~= false then
                 minetest.chat_send_player(pname, "[Tutorial] Your current look yaw was recorded. Continue to record new actions or left-click the tool to end the recording.")
             else
@@ -699,6 +714,29 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             local event = minetest.explode_textlist_event(fields.eventlist)
             if event.type == "CHG" then
                 context.event_selected = event.index
+                save_context(player, context)
+            end
+        end
+        if fields.reward_list then
+            local event = minetest.explode_textlist_event(fields.reward_list)
+            if event.type == "CHG" then
+                context.reward_selected = context.reward_selected or {}
+                context.reward_selected[RW_LIST] = event.index
+                context.reward_selected["active"] = RW_LIST
+
+                save_context(player, context)
+                mc_tutorial.show_record_fs(player)
+            end
+        end
+        if fields.reward_selection then
+            local event = minetest.explode_textlist_event(fields.reward_selection)
+            if event.type == "CHG" then
+                context.reward_selected = context.reward_selected or {}
+                context.reward_selected[RW_SELECT] = event.index
+                context.reward_selected["active"] = RW_SELECT
+
+                save_context(player, context)
+                mc_tutorial.show_record_fs(player)
             end
         end
         --[[if fields.givetool then
