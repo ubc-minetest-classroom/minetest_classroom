@@ -73,14 +73,10 @@ end
 ---@param coords table coordinates in worldspace
 ---@return table coordinates in gridspace.
 function Realm.worldToGridSpace(coords)
-    Debug.logCoords(coords, "worldToGridSpaceStart")
-
     local val = { x = 0, y = 0, z = 0 }
     val.x = math.ceil((tonumber(coords.x) + Realm.const.worldSize) / 80)
     val.y = math.ceil((tonumber(coords.y) + Realm.const.worldSize) / 80)
     val.z = math.ceil((tonumber(coords.z) + Realm.const.worldSize) / 80)
-
-    Debug.logCoords(val, "worldToGridSpaceEnd")
     return val
 end
 

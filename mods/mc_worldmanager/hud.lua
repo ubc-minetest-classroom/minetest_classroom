@@ -42,19 +42,19 @@ end
 local positionText = {}
 
 positionText["latlong"] = function(player, realm)
-    local pos = realm:WorldToLatLong(player:get_pos())
+    local pos = realm:WorldToLatLongSpace(player:get_pos())
     local text = "Lat: " .. pos.x .. " Long: " .. pos.z
     return text
 end
 
 positionText["UTM"] = function(player, realm)
-    local pos = realm:WorldToUTM(player:get_pos())
+    local pos = realm:WorldToUTMSpace(player:get_pos())
     local text = "E: " .. math.ceil(pos.x) .. " N: " .. math.ceil(pos.z)
     return text
 end
 
 positionText["local"] = function(player, realm)
-    local pos = realm:WorldToLocal(player:get_pos())
+    local pos = realm:WorldToLocalSpace(player:get_pos())
     local text = "X: " .. math.ceil(pos.x) .. " Y: " .. math.ceil(pos.y) .. " Z: " .. math.ceil(pos.z)
     return text
 end
@@ -66,7 +66,7 @@ positionText["world"] = function(player, realm)
 end
 
 positionText["grid"] = function(player, realm)
-    local pos = realm:worldToGridSpace(player:get_pos())
+    local pos = realm.worldToGridSpace(player:get_pos())
     local text = "X: " .. pos.x .. " Y: " .. pos.y .. " Z: " .. pos.z
     return text
 end
