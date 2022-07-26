@@ -67,6 +67,16 @@ function Realm:Save_Schematic(schematicName, author, mode)
     settings:set("schematic_size_y", self.EndPos.y - self.StartPos.y)
     settings:set("schematic_size_z", self.EndPos.z - self.StartPos.z)
 
+
+    local utmInfo = self:get_data("UTMInfo")
+
+    if (utmInfo ~= nil) then
+        settings:set("utm_zone", utmInfo.zone)
+        settings:set("utm_easting", utmInfo.easting)
+        settings:set("utm_northing", utmInfo.northing)
+    end
+
+
     local settingsWrote = settings:write()
 
     if (settingsWrote == false) then
@@ -84,7 +94,12 @@ end
 ---@return boolean whether the schematic fit entirely in the realm when loading.
 function Realm:Load_Schematic(schematic, config)
 
+
     local schematicStartPos = self:LocalToWorldPosition(config.startOffset)
+
+    --TODO: Add code to check if the realm is large enough to support the schematic; If not, create a new realm that can;
+    local schematicEndPos = self:LocalToWorldSpace(config.schematicSize)
+
 
     local schematicEndPos = self:LocalToWorldPosition(config.schematicSize)
     if (schematicEndPos.x > self.EndPos.x or schematicEndPos.y > self.EndPos.y or schematicEndPos.z > self.EndPos.z) then
@@ -113,6 +128,9 @@ function Realm:Load_Schematic(schematic, config)
         self.EndPos = schematicEndPos
     end
 
+    if (config.utmInfo ~= nil) then
+        self:set_data("UTMInfo", config.utmInfo)
+    end
 
 
 
@@ -179,6 +197,7 @@ function Realm:Load_Schematic(schematic, config)
         if (config.onRealmDeleteFunction ~= nil) then
             table.insert(self.RealmDeleteTable, { tableName = config.tableName, functionName = config.onRealmDeleteFunction })
         end
+
     end
 
     self:UpdateSpawn(config.spawnPoint)
