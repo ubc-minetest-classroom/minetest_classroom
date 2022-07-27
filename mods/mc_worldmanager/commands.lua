@@ -180,7 +180,7 @@ commands["gen"] = {
 
         local seed = tonumber(params[5])
         if (seed == nil) then
-            seed = math.random(1, 1000)
+            seed = math.random(1, 999999999)
         end
 
         local seaLevel = requestedRealm.StartPos.y
@@ -201,7 +201,9 @@ commands["gen"] = {
         Debug.log("Creating barrier...")
         requestedRealm:CreateBarriersFast()
 
-        return true
+
+
+        return true, "Generated terrain in realm: " .. tostring(realmID) .. " using seed " .. tostring(seed)
     end,
     help = "realm gen <list> | (<realmID> <heightGenKey> [<terrainDecKey>] ([<seaLevel>] [<seed>]) - Generate a realm", }
 
@@ -277,14 +279,11 @@ commands["schematic"] = {
             local schemName = tostring(params[2])
             Debug.log(schemName)
 
-
             local subparam = tostring(params[3])
 
             if (subparam == "" or subparam == "nil") then
                 subparam = "old"
             end
-
-
 
             local path = requestedRealm:Save_Schematic(schemName, name, subparam)
             return true, "Saved realm with ID " .. realmID .. " at path: " .. path
@@ -594,6 +593,89 @@ commands["blocks"] = {
     end,
     help = "realm blocks <block> <count> (<instanced: true | false> | <realmID>) <temporary: true | false> <realmName> <schematic>"
 
+}
+
+commands["coordinates"] = {
+    func = function(name, params)
+        local operation = tostring(params[1])
+        local format = tostring(params[2])
+
+        local playerRealm = Realm.GetRealmFromPlayer(minetest.get_player_by_name(name))
+
+        if (operation == "set") then
+            if (format == "UTM") then
+                if (utmInfo == nil) then
+                    utmInfo = { easting = tonumber(params[3]), northing = tonumber(params[4]), zone = tonumber(params[5]), utm_is_north = tostring(params[6]) }
+                end
+                playerRealm:set_data("UTMInfo", utmInfo)
+                return true
+            end
+            return false, "invalid format."
+
+        elseif (operation == "get") then
+            local rawPos = minetest.get_player_by_name(name):getpos()
+            local pos
+
+            if (format == "world") then
+                pos = rawPos
+            elseif (format == "local" or format == "nil") then
+                pos = playerRealm.WorldToLocalPosition(rawPos)
+            elseif (format == "grid") then
+                pos = Realm.worldToGridSpace(rawPos)
+            elseif (format == "utm") then
+                pos = playerRealm:WorldToUTM(rawPos)
+            elseif (format == "latlong") then
+                pos = playerRealm:WorldToLatLong(rawPos)
+            else
+                return false, "unknown format: " .. tostring(format)
+            end
+
+            minetest.chat_send_player(name, "Format: X: " .. tostring(pos.x) .. " Y: " .. tostring(pos.y) .. " Z: " .. tostring(pos.z))
+            return true, "command executed succesfully"
+
+        elseif (operation == "hud") then
+            if (mc_worldManager.positionTextFunctions[format] ~= nil) then
+                pmeta:set_string("positionHudMode", format)
+                return true, "enabled position hud element for format " .. format .. "."
+            elseif (format == "nil" or format == "none") then
+                pmeta:set_string("positionHudMode", "")
+                mc_worldManager.RemovePositionHud(minetest.get_player_by_name(name))
+                return true, "disabled position hud element."
+            end
+            return false, "invalid format."
+        end
+
+        return false, "unknown command parameters."
+    end,
+    help = "realm coordinates <set | get | hud> <format (world, grid, local, utm, latlong)>"
+}
+
+commands["data"] = {
+    func = function(name, params)
+        local operation = tostring(params[2])
+        local realmID = tonumber(params[1])
+        local realm = Realm.GetRealm(realmID)
+        if (realm == nil) then
+            return false, "realm " .. tostring(realmID) .. " does not exist."
+        end
+        if (operation == "get") then
+            local data = realm:get_data(tostring(params[3]))
+            if (data == nil) then
+                return false, "data " .. tostring(params[3]) .. " does not exist."
+            end
+            minetest.chat_send_player(name, "Data: " .. tostring(data))
+            return true, "command executed succesfully"
+        elseif (operation == "set") then
+            realm:set_data(tostring(params[3]), tostring(params[4]))
+            return true, "command executed succesfully"
+        elseif (operation == "dump") then
+            local data = realm.MetaStorage
+            minetest.chat_send_player(name, "Data: " .. tostring(minetest.serialize(data)))
+            return true, "command executed succesfully"
+        end
+        return false, "unknown sub-command."
+    end,
+    help = "realm data <get | set> <realmID> <dataName> <dataValue>"
 }
 
 minetest.register_chatcommand("realm", {
