@@ -31,7 +31,7 @@ Registers `tool` to be managed by `mc_toolhandler`
 - Returns:
   - *`boolean`*: `true` if the tool was successfully registered, `false` otherwise
 
-### `mc_toolhandler.register_tool_group_manager(tools, options)  -->  boolean` (WIP)
+### `mc_toolhandler.register_group_manager(tools, options)  -->  boolean`
 
 Registers a group of similar tools to be managed by `mc_toolhandler` as if they were one tool
 
@@ -50,7 +50,7 @@ Registers a group of similar tools to be managed by `mc_toolhandler` as if they 
 - Usage:
 
   ```lua
-  mc_toolhandler.register_tool_group_manager({"mod:tool", "mod:different_tool", "another_mod:other_tool"}, options)
+  mc_toolhandler.register_group_manager({"mod:tool", "mod:different_tool", "another_mod:other_tool"}, options)
   ```
 
 - Returns:
