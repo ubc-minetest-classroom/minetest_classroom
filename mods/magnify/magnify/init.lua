@@ -296,7 +296,7 @@ sfinv.register_page("magnify:compendium", {
                 formtable,size = get_expanded_species_formspec(ref)
             end
                 
-            minetest.sound_play("page_turn", { gain = 1.0, pitch = 1.0,}, true)
+            minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
 
             if not formtable then
                 formtable = "label[0,0;Uh oh, something went wrong...]button[0,0.5;5,0.6;back;Back]" -- fallback
