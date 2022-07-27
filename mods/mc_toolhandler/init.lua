@@ -1,9 +1,21 @@
 mc_toolhandler = {
     path = minetest.get_modpath("mc_toolhandler"),
     reg_tools = {}, 
+    reg_groups = {},
     reg_group_tools = {},
+    next_group = 1,
     default_inv = (minetest.get_modpath("mc_toolmenu") ~= nil and mc_toolmenu.tool_inv) or "main"
 }
+
+local function get_tools_in_group(group)
+    local output = {}
+    for tool, tool_group in pairs(mc_toolhandler.reg_group_tools) do
+        if group == tool_group then
+            table.insert(output, tool)
+        end
+    end
+    return output
+end
 
 -- Returns name of list item is in, if it is in player's inventory
 local function get_player_item_location(player, itemstack)
@@ -11,13 +23,13 @@ local function get_player_item_location(player, itemstack)
     return mc_helpers.getInventoryItemLocation(inv, itemstack)
 end
 
--- Returns name of list and index of first item with mc_tool_group in player's inventory, if an item with mc_tool_group is in player's inventory
-local function get_player_item_group_location(player, mc_tool_group)
+-- Returns name of list and index of first item in group in player's inventory, if an item in group is in player's inventory
+local function get_player_item_group_location(player, group)
     local inv = player:get_inventory()
     for list,data in pairs(inv:get_lists()) do
-        for i,item in pairs(data) do
-            if item:get_definition()._mc_tool_group == mc_tool_group then
-                return list,i
+        for _,tool in pairs(get_tools_in_group(group)) do
+            if inv:contains_item(list, ItemStack(tool)) then
+                return list, tool
             end
         end
     end
@@ -43,13 +55,19 @@ local function player_has_multiple_copies(player, itemstack)
     return false
 end
 
--- Returns true if player has 2 of more items with mc_tool_group, false otherwise
-local function player_has_multiple_group_copies(player, mc_tool_group)
+-- Returns true if player has 2 of more items in group, false otherwise
+local function player_has_multiple_group_copies(player, group)
     local inv = player:get_inventory()
     local count = 0
-    for list,data in pairs(inv:get_lists()) do
-        for i,item in pairs(data) do
-            if item:get_definition()._mc_tool_group == mc_tool_group then
+    minetest.log(minetest.serialize(get_tools_in_group(group)))
+    for _,tool in pairs(get_tools_in_group(group)) do
+        local stack = ItemStack(tool)
+        local stack_2 = ItemStack(tool)
+        stack_2:set_count(2)
+        for list,data in pairs(inv:get_lists()) do
+            if inv:contains_item(list, stack_2) then
+                return true
+            elseif inv:contains_item(list, stack) then
                 count = count + 1
                 if count >= 2 then
                     return true
@@ -57,7 +75,6 @@ local function player_has_multiple_group_copies(player, mc_tool_group)
             end
         end
     end
-    return false
 end
 
 -- Removes all copies of itemstack from player's inventory, except the one at i_0 in list_0
@@ -75,11 +92,11 @@ local function remove_item_copies_except(player, itemstack, i_0, list_0)
 end
 
 -- Removes all items in group from player's inventory, except the one at i_0 in list_0
-local function remove_item_group_copies_except(player, mc_tool_group, i_0, list_0)
+local function remove_item_group_copies_except(player, group, i_0, list_0)
     local inv = player:get_inventory()
     for list,data in pairs(inv:get_lists()) do
         for i,item in pairs(data) do
-            if item:get_definition()._mc_tool_group == mc_tool_group and (i ~= i_0 or list ~= list_0) then
+            if mc_toolhandler.reg_group_tools[item:get_name()] == group and (i ~= i_0 or list ~= list_0) then
                 inv:set_stack(list, i, ItemStack(nil))
             end
         end
@@ -189,60 +206,81 @@ function mc_toolhandler.register_tool_manager(tool, options)
 end
 
 --- @public
---- Registers a tool to be managed by mc_toolhandler
---- @param group Table of itemstrings of tools to be managed
---- @param default_tool Itemstring of tool group member to be considered the representative tool for the group, defaults to first element in tools
---- @param privs Table of privileges necessary to any of the tool group members, defaults to {teacher = true}
---[[function mc_toolhandler.register_tool_group_manager(tools, default_tool, privs)
+--- Registers a group of similar tools to be managed by `mc_toolhandler` as if they were one tool
+--- @param tools Table of itemstrings of tools to be managed
+--- @param options Table of tool options
+--- @see README.md > API > mc_toolhandler.register_tool_group_manager
+function mc_toolhandler.register_tool_group_manager(tools, options)
     if type(tools) ~= "table" or not next(tools) then
         return false
     end
 
-    for i,tool in pairs(tools) do
+    local function get_first_v(table)
+        local k,v = next(table)
+        return v
+    end
+
+    -- Set default options
+    options.privs = options.privs or {teacher = true}
+    options.default_tool = options.default_tool or tools[1] or get_first_v(tools)
+    options.allow_take = options.allow_take or false
+
+    -- Get next available group
+    local group = mc_toolhandler.next_group
+    
+    for _,tool in pairs(tools) do
         -- Give the tool to any player who joins with adequate privileges or take it away if they do not have them
         minetest.register_on_joinplayer(function(player)
-            local list,i = get_player_item_group_location(player, data._mc_tool_group)
+            local list, item_name = get_player_item_group_location(player, group)
 
-            if not list and mc_helpers.checkPrivs(player, data._mc_tool_privs) then
+            if not list and mc_helpers.checkPrivs(player, options.privs) then
                 -- Player should have the tool but does not: give one copy
-                player:get_inventory():add_item(mc_toolhandler.default_inv, tool_name)
+                player:get_inventory():add_item(mc_toolhandler.default_inv, options.default_tool)
                 if mc_toolhandler.default_inv ~= "main" then
-                    minetest.chat_send_player(player:get_player_name(), "New tool added to toolbox: "..tool_name)
+                    minetest.chat_send_player(player:get_player_name(), "New tool added to toolbox: "..options.default_tool)
                 end
-            elseif not mc_helpers.checkPrivs(player, data._mc_tool_privs) then
+            elseif not mc_helpers.checkPrivs(player, options.privs) then
                 -- Player has the tool but should not: remove all copies
                 local inv = player:get_inventory()
                 while list do
-                    inv:set_stack(list, i, ItemStack(nil))
-                    list,i = get_player_item_group_location(player, data._mc_tool_group)
+                    inv:remove_item(list, item_name)
+                    list, item_name = get_player_item_group_location(player, group)
                 end
             else
                 -- Make sure player only has one copy of the tool
-                if player_has_multiple_group_copies(player, data._mc_tool_group) then
-                    remove_item_group_copies_except(player, stack, i, list)
+                if player_has_multiple_group_copies(player, group) then
+                    for i,item in pairs(player:get_inventory():get_list(list)) do
+                        if item:get_name() == item_name then
+                            remove_item_group_copies_except(player, group, i, list)
+                        end
+                    end
                 end
             end
         end)
         -- Give the tool to any player who is granted adequate privileges
         minetest.register_on_priv_grant(function(name, granter, priv)
             -- Check if priv has an effect on the privileges needed for the tool
-            if name == nil or not mc_helpers.tableHas(data._mc_tool_privs, priv) or not minetest.get_player_by_name(name) then
+            if name == nil or not mc_helpers.tableHas(options.privs, priv) or not minetest.get_player_by_name(name) then
                 return true -- skip this callback, continue to next callback
             end
     
             local player = minetest.get_player_by_name(name)
-            local list,i = get_player_item_group_location(player, data._mc_tool_group)
+            local list, item_name = get_player_item_group_location(player, group)
 
-            if mc_helpers.checkPrivs(player, data._mc_tool_privs) then
+            if mc_helpers.checkPrivs(player, options.privs) then
                 if not list then
                     -- Player should have the tool but does not: give one copy
-                    player:get_inventory():add_item(mc_toolhandler.default_inv, tool_name)
+                    player:get_inventory():add_item(mc_toolhandler.default_inv, options.default_tool)
                     if mc_toolhandler.default_inv ~= "main" then
-                        minetest.chat_send_player(name, "New tool added to toolbox: "..tool_name)
+                        minetest.chat_send_player(name, "New tool added to toolbox: "..options.default_tool)
                     end
-                elseif player_has_multiple_group_copies(player, data._mc_tool_group) then
+                elseif player_has_multiple_group_copies(player, group) then
                     -- Player has multiple copies of the tool already: remove all but one
-                    remove_item_group_copies_except(player, stack, i, list)
+                    for i,item in pairs(player:get_inventory():get_list(list)) do
+                        if item:get_name() == item_name then
+                            remove_item_group_copies_except(player, group, i, list)
+                        end
+                    end
                 end
             end
             return true -- continue to next callback
@@ -250,25 +288,32 @@ end
         -- Take the tool away from anyone who is revoked privileges and no longer has adequate ones
         minetest.register_on_priv_revoke(function(name, revoker, priv)
             -- Check if priv has an effect on the privileges needed for the tool
-            if name == nil or not mc_helpers.tableHas(data._mc_tool_privs, priv) or not minetest.get_player_by_name(name) then
+            if name == nil or not mc_helpers.tableHas(options.privs, priv) or not minetest.get_player_by_name(name) then
                 return true -- skip this callback, continue to next callback
             end
     
             local player = minetest.get_player_by_name(name)
-            local list,i = get_player_item_group_location(player, data._mc_tool_group)
+            local list, item_name = get_player_item_group_location(player, group)
     
-            if list and not mc_helpers.checkPrivs(player, data._mc_tool_privs) then
+            if list and not mc_helpers.checkPrivs(player, options.privs) then
                 -- Player has the tool but should not: remove all copies
                 local inv = player:get_inventory()
                 while list do
-                    inv:set_stack(list, i, ItemStack(nil))
-                    list,i = get_player_item_group_location(player, data._mc_tool_group)
+                    inv:remove_item(list, tool)
+                    list, item_name = get_player_item_group_location(player, group)
                 end
             end
             return true -- continue to next callback
         end)
+
+        mc_toolhandler.reg_group_tools[tool] = group
     end
-end]]
+
+    -- Save options to mod table for future reference
+    mc_toolhandler.reg_groups[group] = options
+    mc_toolhandler.next_group = group + 1
+    return true
+end
 
 --- Abstract function for checking if a player's inventory contains a tool, and if they have the necessary privileges to use it
 --- @param player Player to check
@@ -317,7 +362,7 @@ end
 -- Removes duplicate copies of registered items and items the player does not have privileges to use
 local function remove_prohibited_items(player, stack, i, list)
     tool_perm_check_abstract(player, stack, {
-        t_np = function(player, stack, i, list)
+        t_np = function(player, stack, list)
             -- Player should not have the tool: remove all copies
             local inv = player:get_inventory()
             if not list then
@@ -328,34 +373,41 @@ local function remove_prohibited_items(player, stack, i, list)
                 list = get_player_item_location(player, stack)
             end
         end,
-        t_np_p = {player, stack, i, list},
+        t_np_p = {player, stack, list},
 
         t_pm = remove_item_copies_except,
         t_pm_p = {player, stack, i, list},
 
-        g_np = function(player, stack, i, list)
+        g_np = function(player, stack, list)
             -- Player does not have privileges to use item: remove all copies
             local inv = player:get_inventory()
-            if not list then
-                list,i = get_player_item_location(player, stack)
+            if not list or not item_name then
+                list, item_name = get_player_item_group_location(player, stack)
             end
             while list do
-                inv:set_stack(list, i, ItemStack(nil))
-                list,i = get_player_item_group_location(player, data._mc_tool_group)
+                inv:remove_item(list, item_name)
+                list, item_name = get_player_item_group_location(player, group)
             end
         end,
-        g_np_p = {player, stack, i, list},
+        g_np_p = {player, stack, list},
 
         g_pm = remove_item_group_copies_except,
-        g_pm_p = {player, stack:get_definition()._mc_tool_group, i, list}
+        g_pm_p = {player, group, i, list}
     })
 end
 
 -- Register callbacks for preventing specified tools from being taken
 minetest.register_allow_player_inventory_action(function(player, action, inventory, inv_info)
-    if action == "take" and mc_toolhandler.reg_tools[inv_info.stack:get_name()] then
-        if not mc_toolhandler.reg_tools[inv_info.stack:get_name()]["allow_take"] then
-            return 0 -- do not allow item to be taken
+    if action == "take" then
+        local tool = inv_info.stack:get_name()
+        if mc_toolhandler.reg_tools[tool] then
+            if not mc_toolhandler.reg_tools[tool]["allow_take"] then
+                return 0 -- do not allow item to be taken
+            end
+        elseif mc_toolhandler.reg_group_tools[tool] then
+            if not mc_toolhandler.reg_groups[mc_toolhandler.reg_group_tools[tool]]["allow_take"] then
+                return 0 -- do not allow item to be taken
+            end
         end
     end
     return -- ignore
@@ -463,17 +515,15 @@ function mc_toolhandler.create_tool_inventory(player)
     -- clear existing store list
     store_inv:set_list(list_name, {})
     local tools_to_check = mc_helpers.shallowCopy(mc_toolhandler.reg_tools)
-    for k,v in pairs(mc_toolhandler.reg_group_tools) do
-        tools_to_check[k] = v
+    for id,options in pairs(mc_toolhandler.reg_groups) do
+        tools_to_check[options.default_tool] = {privs = options.privs, allow_take = options.allow_take}
     end
     local count = 0
 
     -- add items to store
     for item,options in pairs(tools_to_check) do
         local stack = ItemStack(item)
-        minetest.log(minetest.serialize(item))
-        minetest.log(minetest.serialize(mc_toolhandler.reg_tools))
-        if stack and mc_helpers.checkPrivs(player, mc_toolhandler.reg_tools[item]["privs"]) then
+        if stack and mc_helpers.checkPrivs(player, options["privs"]) then
             count = count + 1
             store_inv:set_size(list_name, count)
             store_inv:add_item(list_name, stack)
