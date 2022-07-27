@@ -303,14 +303,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			-- Append list of teachers in-game
 			local teachers = ""
 			for teacher in pairs(minetest_classroom.mc_students.teachers) do
-				local teachers = teachers .. teacher .. ", "
+				teachers = teachers .. teacher .. ", "
 			end
 
-			if teachers ~= "" then
+			if #minetest_classroom.mc_students.teachers then
 				local msg = '[REPORT] ' .. msg .. " (teachers online: " .. teachers:sub(1, -3) .. ")"
 				-- Send report to any teacher currently connected
 				for teacher in pairs(minetest_classroom.mc_students.teachers) do
 					minetest.chat_send_player(teacher, minetest.colorize("#FF00FF", msg))
+					minetest.sound_play("report_alert", {to_player = teacher, gain = 1.0, pitch = 1.0,}, true)
+
 				end
 			end
 
@@ -430,6 +432,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     local realm = Realm.GetRealm(mdata.realm_id[loc])
 
                     if (realm ~= nil) then
+
+                        local students = realm:get_data("students")
+                        if students == nil then
+                            students = {}
+                        end
+                        students[player:get_player_name()] = true
+                        realm:set_data("students", students)
+
                         realm:TeleportPlayer(player)
                         minetest.chat_send_player(pname, pname .. ": You have been teleported to the classroom.")
                     end

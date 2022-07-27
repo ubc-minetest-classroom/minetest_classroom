@@ -4,16 +4,21 @@
 ---@public
 ---Save_Schematic
 ---@return string, boolean The filepath of the schematic; whether the settings file wrote succesfully.
-function Realm:Save_Schematic(author, mode)
+function Realm:Save_Schematic(schematicName, author, mode)
+
+    if (schematicName == nil or schematicName == "nil" or schematicName == "") then
+        schematicName = self.Name
+    end
+
     author = author or "unknown"
     mode = mode or "old"
 
-    local folderpath = minetest.get_worldpath() .. "/schematics/"
+    local folderpath = minetest.get_worldpath() .. "\\realmSchematics\\"
 
     minetest.mkdir(folderpath)
 
-    local fileName = "Realm " .. self.ID .. " " .. math.random(0, 9999) .. os.date(" %Y%m%d %H%M%S")
-    local filepath = folderpath .. "/" .. fileName
+    local fileName = schematicName
+    local filepath = folderpath .. fileName
 
     if (mode == "exschem") then
         exschem.save(self.StartPos, self.EndPos, false, 40, filepath, 0,
@@ -49,18 +54,6 @@ function Realm:Save_Schematic(author, mode)
         minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
     end
 
-    fileName = fileName .. os.date(" %Y%m%d %H%M")
-
-    local filepath = folderpath .. "\\" .. fileName
-    
-    --minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
-
-    local file, err = io.open(filepath .. ".mts", "wb")
-    if err then return 0 end
-    local schematic, count = worldedit.serialize(self.StartPos, self.EndPos)
-    file:write(schematic)
-    file:close()
-
     local settings = Settings(filepath .. ".conf")
     settings:set("author", author)
     settings:set("name", self.Name)
@@ -74,7 +67,23 @@ function Realm:Save_Schematic(author, mode)
     settings:set("schematic_size_y", self.EndPos.y - self.StartPos.y)
     settings:set("schematic_size_z", self.EndPos.z - self.StartPos.z)
 
+
+    local utmInfo = self:get_data("UTMInfo")
+
+    if (utmInfo ~= nil) then
+        settings:set("utm_zone", utmInfo.zone)
+        settings:set("utm_easting", utmInfo.easting)
+        settings:set("utm_northing", utmInfo.northing)
+    end
+
+
     local settingsWrote = settings:write()
+
+    if (settingsWrote == false) then
+        Debug.log("Unable to save realm; Settings did not write correctly...")
+    end
+
+    schematicManager.registerSchematicPath(schematicName, filepath)
 
     return filepath, settingsWrote
 end
@@ -86,7 +95,7 @@ end
 function Realm:Load_Schematic(schematic, config)
 
     --TODO: Add code to check if the realm is large enough to support the schematic; If not, create a new realm that can;
-    local schematicEndPos = self:LocalToWorldPosition(config.schematicSize)
+    local schematicEndPos = self:LocalToWorldSpace(config.schematicSize)
 
     if (schematicEndPos.x > self.EndPos.x or schematicEndPos.y > self.EndPos.y or schematicEndPos.z > self.EndPos.z) then
         Debug.log("Schematic is too large for realm")
@@ -109,6 +118,9 @@ function Realm:Load_Schematic(schematic, config)
         self.EndPos = schematicEndPos
     end
 
+    if (config.utmInfo ~= nil) then
+        self:set_data("UTMInfo", config.utmInfo)
+    end
 
 
 
@@ -173,6 +185,7 @@ function Realm:Load_Schematic(schematic, config)
         if (config.onRealmDeleteFunction ~= nil) then
             table.insert(self.RealmDeleteTable, { tableName = config.tableName, functionName = config.onRealmDeleteFunction })
         end
+
     end
 
     self:UpdateSpawn(config.spawnPoint)
@@ -185,14 +198,19 @@ function Realm:NewFromSchematic(name, key)
         name = config.name
     end
 
-    local newRealm = Realm:New(name, config.schematicSize)
+    local newRealm = Realm:New(name, config.schematicSize, false)
     newRealm:Load_Schematic(schematic, config)
 
     if (config.format ~= "procedural") then
         --TODO: temporarily disabled for UBC because it doesn't work with super large worlds;
         -- Need to emerge chunks as we create barriers
-        newRealm:CreateBarriers()
+        newRealm:CreateBarriersFast()
     end
+
+    -- Realm:CreateTeleporter()
+
+
+    newRealm:CallOnCreateCallbacks()
 
     return newRealm
 end

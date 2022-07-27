@@ -23,6 +23,8 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCoordinateConversion.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPrivileges.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmIntegrationHelpers.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCategory.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmTerrainGeneration.lua")
 
 if (areas) then
     dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmAreasIntegration.lua")
@@ -33,7 +35,11 @@ end
 ---@param name string The name of the realm
 ---@param area table Size of the realm in {x,y,z} format
 ---@return table a new "Realm" table object / class.
-function Realm:New(name, area)
+function Realm:New(name, area, callbacks)
+
+    if (callbacks == nil) then
+        callbacks = true
+    end
 
     if (area.x == nil or area.x == 0) then
         area.x = 80
@@ -89,7 +95,9 @@ function Realm:New(name, area)
 
     Realm.SaveDataToStorage()
 
-    this:CallOnCreateCallbacks()
+    if (callbacks) then
+        this:CallOnCreateCallbacks()
+    end
 
     return this
 end
@@ -474,7 +482,7 @@ end
 ---@param spawnPos table SpawnPoint in localSpace.
 ---@return boolean Whether the operation succeeded.
 function Realm:UpdateSpawn(spawnPos)
-    local pos = self:LocalToWorldPosition(spawnPos)
+    local pos = self:LocalToWorldSpace(spawnPos)
     self.SpawnPoint = { x = pos.x, y = pos.y, z = pos.z }
     Realm.SaveDataToStorage()
     return true

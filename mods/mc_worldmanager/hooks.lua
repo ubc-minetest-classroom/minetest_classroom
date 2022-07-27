@@ -32,7 +32,7 @@ minetest.register_on_joinplayer(function(player, last_login)
         pmeta:set_string("universalPrivs", minetest.serialize(minetest.get_player_privs(player:get_player_name())))
     end
 
-    mc_worldManager.CreateHud(player)
+    mc_worldManager.CreateRealmHud(player)
 
     local realm = Realm.GetRealmFromPlayer(player)
     if (realm ~= nil) then
@@ -46,10 +46,14 @@ minetest.register_on_leaveplayer(function(player, timed_out)
     mc_worldManager.RemoveHud(player)
 
     local realm = Realm.GetRealmFromPlayer(player)
+    if (realm:getCategory() == "instanced") then
+        mc_worldManager.GetSpawnRealm():TeleportPlayer(player)
+    end
+
+    realm = Realm.GetRealmFromPlayer(player)
     if (realm ~= nil) then
         realm:DeregisterPlayer(player)
     end
-
 end)
 
 mc_worldManager.tick = 0
@@ -126,10 +130,24 @@ minetest.register_globalstep(function(deltaTime)
                 player:set_hp(0, "void")
             end
         end
-
-
     end
+end)
 
+mc_worldManager.hudTick = 0
+minetest.register_globalstep(function(deltaTime)
+    mc_worldManager.hudTick = mc_worldManager.hudTick + deltaTime
+
+    if (mc_worldManager.hudTick > 0.5) then
+        mc_worldManager.hudTick = 0
+
+        for id, player in ipairs(minetest.get_connected_players()) do
+            local pmeta = player:get_meta()
+            local positionHudMode = pmeta:get_string("positionHudMode")
+            if (positionHudMode ~= "") then
+                mc_worldManager.UpdatePositionHud(player, positionHudMode)
+            end
+        end
+    end
 
 end)
 

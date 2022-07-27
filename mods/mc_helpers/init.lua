@@ -159,3 +159,7 @@ function mc_helpers.deepCopy(table)
     end
     return copy
 end
+
+function mc_helpers.round(x, n)
+    return tonumber(string.format("%." .. n .. "f", x))
+end

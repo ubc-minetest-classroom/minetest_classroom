@@ -52,7 +52,7 @@ function punchABlock.progress(player)
     local goal = level.goal
     local value = pmeta:get_int(key)
 
-    if (value > goal) then
+    if (value >= goal) then
         if (level.reward ~= nil) then
             player:get_inventory():add_item("main", level.reward)
         end
@@ -74,7 +74,7 @@ function punchABlock.progress(player)
     end
 
     if (level ~= nil) then
-        punchABlock.updateHud(player, key, 5, " " .. level.helpText)
+        punchABlock.updateHud(player, key, 4, " " .. level.helpText)
     end
 
 end

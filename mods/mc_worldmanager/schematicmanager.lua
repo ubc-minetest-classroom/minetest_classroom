@@ -11,6 +11,7 @@ schematicManager.schematics = {}
 ---@param key string the key to associate with the schematic path.
 ---@param rootPath string the path to a schematic and config file.
 function schematicManager.registerSchematicPath(key, rootPath)
+    key = string.lower(key)
 
     -- Sanity checking our schematic registration to ensure we don't enter an invalid state.
     if (key == nil) then
@@ -35,6 +36,8 @@ end
 ---@return string path to the schematic; or nil if the key is invalid.
 ---@return table schematic configuration containing Author, Name, spawnPoint, and size; or nil if the key is invalid.
 function schematicManager.getSchematic(key)
+    key = string.lower(key)
+
     local rootPath = schematicManager.schematics[key]
 
     if (rootPath == nil) then
@@ -75,12 +78,36 @@ function schematicManager.getSchematic(key)
     local realm_create_function_name = settings:get("realm_create_function_name") or nil
     local realm_delete_function_name = settings:get("realm_delete_function_name") or nil
 
+    local utm_zone = tonumber(settings:get("utm_zone") or 1)
+    local utm_hemisphere = settings:get("utm_hemisphere") or "N"
+    local utm_origin_easting = tonumber(settings:get("utm_origin_easting")) or 0
+    local utm_origin_northing = tonumber(settings:get("utm_origin_northing")) or 0
+
     local _spawnPoint = { x = spawn_pos_x, y = spawn_pos_y, z = spawn_pos_z }
     local _schematicSize = { x = schematic_size_x, y = schematic_size_y, z = schematic_size_z }
+    local _utmInfo = { zone = utm_zone, utm_is_north = (utm_hemisphere == "n" or utm_hemisphere == "N"), easting = utm_origin_easting, northing = utm_origin_northing }
 
     local config = { author = _author, name = _name, format = _format, spawnPoint = _spawnPoint, schematicSize = _schematicSize,
                      tableName = schematic_table_name, onTeleportInFunction = teleport_function_in_name, onTeleportOutFunction = teleport_function_out_name,
-                     onSchematicPlaceFunction = realm_create_function_name, onRealmDeleteFunction = realm_delete_function_name }
+                     onSchematicPlaceFunction = realm_create_function_name, onRealmDeleteFunction = realm_delete_function_name, utmInfo = _utmInfo }
 
     return schematic, config
+end
+
+
+
+
+
+
+-- Scan the world realm schematics folder and add them to the schematics list.
+local files = minetest.get_dir_list(minetest.get_worldpath() .. "\\realmSchematics\\", false)
+for k, fileName in pairs(files) do
+    local filePath = minetest.get_worldpath() .. "\\realmSchematics\\" .. fileName
+    local ext = string.sub(filePath, -5)
+
+    if (ext == ".conf") then
+        local path = string.sub(filePath, 1, -6)
+        local key = string.sub(fileName, 1, -6)
+        schematicManager.registerSchematicPath(key, path)
+    end
 end
