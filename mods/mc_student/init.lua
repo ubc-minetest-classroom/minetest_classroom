@@ -311,6 +311,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				-- Send report to any teacher currently connected
 				for teacher in pairs(minetest_classroom.mc_students.teachers) do
 					minetest.chat_send_player(teacher, minetest.colorize("#FF00FF", msg))
+					minetest.sound_play("report_alert", {to_player = teacher, gain = 1.0, pitch = 1.0,}, true)
+
 				end
 			end
 
