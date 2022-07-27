@@ -35,7 +35,7 @@ function mc_worldManager.UpdateRealmHud(player)
     return true
 end
 
-function mc_worldManager.RemoveRealmHud(player)
+function mc_worldManager.RemoveHud(player)
     mc_worldManager.hud:remove(player)
 end
 
@@ -101,8 +101,4 @@ function mc_worldManager.UpdatePositionHud(player, positionMode)
     })
 
     return true
-end
-
-function mc_worldManager.RemovePositionHud(player)
-    mc_worldManager.hud:remove(player, "worldManager:position")
 end

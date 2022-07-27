@@ -43,8 +43,7 @@ end)
 
 -- When player leave the game, we delete their hud
 minetest.register_on_leaveplayer(function(player, timed_out)
-    mc_worldManager.RemoveRealmHud(player)
-    mc_worldManager.RemovePositionHud(player)
+    mc_worldManager.RemoveHud(player)
 
     local realm = Realm.GetRealmFromPlayer(player)
     if (realm:getCategory() == "instanced") then
