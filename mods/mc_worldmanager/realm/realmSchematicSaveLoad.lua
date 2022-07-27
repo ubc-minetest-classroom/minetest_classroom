@@ -168,6 +168,11 @@ function Realm:Load_Schematic(schematic, config)
         vm:write_to_map(true)
     end
 
+    if (config.backgroundSound ~= nil) then
+        self:set_data("backgroundSound", config.backgroundSound)
+        table.insert(self.PlayerJoinTable, {tableName = "realmExtensions", functionName = "playbackgroundSound"})
+    end
+
     if (config.tableName ~= nil) then
         if (config.onSchematicPlaceFunction ~= nil) then
             local table = loadstring("return " .. config.tableName)()

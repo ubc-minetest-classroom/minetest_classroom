@@ -24,11 +24,12 @@ function Realm:TeleportPlayer(player)
     self:RunTeleportInFunctions(player)
     local spawn = self.SpawnPoint
     player:set_pos(spawn)
-    minetest.sound_play("teleport", {to_player = player:get_player_name(), gain = 1.0, pitch = 1.0,}, true)
 
     self:RegisterPlayer(player)
     mc_worldManager.UpdateRealmHud(player)
     self:ApplyPrivileges(player)
+
+    minetest.sound_play("teleport", {to_player = player:get_player_name(), gain = 1.0, pitch = 1.0,}, true)
 
     return true, "Successfully teleported to realm."
 end
