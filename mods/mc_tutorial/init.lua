@@ -1,11 +1,11 @@
 -- TODO:
 ----- add tutorial progress and completion to player meta
------ get/set pdata.tutorials.active from player meta
+----- get/set pdata.active from player meta
 ----- make tutorials dependent on other tutorials (sequence of tutorials)
 ----- update png texture for tutorialbook - consider revising this to a new icon different from student notebook
 ----- add sequence of formspecs or HUD elements to guide teacher through recording different gameplay options
 ----- make tutorial_fs dynamic to show what a player will get on_complettion: use add item_image[]
------ need a way for the player to access the pdata.tutorials.active instructions and possibly accompanying item_images and models
+----- need a way for the player to access the pdata.active instructions and possibly accompanying item_images and models
 ----- update the record_fs menu so that on_completion items and tools are displayed in an inventory and the number of items given can be set by the player recording the tutorial
 ----- add option to display a message after completing a specific action, like "now do this next"\
 ----- fix tutorial wield/key listener
@@ -76,7 +76,7 @@ end
 
 mc_tutorial.player_priv_table = mc_tutorial.fetch_setting_key_table("player_priv_table") or {interact = true}
 mc_tutorial.recorder_priv_table = mc_tutorial.fetch_setting_key_table("recorder_priv_table") or {teacher = true, interact = true}
-mc_tutorial.check_interval = mc_tutorial.fetch_setting("check_interval") or 1
+mc_tutorial.check_interval = math.max(tonumber(mc_tutorial.fetch_setting("check_interval")), 0.1) or 1
 mc_tutorial.check_dir_tolerance = mc_tutorial.fetch_setting("check_dir_tolerance") or 0.01745
 mc_tutorial.check_pos_x_tolerance = tonumber(mc_tutorial.fetch_setting("check_pos_x_tolerance") or 4) * mc_tutorial.check_interval
 mc_tutorial.check_pos_y_tolerance = tonumber(mc_tutorial.fetch_setting("check_pos_y_tolerance") or 4) * mc_tutorial.check_interval
@@ -91,85 +91,21 @@ minetest.register_on_joinplayer(function(player)
     -- Load player meta
     local pmeta = player:get_meta()
     local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
-    if pdata == nil or next(pdata) == nil then
-        -- Nothing to see here so initialize and serialize a table to hold everything
+    if not pdata or not next(pdata) or not pdata.format or pdata.format ~= 3 then
+        -- data not initialized, initialize and serialize a table to hold everything
         pdata = {
-            tutorials = {
-                active = {},
-                player_seq = {},
-                completed = {}, -- TODO: use this to change the tutorial_fs to indicate tutorials that are completed
-                listener = {
-                    wield = false,
-                    key = false
-                }
-            }
+            active = {},
+            player_seq = {},
+            completed = {}, -- TODO: use this to change the tutorial_fs to indicate tutorials that are completed
+            listener = {
+                wield = false,
+                key = false
+            },
+            format = 3
         }
         pmeta:set_string("mc_tutorial:tutorials", minetest.serialize(pdata))
     end
 end)
-
---[[
-NEW FORMSPEC CLEAN COPIES
-
-OVERVIEW TAB:
-formspec_version[6]
-size[14.2,10]
-field[0.4,0.7;13.4,0.7;title;Title;]
-textarea[0.4,1.9;13.4,1.3;description;Description;]
-textarea[0.4,3.7;13.4,1.3;message;Completion message;]
-textarea[0.4,5.5;13.4,3.2;;Tutorial summary;]
-button_exit[0.4,8.8;13.4,0.8;finish;Finish and save]
-
-EVENT/GROUP TAB:
-formspec_version[6]
-size[14.2,10]
-textlist[0.4,0.8;13.4,7.3;eventlist;;1;false]
-label[0.4,0.6;Recorded events]
-image_button[0.4,8.2;1.4,1.4;blank.png;eventlist_add_event;;false;true]
-image_button[1.9,8.2;1.4,1.4;blank.png;eventlist_add_group;;false;true]
-image_button[3.4,8.2;1.4,1.4;blank.png;eventlist_edit;;false;true]
-image_button[4.9,8.2;1.4,1.4;blank.png;eventlist_delete;;false;true]
-image_button[6.4,8.2;1.4,1.4;blank.png;eventlist_duplicate;;false;true]
-image_button[7.9,8.2;1.4,1.4;blank.png;eventlist_move_top;;false;true]
-image_button[9.4,8.2;1.4,1.4;blank.png;eventlist_move_up;;false;true]
-image_button[10.9,8.2;1.4,1.4;blank.png;eventlist_move_down;;false;true]
-image_button[12.4,8.2;1.4,1.4;blank.png;eventlist_move_bottom;;false;true]
-
-REWARDS TAB:
-formspec_version[6]
-size[14.2,10]
-label[0.4,0.6;Available items/privileges to reward]
-label[7.5,0.6;Selected rewards]
-textlist[0.4,0.8;6.3,6;reward_list;;1;false]
-textlist[7.5,0.8;6.3,6;reward_selection;;1;false]
-image_button[6.7,0.8;0.8,3;blank.png;reward_add;-->;false;true]
-image_button[6.7,3.8;0.8,3;blank.png;button_delete;<--;false;true]
-field[7.5,7.4;4.4,0.8;reward_quantity;Quantity;1]
-button[11.9,7.4;1.9,0.8;reward_quantity_update;Update]
-field[7.5,8.8;6.3,0.8;reward_search;Search for items/privileges/nodes;]
-image_button[12.2,8.8;0.8,0.8;blank.png;reward_search_go;Go!;false;false]
-image_button[13,8.8;0.8,0.8;blank.png;reward_search_x;X;false;false]
-image[0.4,7.5;2.1,2.1;blank.png]
-textarea[2.6,7.4;4.2,2.2;;;This is the info text! Lorem ipsum dolor\, sit amet.]
-label[0.4,7.2;Selected reward]
-
-DEPENDENCIES TAB:
-formspec_version[6]
-size[14.2,10]
-label[0.4,0.6;Available tutorials]
-label[7.3,0.6;Dependencies (required BEFORE)]
-label[7.3,5.3;Dependents (unlocked AFTER)]
-textlist[0.4,0.8;6.5,6.5;depend_tutorials;;1;false]
-textlist[7.3,0.8;6.5,3.3;dependencies;;1;false]
-textlist[7.3,5.5;6.5,3.3;dependents;;1;false]
-button[0.4,7.4;3.2,0.8;dependencies_add;Add dependency]
-button[7.3,4.1;6.5,0.8;dependencies_delete;Delete selected dependency]
-button[3.7,7.4;3.2,0.8;dependents_add;Add dependent]
-button[7.3,8.8;6.5,0.8;dependents_delete;Delete selected dependent]
-field[0.4,8.8;6.5,0.8;depend_search;Search for tutorials;]
-image_button[5.3,8.8;0.8,0.8;blank.png;depend_search_go;Go!;false;false]
-image_button[6.1,8.8;0.8,0.8;blank.png;depend_search_x;X;false;false]
-]]
 
 local function save_temp_fields(player, fields)
     local pname = player:get_player_name()
@@ -214,7 +150,7 @@ function mc_tutorial.show_record_fs(player)
                     return "place node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " while wielding "..event.tool or "")
                 end,
                 [mc_tutorial.ACTION.WIELD] = function(event)
-                    return "wield "..(event.tool and (event.tool ~= "" and "nothing" or event.tool) or "[?]")
+                    return "wield "..(event.tool and (event.tool == "" and "nothing" or event.tool) or "[?]")
                 end,
                 [mc_tutorial.ACTION.KEY] = function(event)
                     return "press key"..(event.key and (#event.key > 1 and "s " or " ")..table.concat(event.key, " + ") or " [?]")
@@ -366,6 +302,69 @@ function mc_tutorial.show_record_fs(player)
 	end
 end
 
+--[[
+NEW FORMSPEC CLEAN COPIES
+
+OVERVIEW TAB:
+formspec_version[6]
+size[14.2,10]
+field[0.4,0.7;13.4,0.7;title;Title;]
+textarea[0.4,1.9;13.4,1.3;description;Description;]
+textarea[0.4,3.7;13.4,1.3;message;Completion message;]
+textarea[0.4,5.5;13.4,3.2;;Tutorial summary;]
+button_exit[0.4,8.8;13.4,0.8;finish;Finish and save]
+
+EVENT/GROUP TAB:
+formspec_version[6]
+size[14.2,10]
+textlist[0.4,0.8;13.4,7.3;eventlist;;1;false]
+label[0.4,0.6;Recorded events]
+image_button[0.4,8.2;1.4,1.4;blank.png;eventlist_add_event;;false;true]
+image_button[1.9,8.2;1.4,1.4;blank.png;eventlist_add_group;;false;true]
+image_button[3.4,8.2;1.4,1.4;blank.png;eventlist_edit;;false;true]
+image_button[4.9,8.2;1.4,1.4;blank.png;eventlist_delete;;false;true]
+image_button[6.4,8.2;1.4,1.4;blank.png;eventlist_duplicate;;false;true]
+image_button[7.9,8.2;1.4,1.4;blank.png;eventlist_move_top;;false;true]
+image_button[9.4,8.2;1.4,1.4;blank.png;eventlist_move_up;;false;true]
+image_button[10.9,8.2;1.4,1.4;blank.png;eventlist_move_down;;false;true]
+image_button[12.4,8.2;1.4,1.4;blank.png;eventlist_move_bottom;;false;true]
+
+REWARDS TAB:
+formspec_version[6]
+size[14.2,10]
+label[0.4,0.6;Available items/privileges to reward]
+label[7.5,0.6;Selected rewards]
+textlist[0.4,0.8;6.3,6;reward_list;;1;false]
+textlist[7.5,0.8;6.3,6;reward_selection;;1;false]
+image_button[6.7,0.8;0.8,3;blank.png;reward_add;-->;false;true]
+image_button[6.7,3.8;0.8,3;blank.png;button_delete;<--;false;true]
+field[7.5,7.4;4.4,0.8;reward_quantity;Quantity;1]
+button[11.9,7.4;1.9,0.8;reward_quantity_update;Update]
+field[7.5,8.8;6.3,0.8;reward_search;Search for items/privileges/nodes;]
+image_button[12.2,8.8;0.8,0.8;blank.png;reward_search_go;Go!;false;false]
+image_button[13,8.8;0.8,0.8;blank.png;reward_search_x;X;false;false]
+image[0.4,7.5;2.1,2.1;blank.png]
+textarea[2.6,7.4;4.2,2.2;;;This is the info text! Lorem ipsum dolor\, sit amet.]
+label[0.4,7.2;Selected reward]
+
+DEPENDENCIES TAB:
+formspec_version[6]
+size[14.2,10]
+label[0.4,0.6;Available tutorials]
+label[7.3,0.6;Dependencies (required BEFORE)]
+label[7.3,5.3;Dependents (unlocked AFTER)]
+textlist[0.4,0.8;6.5,6.5;depend_tutorials;;1;false]
+textlist[7.3,0.8;6.5,3.3;dependencies;;1;false]
+textlist[7.3,5.5;6.5,3.3;dependents;;1;false]
+button[0.4,7.4;3.2,0.8;dependencies_add;Add dependency]
+button[7.3,4.1;6.5,0.8;dependencies_delete;Delete selected dependency]
+button[3.7,7.4;3.2,0.8;dependents_add;Add dependent]
+button[7.3,8.8;6.5,0.8;dependents_delete;Delete selected dependent]
+field[0.4,8.8;6.5,0.8;depend_search;Search for tutorials;]
+image_button[5.3,8.8;0.8,0.8;blank.png;depend_search_go;Go!;false;false]
+image_button[6.1,8.8;0.8,0.8;blank.png;depend_search_x;X;false;false]
+]]
+
 function mc_tutorial.show_record_options_fs(player)
     local record_options_fs = {
         "formspec_version[5]",
@@ -457,12 +456,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             mc_tutorial.show_tutorials(player)
         elseif fields.delete then
             if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
-                context.tutorial_selected = context.tutorial_selected or 1
-                save_context(player, context)
-
                 if tutorials and next(tutorials.fields) then
-                    table.remove(tutorials.fields, context.tutorial_selected)
-                    mc_tutorial.tutorials:set_string(context.tutorial_selected, "")
+                    mc_tutorial.tutorials:set_string(context.tutorial_i_to_id[context.tutorial_selected], "")
 
                     context.tutorial_selected = 1
                     save_context(player, context)
@@ -475,9 +470,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_player(pname, "[Tutorial] You do not have sufficient privileges to delete tutorials.")
             end
         elseif fields.edit then
-            context.tutorial_selected = context.tutorial_selected or 1
-            save_context(player, context)
-
             if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
                 mc_tutorial.record.temp[pname] = minetest.deserialize(tutorials.fields[context.tutorial_i_to_id[context.tutorial_selected]])
                 mc_tutorial.record.edit[pname] = true
@@ -488,9 +480,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_player(pname, "[Tutorial] You do not have sufficient privileges to edit tutorials.")
             end
         elseif fields.start then
-            context.tutorial_selected = context.tutorial_selected or 1
-            save_context(player, context)
-
             if tutorials and tutorials.fields[context.tutorial_i_to_id[context.tutorial_selected]] then
                 pmeta = player:get_meta()
                 pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
@@ -500,9 +489,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     return
                 end
 
-                pdata.tutorials.active = tutorial_to_start
+                pdata.active = tutorial_to_start
                 pmeta:set_string("mc_tutorial:tutorials", minetest.serialize(pdata))
-                minetest.chat_send_player(pname, "[Tutorial] Tutorial has started: "..pdata.tutorials.active.title)
+                minetest.chat_send_player(pname, "[Tutorial] Tutorial has started: "..pdata.active.title)
 
                 -- Check if there is an action in the sequence that requires the tutorial_progress_listener
                 -- This saves us from unnecessarily burning cycles server-side
@@ -514,11 +503,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     [mc_tutorial.ACTION.WIELD] = true,
                     [mc_tutorial.ACTION.KEY] = true
                 }
-                for _,event in ipairs(pdata.tutorials.active.sequence) do
-                    if action_map[event.action] then
-                        mc_tutorial.tutorial_progress_listener(player)
-                        break
-                    end
+                local listener_needed = false
+                for _,event in ipairs(pdata.active.sequence) do
+                    listener_needed = action_map[event.action] or listener_needed
+                end
+                if listener_needed then
+                    minetest.after(0.1, mc_tutorial.tutorial_progress_listener, player)
                 end
                 -- TODO: add HUD and/or formspec to display the instructions for the tutorial
             end
@@ -713,16 +703,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         mc_tutorial.tutorials:set_int("next_id", next_id + 1)
                     end
                 end
-                minetest.chat_send_player(pname, "[Tutorial] Your tutorial was successfully recorded!")
+                minetest.chat_send_player(pname, "[Tutorial] Your tutorial was successfully saved!")
             else
-                minetest.chat_send_player(pname, "[Tutorial] No tutorial was recorded.")
+                minetest.chat_send_player(pname, "[Tutorial] No tutorial was saved.")
             end
 
             -- Ensure global temp is recycled + context is cleared
             mc_tutorial.record.temp[pname] = nil
             save_context(player, nil)
         elseif fields.quit then -- forced quit
-            minetest.chat_send_player(pname, "[Tutorial] No tutorial was recorded.")
+            minetest.chat_send_player(pname, "[Tutorial] No tutorial was saved.")
             mc_tutorial.record.temp[pname] = nil
             save_context(player, nil)
         end
@@ -732,7 +722,6 @@ end)
 minetest.register_on_leaveplayer(function(player)
     pmeta = player:get_meta()
     pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
-    pdata.tutorials.active.continue = false
     pmeta:set_string("mc_tutorial:tutorials", minetest.serialize(pdata))
 end)
 

@@ -51,55 +51,71 @@ function mc_tutorial.tutorial_progress_listener(player)
     local pmeta = player:get_meta()
     local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
     local pname = player:get_player_name()
-    
-    if pdata.tutorials.active and pdata.tutorials.active.continue and not mc_tutorial.record.active[pname] then
+
+    if pdata.active and not mc_tutorial.record.active[pname] then
         -- Figure out the type of action to call the correct listener
         local listener_map = {
             [mc_tutorial.ACTION.POS] = function()
-                pdata.tutorials.player_seq.pos = player:get_pos()
-                check_pos = pdata.tutorials.active.sequence[pdata.tutorials.active.seq_index].pos
+                -- debug
+                minetest.chat_send_player(pname, "[Tutorial] listening for position...")
+
+                pdata.player_seq.pos = player:get_pos()
+                check_pos = pdata.active.sequence[pdata.active.seq_index].pos
                 -- minetest.get_objects_inside_radius(pos, radius) may be better here?
                 -- minetest.get_objects_in_area(pos1, pos2) would also work
-                if (pdata.tutorials.player_seq.pos.x >= check_pos.x - mc_tutorial.check_pos_x_tolerance) and (pdata.tutorials.player_seq.pos.x <= check_pos.x + mc_tutorial.check_pos_x_tolerance) and (pdata.tutorials.player_seq.pos.y >= check_pos.y - mc_tutorial.check_pos_y_tolerance) and (pdata.tutorials.player_seq.pos.y <= check_pos.y + mc_tutorial.check_pos_y_tolerance) and (pdata.tutorials.player_seq.pos.z >= check_pos.z - mc_tutorial.check_pos_z_tolerance) and (pdata.tutorials.player_seq.pos.z <= check_pos.z + mc_tutorial.check_pos_z_tolerance) then
+                if (pdata.player_seq.pos.x >= check_pos.x - mc_tutorial.check_pos_x_tolerance) and (pdata.player_seq.pos.x <= check_pos.x + mc_tutorial.check_pos_x_tolerance) and (pdata.player_seq.pos.y >= check_pos.y - mc_tutorial.check_pos_y_tolerance) and (pdata.player_seq.pos.y <= check_pos.y + mc_tutorial.check_pos_y_tolerance) and (pdata.player_seq.pos.z >= check_pos.z - mc_tutorial.check_pos_z_tolerance) and (pdata.player_seq.pos.z <= check_pos.z + mc_tutorial.check_pos_z_tolerance) then
                     mc_tutorial.completed_action(player)
                 end
             end,
             [mc_tutorial.ACTION.LOOK_DIR] = function()
                 -- TODO
-                minetest.chat_send_player(pdata.tutorials.active.pname,"[Tutorial] listening for look direction...")
+
+                -- debug
+                minetest.chat_send_player(pname, "[Tutorial] listening for look direction...")
             end,
             [mc_tutorial.ACTION.LOOK_PITCH] = function()
-                pdata.tutorials.player_seq.dir = player:get_look_vertical()
-                check_dir = pdata.tutorials.active.sequence[pdata.tutorials.active.seq_index].dir
-                if (pdata.tutorials.player_seq.dir >= check_dir - mc_tutorial.check_dir_tolerance) and (pdata.tutorials.player_seq.dir <= check_dir + mc_tutorial.check_dir_tolerance) then
+                -- debug
+                minetest.chat_send_player(pname, "[Tutorial] listening for look pitch...")
+
+                pdata.player_seq.dir = player:get_look_vertical()
+                check_dir = pdata.active.sequence[pdata.active.seq_index].dir
+                if (pdata.player_seq.dir >= check_dir - mc_tutorial.check_dir_tolerance) and (pdata.player_seq.dir <= check_dir + mc_tutorial.check_dir_tolerance) then
                     mc_tutorial.completed_action(player)
                 end
             end,
             [mc_tutorial.ACTION.LOOK_YAW] = function()
-                pdata.tutorials.player_seq.dir = player:get_look_horizontal()
-                check_dir = pdata.tutorials.active.sequence[pdata.tutorials.active.seq_index].dir
-                if (pdata.tutorials.player_seq.dir >= check_dir - mc_tutorial.check_dir_tolerance) and (pdata.tutorials.player_seq.dir <= check_dir + mc_tutorial.check_dir_tolerance) then
+                -- debug
+                minetest.chat_send_player(pname, "[Tutorial] listening for look yaw...")
+
+                pdata.player_seq.dir = player:get_look_horizontal()
+                check_dir = pdata.active.sequence[pdata.active.seq_index].dir
+                if (pdata.player_seq.dir >= check_dir - mc_tutorial.check_dir_tolerance) and (pdata.player_seq.dir <= check_dir + mc_tutorial.check_dir_tolerance) then
                     mc_tutorial.completed_action(player)
                 end
             end,
             [mc_tutorial.ACTION.WIELD] = function()
-                pdata.tutorials.player_seq.wield = player:get_wielded_item():get_name()
-                if pdata.tutorials.player_seq.wield == pdata.tutorials.active.sequence[pdata.tutorials.active.seq_index].tool then
+                -- debug
+                minetest.chat_send_player(pname, "[Tutorial] listening for wield...")
+
+                pdata.player_seq.wield = player:get_wielded_item():get_name()
+                if pdata.player_seq.wield == pdata.active.sequence[pdata.active.seq_index].tool then
                     mc_tutorial.completed_action(player)
                 end
             end,
             [mc_tutorial.ACTION.KEY] = function()
-                minetest.chat_send_player(pdata.tutorials.active.pname,"[Tutorial] Listening for key strike...")
-                pdata.tutorials.player_seq.keyStrike = player:get_player_control()
-                if pdata.tutorials.player_seq.keyStrike.up or pdata.tutorials.player_seq.keyStrike.down or pdata.tutorials.player_seq.keyStrike.right or pdata.tutorials.player_seq.keyStrike.left or pdata.tutorials.player_seq.keyStrike.aux1 or pdata.tutorials.player_seq.keyStrike.jump or pdata.tutorials.player_seq.keyStrike.sneak then
-                    pdata.tutorials.player_seq.keys = {}
+                -- debug
+                minetest.chat_send_player(pname, "[Tutorial] listening for key strike...")
+
+                pdata.player_seq.key_control = player:get_player_control()
+                if pdata.player_seq.key_control.up or pdata.player_seq.key_control.down or pdata.player_seq.key_control.right or pdata.player_seq.key_control.left or pdata.player_seq.key_control.aux1 or pdata.player_seq.key_control.jump or pdata.player_seq.key_control.sneak then
+                    pdata.player_seq.keys = {}
                     -- TODO: redesign (concat + sequence may be arbitrary)
-                    for k,v in pairs(pdata.tutorials.player_seq.keyStrike) do
+                    for k,v in pairs(pdata.player_seq.key_control) do
                         if v then
-                            table.insert(pdata.tutorials.player_seq.keys, k)
+                            table.insert(pdata.player_seq.keys, k)
                         end
                     end
-                    if table.concat(pdata.tutorials.player_seq.keys, " ") == table.concat(pdata.tutorials.active.sequence[pdata.tutorials.active.seq_index].key, " ") then
+                    if table.concat(pdata.player_seq.keys, " ") == table.concat(pdata.active.sequence[pdata.active.seq_index].key, " ") then
                         mc_tutorial.completed_action(player)
                     end
                 end
@@ -107,9 +123,11 @@ function mc_tutorial.tutorial_progress_listener(player)
         }
 
         -- Perform check for appropriate listener
-        listener_map[pdata.tutorials.active.sequence[pdata.tutorials.active.seq_index].action]()
+        if listener_map[pdata.active.sequence[pdata.active.seq_index].action] then
+            listener_map[pdata.active.sequence[pdata.active.seq_index].action]()
+        end
         -- Continue listener cycle
-        minetest.after(mc_tutorial.check_interval, mc_tutorial.tutorial_progress_listener(player))
+        minetest.after(mc_tutorial.check_interval, mc_tutorial.tutorial_progress_listener, player)
     end
 end
 
@@ -120,31 +138,33 @@ function mc_tutorial.completed_action(player)
     local pmeta = player:get_meta()
     local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
     
+    minetest.log("action complete!")
+
     -- Action was successfully completed, so update the searchIndex and completed
-    pdata.tutorials.active.seq_index = pdata.tutorials.active.seq_index + 1 
+    pdata.active.seq_index = pdata.active.seq_index + 1 
     minetest.sound_play("bell", {gain = 1.0, pitch = 1.0, to_player = pname}, true)
     -- Check if tutorial is completed
-    if pdata.tutorials.active.seq_index >= pdata.tutorials.active.length then
+    if pdata.active.seq_index >= pdata.active.length then
         -- on_completion callbacks here
-        minetest.chat_send_player(pname, "[Tutorial] "..pdata.tutorials.active.on_completion.message)
-        pdata.tutorials.active.continue = false
-        pdata.tutorials.listener.wield = false
+        minetest.chat_send_player(pname, "[Tutorial] "..pdata.active.on_completion.message)
+        pdata.listener.wield = false
+        pdata.listener.key = false
         pmeta:set_string("mc_tutorial:tutorials", minetest.serialize(pdata))
 
         local inv = player:get_inventory()
         -- Check if the player already has the tool
-        --[[if pdata.tutorials.active.on_completion.givetool then
-            if not mc_helpers.getInventoryItemLocation(inv, pItemStack(pdata.tutorials.active.on_completion.givetool)) then
-                inv:add_item("main", pdata.tutorials.active.on_completion.givetool)
+        --[[if pdata.active.on_completion.givetool then
+            if not mc_helpers.getInventoryItemLocation(inv, pItemStack(pdata.active.on_completion.givetool)) then
+                inv:add_item("main", pdata.active.on_completion.givetool)
             end
         end
-        if pdata.tutorials.active.on_completion.giveitem then
+        if pdata.active.on_completion.giveitem then
             -- Check if the player already has the item
-            if not mc_helpers.getInventoryItemLocation(inv, ItemStack(pdata.tutorials.active.on_completion.giveitem)) then
-                inv:add_item("main", pdata.tutorials.active.on_completion.giveitem)
+            if not mc_helpers.getInventoryItemLocation(inv, ItemStack(pdata.active.on_completion.giveitem)) then
+                inv:add_item("main", pdata.active.on_completion.giveitem)
             end
         end
-        if pdata.tutorials.active.on_completion.grantpriv then
+        if pdata.active.on_completion.grantpriv then
             -- TODO
         end]]
     end
@@ -155,23 +175,23 @@ function mc_tutorial.check_tutorial_progress(player,action,tool,node)
     local pname = player:get_player_name()
     local pmeta = player:get_meta()
     local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
-    -- TODO: retrieve pdata.tutorials.active from player meta
+    -- TODO: retrieve pdata.active from player meta
     -- any player can complete a tutorial, but don't attempt a tutorial if one is being recorded
-    if pdata.tutorials.active and pdata.tutorials.active.continue and not mc_tutorial.record.active[pname] then
+    if pdata.active and --[[pdata.active.continue and]] not mc_tutorial.record.active[pname] then
         if action then
-            pdata.tutorials.player_seq.action = action
-            pdata.tutorials.player_seq.tool = tool or false
-            pdata.tutorials.player_seq.node = node or false
+            pdata.player_seq.action = action
+            pdata.player_seq.tool = tool or false
+            pdata.player_seq.node = node or false
         else
             return false
         end
 
         -- match the action first since this callback might not even be relevant
-        if pdata.tutorials.player_seq.action == pdata.tutorials.active.sequence[pdata.tutorials.active.seq_index].action then
+        if pdata.player_seq.action == pdata.active.sequence[pdata.active.seq_index].action then
             -- match the node next
-            if pdata.tutorials.player_seq.node == pdata.tutorials.active.sequence[pdata.tutorials.active.seq_index].node then
+            if pdata.player_seq.node == pdata.active.sequence[pdata.active.seq_index].node then
                 -- finally match the tool
-                if pdata.tutorials.player_seq.tool == pdata.tutorials.active.sequence[pdata.tutorials.active.seq_index].tool then
+                if pdata.player_seq.tool == pdata.active.sequence[pdata.active.seq_index].tool then
                     mc_tutorial.completed_action(player)
                 end
             end

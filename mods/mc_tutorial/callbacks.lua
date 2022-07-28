@@ -65,11 +65,11 @@ minetest.register_globalstep(function(dtime)
             -- Listen for keystroke, if triggered
             if timer > 1 and mc_tutorial.record.listener.key[pname] == "track" then
                 reset_timer = true
-                local keyStrike = player:get_player_control()
+                local key_control = player:get_player_control()
     
-                if keyStrike.up or keyStrike.down or keyStrike.right or keyStrike.left or keyStrike.aux1 or keyStrike.jump or keyStrike.sneak then
+                if key_control.up or key_control.down or key_control.right or key_control.left or key_control.aux1 or key_control.jump or key_control.sneak then
                     local keys = {}
-                    for k,v in pairs(keyStrike) do
+                    for k,v in pairs(key_control) do
                         if v then table.insert(keys, k) end
                     end
                     local msg = "[Tutorial] Keystroke "..table.concat(keys, " + ").." recorded."
@@ -80,10 +80,13 @@ minetest.register_globalstep(function(dtime)
             end
 
             -- Start keystroke timer
-            if mc_tutorial.record.listener.key[pname] == true and player:get_player_control_bits() ~= 0 then
-                minetest.chat_send_player(pname, "[Tutorial] Recording keystroke, please continue to hold the player control keys you would like to record.")
-                mc_tutorial.record.listener.key[pname] = "track"
-                reset_timer = true
+            if mc_tutorial.record.listener.key[pname] == true then
+                local key_control = player:get_player_control()
+                if key_control.up or key_control.down or key_control.right or key_control.left or key_control.aux1 or key_control.jump or key_control.sneak then
+                    minetest.chat_send_player(pname, "[Tutorial] Recording keystroke, please continue to hold the player control keys you would like to record.")
+                    mc_tutorial.record.listener.key[pname] = "track"
+                    reset_timer = true
+                end
             end
 
             mc_tutorial.record.timer[pname] = (reset_timer and 0) or timer
