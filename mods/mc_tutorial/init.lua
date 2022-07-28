@@ -490,6 +490,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
 
                 pdata.active = tutorial_to_start
+                mc_tutorial.active[pname] = tostring(context.tutorial_i_to_id[context.tutorial_selected])
                 pmeta:set_string("mc_tutorial:tutorials", minetest.serialize(pdata))
                 minetest.chat_send_player(pname, "[Tutorial] Tutorial has started: "..pdata.active.title)
 
@@ -720,9 +721,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 end)
 
 minetest.register_on_leaveplayer(function(player)
-    pmeta = player:get_meta()
-    pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
+    local pname = player:get_player_name()
+    local pmeta = player:get_meta()
+    local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
+    pdata.active = nil
     pmeta:set_string("mc_tutorial:tutorials", minetest.serialize(pdata))
+
+    mc_tutorial.active[pname] = nil
+    for list,_ in pairs(mc_tutorial.record) do
+        mc_tutorial.record[list][pname] = nil
+    end
 end)
 
 -- TODO: other possible callbacks

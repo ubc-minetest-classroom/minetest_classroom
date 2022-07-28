@@ -2,43 +2,39 @@
 minetest.register_on_punchnode(function(pos, node, player, pointed_thing)
     local pname = player:get_player_name()
     if mc_tutorial.record.active[pname] or mc_tutorial.active[pname] then
-        local action = mc_tutorial.ACTION.PUNCH
-        local tool = player:get_wielded_item():get_name()
-        local node = node.name
-
+        local func
         if mc_tutorial.record.active[pname] then
-            mc_tutorial.register_tutorial_action(player, action, {tool = tool, node = node})
+            func = mc_tutorial.register_tutorial_action
         elseif mc_tutorial.active[pname] then
-            mc_tutorial.check_tutorial_progress(player, action, {tool = tool, node = node})
+            func = mc_tutorial.check_tutorial_progress
         end
+        func(player, mc_tutorial.ACTION.PUNCH, {tool = player:get_wielded_item():get_name(), node = node.name})
     end
 end)
 
 minetest.register_on_dignode(function(pos, oldnode, player)
     local pname = player:get_player_name()
     if mc_tutorial.record.active[pname] or mc_tutorial.active[pname] then
-        local action = mc_tutorial.ACTION.DIG
-        local tool = player:get_wielded_item():get_name()
-        local node = oldnode.name
+        local func
         if mc_tutorial.record.active[pname] then
-            mc_tutorial.register_tutorial_action(player, action, {tool = tool, node = node})
+            func = mc_tutorial.register_tutorial_action
         elseif mc_tutorial.active[pname] then
-            mc_tutorial.check_tutorial_progress(player, action, {tool = tool, node = node})
+            func = mc_tutorial.check_tutorial_progress
         end
+        func(player, mc_tutorial.ACTION.DIG, {tool = player:get_wielded_item():get_name(), node = oldnode.name})
     end
 end)
 
 minetest.register_on_placenode(function(pos, newnode, player, oldnode, itemstack, pointed_thing)
     local pname = player:get_player_name()
     if mc_tutorial.record.active[pname] or mc_tutorial.active[pname] then
-        local action = mc_tutorial.ACTION.PLACE
-        local tool = player:get_wielded_item():get_name()
-        local node = newnode.name
+        local func
         if mc_tutorial.record.active[pname] then
-            mc_tutorial.register_tutorial_action(player, action, {tool = tool, node = node})
+            func = mc_tutorial.register_tutorial_action
         elseif mc_tutorial.active[pname] then
-            mc_tutorial.check_tutorial_progress(player, action, {tool = tool, node = node})
+            func = mc_tutorial.check_tutorial_progress
         end
+        func(player, mc_tutorial.ACTION.PLACE, {tool = player:get_wielded_item():get_name(), node = newnode.name})
     end
 end)
 
