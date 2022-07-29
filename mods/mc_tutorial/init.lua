@@ -4,11 +4,10 @@
 ----- make tutorials dependent on other tutorials (sequence of tutorials)
 ----- update png texture for tutorialbook - consider revising this to a new icon different from student notebook
 ----- add sequence of formspecs or HUD elements to guide teacher through recording different gameplay options
------ make tutorial_fs dynamic to show what a player will get on_complettion: use add item_image[]
+----- make tutorial_fs dynamic to show what a player will get on_completion: use add item_image[]
 ----- need a way for the player to access the pdata.active instructions and possibly accompanying item_images and models
 ----- update the record_fs menu so that on_completion items and tools are displayed in an inventory and the number of items given can be set by the player recording the tutorial
 ----- add option to display a message after completing a specific action, like "now do this next"\
------ fix tutorial wield/key listener
 
 mc_tutorial = {
     path = minetest.get_modpath("mc_tutorial"),
@@ -133,7 +132,7 @@ local function get_selected_reward_info(context, list_id)
     local pattern = "(.-)"..string.gsub(minetest.formspec_escape("["), "%[", "%%%[").."(%w)"..string.gsub(minetest.formspec_escape("]"), "%]", "%%%]").."(.*)"
     local selection = context.reward_selected[list_id]
     local col, type_id, item = string.match(list_id == RW_LIST and context.rewards[selection] or list_id == RW_SELECT and context.selected_rewards[selection] or "", pattern)
-    return mc_helpers.trim(col), mc_helpers.trim(type_id), mc_helpers.trim(item)
+    return col and mc_helpers.trim(col), type_id and mc_helpers.trim(type_id), item and mc_helpers.trim(item)
 end
 
 function mc_tutorial.show_record_fs(player)
@@ -189,8 +188,13 @@ function mc_tutorial.show_record_fs(player)
         -- Get all available rewards
         if not context.rewards then
             local rewards = {}
+            local selected_rewards = {}
             for priv,_ in pairs(minetest.registered_privileges) do
-                table.insert(rewards, "#FFCCFF"..minetest.formspec_escape("[P] "..priv))
+                if mc_helpers.tableHas(mc_tutorial.record.temp[pname].on_completion.privs, priv) then
+                    table.insert(selected_rewards, "#FFCCFF"..minetest.formspec_escape("[P] "..priv))
+                else
+                    table.insert(rewards, "#FFCCFF"..minetest.formspec_escape("[P] "..priv))
+                end
             end
 
             local item_map = {
@@ -200,12 +204,17 @@ function mc_tutorial.show_record_fs(player)
             for item,def in pairs(minetest.registered_items) do
                 local item_trim = mc_helpers.trim(item)
                 if item_trim ~= "" then
-                    table.insert(rewards, (item_map[def.type] or "#FFFFCC"..minetest.formspec_escape("[I] "))..item_trim)
+                    if mc_helpers.tableHas(mc_tutorial.record.temp[pname].on_completion.items, item) then
+                        table.insert(selected_rewards, (item_map[def.type] or "#FFFFCC"..minetest.formspec_escape("[I] "))..item_trim)
+                    else
+                        table.insert(rewards, (item_map[def.type] or "#FFFFCC"..minetest.formspec_escape("[I] "))..item_trim)
+                    end
                 end
             end
             table.sort(rewards)
+            table.sort(selected_rewards)
             context.rewards = rewards
-            context.selected_rewards = {}
+            context.selected_rewards = selected_rewards
         end
 
         local tutorials = mc_tutorial.tutorials:to_table()
@@ -685,7 +694,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             context.selected_rewards, context.rewards, new_index = move_list_item(context.reward_selected[RW_SELECT], context.selected_rewards, context.rewards)
             context.reward_selected = {
                 [RW_LIST] = new_index,
-                [RW_SELECT] = math.max(1, math.min(context.reward_selected[RW_SELECT], #context.rewards)),
+                [RW_SELECT] = math.max(1, math.min(context.reward_selected[RW_SELECT], #context.selected_rewards)),
                 ["active"] = RW_LIST
             }
             save_context(player, context)
