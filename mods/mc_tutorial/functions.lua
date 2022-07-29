@@ -140,23 +140,29 @@ function mc_tutorial.completed_action(player)
         -- on_completion callbacks here
         minetest.chat_send_player(pname, "[Tutorial] "..pdata.active.on_completion.message)
 
-        local inv = player:get_inventory()
-        for _,item in pairs(pdata.active.on_completion.items) do
-            if not mc_helpers.getInventoryItemLocation(inv, ItemStack(item)) then
-                inv:add_item("main", item)
+        if not mc_helpers.tableHas(pdata.completed, mc_tutorial.active[pname]) then
+            -- Give rewards for first-time completion
+            local inv = player:get_inventory()
+            for _,item in pairs(pdata.active.on_completion.items) do
+                if not mc_helpers.getInventoryItemLocation(inv, ItemStack(item)) then
+                    inv:add_item("main", item)
+                end
             end
-        end
 
-        -- TODO
-        local player_privs = minetest.get_player_privs(pname)
-        for _,priv in pairs(pdata.active.on_completion.privs) do
-            player_privs.priv = true
+            -- TODO
+            local player_privs = minetest.get_player_privs(pname)
+            for _,priv in pairs(pdata.active.on_completion.privs) do
+                player_privs.priv = true
+            end
+            minetest.set_player_privs(pname, player_privs)
+
+            table.insert(pdata.completed, mc_tutorial.active[pname])
         end
-        minetest.set_player_privs(pname, player_privs)
 
         pdata.listener.wield = false
         pdata.listener.key = false
         pdata.active = nil
+        mc_tutorial.active[pname] = nil
     end
 
     -- set player metedata

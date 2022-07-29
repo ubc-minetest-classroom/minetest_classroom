@@ -764,6 +764,8 @@ minetest.register_on_leaveplayer(function(player)
     for list,_ in pairs(mc_tutorial.record) do
         mc_tutorial.record[list][pname] = nil
     end
+    mc_tutorial.record.listener.wield[pname] = nil
+    mc_tutorial.record.listener.key[pname] = nil
 end)
 
 -- TODO: other possible callbacks
@@ -788,13 +790,15 @@ minetest.register_chatcommand("listTutorials", {
 	func = function(name, param)
         local tutorials = mc_tutorial.tutorials:to_table()
         if tutorials and next(tutorials.fields) then
-            minetest.chat_send_all("[Tutorial] Recorded tutorials:")
-            for _,serial_tutorial in pairs(tutorials.fields or {}) do
-                local tutorial = minetest.deserialize(serial_tutorial)
-                minetest.chat_send_player(name, "[Tutorial] - " .. tutorial.title)
+            minetest.chat_send_all("Recorded tutorials:")
+            for k,serial_tutorial in pairs(tutorials.fields) do
+                if tonumber(k) then
+                    local tutorial = minetest.deserialize(serial_tutorial)
+                    minetest.chat_send_player(name, "- " .. tutorial.title)
+                end
             end
         else
-            minetest.chat_send_player(name, "[Tutorial] No tutorials have been recorded.")
+            minetest.chat_send_player(name, "No tutorials have been recorded.")
         end
 	end
 })
