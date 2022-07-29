@@ -121,12 +121,19 @@ local function get_reward_desc(type_id, item)
 
     local desc = ""
     if type_id == "P" then
-        desc = minetest.registered_privileges[mc_helpers.trim(item)] and minetest.registered_privileges[mc_helpers.trim(item)].description or ""
-    elseif ItemStack(mc_helpers.trim(item)):is_known() then
-        local stack = ItemStack(mc_helpers.trim(item))
+        desc = minetest.registered_privileges[item] and minetest.registered_privileges[item].description or ""
+    elseif ItemStack(item):is_known() then
+        local stack = ItemStack(item)
         desc = stack:get_description() or stack:get_short_description()
     end
-    return minetest.formspec_escape(mc_helpers.trim(item)).."\n"..desc
+    return minetest.formspec_escape(item).."\n"..desc
+end
+
+local function get_selected_reward_info(context, list_id)
+    local pattern = "(.-)"..string.gsub(minetest.formspec_escape("["), "%[", "%%%[").."(%w)"..string.gsub(minetest.formspec_escape("]"), "%]", "%%%]").."(.*)"
+    local selection = context.reward_selected[list_id]
+    local col, type_id, item = string.match(list_id == RW_LIST and context.rewards[selection] or list_id == RW_SELECT and context.selected_rewards[selection] or "", pattern)
+    return mc_helpers.trim(col), mc_helpers.trim(type_id), mc_helpers.trim(item)
 end
 
 function mc_tutorial.show_record_fs(player)
@@ -246,11 +253,8 @@ function mc_tutorial.show_record_fs(player)
             end,
             ["3"] = function()
                 -- TODO: limit rewards to items tutorial creator has access to in order to limit abuse?
-                local pattern = "(.-)"..string.gsub(minetest.formspec_escape("["), "%[", "%%%[").."(%w)"..string.gsub(minetest.formspec_escape("]"), "%]", "%%%]").."(.*)"
-                context.reward_selected = context.reward_selected or {[RW_LIST] = 1, [RW_SELECT] = 1, active = RW_LIST}
-                local selection = context.reward_selected[context.reward_selected["active"]]
-                local sel_info = context.reward_selected["active"] == RW_LIST and context.rewards[selection] or context.reward_selected["active"] == RW_SELECT and context.selected_rewards[selection] or ""
-                local col, type_id, item = string.match(sel_info or "", pattern)
+                context.reward_selected = context.reward_selected or {[RW_LIST] = 1, [RW_SELECT] = 1, ["active"] = RW_LIST}
+                local col, type_id, item = get_selected_reward_info(context, context.reward_selected["active"])
 
                 return { -- REWARDS
                     "label[0.4,0.6;Available rewards]",
@@ -265,7 +269,7 @@ function mc_tutorial.show_record_fs(player)
                     "image_button[12.2,8.8;0.8,0.8;mc_tutorial_search.png;reward_search_go;;false;false]",
                     "image_button[13,8.8;0.8,0.8;mc_tutorial_cancel.png;reward_search_x;;false;false]",
                     "label[0.4,7.2;Selected reward]",
-                    type_id and type_id ~= "P" and "item_" or "", "image[0.4,7.5;2.1,2.1;", type_id and (type_id ~= "P" and item and mc_helpers.trim(item) or "mc_tutorial_tutorialbook.png") or "mc_tutorial_cancel.png", "]",
+                    type_id and type_id ~= "P" and "item_" or "", "image[0.4,7.5;2.1,2.1;", type_id and (type_id ~= "P" and item or "mc_tutorial_tutorialbook.png") or "mc_tutorial_cancel.png", "]",
                     "textarea[2.6,7.4;4.2,2.2;;;", get_reward_desc(type_id, item), "]",
                     "tooltip[reward_add;Add reward]",
                     "tooltip[reward_delete;Remove reward]",
@@ -438,6 +442,18 @@ function mc_tutorial.show_tutorials(player)
     return true
 end
 
+local function move_list_item(index, from_list, to_list)
+    local item_to_move = table.remove(from_list, index)
+    table.insert(to_list, item_to_move)
+    table.sort(to_list)
+    for i,v in pairs(to_list) do
+        if v == item_to_move then
+            return from_list, to_list, i
+        end
+    end
+    return from_list, to_list
+end
+
 -- REWORK
 minetest.register_on_player_receive_fields(function(player, formname, fields)
     local pname = player:get_player_name()
@@ -592,6 +608,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
     -- Complete the recording
 	if formname == "mc_tutorial:record_fs" then
+
+        -- NAV + SELECTION
         if fields.record_nav then
             context.tab = fields.record_nav
             save_temp_fields(player, fields)
@@ -608,7 +626,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.reward_list then
             local event = minetest.explode_textlist_event(fields.reward_list)
             if event.type == "CHG" then
-                context.reward_selected = context.reward_selected or {}
+                context.reward_selected = context.reward_selected or {[RW_LIST] = 1, [RW_SELECT] = 1, ["active"] = RW_LIST}
                 context.reward_selected[RW_LIST] = event.index
                 context.reward_selected["active"] = RW_LIST
 
@@ -619,7 +637,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.reward_selection then
             local event = minetest.explode_textlist_event(fields.reward_selection)
             if event.type == "CHG" then
-                context.reward_selected = context.reward_selected or {}
+                context.reward_selected = context.reward_selected or {[RW_LIST] = 1, [RW_SELECT] = 1, ["active"] = RW_LIST}
                 context.reward_selected[RW_SELECT] = event.index
                 context.reward_selected["active"] = RW_SELECT
 
@@ -627,46 +645,61 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 mc_tutorial.show_record_fs(player)
             end
         end
-        --[[if fields.givetool then
-            local event = minetest.explode_textlist_event(fields.givetool)
-            if event.type == "CHG" then
-                --mc_tutorial.selected_tool = event.index
+
+        -- BUTTONS
+        if fields.reward_add and #context.rewards > 0 then
+            context.reward_selected = context.reward_selected or {[RW_LIST] = 1, [RW_SELECT] = 1, ["active"] = RW_LIST}
+            local col, type_id, item = get_selected_reward_info(context, RW_LIST)
+            if type_id == "P" then
+                table.insert(mc_tutorial.record.temp[pname].on_completion.privs, item)
+            else
+                table.insert(mc_tutorial.record.temp[pname].on_completion.items, item)
             end
-            for i,itemstring in ipairs(tools) do
-                if i+1 == mc_tutorial.selected_tool then
-                    mc_tutorial.record.temp[pname].on_completion.givetool = itemstring
-                end
-            end
+
+            context.rewards, context.selected_rewards, new_index = move_list_item(context.reward_selected[RW_LIST], context.rewards, context.selected_rewards)
+            context.reward_selected = {
+                [RW_LIST] = math.max(1, math.min(context.reward_selected[RW_LIST], #context.rewards)),
+                [RW_SELECT] = new_index,
+                ["active"] = RW_SELECT
+            }
+            save_context(player, context)
+            mc_tutorial.show_record_fs(player)
         end
-        if fields.giveitem then
-            local event = minetest.explode_textlist_event(fields.giveitem)
-            if event.type == "CHG" then
-                --mc_tutorial.selected_item = event.index
-            end
-            for i,itemstring in ipairs(items) do
-                --[[if i+1 == mc_tutorial.selected_item then
-                    mc_tutorial.record.temp[pname].on_completion.giveitem = itemstring
+        if fields.reward_delete and #context.selected_rewards > 0 then
+            context.reward_selected = context.reward_selected or {[RW_LIST] = 1, [RW_SELECT] = 1, ["active"] = RW_LIST}
+            local col, type_id, item = get_selected_reward_info(context, RW_SELECT)
+            if type_id == "P" then
+                for i,reward in pairs(mc_tutorial.record.temp[pname].on_completion.privs) do
+                    if item == reward then
+                        table.remove(mc_tutorial.record.temp[pname].on_completion.privs, i)
+                    end
+                end
+            else
+                for i,reward in pairs(mc_tutorial.record.temp[pname].on_completion.items) do
+                    if item == reward then
+                        table.remove(mc_tutorial.record.temp[pname].on_completion.items, i)
+                    end
                 end
             end
+
+            context.selected_rewards, context.rewards, new_index = move_list_item(context.reward_selected[RW_SELECT], context.selected_rewards, context.rewards)
+            context.reward_selected = {
+                [RW_LIST] = new_index,
+                [RW_SELECT] = math.max(1, math.min(context.reward_selected[RW_SELECT], #context.rewards)),
+                ["active"] = RW_LIST
+            }
+            save_context(player, context)
+            mc_tutorial.show_record_fs(player)
         end
-        if fields.grantpriv then
-            local event = minetest.explode_textlist_event(fields.grantpriv)
-            if event.type == "CHG" then
-                --mc_tutorial.selected_priv = event.index
-            end
-            for i,priv in ipairs(privs) do
-                if i+1 == mc_tutorial.selected_priv then
-                    mc_tutorial.record.temp[pname].on_completion.grantpriv = priv
-                end
-            end
-        end]]
-        if fields.delete then
+
+        --[[if fields.delete then
             if context.selected_event then
                 table.remove(mc_tutorial.record.temp[pname].sequence, context.selected_event)
                 mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length - 1
                 mc_tutorial.show_record_fs(player)
             end
-        end
+        end]]
+
         if fields.finish then
             if mc_tutorial.record.temp[pname].length > 0 then
                 save_temp_fields(player, fields)

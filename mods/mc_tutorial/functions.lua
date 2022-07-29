@@ -139,26 +139,24 @@ function mc_tutorial.completed_action(player)
     if pdata.active.seq_index > pdata.active.length then
         -- on_completion callbacks here
         minetest.chat_send_player(pname, "[Tutorial] "..pdata.active.on_completion.message)
+
+        local inv = player:get_inventory()
+        for _,item in pairs(pdata.active.on_completion.items) do
+            if not mc_helpers.getInventoryItemLocation(inv, ItemStack(item)) then
+                inv:add_item("main", item)
+            end
+        end
+
+        -- TODO
+        local player_privs = minetest.get_player_privs(pname)
+        for _,priv in pairs(pdata.active.on_completion.privs) do
+            player_privs.priv = true
+        end
+        minetest.set_player_privs(pname, player_privs)
+
         pdata.listener.wield = false
         pdata.listener.key = false
         pdata.active = nil
-    
-        local inv = player:get_inventory()
-        -- Check if the player already has the tool
-        --[[if pdata.active.on_completion.givetool then
-            if not mc_helpers.getInventoryItemLocation(inv, pItemStack(pdata.active.on_completion.givetool)) then
-                inv:add_item("main", pdata.active.on_completion.givetool)
-            end
-        end
-        if pdata.active.on_completion.giveitem then
-            -- Check if the player already has the item
-            if not mc_helpers.getInventoryItemLocation(inv, ItemStack(pdata.active.on_completion.giveitem)) then
-                inv:add_item("main", pdata.active.on_completion.giveitem)
-            end
-        end
-        if pdata.active.on_completion.grantpriv then
-            -- TODO
-        end]]
     end
 
     -- set player metedata
