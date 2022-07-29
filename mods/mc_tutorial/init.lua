@@ -238,7 +238,7 @@ function mc_tutorial.show_record_fs(player)
             end,
             ["2"] = function() -- EVENTS
                 return { 
-                    "textlist[0.4,0.8;13.4,7.3;eventlist;", table.concat(context.events, ","), ";1;false]",
+                    "textlist[0.4,0.8;13.4,7.3;eventlist;", table.concat(context.events, ","), ";", context.selected_event or 1, ";false]",
                     "label[0.4,0.6;Recorded events]",
                     "image_button[0.4,8.2;1.4,1.4;mc_tutorial_add_event.png;eventlist_add_event;;false;true]",
                     "image_button[1.9,8.2;1.4,1.4;mc_tutorial_add_group.png;eventlist_add_group;;false;true]",
@@ -463,6 +463,15 @@ local function move_list_item(index, from_list, to_list)
     return from_list, to_list
 end
 
+local function shift_list_item(list, from_index, to_index)
+    local shift = table.remove(list, from_index)
+    if to_index then
+        table.insert(list, to_index, shift)
+    else
+        table.insert(list, shift)
+    end
+end
+
 -- REWORK
 minetest.register_on_player_receive_fields(function(player, formname, fields)
     local pname = player:get_player_name()
@@ -546,15 +555,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
         -- TODO: add formspec to support recording: 
                 ----- put something into or modify inventory player:get_inventory() inv:contains_item() inv:is_empty() ItemStack:get_count()
-                ----- press keys player:get_player_control() or player:get_player_control_bits()
-        
-        --[[if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) and mc_tutorial.record.active[pname] then
-            -- Check if the tutorial has already been instanced by another callback
-            if not mc_tutorial.record.temp[pname] then
-                -- this is the first entry for the tutorial, apply default values
-                mc_tutorial.record.temp[pname] = mc_tutorial.get_temp_shell()
-            end
-        end]]
 
         if fields.getpos then
             local pos = player:get_pos()
@@ -617,19 +617,19 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
     -- Complete the recording
 	if formname == "mc_tutorial:record_fs" then
+        local reload = false
 
         -- NAV + SELECTION
         if fields.record_nav then
             context.tab = fields.record_nav
             save_temp_fields(player, fields)
-            save_context(player, context)
-            mc_tutorial.show_record_fs(player)
+            reload = true
         end
         if fields.eventlist then
             local event = minetest.explode_textlist_event(fields.eventlist)
             if event.type == "CHG" then
-                context.event_selected = event.index
-                save_context(player, context)
+                context.selected_event = event.index
+                reload = true
             end
         end
         if fields.reward_list then
@@ -638,9 +638,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 context.reward_selected = context.reward_selected or {[RW_LIST] = 1, [RW_SELECT] = 1, ["active"] = RW_LIST}
                 context.reward_selected[RW_LIST] = event.index
                 context.reward_selected["active"] = RW_LIST
-
-                save_context(player, context)
-                mc_tutorial.show_record_fs(player)
+                reload = true
             end
         end
         if fields.reward_selection then
@@ -649,13 +647,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 context.reward_selected = context.reward_selected or {[RW_LIST] = 1, [RW_SELECT] = 1, ["active"] = RW_LIST}
                 context.reward_selected[RW_SELECT] = event.index
                 context.reward_selected["active"] = RW_SELECT
-
-                save_context(player, context)
-                mc_tutorial.show_record_fs(player)
+                reload = true
             end
         end
 
-        -- BUTTONS
+        -- REWARDS INTERACTION
         if fields.reward_add and #context.rewards > 0 then
             context.reward_selected = context.reward_selected or {[RW_LIST] = 1, [RW_SELECT] = 1, ["active"] = RW_LIST}
             local col, type_id, item = get_selected_reward_info(context, RW_LIST)
@@ -671,8 +667,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 [RW_SELECT] = new_index,
                 ["active"] = RW_SELECT
             }
-            save_context(player, context)
-            mc_tutorial.show_record_fs(player)
+            reload = true
         end
         if fields.reward_delete and #context.selected_rewards > 0 then
             context.reward_selected = context.reward_selected or {[RW_LIST] = 1, [RW_SELECT] = 1, ["active"] = RW_LIST}
@@ -697,18 +692,89 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 [RW_SELECT] = math.max(1, math.min(context.reward_selected[RW_SELECT], #context.selected_rewards)),
                 ["active"] = RW_LIST
             }
-            save_context(player, context)
-            mc_tutorial.show_record_fs(player)
+            reload = true
+        end
+        if fields.reward_search_go then
+            -- TODO
+        end
+        if fields.reward_search_x then
+            -- TODO
         end
 
-        --[[if fields.delete then
-            if context.selected_event then
-                table.remove(mc_tutorial.record.temp[pname].sequence, context.selected_event)
-                mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length - 1
-                mc_tutorial.show_record_fs(player)
+        -- EVENTS INTERACTION
+        local eventlist_field_active = false
+        for k,v in pairs(fields) do
+            if string.sub(k, 1, 10) == "eventlist_" then
+                eventlist_field_active = true
+                break
             end
-        end]]
+        end
+        if eventlist_field_active then
+            reload = true
+            if fields.eventlist_add_event then
+                context.selected_event = context.selected_event or 1
+                -- TODO
+            end
+            if fields.eventlist_add_group then
+                context.selected_event = context.selected_event or 1
+                -- TODO
+            end
+            if fields.eventlist_delete then
+                context.selected_event = context.selected_event or 1
+                table.remove(mc_tutorial.record.temp[pname].sequence, context.selected_event)
+                table.remove(context.events, context.selected_event)
+                mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length - 1
+                context.selected_event = math.max(1, math.min(context.selected_event, #mc_tutorial.record.temp[pname].sequence))
+            end
+            if fields.eventlist_duplicate then
+                context.selected_event = context.selected_event or 1
+                local copy = {
+                    internal = mc_tutorial.record.temp[pname].sequence[context.selected_event],
+                    external = context.events[context.selected_event]
+                }
+                table.insert(mc_tutorial.record.temp[pname].sequence, context.selected_event + 1, copy.internal)
+                table.insert(context.events, context.selected_event + 1, copy.external)
+                mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length + 1
+            end
+            if fields.eventlist_edit then
+                context.selected_event = context.selected_event or 1
+                -- TODO
+            end
+            if fields.eventlist_move_top then
+                context.selected_event = context.selected_event or 1
+                if context.selected_event > 1 then
+                    shift_list_item(mc_tutorial.record.temp[pname].sequence, context.selected_event, 1)
+                    shift_list_item(context.events, context.selected_event, 1)
+                    context.selected_event = 1
+                end
+            end
+            if fields.eventlist_move_up then
+                context.selected_event = context.selected_event or 1
+                if context.selected_event > 1 then
+                    shift_list_item(mc_tutorial.record.temp[pname].sequence, context.selected_event, context.selected_event - 1)
+                    shift_list_item(context.events, context.selected_event, context.selected_event - 1)
+                    context.selected_event = context.selected_event - 1
+                end
+            end
+            if fields.eventlist_move_down then
+                context.selected_event = context.selected_event or 1
+                if context.selected_event < #context.events then
+                    shift_list_item(mc_tutorial.record.temp[pname].sequence, context.selected_event, context.selected_event + 1)
+                    shift_list_item(context.events, context.selected_event, context.selected_event + 1)
+                    context.selected_event = context.selected_event + 1
+                end
+            end
+            if fields.eventlist_move_bottom then
+                context.selected_event = context.selected_event or 1
+                if context.selected_event < #context.events then
+                    shift_list_item(mc_tutorial.record.temp[pname].sequence, context.selected_event)
+                    shift_list_item(context.events, context.selected_event)
+                    context.selected_event = #context.events
+                end
+            end
+        end
 
+        -- MISC
         if fields.finish then
             if mc_tutorial.record.temp[pname].length > 0 then
                 save_temp_fields(player, fields)
@@ -754,10 +820,18 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             -- Ensure global temp is recycled + context is cleared
             mc_tutorial.record.temp[pname] = nil
             save_context(player, nil)
+            return -- formspec was closed, do not continue
         elseif fields.quit then -- forced quit
             minetest.chat_send_player(pname, "[Tutorial] No tutorial was saved.")
             mc_tutorial.record.temp[pname] = nil
             save_context(player, nil)
+            return -- formspec was closed, do not continue
+        end
+
+        -- Save context and refresh formspec, if necessary
+        if reload then
+            save_context(player, context)
+            mc_tutorial.show_record_fs(player)
         end
     end
 end)
