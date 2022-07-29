@@ -62,7 +62,7 @@ local function show_all_huds(player)
 	instances[player:get_player_name()].HUD_showing = true
 end
 
-local function hide_huds()
+local function hide_huds(player)
 	bgHud:remove_all()
 
 	for _,hud in ipairs(instances[player:get_player_name()].measurementHuds) do
@@ -81,7 +81,7 @@ minetest.register_tool("forestry_tools:clinometer" , {
 	-- On left-click
     on_use = function(itemstack, player, pointed_thing)
 		if instances[player:get_player_name()].HUD_showing then
-			hide_huds()
+			hide_huds(player)
 		else
 			show_all_huds(player)
 		end
