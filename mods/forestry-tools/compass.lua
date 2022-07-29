@@ -228,7 +228,7 @@ minetest.register_tool("forestry_tools:compass" , {
 
 	on_secondary_use = function(itemstack, player, pointed_thing)
 		if instances[player:get_player_name()].open_HUD_showing then 
-			update_formspec_image(placer, true, true)
+			update_formspec_image(player, true, true)
 		end
 	end,
 
