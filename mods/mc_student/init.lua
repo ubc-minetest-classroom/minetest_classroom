@@ -301,7 +301,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			local msg = pname .. " reported: " .. fields.report
 
 			-- Append list of teachers in-game
-			local teachers = 
+			local teachers = ""
 			for teacher in pairs(minetest_classroom.mc_students.teachers) do
 				local teachers = teachers .. teacher .. ", "
 			end

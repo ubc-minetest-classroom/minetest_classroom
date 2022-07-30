@@ -500,6 +500,12 @@ function mc_toolhandler.create_tool_inventory(player)
     local inv_name = "mc_toolhandler:"..pname
     local list_name = "store"
 
+    -- get items to add to store
+    local tools_to_check = mc_helpers.shallowCopy(mc_toolhandler.reg_tools)
+    for id,options in pairs(mc_toolhandler.reg_groups) do
+        tools_to_check[options.default_tool] = {privs = options.privs, allow_take = options.allow_take}
+    end
+
     -- get detached inventory, or initialize if it doesn't already exist
     local store_inv = minetest.get_inventory({type = "detached", name = inv_name})
     if not store_inv then
@@ -513,7 +519,9 @@ function mc_toolhandler.create_tool_inventory(player)
                 return 0
             end,
             allow_take = function(inv, listname, index, stack, player)
-                if not mc_helpers.checkPrivs(player, mc_toolhandler.reg_tools[stack:get_name()]) then
+                minetest.log(minetest.serialize(tools_to_check[stack:get_name()]))
+                minetest.log(minetest.serialize(tools_to_check[stack:get_name()]["privs"]))
+                if not mc_helpers.checkPrivs(player, tools_to_check[stack:get_name()]["privs"]) then
                     -- no permissions: do not allow player to take item
                     return 0
                 else
@@ -524,16 +532,10 @@ function mc_toolhandler.create_tool_inventory(player)
         }, pname)
     end
 
-    -- clear existing store list
+    -- clear existing store list + add items to store
     store_inv:set_list(list_name, {})
-    local tools_to_check = mc_helpers.shallowCopy(mc_toolhandler.reg_tools)
-    for id,options in pairs(mc_toolhandler.reg_groups) do
-        tools_to_check[options.default_tool] = {privs = options.privs, allow_take = options.allow_take}
-    end
     local count = 0
-
-    -- add items to store
-    for item,options in pairs(tools_to_check) do
+    for item, options in pairs(tools_to_check) do
         local stack = ItemStack(item)
         if stack and mc_helpers.checkPrivs(player, options["privs"]) then
             count = count + 1
