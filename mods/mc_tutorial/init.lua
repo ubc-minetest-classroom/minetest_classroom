@@ -134,10 +134,33 @@ local function get_reward_desc(type_id, item)
 end
 
 local function get_selected_reward_info(context, list_id)
-    local pattern = "(.-)"..string.gsub(minetest.formspec_escape("["), "%[", "%%%[").."(%w)"..string.gsub(minetest.formspec_escape("]"), "%]", "%%%]").."(.*)"
+    local pattern = string.gsub(minetest.formspec_escape("["), "%[", "%%%[").."(%w)"..string.gsub(minetest.formspec_escape("]"), "%]", "%%%]").."(.*)"
     local selection = context.reward_selected[list_id]
-    local col, type_id, item = string.match(list_id == RW_LIST and context.rewards[selection] or list_id == RW_SELECT and context.selected_rewards[selection] or "", pattern)
-    return col and mc_helpers.trim(col), type_id and mc_helpers.trim(type_id), item and mc_helpers.trim(item)
+    local reward = list_id == RW_LIST and context.rewards[selection] or list_id == RW_SELECT and context.selected_rewards[selection]
+    local type_id, item = string.match(reward and reward.s or "", pattern)
+    return reward and (reward.col_override or reward.col), type_id and mc_helpers.trim(type_id), item and mc_helpers.trim(item)
+end
+
+local function col_field_compare(a, b)
+    local type_a = type(a) == "table"
+    local type_b = type(b) == "table"
+    if (not type_a or not a.s) and (not type_b or not b.s) then
+        return a < b
+    elseif (not type_a or not a.s) or (not type_b or not b.s) then
+        return type_a
+    else
+        return a.s < b.s
+    end
+end
+
+-- Concatenates a list of colour fields using the given separator
+local function concat_col_field_list(list, separator)
+    local col_list = {}
+    for i,elem in ipairs(list) do
+        local string = (elem.col_override or elem.col or "")..(elem.s or "")
+        table.insert(col_list, string)
+    end
+    return table.concat(col_list, separator)
 end
 
 function mc_tutorial.show_record_fs(player)
@@ -207,28 +230,29 @@ function mc_tutorial.show_record_fs(player)
             local selected_rewards = {}
             for priv,_ in pairs(minetest.registered_privileges) do
                 if mc_helpers.tableHas(mc_tutorial.record.temp[pname].on_completion.privs, priv) then
-                    table.insert(selected_rewards, "#FFCCFF"..minetest.formspec_escape("[P] "..priv))
+                    table.insert(selected_rewards, {col = "#FFCCFF", s = minetest.formspec_escape("[P] ")..priv})
                 else
-                    table.insert(rewards, "#FFCCFF"..minetest.formspec_escape("[P] "..priv))
+                    table.insert(rewards, {col = "#FFCCFF", s = minetest.formspec_escape("[P] ")..priv})
                 end
             end
 
             local item_map = {
-                ["tool"] = "#CCFFFF"..minetest.formspec_escape("[T] "),
-                ["node"] = "#CCFFCC"..minetest.formspec_escape("[N] "),
+                ["tool"] = {col = "#CCFFFF", s_pre = minetest.formspec_escape("[T] ")},
+                ["node"] = {col = "#CCFFCC", s_pre = minetest.formspec_escape("[N] ")},
             }
             for item,def in pairs(minetest.registered_items) do
                 local item_trim = mc_helpers.trim(item)
                 if item_trim ~= "" then
+                    local raw_col_field = item_map[def.type] or {col = "#FFFFCC", s_pre = minetest.formspec_escape("[I] ")}
                     if mc_helpers.tableHas(mc_tutorial.record.temp[pname].on_completion.items, item) then
-                        table.insert(selected_rewards, (item_map[def.type] or "#FFFFCC"..minetest.formspec_escape("[I] "))..item_trim)
+                        table.insert(selected_rewards, {col = raw_col_field.col, s = raw_col_field.s_pre..item_trim})
                     else
-                        table.insert(rewards, (item_map[def.type] or "#FFFFCC"..minetest.formspec_escape("[I] "))..item_trim)
+                        table.insert(rewards, {col = raw_col_field.col, s = raw_col_field.s_pre..item_trim})
                     end
                 end
             end
-            table.sort(rewards)
-            table.sort(selected_rewards)
+            table.sort(rewards, col_field_compare)
+            table.sort(selected_rewards, col_field_compare)
             context.rewards = rewards
             context.selected_rewards = selected_rewards
         end
@@ -284,8 +308,8 @@ function mc_tutorial.show_record_fs(player)
                 return { -- REWARDS
                     "label[0.4,0.6;Available rewards]",
                     "label[7.5,0.6;Selected rewards]",
-                    "textlist[0.4,0.8;6.3,6;reward_list;", table.concat(context.rewards, ","), ";", context.reward_selected and context.reward_selected[1] or 1, ";false]",
-                    "textlist[7.5,0.8;6.3,6;reward_selection;", table.concat(context.selected_rewards, ","), ";", context.reward_selected and context.reward_selected[2] or 1, ";false]",
+                    "textlist[0.4,0.8;6.3,6;reward_list;", concat_col_field_list(context.rewards, ","), ";", context.reward_selected and context.reward_selected[1] or 1, ";false]",
+                    "textlist[7.5,0.8;6.3,6;reward_selection;", concat_col_field_list(context.selected_rewards, ","), ";", context.reward_selected and context.reward_selected[2] or 1, ";false]",
                     "image_button[6.7,0.8;0.8,3;mc_tutorial_reward_add.png;reward_add;;false;true]",
                     "image_button[6.7,3.8;0.8,3;mc_tutorial_reward_delete.png;reward_delete;;false;true]",
                     "field[7,7.4;4.9,0.8;reward_quantity;Quantity;1]",
@@ -467,10 +491,10 @@ function mc_tutorial.show_tutorials(player)
     return true
 end
 
-local function move_list_item(index, from_list, to_list)
+local function move_list_item(index, from_list, to_list, comp_func)
     local item_to_move = table.remove(from_list, index)
     table.insert(to_list, item_to_move)
-    table.sort(to_list)
+    table.sort(to_list, comp_func or nil)
     for i,v in pairs(to_list) do
         if v == item_to_move then
             return from_list, to_list, i
@@ -702,7 +726,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 table.insert(mc_tutorial.record.temp[pname].on_completion.items, item)
             end
 
-            context.rewards, context.selected_rewards, new_index = move_list_item(context.reward_selected[RW_LIST], context.rewards, context.selected_rewards)
+            context.rewards, context.selected_rewards, new_index = move_list_item(context.reward_selected[RW_LIST], context.rewards, context.selected_rewards, col_field_compare)
             context.reward_selected = {
                 [RW_LIST] = math.max(1, math.min(context.reward_selected[RW_LIST], #context.rewards)),
                 [RW_SELECT] = new_index,
@@ -727,7 +751,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
             end
 
-            context.selected_rewards, context.rewards, new_index = move_list_item(context.reward_selected[RW_SELECT], context.selected_rewards, context.rewards)
+            context.selected_rewards, context.rewards, new_index = move_list_item(context.reward_selected[RW_SELECT], context.selected_rewards, context.rewards, col_field_compare)
             context.reward_selected = {
                 [RW_LIST] = new_index,
                 [RW_SELECT] = math.max(1, math.min(context.reward_selected[RW_SELECT], #context.selected_rewards)),
