@@ -1,6 +1,3 @@
-----------------------------------
---    TUTORIAL BOOK FUNCTIONS   --
-----------------------------------
 
 -- Define a formspec that will describe tutorials and give the option to teleport to selected tutorial realm
 local mc_student_tutorial_menu =
@@ -101,5 +98,30 @@ local function show_punch(player)
 	end
 end
 
---    END TUTORIAL FUNCTIONS    --
-----------------------------------
+
+minetest.register_on_player_receive_fields(function(player, formname, fields)
+    if formname == "mc_student:tutorial_menu" then
+        if fields.mov then
+			show_mov(player)
+		elseif fields.punch then
+			show_punch(player)
+		end
+	end
+
+	if formname == "mc_student:mov" then
+        if fields.intro then
+            show_tutorial_menu(player)
+		elseif fields.punch then
+			show_punch(player)
+		end
+	end
+
+	if formname == "mc_student:punch" then
+        if fields.intro then
+            show_tutorial_menu(player)
+		elseif fields.mov then
+			show_mov(player)
+		end
+	end
+end
+
