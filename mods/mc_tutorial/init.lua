@@ -34,7 +34,12 @@ mc_tutorial = {
         LOOK_YAW = 6,
         LOOK_PITCH = 7,
         LOOK_DIR = 8,
-        POS = 9
+        POS = 9,
+        GROUP = 10
+    },
+    GROUP = { -- group type constants
+        START = 1,
+        END = 2
     }
 }
 -- local constants
@@ -90,7 +95,7 @@ minetest.register_on_joinplayer(function(player)
     -- Load player meta
     local pmeta = player:get_meta()
     local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
-    if not pdata or not next(pdata) or not pdata.format or pdata.format ~= 3 then
+    if not pdata or not next(pdata) or not pdata.format or pdata.format < 3 then
         -- data not initialized, initialize and serialize a table to hold everything
         pdata = {
             active = {},
@@ -147,39 +152,50 @@ function mc_tutorial.show_record_fs(player)
             local events = {}
             local action_map = {
                 [mc_tutorial.ACTION.PUNCH] = function(event)
-                    return "punch node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " with "..event.tool or "")
+                    return nil, "punch node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " with "..event.tool or "")
                 end,
                 [mc_tutorial.ACTION.DIG] = function(event)
-                    return "dig node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " with "..event.tool or "")
+                    return nil, "dig node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " with "..event.tool or "")
                 end,
                 [mc_tutorial.ACTION.PLACE] = function(event)
-                    return "place node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " while wielding "..event.tool or "")
+                    return nil, "place node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " while wielding "..event.tool or "")
                 end,
                 [mc_tutorial.ACTION.WIELD] = function(event)
-                    return "wield "..(event.tool and (event.tool == "" and "nothing" or event.tool) or "[?]")
+                    return nil, "wield "..(event.tool and (event.tool == "" and "nothing" or event.tool) or "[?]")
                 end,
                 [mc_tutorial.ACTION.KEY] = function(event)
-                    return "press key"..(event.key and (#event.key > 1 and "s " or " ")..table.concat(event.key, " + ") or " [?]")
+                    return nil, "press key"..(event.key and (#event.key > 1 and "s " or " ")..table.concat(event.key, " + ") or " [?]")
                 end,
                 [mc_tutorial.ACTION.LOOK_YAW] = function(event)
-                    return "look at yaw (horizontal) "..(event.dir and math.deg(event.dir).."°" or "[?]")
+                    return nil, "look at yaw (horizontal) "..(event.dir and math.deg(event.dir).."°" or "[?]")
                 end,
                 [mc_tutorial.ACTION.LOOK_PITCH] = function(event)
-                    return "look at pitch (vertical) "..(event.dir and math.deg(event.dir).."°" or "[?]")
+                    return nil, "look at pitch (vertical) "..(event.dir and math.deg(event.dir).."°" or "[?]")
                 end,
                 [mc_tutorial.ACTION.LOOK_DIR] = function(event)
                     -- directional vector: simplify representation?
                     local yaw_vect = event.dir and vector.new(event.dir.x, 0, event.dir.z)
                     local yaw = math.deg(vector.angle(vector.new(0, 0, 1), yaw_vect or vector.new(0, 0, 1)))
-                    return "look in direction "..(event.dir and "(yaw = "..(math.sign(yaw_vect.x) == -1 and (360 - yaw) or yaw).."°, pitch = "..math.sign(event.dir.y)*math.deg(vector.angle(event.dir, yaw_vect)).."°)" or "[?]")
+                    return nil, "look in direction "..(event.dir and "(yaw = "..(math.sign(yaw_vect.x) == -1 and (360 - yaw) or yaw).."°, pitch = "..math.sign(event.dir.y)*math.deg(vector.angle(event.dir, yaw_vect)).."°)" or "[?]")
                 end,
                 [mc_tutorial.ACTION.POS] = function(event)
-                    return "go to position "..(event.pos and "(x = "..event.pos.x..", y = "..event.pos.y..", z = "..event.pos.z..")" or "[?]")
+                    return nil, "go to position "..(event.pos and "(x = "..event.pos.x..", y = "..event.pos.y..", z = "..event.pos.z..")" or "[?]")
+                end,
+                [mc_tutorial.ACTION.GROUP] = function(event)
+                    if event.g_type == mc_tutorial.GROUP.START then
+                        return "#CCFFFF", "GROUP "..(event.g_id or "[?]").." {"
+                    else
+                        return "#CCFFFF", "} END GROUP "..(event.g_id or "[?]")
+                    end
                 end,
             }
+
             for i,event in ipairs(mc_tutorial.record.temp[pname].sequence) do
                 if event.action then
-                    table.insert(events, minetest.formspec_escape(action_map[event.action](event)))
+                    local col, event_string = action_map[event.action](event)
+                    table.insert(events, (col or "")..minetest.formspec_escape(event_string or ""))
+                else
+                    table.insert(events, "#FFCCCC"..minetest.formspec_escape("[?]"))
                 end
             end
             context.events = events
@@ -472,6 +488,30 @@ local function shift_list_item(list, from_index, to_index)
     end
 end
 
+local function event_shift_handler(pname, context, sequence, to_index)
+    local limit = to_index
+    local direction
+    if sequence[context.selected_event].action == mc_tutorial.ACTION.GROUP then
+        -- Prevent group markers from moving past other group markers
+        direction = math.sign((to_index or #context.events) - context.selected_event)
+        direction = direction ~= 0 and direction or 1
+
+        for i = context.selected_event + direction, to_index or #context.events, direction do
+            if sequence[i].action == mc_tutorial.ACTION.GROUP then
+                limit = i - direction
+                break
+            end
+        end
+    end
+    if limit ~= context.selected_event then
+        shift_list_item(sequence, context.selected_event, limit)
+        shift_list_item(context.events, context.selected_event, limit)
+        context.selected_event = limit or #context.events
+    else
+        minetest.chat_send_player(pname, "[Tutorial] You can not move this group marker any "..(direction == -1 and "higher" or "lower")..".")
+    end
+end
+
 -- REWORK
 minetest.register_on_player_receive_fields(function(player, formname, fields)
     local pname = player:get_player_name()
@@ -506,6 +546,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         elseif fields.edit then
             if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
                 mc_tutorial.record.temp[pname] = minetest.deserialize(tutorials.fields[context.tutorial_i_to_id[context.tutorial_selected]])
+                mc_tutorial.record.temp[pname].has_actions = mc_tutorial.record.temp[pname].length and mc_tutorial.record.temp[pname].length > 0
                 mc_tutorial.record.edit[pname] = true
                 if mc_tutorial.record.temp[pname] then
                     mc_tutorial.show_record_fs(player)
@@ -518,7 +559,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 pmeta = player:get_meta()
                 pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
                 local tutorial_to_start = minetest.deserialize(tutorials.fields[tostring(context.tutorial_i_to_id[context.tutorial_selected])])
-                if not tutorial_to_start.format or tutorial_to_start.format ~= 3 then
+                if not tutorial_to_start.format or tutorial_to_start.format < 3 then
                     minetest.chat_send_player(pname, "[Tutorial] This tutorial was saved in an outdated format and can no longer be accessed.")
                     return
                 end
@@ -651,7 +692,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         end
 
-        -- REWARDS INTERACTION
+        -- REWARDS TAB INTERACTIONS
         if fields.reward_add and #context.rewards > 0 then
             context.reward_selected = context.reward_selected or {[RW_LIST] = 1, [RW_SELECT] = 1, ["active"] = RW_LIST}
             local col, type_id, item = get_selected_reward_info(context, RW_LIST)
@@ -701,7 +742,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             -- TODO
         end
 
-        -- EVENTS INTERACTION
+        -- EVENTS TAB INTERACTIONS
         local eventlist_field_active = false
         for k,v in pairs(fields) do
             if string.sub(k, 1, 10) == "eventlist_" then
@@ -713,17 +754,44 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
             if fields.eventlist_add_event then
                 context.selected_event = context.selected_event or 1
+                minetest.chat_send_player(pname, "[Tutorial] Coming soon!")
                 -- TODO
             end
             if fields.eventlist_add_group then
                 context.selected_event = context.selected_event or 1
-                -- TODO
+                if mc_tutorial.record.temp[pname].sequence[context.selected_event].action == mc_tutorial.ACTION.GROUP then
+                    minetest.chat_send_player(pname, "[Tutorial] Groups can not be added around group markers.")
+                else
+                    local group = mc_tutorial.record.temp[pname].next_group or 1
+                    table.insert(mc_tutorial.record.temp[pname].sequence, context.selected_event + 1, {
+                        action = mc_tutorial.ACTION.GROUP,
+                        g_type = mc_tutorial.GROUP.END,
+                        g_id = group,
+                    })
+                    table.insert(context.events, context.selected_event + 1, "#CCFFFF} END GROUP "..group)
+                    table.insert(mc_tutorial.record.temp[pname].sequence, context.selected_event, {
+                        action = mc_tutorial.ACTION.GROUP,
+                        g_type = mc_tutorial.GROUP.START,
+                        g_id = group,
+                    })
+                    table.insert(context.events, context.selected_event, "#CCFFFFGROUP "..group.. " {")
+
+                    mc_tutorial.record.temp[pname].next_group = group + 1
+                end
             end
             if fields.eventlist_delete then
                 context.selected_event = context.selected_event or 1
-                table.remove(mc_tutorial.record.temp[pname].sequence, context.selected_event)
+                local removed = table.remove(mc_tutorial.record.temp[pname].sequence, context.selected_event)
                 table.remove(context.events, context.selected_event)
-                mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length - 1
+                if removed.action == mc_tutorial.ACTION.GROUP then
+                    for i,event in pairs(mc_tutorial.record.temp[pname].sequence) do
+                        if event.action == mc_tutorial.ACTION.GROUP and event.g_id == removed.g_id then
+                            table.remove(mc_tutorial.record.temp[pname].sequence, i)
+                            table.remove(context.events, i)
+                            break
+                        end
+                    end
+                end
                 context.selected_event = math.max(1, math.min(context.selected_event, #mc_tutorial.record.temp[pname].sequence))
             end
             if fields.eventlist_duplicate then
@@ -732,51 +800,59 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     internal = mc_tutorial.record.temp[pname].sequence[context.selected_event],
                     external = context.events[context.selected_event]
                 }
-                table.insert(mc_tutorial.record.temp[pname].sequence, context.selected_event + 1, copy.internal)
-                table.insert(context.events, context.selected_event + 1, copy.external)
-                mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length + 1
+                if copy.internal.action ~= mc_tutorial.ACTION.GROUP then
+                    table.insert(mc_tutorial.record.temp[pname].sequence, context.selected_event + 1, copy.internal)
+                    table.insert(context.events, context.selected_event + 1, copy.external)
+                else
+                    -- TODO: allow entire groups to be duplicated
+                    minetest.chat_send_player(pname, "[Tutorial] Group markers can not be duplicated.")
+                end
             end
             if fields.eventlist_edit then
                 context.selected_event = context.selected_event or 1
-                -- TODO
+                if mc_tutorial.record.temp[pname].sequence[context.selected_event].action ~= mc_tutorial.ACTION.GROUP then
+                    minetest.chat_send_player(pname, "[Tutorial] Coming soon!")
+                else
+                    minetest.chat_send_player(pname, "[Tutorial] Group markers can not be edited.")
+                end
             end
             if fields.eventlist_move_top then
                 context.selected_event = context.selected_event or 1
                 if context.selected_event > 1 then
-                    shift_list_item(mc_tutorial.record.temp[pname].sequence, context.selected_event, 1)
-                    shift_list_item(context.events, context.selected_event, 1)
-                    context.selected_event = 1
+                    event_shift_handler(pname, context, mc_tutorial.record.temp[pname].sequence, 1)
+                else
+                    minetest.chat_send_player(pname, "[Tutorial] This element can not be moved any higher.")
                 end
             end
             if fields.eventlist_move_up then
                 context.selected_event = context.selected_event or 1
                 if context.selected_event > 1 then
-                    shift_list_item(mc_tutorial.record.temp[pname].sequence, context.selected_event, context.selected_event - 1)
-                    shift_list_item(context.events, context.selected_event, context.selected_event - 1)
-                    context.selected_event = context.selected_event - 1
+                    event_shift_handler(pname, context, mc_tutorial.record.temp[pname].sequence, context.selected_event - 1)
+                else
+                    minetest.chat_send_player(pname, "[Tutorial] This element can not be moved any higher.")
                 end
             end
             if fields.eventlist_move_down then
                 context.selected_event = context.selected_event or 1
                 if context.selected_event < #context.events then
-                    shift_list_item(mc_tutorial.record.temp[pname].sequence, context.selected_event, context.selected_event + 1)
-                    shift_list_item(context.events, context.selected_event, context.selected_event + 1)
-                    context.selected_event = context.selected_event + 1
+                    event_shift_handler(pname, context, mc_tutorial.record.temp[pname].sequence, context.selected_event + 1)
+                else
+                    minetest.chat_send_player(pname, "[Tutorial] This element can not be moved any lower.")
                 end
             end
             if fields.eventlist_move_bottom then
                 context.selected_event = context.selected_event or 1
                 if context.selected_event < #context.events then
-                    shift_list_item(mc_tutorial.record.temp[pname].sequence, context.selected_event)
-                    shift_list_item(context.events, context.selected_event)
-                    context.selected_event = #context.events
+                    event_shift_handler(pname, context, mc_tutorial.record.temp[pname].sequence)
+                else
+                    minetest.chat_send_player(pname, "[Tutorial] This element can not be moved any lower.")
                 end
             end
         end
 
         -- MISC
         if fields.finish then
-            if mc_tutorial.record.temp[pname].length > 0 then
+            if mc_tutorial.record.temp[pname].has_actions then
                 save_temp_fields(player, fields)
 
                 -- Build the tutorial table to send to mod storage
@@ -784,16 +860,17 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     dependencies = mc_tutorial.record.temp[pname].dependencies or {}, -- table of tutorial IDs that must be compeleted before the player can attempt this tutorial
                     dependents = mc_tutorial.record.temp[pname].dependents or {}, -- table of tutorial IDs that completing this tutorial unlocks
                     title = (mc_tutorial.record.temp[pname].title ~= "" and mc_tutorial.record.temp[pname].title) or "Untitled",
-                    length = mc_tutorial.record.temp[pname].length or 0,
+                    length = mc_tutorial.record.temp[pname].sequence and #mc_tutorial.record.temp[pname].sequence or 0,
                     seq_index = 1, -- default search always starts on the first element in the sequence
                     description = (mc_tutorial.record.temp[pname].description ~= "" and mc_tutorial.record.temp[pname].description) or "No description provided",
                     sequence = mc_tutorial.record.temp[pname].sequence or {},
+                    next_group = mc_tutorial.record.temp[pname].next_group or 1,
                     on_completion = {
                         message = (mc_tutorial.record.temp[pname].on_completion.message ~= "" and mc_tutorial.record.temp[pname].on_completion.message) or "You completed the tutorial!",
                         items = mc_tutorial.record.temp[pname].on_completion.items or {},
                         privs = mc_tutorial.record.temp[pname].on_completion.privs or {}
                     },
-                    format = mc_tutorial.record.temp[pname].format
+                    format = mc_tutorial.get_temp_shell().format
                 }
 
                 -- Send to mod storage

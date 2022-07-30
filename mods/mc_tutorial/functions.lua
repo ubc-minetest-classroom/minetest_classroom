@@ -15,12 +15,13 @@ function mc_tutorial.get_temp_shell()
         dependents = {}, -- table of tutorial IDs that completing this tutorial unlocks
         sequence = {},
         length = 0,
+        next_group = 1,
         on_completion = {
             message = "",
             items = {},
             privs = {}
         },
-        format = 3
+        format = 4
     }
 end
 
@@ -38,8 +39,9 @@ function mc_tutorial.register_tutorial_action(player, action, action_table)
         end
         action_table["action"] = action
         table.insert(mc_tutorial.record.temp[pname].sequence, action_table)
-        mc_tutorial.record.temp[pname].length = mc_tutorial.record.temp[pname].length + 1
     end
+
+    mc_tutorial.record.temp[pname].has_actions = true
 end
 
 -- If needed, this function runs continuously after starting a mc_tutorial.
@@ -116,8 +118,15 @@ function mc_tutorial.tutorial_progress_listener(player)
         }
 
         -- Perform check for appropriate listener
-        if pdata.active.sequence[pdata.active.seq_index] and listener_map[pdata.active.sequence[pdata.active.seq_index].action] then
-            listener_map[pdata.active.sequence[pdata.active.seq_index].action]()
+        if pdata.active.sequence[pdata.active.seq_index] then
+            if pdata.active.sequence[pdata.active.seq_index].action == mc_tutorial.ACTION.GROUP then
+                -- Handle action group checks
+                --mc_tutorial.completed_action(player) -- TEMP until framework is in place
+            else
+                if listener_map[pdata.active.sequence[pdata.active.seq_index].action] then
+                    listener_map[pdata.active.sequence[pdata.active.seq_index].action]()
+                end
+            end
         end
         -- Continue listener cycle
         minetest.after(mc_tutorial.check_interval, mc_tutorial.tutorial_progress_listener, player)
@@ -134,6 +143,11 @@ function mc_tutorial.completed_action(player)
     -- Action was successfully completed, so update the sequence index
     pdata.active.seq_index = pdata.active.seq_index + 1 
     minetest.sound_play("bell", {gain = 1.0, pitch = 1.0, to_player = pname}, true)
+
+    -- TEMP to skip groups until proper framework is in place
+    while pdata.active.sequence[pdata.active.seq_index] and pdata.active.sequence[pdata.active.seq_index].action == mc_tutorial.ACTION.GROUP do
+        pdata.active.seq_index = pdata.active.seq_index + 1
+    end
 
     -- Check if tutorial is completed
     if pdata.active.seq_index > pdata.active.length then
