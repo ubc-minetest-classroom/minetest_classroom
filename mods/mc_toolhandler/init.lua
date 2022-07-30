@@ -519,8 +519,6 @@ function mc_toolhandler.create_tool_inventory(player)
                 return 0
             end,
             allow_take = function(inv, listname, index, stack, player)
-                minetest.log(minetest.serialize(tools_to_check[stack:get_name()]))
-                minetest.log(minetest.serialize(tools_to_check[stack:get_name()]["privs"]))
                 if not mc_helpers.checkPrivs(player, tools_to_check[stack:get_name()]["privs"]) then
                     -- no permissions: do not allow player to take item
                     return 0
