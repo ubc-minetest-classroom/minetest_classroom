@@ -1,18 +1,41 @@
-minetest.register_node("unbreakable_map_barrier:barrier", {
+minetest.register_node("unbreakable_map_barrier:barrierAir", {
         description = "Indestructible Map Block Barrier",
-		drawtype = "glasslike_framed_optional",
-		tiles = {"default_glass_detail.png"},
+		drawtype = "glasslike_framed",
+		align_style="world",
+		scale=16,
+		backface_culling = false,
+		tiles = {"barrier.png", "barrier_detail.png"},
 		use_texture_alpha = "clip",
 		paramtype = "light",
 		paramtype2 = "glasslikeliquidlevel",
 		sunlight_propagates = true,
-        is_ground_content = false,	
+        is_ground_content = false,
         on_blast = function() end,
         on_destruct = function () end,
         can_dig = function() return false end,
         diggable = false,
 		pointable = false, -- The player can't highlight it
 		drop = "",
+})
+
+minetest.register_node("unbreakable_map_barrier:barrierSolid", {
+	description = "Indestructible Map Block Barrier",
+	drawtype = "glasslike_framed",
+	align_style="world",
+	scale=16,
+	backface_culling = false,
+	tiles = {"barrierSolid.png", "barrierSolid_detail.png"},
+	use_texture_alpha = "clip",
+	paramtype = "light",
+	paramtype2 = "glasslikeliquidlevel",
+	sunlight_propagates = true,
+	is_ground_content = false,
+	on_blast = function() end,
+	on_destruct = function () end,
+	can_dig = function() return false end,
+	diggable = false,
+	pointable = false, -- The player can't highlight it
+	drop = "",
 })
 
 minetest.register_chatcommand("mapbarrier", {
@@ -39,11 +62,11 @@ minetest.register_chatcommand("mapbarrier", {
 		end
 		vm:set_data(data)
 		vm:write_to_map()
-		
+
 		-- bottom
 		minetest.chat_send_all("Writing bottom unbreakable blocks...")
 		pos1 = {x = x0, y = y0, z = z1}
-		pos2 = {x = x1, y = y0, z = z0}		
+		pos2 = {x = x1, y = y0, z = z0}
 		vm = minetest.get_voxel_manip()
 		edge0, edge1 = vm:read_from_map(pos1, pos2)
 		area = VoxelArea:new{MinEdge=edge0, MaxEdge=edge1}
@@ -57,11 +80,11 @@ minetest.register_chatcommand("mapbarrier", {
 		vm:set_data(data)
 		vm:write_to_map()
 		pos1, pos2, vm, edge0, edge1, area, data = {}, {}, {}, {}, {}, {}, {}
-		
+
 		-- front
 		minetest.chat_send_all("Writing unbreakable front blocks...")
 		pos1 = {x = x0, y = y0, z = z0}
-		pos2 = {x = x0, y = y1, z = z1}	
+		pos2 = {x = x0, y = y1, z = z1}
 		vm = minetest.get_voxel_manip()
 		edge0, edge1 = vm:read_from_map(pos1, pos2)
 		area = VoxelArea:new{MinEdge=edge0, MaxEdge=edge1}
@@ -78,7 +101,7 @@ minetest.register_chatcommand("mapbarrier", {
 		-- back
 		minetest.chat_send_all("Writing unbreakable back blocks...")
 		pos1 = {x = x1, y = y0, z = z0}
-		pos2 = {x = x1, y = y1, z = z1}	
+		pos2 = {x = x1, y = y1, z = z1}
 		vm = minetest.get_voxel_manip()
 		edge0, edge1 = vm:read_from_map(pos1, pos2)
 		area = VoxelArea:new{MinEdge=edge0, MaxEdge=edge1}

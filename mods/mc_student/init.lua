@@ -4,15 +4,7 @@ minetest_classroom.mc_students = {teachers = {}}
 
 -- Local variables
 local tool_name = "mc_student:notebook"
-local priv_table = {"interact"}
-
--- Check for adequate privileges
-local function check_perm_name(name)
-    return minetest.check_player_privs(name, {interact = true})
-end
-local function check_perm(player)
-    return check_perm_name(player:get_player_name())
-end
+local priv_table = {interact = true}
 
 -- Split pos in coordlist from character "x=1 y=2 z=3" to numeric table {1,2,3}
 local function pos_split (inputstr)
@@ -24,23 +16,24 @@ local function pos_split (inputstr)
 	return tt
 end
 
--- Define an initial formspec that will redirect to different formspecs depending on what the teacher wants to do
-local mc_student_menu =
-	"formspec_version[5]"..
-	"size[10,9]"..
-	"label[3.1,0.7;What do you want to do?]"..
-	"button[1,1.6;3.8,1.3;spawn;Go to UBC]"..
-	"button[5.2,1.6;3.8,1.3;accesscode;Join Classroom]"..
-	"button[1,3.3;3.8,1.3;coordinates;My Coordinates]"..
-	"button[5.2,3.3;3.8,1.3;marker;Place a Marker]"..
-	"button[1,5;3.8,1.3;taskstudent;View Tasks]"..
-	"button[5.2,5;3.8,1.3;report;Report]"..
+-- Define an initial formspec that will redirect to different formspecs depending on what the student wants to do
+local mc_student_menu = {
+	"formspec_version[5]",
+	"size[10,9]",
+	"label[3.1,0.7;What do you want to do?]",
+	"button[1,1.6;3.8,1.3;spawn;Go Home]",
+	"button[5.2,1.6;3.8,1.3;accesscode;Join Classroom]",
+	"button[1,3.3;3.8,1.3;coordinates;My Coordinates]",
+	"button[5.2,3.3;3.8,1.3;marker;Place a Marker]",
+	"button[1,5;3.8,1.3;taskstudent;View Tasks]",
+	"button[5.2,5;3.8,1.3;report;Report]",
 	"button_exit[3.1,6.7;3.8,1.3;exit;Exit]"
+}
 
 local function show_student_menu(player)
-	if check_perm(player) then
+	if mc_helpers.checkPrivs(player,priv_table) then
 		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:menu", mc_student_menu)
+		minetest.show_formspec(pname, "mc_student:menu", table.concat(mc_student_menu,""))
 		return true
 	end
 end
@@ -56,67 +49,66 @@ minetest.register_on_leaveplayer(function(player)
 end)
 
 -- Define the Report formspec
-local mc_student_report = 
-		"formspec_version[5]"..
-		"size[7,7]"..
-		"label[1.8,0.8;What are you reporting?]"..
-		"button[0.7,5.2;2,0.8;back;Back]"..
-		"button_exit[2.9,5.2;2,0.8;submit;Submit]"..
-		"textarea[0.7,1.5;5.6,3.1;report;; ]"
+local mc_student_report = {
+	"formspec_version[5]",
+	"size[7,7]",
+	"label[1.8,0.8;What are you reporting?]",
+	"button[0.7,5.2;2,0.8;back;Back]",
+	"button_exit[2.9,5.2;2,0.8;submit;Submit]",
+	"textarea[0.7,1.5;5.6,3.1;report;; ]"
+}
 
 local function show_report(player)
 	local pname = player:get_player_name()
-	minetest.show_formspec(pname, "mc_student:report", mc_student_report)
+	minetest.show_formspec(pname, "mc_student:report", table.concat(mc_student_report,""))
 	return true
 end
 
 -- Define the Coordinates formspec
 local function show_coordinates(player)
 	local pname = player:get_player_name()
-	mc_student_coordinates = 
-		"formspec_version[5]"..
-		"size[15,10]"..
+	mc_student_coordinates = {
+		"formspec_version[5]",
+		"size[15,10]",
 		"label[6.3,0.5;Coordinates Stored]"
-		
+	}
+
 	-- Get the stored coordinates for the player
 	local pmeta = player:get_meta()
 	pdata = minetest.deserialize(pmeta:get_string("coordinates"))
 	if pdata == nil then
 		-- No coordinates stored, so return an empty list element
-		mc_student_coordinates = 
-		mc_student_coordinates.. 
-		"textlist[0.3,1;14.4,7.5;;No Coordinates Stored;1;false]"
+		mc_student_coordinates[#mc_student_coordinates + 1] = "textlist[0.3,1;14.4,7.5;;No Coordinates Stored;1;false]"
 	else
-		mc_student_coordinates = mc_student_coordinates .. "textlist[0.3,1;14.4,7.5;coordlist;"
+		mc_student_coordinates[#mc_student_coordinates + 1] = "textlist[0.3,1;14.4,7.5;coordlist;"
 		-- Some coordinates were found, so iterate the list
 		pxyz = pdata.coords
 		pnotes = pdata.notes
 		for i in pairs(pxyz) do
-			mc_student_coordinates = mc_student_coordinates .. pxyz[i] .. " " .. pnotes[i] .. ","
+			mc_student_coordinates[#mc_student_coordinates + 1] = pxyz[i] .. " " .. pnotes[i] .. ","
 		end
-		mc_student_coordinates = mc_student_coordinates .. ";1;false]"
+		mc_student_coordinates[#mc_student_coordinates + 1] = ";1;false]"
 	end
 
-	mc_student_coordinates = mc_student_coordinates..
-		"button[0.1,9.1;1.6,0.8;back;Back]"..
-		"button[1.9,9.1;1.4,0.8;go;Go]"..
-		"button[3.5,9.1;1.9,0.8;deleteall;Delete All]"..
-		"button[5.6,9.1;1.6,0.8;record;Record]"..
-		"field[7.4,9.1;7.3,0.8;message;Note;Add a note to record at your current location]"
-	minetest.show_formspec(pname, "mc_student:coordinates", mc_student_coordinates)
+	mc_student_coordinates[#mc_student_coordinates + 1] = "button[0.1,9.1;1.6,0.8;back;Back]"
+	mc_student_coordinates[#mc_student_coordinates + 1] = "button[1.9,9.1;1.4,0.8;go;Go]"
+	mc_student_coordinates[#mc_student_coordinates + 1] = "button[3.5,9.1;1.9,0.8;deleteall;Delete All]"
+	mc_student_coordinates[#mc_student_coordinates + 1] = "button[5.6,9.1;1.6,0.8;record;Record]"
+	mc_student_coordinates[#mc_student_coordinates + 1] = "field[7.4,9.1;7.3,0.8;message;Note;Add a note to record at your current location]"
+	minetest.show_formspec(pname, "mc_student:coordinates", table.concat(mc_student_coordinates,""))
 	return true
 end
 
 local function record_coordinates(player,message)
-	if check_perm(player) then
+	if mc_helpers.checkPrivs(player,priv_table) then
 		local pname = player:get_player_name()
 		pmeta = player:get_meta()
 		local pos = player:get_pos()
 		temp = minetest.deserialize(pmeta:get_string("coordinates"))
 		if temp == nil then
 			datanew = {
-				coords = {"x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z), }, 
-				notes = { message, }, 
+				coords = {"x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z), },
+				notes = { message, },
 			}
 		else
 			table.insert(temp.coords, "x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z))
@@ -132,173 +124,148 @@ local function record_coordinates(player,message)
 end
 
 -- Define the Access Code formspec
-local mc_student_accesscode =
-		"formspec_version[5]"..
-		"size[5,3]"..
-		"label[0.6,0.5;Enter an Access Code]"..
-		"pwdfield[0.5,0.9;3.9,0.8;accesscode;]"..
-		"button_exit[0.9,2;3,0.8;submit;Submit]"..
-		"button_exit[4.4,0;0.6,0.5;exit;X]"
+local mc_student_accesscode = {
+	"formspec_version[5]",
+	"size[5,3]",
+	"label[0.6,0.5;Enter an Access Code]",
+	"pwdfield[0.5,0.9;3.9,0.8;accesscode;]",
+	"button_exit[0.9,2;3,0.8;submit;Submit]",
+	"button_exit[4.4,0;0.6,0.5;exit;X]"
+}
 
 local function show_accesscode(player)
-	if check_perm(player) then
+	if mc_helpers.checkPrivs(player,priv_table) then
 		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:accesscode", mc_student_accesscode)
+		minetest.show_formspec(pname, "mc_student:accesscode", table.concat(mc_student_accesscode,""))
 		return true
 	end
 end
 
-local mc_student_accesscode_fail = 
-		"formspec_version[5]"..
-		"size[5,4.2]"..
-		"label[0.6,0.5;Enter Your Access Code]"..
-		"pwdfield[0.5,0.9;3.9,0.8;accesscode;]"..
-		"button_exit[0.9,2;3,0.8;submit;Submit]"..
-		"label[0.9,3.2;Invalid access code.]"..
-		"label[1.2,3.7;Please try again.]"..
-		"button_exit[4.4,0;0.6,0.5;exit;X]"
-		
+local mc_student_accesscode_fail = {
+	"formspec_version[5]",
+	"size[5,4.2]",
+	"label[0.6,0.5;Enter Your Access Code]",
+	"pwdfield[0.5,0.9;3.9,0.8;accesscode;]",
+	"button_exit[0.9,2;3,0.8;submit;Submit]",
+	"label[0.9,3.2;Invalid access code.]",
+	"label[1.2,3.7;Please try again.]",
+	"button_exit[4.4,0;0.6,0.5;exit;X]"
+}
+
 local function show_accesscode_fail(player)
-	if check_perm(player) then
+	if mc_helpers.checkPrivs(player,priv_table) then
 		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:accesscode_fail", mc_student_accesscode_fail)
+		minetest.show_formspec(pname, "mc_student:accesscode_fail", table.concat(mc_student_accesscode_fail,""))
 		return true
 	end
 end
 
 -- Define place a marker formspec
-local mc_student_marker =
-		"formspec_version[5]"..
-		"size[7,6.5]"..
-		"position[0.3,0.5]"..
-		"label[1.8,0.8;Add text to your marker]"..
-		"button[0.7,5.2;2,0.8;back;Back]"..
-		"button_exit[2.9,5.2;2,0.8;submit;Submit]"..
-		"textarea[0.7,1.5;5.6,3.1;message;; ]"
+local mc_student_marker = {
+	"formspec_version[5]",
+	"size[7,6.5]",
+	"position[0.3,0.5]",
+	"label[1.8,0.8;Add text to your marker]",
+	"button[0.7,5.2;2,0.8;back;Back]",
+	"button_exit[2.9,5.2;2,0.8;submit;Submit]",
+	"textarea[0.7,1.5;5.6,3.1;message;; ]"
+}
 
-local function show_marker(player)
-	if check_perm(player) then
+	local function show_marker(player)
+	if mc_helpers.checkPrivs(player,priv_table) then
 		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:marker", mc_student_marker)
+		minetest.show_formspec(pname, "mc_student:marker", table.concat(mc_student_marker,""))
 		return true
 	end
 end
-
 
 ----------------------------------
 --    TUTORIAL BOOK FUNCTIONS   --
 ----------------------------------
 
 -- Define a formspec that will describe tutorials and give the option to teleport to selected tutorial realm
-local mc_student_tutorial_menu =
-	"formspec_version[5]" .. 
-	"size[13,10]" ..
-	"button[0.2,0.2;4.6,0.8;intro;Introduction]" ..
-	"box[0.2,8.4;10.2,1.4;#505050]" ..
-	"button[0.2,1.2;4.6,0.8;mov;Movement]" ..
-	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]" ..
-	"textarea[5,0.2;7.8,8;text;;Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.]" ..
-	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]" ..
-	"box[10.7,8.4;2.1,1.4;#C0C0C0]" ..
+local mc_student_tutorial_menu = {
+	"formspec_version[5]",
+	"size[13,10]",
+	"button[0.2,0.2;4.6,0.8;intro;Introduction]",
+	"box[0.2,8.4;10.2,1.4;#505050]",
+	"button[0.2,1.2;4.6,0.8;mov;Movement]",
+	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]",
+	"textarea[5,0.2;7.8,8;text;;Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.]",
+	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]",
+	"box[10.7,8.4;2.1,1.4;#C0C0C0]",
 	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
+}
 
 local function show_tutorial_menu(player)
-	if check_perm(player) then
+	if mc_helpers.checkPrivs(player,priv_table) then
 		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:tutorial_menu", mc_student_tutorial_menu)
+		minetest.show_formspec(pname, "mc_student:tutorial_menu", table.concat(mc_student_tutorial_menu,""))
 		return true
 	end
 end
 
--- The tutorial book for accessing tutorials
-minetest.register_tool("mc_student:tutorialbook" , {
-	description = "Tutorial book",
-	inventory_image = "tutorial_book.png",
-	-- Left-click the tool activates the tutorial menu
-	on_use = function (itemstack, user, pointed_thing)
-        local pname = user:get_player_name()
-		-- Check for shout privileges
-		if check_perm(user) then
-			show_tutorial_menu(user)
-		end
-	end,
-	-- Destroy the book on_drop to keep things tidy
-	on_drop = function (itemstack, dropper, pos)
-		minetest.set_node(pos, {name="air"})
-	end,
-})
-
-minetest.register_alias("tutorialbook", "mc_student:tutorialbook")
-tutorialbook = minetest.registered_aliases[tutorialbook] or tutorialbook
-
-mc_student_mov =
-	"formspec_version[5]" .. 
-	"size[13,10]" ..
-	"button[0.2,0.2;4.6,0.8;intro;Introduction]" ..
-	"box[0.2,8.4;10.2,1.4;#505050]" ..
-	"button[0.2,1.2;4.6,0.8;mov;Movement]" ..
-	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]" ..
-	"textarea[5,0.2;7.8,8;text;;This tutorial explains how to walk in different directions, jump, and fly. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.]" ..
-	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]" ..
-	"box[10.7,8.4;2.1,1.4;#C0C0C0]" ..
+mc_student_mov = {
+	"formspec_version[5]",
+	"size[13,10]",
+	"button[0.2,0.2;4.6,0.8;intro;Introduction]",
+	"box[0.2,8.4;10.2,1.4;#505050]",
+	"button[0.2,1.2;4.6,0.8;mov;Movement]",
+	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]",
+	"textarea[5,0.2;7.8,8;text;;This tutorial explains how to walk in different directions, jump, and fly. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.]",
+	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]",
+	"box[10.7,8.4;2.1,1.4;#C0C0C0]",
 	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
+}
 
-local function show_mov(player) 
-	if check_perm(player) then
+local function show_mov(player)
+	if mc_helpers.checkPrivs(player,priv_table) then
 		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:mov", mc_student_mov)
+		minetest.show_formspec(pname, "mc_student:mov", table.concat(mc_student_mov,""))
 		return true
 	end
 end
 
-mc_student_punch =
-        "formspec_version[5]" .. 
-        "size[13,10]" ..
-        "button[0.2,0.2;4.6,0.8;intro;Introduction]" ..
-        "box[0.2,8.4;10.2,1.4;#505050]" ..
-        "button[0.2,1.2;4.6,0.8;mov;Movement]" ..
-		"button[0.2,2.2;4.6,0.8;punch;Punch A Block]" ..
-        "textarea[5,0.2;7.8,8;text;;This tutorial explains how to punch and place blocks, which will allow you to add materials to your inventory and build. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.]" ..
-        "button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]" ..
-		"box[10.7,8.4;2.1,1.4;#C0C0C0]" ..
-		"button_exit[11,8.65;1.5,0.9;exit;Exit]"
+mc_student_punch = {
+    "formspec_version[5]",
+	"size[13,10]" ,
+	"button[0.2,0.2;4.6,0.8;intro;Introduction]",
+	"box[0.2,8.4;10.2,1.4;#505050]",
+	"button[0.2,1.2;4.6,0.8;mov;Movement]",
+	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]",
+	"textarea[5,0.2;7.8,8;text;;This tutorial explains how to punch and place blocks, which will allow you to add materials to your inventory and build. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.]",
+	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]",
+	"box[10.7,8.4;2.1,1.4;#C0C0C0]",
+	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
+}
 
-local function show_punch(player) 
-	if check_perm(player) then
+local function show_punch(player)
+	if mc_helpers.checkPrivs(player,priv_table) then
 		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:punch", mc_student_punch)
+		minetest.show_formspec(pname, "mc_student:punch", table.concat(mc_student_punch,""))
 		return true
 	end
 end
 
+----------------------------------
 --    END TUTORIAL FUNCTIONS    --
 ----------------------------------
-
 
 -- Processing the form from the menu
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if string.sub(formname, 1, 10) ~= "mc_student" then
 		return false
 	end
-	
+
 	local wait = os.clock()
 	while os.clock() - wait < 0.05 do end --popups don't work without this
 
 	-- Menu
-	if formname == "mc_student:menu" then 
-                if fields.spawn then
-                        -- TODO: dynamically extract the static spawn point from the minetest.conf file
-                        -- local cmeta = Settings(minetest.get_modpath("mc_teacher").."/maps/"..map..".conf")
-                        -- local spawn_pos_x = tonumber(cmeta:get("spawn_pos_x"))
-                        -- local spawn_pos_y = tonumber(cmeta:get("spawn_pos_y"))
-                        -- local spawn_pos_z = tonumber(cmeta:get("spawn_pos_z"))
-                        local spawn_pos = {
-                                x = 1426,
-                                y = 92,
-                                z = 1083,
-                        }
-                        player:set_pos(spawn_pos)
-                elseif fields.report then
+	if formname == "mc_student:menu" then
+		if fields.spawn then
+			local spawnRealm = mc_worldManager.GetSpawnRealm()
+			spawnRealm:TeleportPlayer(player)
+        elseif fields.report then
 			show_report(player)
 		elseif fields.coordinates then
 			show_coordinates(player)
@@ -322,7 +289,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		-- Checking for nil (caused by player pressing escape instead of Back) ensures the game does not crash
 		elseif fields.report ~= " " and fields.report ~= nil then
 			local pname = player:get_player_name()
-			
+
 			-- Count the number of words, by counting for replaced spaces
 			-- Number of spaces = Number of words - 1
 			local _, count = string.gsub(fields.report, " ", "")
@@ -339,25 +306,30 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				teachers = teachers .. teacher .. ", "
 			end
 
-			if teachers ~= "" then
-				msg = '[REPORT] ' .. msg .. " (teachers online: " .. teachers:sub(1, -3) .. ")"
+			if #minetest_classroom.mc_students.teachers then
+				local msg = '[REPORT] ' .. msg .. " (teachers online: " .. teachers:sub(1, -3) .. ")"
+				-- Send report to any teacher currently connected
+				for teacher in pairs(minetest_classroom.mc_students.teachers) do
+					minetest.chat_send_player(teacher, minetest.colorize("#FF00FF", msg))
+					minetest.sound_play("report_alert", {to_player = teacher, gain = 1.0, pitch = 1.0,}, true)
+
+				end
 			end
 
-			-- Send report to any teacher currently connected
-			for teacher in pairs(minetest_classroom.mc_students.teachers) do
-				minetest.chat_send_player(teacher, minetest.colorize("#FF00FF", msg))
-			end
-			
 			-- Archive the report in mod storage
 			local key = pname.." "..tostring(os.date("%d-%m-%Y %H:%M:%S"))
-			minetest_classroom.reports:set_string(key, minetest.write_json(fields.report))
+			minetest_classroom.reports:set_string(key,
+			minetest.write_json(fields.report))
+
+			-- Archive the report in the chatlog
+			chatlog.write_log(pname,'[REPORT] '..fields.report)
 		elseif fields.report == nil then
 			return true
 		else
 			minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF0000","Error: Please add a message to your report."))
 		end
 	end
-	
+
 	if formname == "mc_student:marker" then
 		if fields.back then
 			show_student_menu(player)
@@ -367,7 +339,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			return true
 		end
 	end
-	
+
 	if formname == "mc_student:coordinates" then
 		if fields.back then
 			show_student_menu(player)
@@ -381,7 +353,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		    	end
 		elseif fields.go then
 			local pname = player:get_player_name()
-			pmeta = player:get_meta()
+			local pmeta = player:get_meta()
 			if not context.selected then
 				context.selected = 1
 			end
@@ -395,68 +367,88 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			show_coordinates(player)
 		end
 	end
-	
+
 	if formname == "mc_student:accesscode" or formname == "mc_student:accesscode_fail" then
 		if fields.exit then
 			return
 		end
-		
+
 		local pname = player:get_player_name()
-		
+
 		-- Get the classrooms from modstorage
-		temp = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
-		-- Get the classroom accesscodes
-		loc = check_access_code(fields.accesscode,temp.access_code)
-		if loc then
-			-- Check if the student is currently registered for this course
-			pmeta = player:get_meta()
-			pdata = minetest.deserialize(pmeta:get_string("classrooms"))
-			-- Validate against modstorage
-			mdata = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
-			if pdata == nil then
-				-- This is the first time the student registers for any course
-				classroomdata = {
-					course_code = { mdata.course_code[loc] },
-					section_number = { mdata.section_number[loc] },
-					start_year = { mdata.start_year[loc] },
-					start_month = { mdata.start_month[loc] },
-					start_day = { mdata.start_day[loc] },
-					end_year = { mdata.end_year[loc] },
-					end_month = { mdata.end_month[loc] },
-					end_day = { mdata.end_day[loc] },
-				}
-				pmeta:set_string("classrooms", minetest.serialize(classroomdata))
+		local temp = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
+
+		if temp ~= nil then
+			-- Get the classroom accesscodes
+			local loc = check_access_code(fields.accesscode,temp.access_code)
+			if loc then
+				-- Check if the student is currently registered for this course
+				local pmeta = player:get_meta()
+				local pdata = minetest.deserialize(pmeta:get_string("classrooms"))
+				-- Validate against modstorage
+				local mdata = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
+				if pdata == nil then
+					-- This is the first time the student registers for any course
+					local classroomdata = {
+						course_code = { mdata.course_code[loc] },
+						section_number = { mdata.section_number[loc] },
+						start_year = { mdata.start_year[loc] },
+						start_month = { mdata.start_month[loc] },
+						start_day = { mdata.start_day[loc] },
+						end_year = { mdata.end_year[loc] },
+						end_month = { mdata.end_month[loc] },
+						end_day = { mdata.end_day[loc] },
+						realm_id = { mdata.realm_id[loc] },
+					}
+					pmeta:set_string("classrooms", minetest.serialize(classroomdata))
+				else
+					-- Student has already registered for another classroom
+					table.insert(pdata.course_code, mdata.course_code[loc])
+					table.insert(pdata.section_number, mdata.section_number[loc])
+					table.insert(pdata.start_year, mdata.start_year[loc])
+					table.insert(pdata.start_month, mdata.start_month[loc])
+					table.insert(pdata.start_day, mdata.start_day[loc])
+					table.insert(pdata.end_year, mdata.end_year[loc])
+					table.insert(pdata.end_month, mdata.end_month[loc])
+					table.insert(pdata.end_day, mdata.end_day[loc])
+					local classroomdata = {
+						course_code = pdata.course_code,
+						section_number = pdata.section_number,
+						start_year = pdata.start_year,
+						start_month = pdata.start_month,
+						start_day = pdata.start_day,
+						end_year = pdata.end_year,
+						end_month = pdata.end_month,
+						end_day = pdata.end_day,
+						realm_id = pdata.realm_id,
+					}
+				end
+
+				-- Check if the access code is expired
+				if tonumber(mdata.end_year[loc]) < tonumber(os.date("%Y")) and months[mdata.end_month[loc]] < tonumber(os.date("%m")) and tonumber(mdata.end_day[loc]) < tonumber(os.date("%d")) then
+					minetest.chat_send_player(pname,pname..": The access code you entered has expired. Please contact your instructor.")
+				else
+
+                    local realm = Realm.GetRealm(mdata.realm_id[loc])
+
+                    if (realm ~= nil) then
+
+                        local students = realm:get_data("students")
+                        if students == nil then
+                            students = {}
+                        end
+                        students[player:get_player_name()] = true
+                        realm:set_data("students", students)
+
+                        realm:TeleportPlayer(player)
+                        minetest.chat_send_player(pname, pname .. ": You have been teleported to the classroom.")
+                    end
+				end
 			else
-				-- Student has already registered for another classroom
-				table.insert(pdata.course_code, mdata.course_code[loc])
-				table.insert(pdata.section_number, mdata.section_number[loc])
-				table.insert(pdata.start_year, mdata.start_year[loc])
-				table.insert(pdata.start_month, mdata.start_month[loc])
-				table.insert(pdata.start_day, mdata.start_day[loc])
-				table.insert(pdata.end_year, mdata.end_year[loc])
-				table.insert(pdata.end_month, mdata.end_month[loc])
-				table.insert(pdata.end_day, mdata.end_day[loc])
-				classroomdata = {
-					course_code = pdata.course_code,
-					section_number = pdata.section_number,
-					start_year = pdata.start_year,
-					start_month = pdata.start_month,
-					start_day = pdata.start_day,
-					end_year = pdata.end_year,
-					end_month = pdata.end_month,
-					end_day = pdata.end_day,
-				}
-			end
-			
-			-- Check if the access code is expired
-			if tonumber(mdata.end_year[loc]) < tonumber(os.date("%Y")) and months[mdata.end_month[loc]] < tonumber(os.date("%m")) and tonumber(mdata.end_day[loc]) < tonumber(os.date("%d")) then
-				minetest.chat_send_player(pname,pname..": The access code you entered has expired. Please contact your instructor.")
-			else
-				-- Send the student to the classroom spawn pos
-				player:set_pos(mdata.spawn_pos[loc])
+				show_accesscode_fail(player)
 			end
 		else
-			show_accesscode_fail(player)
+			return
 		end
 	end
 
@@ -502,99 +494,19 @@ end
 minetest.register_tool(tool_name , {
 	description = "Notebook for students",
 	inventory_image = "notebook.png",
+	_mc_tool_privs = priv_table,
 	-- Left-click the tool activates the teacher menu
-	on_use = function (itemstack, user, pointed_thing)
-        local pname = user:get_player_name()
+	on_use = function (itemstack, player, pointed_thing)
+        local pname = player:get_player_name()
 		-- Check for adequate privileges
-		if check_perm(user) then
-			show_student_menu(user)
+		if mc_helpers.checkPrivs(player,priv_table) then
+			show_student_menu(player)
 		end
 	end,
 	-- Destroy the controller on_drop to keep things tidy
-	on_drop = function (itemstack, dropper, pos)
-		minetest.set_node(pos, {name="air"})
+	on_drop = function(itemstack, dropper, pos)
 	end,
 })
-
--- Give the notebook and tutorialbook to any player who joins with shout privileges or take them away if they do not have shout
-
--- Tool handling functions:
-    -- Give the notebook to any player who joins with adequate privileges or take away the notebook if they do not have them
-    -- Give the notebook to any player who is granted adequate privileges
-    -- Take the notebook away from anyone who is revoked privileges and no longer has adequate ones
-minetest.register_on_joinplayer(function(player)
-	local inv = player:get_inventory()
-	if inv:contains_item("main", ItemStack(tool_name)) then
-		-- Player has the notebook
-		if check_perm(player) then
-			-- The player should have the notebook
-			return
-		else
-			-- The player should not have the notebook
-			player:get_inventory():remove_item('main', tool_name)
-		end
-	else
-		-- Player does not have the notebook
-		if check_perm(player) then
-			-- The player should have the notebook
-			player:get_inventory():add_item('main', tool_name)
-		else
-			-- The player should not have the notebook
-			return
-		end
-	end
-
-	-- Keeping as separate statement for now in case we don't want the tutorialbook as its own item
-	if inv:contains_item("main", ItemStack("mc_student:tutorialbook")) then
-		if check_perm(player) then
-			return
-		else
-			player:get_inventory():remove_item('main', 'mc_student:tutorialbook')
-		end
-	else
-		if check_perm(player) then
-			player:get_inventory():add_item('main', 'mc_student:tutorialbook')
-		else
-			return
-		end
-	end
-end)
-
--- Give the notebook to any player who is granted adequate privileges
-minetest.register_on_priv_grant(function(name, granter, priv)
-    -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
-        return true -- skip this callback, continue to next callback
-    end
-
-    local player = minetest.get_player_by_name(name)
-    local inv = player:get_inventory()
-
-    if (not inv:contains_item("main", ItemStack(tool_name))) and check_perm_name(name) then
-        -- Give the player the tool
-        player:get_inventory():add_item('main', tool_name)
-    end
-
-    return true -- continue to next callback
-end)
-
--- Take the notebook away from anyone who is revoked privileges and no longer has adequate ones
-minetest.register_on_priv_revoke(function(name, revoker, priv)
-    -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not table.has(priv_table, priv) or not minetest.get_player_by_name(name) then
-        return true -- skip this callback, continue to next callback
-    end
-
-    local player = minetest.get_player_by_name(name)
-    local inv = player:get_inventory()
-	
-    if inv:contains_item("main", ItemStack(tool_name)) and (not check_perm_name(name)) then
-        -- Take the tool away from the player
-        player:get_inventory():remove_item('main', tool_name)
-    end
-
-    return true -- continue to next callback
-end)
 
 -- Functions and variables for placing markers
 hud = mhud.init()
@@ -618,7 +530,7 @@ function add_marker(pname, message, pos, owner)
 		})
 	end
 end
-	
+
 function markers.add(pname, msg, pos)
 
 	if markers[pname] then
@@ -712,7 +624,7 @@ minetest.register_chatcommand("m", {
 })
 
 function place_marker(player,message)
-	if check_perm(player) then
+	if mc_helpers.checkPrivs(player,priv_table) then
 		local pname = player:get_player_name()
 		local pos1 = vector.offset(player:get_pos(), 0, player:get_properties().eye_height, 0)
 
@@ -721,7 +633,7 @@ function place_marker(player,message)
 			true, false
 		))
 		local pointed = ray:next()
-		
+
 		if message == "" then
 			message = "Look here!"
 		end
@@ -772,4 +684,3 @@ function place_marker(player,message)
 		minetest.chat_send_player(pname,pname..": You are not allowed to place markers. Please submit a report from your notebook to request this privilege.")
 	end
 end
-
