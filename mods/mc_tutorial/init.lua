@@ -536,6 +536,23 @@ local function event_shift_handler(pname, context, sequence, to_index)
     end
 end
 
+local function group_parity_is_odd(selection, sequence)
+    local parity = 0
+    for i,action in ipairs(sequence) do
+        if i >= selection then
+            break
+        end
+        if action.action == mc_tutorial.ACTION.GROUP then
+            if action.g_type == mc_tutorial.GROUP.START then
+                parity = parity + 1
+            elseif action.g_type == mc_tutorial.GROUP.END then
+                parity = parity - 1
+            end
+        end
+    end
+    return parity ~= 0
+end
+
 -- REWORK
 minetest.register_on_player_receive_fields(function(player, formname, fields)
     local pname = player:get_player_name()
@@ -785,12 +802,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 context.selected_event = context.selected_event or 1
                 if mc_tutorial.record.temp[pname].sequence[context.selected_event].action == mc_tutorial.ACTION.GROUP then
                     minetest.chat_send_player(pname, "[Tutorial] Groups can not be added around group markers.")
+                elseif group_parity_is_odd(context.selected_event, mc_tutorial.record.temp[pname].sequence) then
+                    minetest.chat_send_player(pname, "[Tutorial] Groups can not be added inside other groups.")
                 else
                     local group = mc_tutorial.record.temp[pname].next_group or 1
                     table.insert(mc_tutorial.record.temp[pname].sequence, context.selected_event + 1, {
                         action = mc_tutorial.ACTION.GROUP,
                         g_type = mc_tutorial.GROUP.END,
                         g_id = group,
+                        g_remaining = {},
+                        g_length = 0,
                     })
                     table.insert(context.events, context.selected_event + 1, "#CCFFFF} END GROUP "..group)
                     table.insert(mc_tutorial.record.temp[pname].sequence, context.selected_event, {
