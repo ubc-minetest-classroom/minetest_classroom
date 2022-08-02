@@ -16,7 +16,7 @@ minetest.register_chatcommand("localPos", {
             return false, "Player is not listed in a realm OR current realm has been deleted; Try teleporting to a different realm and then back..."
         end
 
-        local position = requestedRealm:WorldToLocalPosition(player:get_pos())
+        local position = requestedRealm:WorldToLocalSpace(player:get_pos())
         return true, "Your position in the local space of realm " .. param .. " is x: " .. position.x .. " y: " .. position.y .. " z: " .. position.z
     end,
     help = "Get your local position in the current realm",
@@ -37,8 +37,8 @@ commands["new"] = {
             sizeY = 40
         end
         local sizeZ = tonumber(params[4]) or 40
-        if (SizeZ == nil or SizeZ == 0) then
-            SizeZ = 40
+        if (sizeZ == nil or sizeZ == 0) then
+            sizeZ = 40
         end
         local newRealm = Realm:New(realmName, { x = sizeX, y = sizeY, z = sizeZ })
         newRealm:CreateGround()
@@ -318,7 +318,7 @@ commands["setspawn"] = {
 
         local requestedRealm = Realm.GetRealmFromPlayer(player)
 
-        local position = requestedRealm:WorldToLocalPosition(player:get_pos())
+        local position = requestedRealm:WorldToLocalSpace(player:get_pos())
 
         requestedRealm:UpdateSpawn(position)
 
@@ -635,7 +635,7 @@ commands["coordinates"] = {
             if (format == "world") then
                 pos = rawPos
             elseif (format == "local" or format == "nil") then
-                pos = playerRealm.WorldToLocalPosition(rawPos)
+                pos = playerRealm.WorldToLocalSpace(rawPos)
             elseif (format == "grid") then
                 pos = Realm.worldToGridSpace(rawPos)
             elseif (format == "utm") then
@@ -825,7 +825,7 @@ minetest.register_chatcommand("teleport", {
             local player = minetest.get_player_by_name(name)
 
             local position = { x = paramTable[2], y = paramTable[3], z = paramTable[4] }
-            local worldPosition = requestedRealm:LocalToWorldPosition(position)
+            local worldPosition = requestedRealm:LocalToWorldSpace(position)
 
             if (not requestedRealm:ContainsCoordinate(worldPosition)) then
                 return false, "requested position does not exist in realm " .. tostring(realmID)
