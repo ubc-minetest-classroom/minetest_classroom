@@ -61,11 +61,15 @@ function mc_tutorial.tutorial_progress_listener(player)
                 minetest.chat_send_player(pname, "[Tutorial] Listening for position...")
 
                 pdata.player_seq.pos = player:get_pos()
-                check_pos = pdata.active.sequence[pdata.active.seq_index].pos
-                -- minetest.get_objects_inside_radius(pos, radius) may be better here?
-                -- minetest.get_objects_in_area(pos1, pos2) would also work
-                if (pdata.player_seq.pos.x >= check_pos.x - mc_tutorial.check_pos_x_tolerance) and (pdata.player_seq.pos.x <= check_pos.x + mc_tutorial.check_pos_x_tolerance) and (pdata.player_seq.pos.y >= check_pos.y - mc_tutorial.check_pos_y_tolerance) and (pdata.player_seq.pos.y <= check_pos.y + mc_tutorial.check_pos_y_tolerance) and (pdata.player_seq.pos.z >= check_pos.z - mc_tutorial.check_pos_z_tolerance) and (pdata.player_seq.pos.z <= check_pos.z + mc_tutorial.check_pos_z_tolerance) then
-                    mc_tutorial.completed_action(player)
+                local check_pos = pdata.active.sequence[pdata.active.seq_index].pos
+                local tol = {x = mc_tutorial.check_pos_x_tolerance, y = mc_tutorial.check_pos_y_tolerance, z = mc_tutorial.check_pos_z_tolerance}
+                
+                local upper_pos = {x = check_pos.x + tol.x, y = check_pos.y + tol.y, z = check_pos.z + tol.z}
+                local lower_pos = {x = check_pos.x - tol.x, y = check_pos.y - tol.y, z = check_pos.z - tol.z}
+                for k,obj in pairs(minetest.get_objects_in_area(upper_pos, lower_pos)) do
+                    if obj:is_player() and obj:get_player_name() == pname then
+                        mc_tutorial.completed_action(player)
+                    end
                 end
             end,
             [mc_tutorial.ACTION.LOOK_DIR] = function()
