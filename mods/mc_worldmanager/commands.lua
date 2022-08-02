@@ -201,8 +201,6 @@ commands["gen"] = {
         Debug.log("Creating barrier...")
         requestedRealm:CreateBarriersFast()
 
-
-
         return true, "Generated terrain in realm: " .. tostring(realmID) .. " using seed " .. tostring(seed)
     end,
     help = "realm gen <list> | (<realmID> <heightGenKey> [<terrainDecKey>] ([<seaLevel>] [<seed>]) - Generate a realm", }
@@ -355,7 +353,15 @@ commands["category"] = {
                 return false, "Requested realm of ID:" .. tostring(realmID) .. " does not exist."
             end
 
-            local category = tostring(params[3])
+            local category = string.lower(tostring(params[3]))
+
+            if (category == "nil") then
+                category = "default"
+            end
+
+            if (Realm.getRegisteredCategories()[category] == nil) then
+                return false, "Category: " .. category .. " is not registered. Try /realm category list to see all registered categories."
+            end
 
             requestedRealm:setCategoryKey(category)
             return true, "Updated category for realm with ID: " .. realmID .. " to " .. category
@@ -366,7 +372,7 @@ commands["category"] = {
             minetest.chat_send_player(name, "=======================")
             local categories = Realm.getRegisteredCategories()
             for key, value in pairs(categories) do
-                minetest.chat_send_player(name, value)
+                minetest.chat_send_player(name, key)
             end
             minetest.chat_send_player(name, "=======================")
             return true, "Listed all valid realm categories."
