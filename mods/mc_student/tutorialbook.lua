@@ -12,6 +12,10 @@ local mc_student_tutorial_menu =
 	"box[10.7,8.4;2.1,1.4;#C0C0C0]" ..
 	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
 
+local function check_perm(player)
+	mc_helpers.checkPrivs(player, mc_student.priv_table)
+end
+
 local function show_tutorial_menu(player)
 	if check_perm(player) then
 		local pname = player:get_player_name()
@@ -123,5 +127,5 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			show_mov(player)
 		end
 	end
-end
+end)
 
