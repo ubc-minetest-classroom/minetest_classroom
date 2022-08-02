@@ -1,13 +1,16 @@
 -- Global variables
 minetest_classroom.reports = minetest.get_mod_storage()
 minetest_classroom.mc_students = {teachers = {}}
-mc_student = {path = minetest.get_modpath("mc_student")}
+mc_student = {
+	path = minetest.get_modpath("mc_student"),
+	priv_table = {interact = true}
+}
 
 dofile(mc_student.path .. "/tutorialbook.lua")
 
 -- Local variables
 local tool_name = "mc_student:notebook"
-local priv_table = {interact = true}
+local priv_table = mc_student.priv_table
 
 -- Split pos in coordlist from character "x=1 y=2 z=3" to numeric table {1,2,3}
 local function pos_split (inputstr)

@@ -12,6 +12,7 @@
 -- 	"box[10.7,8.4;2.1,1.4;#C0C0C0]" ..
 -- 	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
 
+<<<<<<< HEAD
 -- local function show_tutorial_menu(player)
 -- 	if check_perm(player) then
 -- 		local pname = player:get_player_name()
@@ -19,6 +20,19 @@
 -- 		return true
 -- 	end
 -- end
+=======
+local function check_perm(player)
+	mc_helpers.checkPrivs(player, mc_student.priv_table)
+end
+
+local function show_tutorial_menu(player)
+	if check_perm(player) then
+		local pname = player:get_player_name()
+		minetest.show_formspec(pname, "mc_student:tutorial_menu", mc_student_tutorial_menu)
+		return true
+	end
+end
+>>>>>>> 0bbe00c27540c9c114600b06f3311466e0340e52
 
 -- -- The tutorial book for accessing tutorials
 -- minetest.register_tool("mc_student:tutorialbook" , {
