@@ -1,8 +1,6 @@
-Realm.RegisterOnJoinCallback(function(realm, player)
-    Debug.log("Calling on join callback")
-    Debug.log("Player: " .. player:get_player_name())
-    Debug.log("Realm: " .. realm:getName())
+realmExtensions.playerSounds = {}
 
+Realm.RegisterOnJoinCallback(function(realm, player)
     local backgroundSound = realm:get_data("backgroundSound")
     if (backgroundSound ~= nil) then
         local reference = minetest.sound_play(backgroundSound, {
@@ -17,7 +15,8 @@ Realm.RegisterOnJoinCallback(function(realm, player)
 end)
 
 Realm.RegisterOnLeaveCallback(function(realm, player)
-    Debug.log("Calling on leave callback")
-    Debug.log("Player: " .. player:get_player_name())
-    Debug.log("Realm: " .. realm:getName())
+    if (realmExtensions.playerSounds[player:get_player_name()] ~= nil) then
+        minetest.sound_stop(realmExtensions.playerSounds[player:get_player_name()])
+        realmExtensions.playerSounds[player:get_player_name()] = nil
+    end
 end)

@@ -493,7 +493,12 @@ function Realm:RunFunctionFromTable(table, player)
         for key, value in pairs(table) do
             if (value.tableName ~= nil and value.functionName ~= nil) then
                 local table = loadstring("return " .. value.tableName)
-                table()[value.functionName](self, player)
+                if (table ~= nil) then
+                    local tableFunc = table()[value.functionName]
+                    if (tableFunc ~= nil) then
+                        tableFunc(self, player)
+                    end
+                end
             end
         end
     end
