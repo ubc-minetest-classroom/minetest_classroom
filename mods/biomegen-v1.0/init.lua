@@ -133,8 +133,15 @@ local function calc_biome_from_noise(heat, humid, pos, seaLevel)
 end
 
 local function get_biome_at_index(i, pos, seaLevel)
-    local heat = heatmap[i] - math.max(pos.y, seaLevel) * elevation_chill
-    local humid = humidmap[i]
+    local heat = heatmap[i] - (math.max(pos.y, seaLevel) * elevation_chill)
+    local humid = humidmap[i] + (seaLevel - pos.y) * elevation_chill -- -30
+    if (pos.y >= seaLevel + 30) then
+        humid = humid + (pos.y - seaLevel - 15) * elevation_chill * 0.5
+    end
+
+
+            --(math.max(pos.y - seaLevel, seaLevel + 20 - pos.y) * elevation_chill * 0.5)
+
     return calc_biome_from_noise(heat, humid, pos, seaLevel)
 end
 
