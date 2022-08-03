@@ -1,10 +1,16 @@
 -- Global variables
 minetest_classroom.reports = minetest.get_mod_storage()
 minetest_classroom.mc_students = {teachers = {}}
+mc_student = {
+	path = minetest.get_modpath("mc_student"),
+	priv_table = {interact = true}
+}
+
+dofile(mc_student.path .. "/tutorialbook.lua")
 
 -- Local variables
 local tool_name = "mc_student:notebook"
-local priv_table = {interact = true}
+local priv_table = mc_student.priv_table
 
 -- Split pos in coordlist from character "x=1 y=2 z=3" to numeric table {1,2,3}
 local function pos_split (inputstr)
@@ -179,78 +185,6 @@ local mc_student_marker = {
 	end
 end
 
-----------------------------------
---    TUTORIAL BOOK FUNCTIONS   --
-----------------------------------
-
--- Define a formspec that will describe tutorials and give the option to teleport to selected tutorial realm
-local mc_student_tutorial_menu = {
-	"formspec_version[5]",
-	"size[13,10]",
-	"button[0.2,0.2;4.6,0.8;intro;Introduction]",
-	"box[0.2,8.4;10.2,1.4;#505050]",
-	"button[0.2,1.2;4.6,0.8;mov;Movement]",
-	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]",
-	"textarea[5,0.2;7.8,8;text;;Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.]",
-	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]",
-	"box[10.7,8.4;2.1,1.4;#C0C0C0]",
-	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
-}
-
-local function show_tutorial_menu(player)
-	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:tutorial_menu", table.concat(mc_student_tutorial_menu,""))
-		return true
-	end
-end
-
-mc_student_mov = {
-	"formspec_version[5]",
-	"size[13,10]",
-	"button[0.2,0.2;4.6,0.8;intro;Introduction]",
-	"box[0.2,8.4;10.2,1.4;#505050]",
-	"button[0.2,1.2;4.6,0.8;mov;Movement]",
-	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]",
-	"textarea[5,0.2;7.8,8;text;;This tutorial explains how to walk in different directions, jump, and fly. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.]",
-	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]",
-	"box[10.7,8.4;2.1,1.4;#C0C0C0]",
-	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
-}
-
-local function show_mov(player)
-	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:mov", table.concat(mc_student_mov,""))
-		return true
-	end
-end
-
-mc_student_punch = {
-    "formspec_version[5]",
-	"size[13,10]" ,
-	"button[0.2,0.2;4.6,0.8;intro;Introduction]",
-	"box[0.2,8.4;10.2,1.4;#505050]",
-	"button[0.2,1.2;4.6,0.8;mov;Movement]",
-	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]",
-	"textarea[5,0.2;7.8,8;text;;This tutorial explains how to punch and place blocks, which will allow you to add materials to your inventory and build. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.]",
-	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]",
-	"box[10.7,8.4;2.1,1.4;#C0C0C0]",
-	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
-}
-
-local function show_punch(player)
-	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:punch", table.concat(mc_student_punch,""))
-		return true
-	end
-end
-
-----------------------------------
---    END TUTORIAL FUNCTIONS    --
-----------------------------------
-
 -- Processing the form from the menu
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if string.sub(formname, 1, 10) ~= "mc_student" then
@@ -301,9 +235,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			local msg = pname .. " reported: " .. fields.report
 
 			-- Append list of teachers in-game
-			--local teachers
+			local teachers = ""
+
 			for teacher in pairs(minetest_classroom.mc_students.teachers) do
-				local teachers = teachers .. teacher .. ", "
+				teachers = teachers .. teacher .. ", "
 			end
 
 			if #minetest_classroom.mc_students.teachers then
@@ -449,30 +384,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 		else
 			return
-		end
-	end
-
-	if formname == "mc_student:tutorial_menu" then
-        if fields.mov then
-			show_mov(player)
-		elseif fields.punch then
-			show_punch(player)
-		end
-	end
-
-	if formname == "mc_student:mov" then
-        if fields.intro then
-            show_tutorial_menu(player)
-		elseif fields.punch then
-			show_punch(player)
-		end
-	end
-
-	if formname == "mc_student:punch" then
-        if fields.intro then
-            show_tutorial_menu(player)
-		elseif fields.mov then
-			show_mov(player)
 		end
 	end
 end)

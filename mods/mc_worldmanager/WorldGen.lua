@@ -1,5 +1,5 @@
-local c_stone = minetest.get_content_id("mapgen_stone")
-local c_water = minetest.get_content_id("mapgen_water_source")
+local c_stone = minetest.get_content_id("default:stone")
+local c_water = minetest.get_content_id("default:water_source")
 local c_air = minetest.get_content_id("air")
 local c_dirt = minetest.get_content_id("default:dirt")
 local c_dirtGrass = minetest.get_content_id("default:dirt_with_grass")
