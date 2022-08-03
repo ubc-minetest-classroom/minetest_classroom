@@ -170,7 +170,6 @@ function Realm:Load_Schematic(schematic, config)
 
     if (config.backgroundSound ~= nil) then
         self:set_data("backgroundSound", config.backgroundSound)
-        table.insert(self.PlayerJoinTable, {tableName = "realmExtensions", functionName = "playbackgroundSound"})
     end
 
     if (config.tableName ~= nil) then
