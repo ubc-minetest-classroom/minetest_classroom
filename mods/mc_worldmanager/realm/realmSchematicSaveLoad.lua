@@ -210,9 +210,6 @@ function Realm:NewFromSchematic(name, key)
         newRealm:CreateBarriersFast()
     end
 
-    -- Realm:CreateTeleporter()
-
-
     newRealm:CallOnCreateCallbacks()
 
     return newRealm

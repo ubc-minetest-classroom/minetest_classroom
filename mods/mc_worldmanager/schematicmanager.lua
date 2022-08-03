@@ -87,11 +87,10 @@ function schematicManager.getSchematic(key)
 
     local settingNames = settings:get_names()
     for k, v in pairs(settingNames) do
-        if (tostring(k):find("^d_")) then
-            _miscData[string.gsub(k, "d_", "")] = v
+        if (mc_helpers.starts(string.lower(tostring(v)), "d_")) then
+            _miscData[string.gsub(v, "d_", "", 1)] = settings:get(v)
         end
     end
-
 
     local _spawnPoint = { x = spawn_pos_x, y = spawn_pos_y, z = spawn_pos_z }
     local _schematicSize = { x = schematic_size_x, y = schematic_size_y, z = schematic_size_z }

@@ -1,11 +1,12 @@
 realmExtensions.playerSounds = {}
 
 Realm.RegisterOnJoinCallback(function(realm, player)
-    local backgroundSound = realm:get_data("backgroundSound")
+    local backgroundSound = realm:get_data("background_sound")
+   local backgroundVolume = tonumber(realm:get_data("background_volume")) or 1.0
     if (backgroundSound ~= nil) then
         local reference = minetest.sound_play(backgroundSound, {
             to_player = player:get_player_name(),
-            gain = 1.0,
+            gain = backgroundVolume,
             object = player,
             loop = true })
 

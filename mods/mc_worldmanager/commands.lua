@@ -652,8 +652,9 @@ commands["coordinates"] = {
 
 commands["data"] = {
     func = function(name, params)
-        local operation = tostring(params[2])
-        local realmID = tonumber(params[1])
+        local realmID = tonumber(params[2])
+        local operation = tostring(params[1])
+
         local realm = Realm.GetRealm(realmID)
         if (realm == nil) then
             return false, "realm " .. tostring(realmID) .. " does not exist."
@@ -675,7 +676,7 @@ commands["data"] = {
         end
         return false, "unknown sub-command."
     end,
-    help = "realm data <get | set> <realmID> <dataName> <dataValue>"
+    help = "realm data <get | set | dump> <realmID> <dataName> <dataValue>"
 }
 
 minetest.register_chatcommand("realm", {
