@@ -11,7 +11,6 @@ Realm.RegisterOnJoinCallback(function(realm, player)
 
         realmExtensions.playerSounds[player:get_player_name()] = reference
     end
-
 end)
 
 Realm.RegisterOnLeaveCallback(function(realm, player)

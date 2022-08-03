@@ -3,16 +3,19 @@
 ---Teleports a player to this realm.
 ---@param player
 function Realm:TeleportPlayer(player)
+    -- STOP: Before modifying this function, make sure that you have a good reason for doing so.
+    -- Most additions to this function should be made by registering a callback with
+    -- Realm.RegisterOnJoinCallback(function(realm, player) ... end) or Realm.RegisterOnLeaveCallback(function(realm, player) ... end)
+
+    -- We check if the player has privilege to join this realm based on the realms category.
     local realmCategory = self:getCategory()
-
     local joinable, reason = realmCategory.joinable(self, player)
-
     if (not joinable and not minetest.check_player_privs(player, { teacher = true })) then
         return false, "Player does not have permission to join this realm."
     end
 
+    -- We remove the player from their old realm.
     local newRealmID, OldRealmID = self:UpdatePlayerMetaData(player)
-
     if (OldRealmID ~= nil) then
         local oldRealm = Realm.realmDict[OldRealmID]
         if (oldRealm ~= nil) then
@@ -21,13 +24,16 @@ function Realm:TeleportPlayer(player)
         end
     end
 
-    self:RunTeleportInFunctions(player)
+    -- We teleport the player to the realm.
     local spawn = self.SpawnPoint
     player:set_pos(spawn)
 
+    -- We register the player with the new realm, and apply their realm-specific privileges.
     self:RegisterPlayer(player)
-    mc_worldManager.UpdateRealmHud(player)
     self:ApplyPrivileges(player)
+
+    -- We run the teleport functions of the new realm. These are added by non-core features, other mods, and realms.
+    self:RunTeleportInFunctions(player)
 
     return true, "Successfully teleported to realm."
 end

@@ -123,6 +123,7 @@ function Realm:Load_Schematic(schematic, config)
 
 
     --exschem is having issues loading random chunks, need to debug
+    --Looks like it fails when there are unknown nodes...
     if (config.format == "exschem") then
         exschem.load(self.StartPos, self.StartPos, 0, {}, schematic, 0,
                 function(id, time, errcode, err)
