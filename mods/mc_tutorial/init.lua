@@ -446,6 +446,78 @@ function mc_tutorial.show_record_options_fs(player)
 	return true
 end
 
+function mc_tutorial.show_event_popop_fs(player)
+    local pname = player:get_player_name()
+	if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
+        -- Event popup for adding/editing events in a tutorial
+        local context = get_context(pname)
+        local temp = mc_tutorial.record.temp[pname] or {}
+        if not context.epop then
+            context.epop = {
+                expand = false,
+                selected = 1,
+            }
+        end
+
+        local epop_fs = {
+            "formspec_version[6]",
+            "size[0", context.epop.expand and 13.4 or 8.4, ",8]",
+            "container[", context.epop.expand and 5 or 0, ",0]",
+            "label[0.8,0.5;Event type]",
+            "dropdown[0.8,0.7;7.2,1;action;;", context.epop.selected or 1, ";true]",
+            "button[0.8,6.8;3.6,0.8;save;Save event]",
+            "button[4.4,6.8;3.6,0.8;cancel;Cancel]",
+        }
+
+        -- insert action-specific information from action map
+
+        table.insert(epop_fs, "container_end[]")
+
+        if context.epop.expand then
+            table.insert(epop_fs, table.concat({
+                "label[0.7,0.5;Registered items]",
+                "textlist[0.7,0.7;4.6,5.5;;;1;false]",
+                "image[0.7,6.4;1.2,1.2;]",
+                "textarea[2,6.3;3.3,1.4;;;Item + desc]",
+                "box[5.525,0.2;0.05,7.6;#202020]",
+                "button[0,0;0.5,8;collapse_list;>]",
+            }))
+        else
+            table.insert(epop_fs, table.concat({
+                "button[0,0;0.5,8;expand_list;<]",
+            }))
+        end
+
+        save_context(pname, context)
+        minetest.show_formspec(pname, "mc_tutorial:record_epop", table.concat(epop_fs, ""))
+    end
+end
+
+--[[
+CONDENSED:
+formspec_version[6]
+size[8.4,8]
+label[0.8,0.5;Event type]
+dropdown[0.8,0.7;7.2,1;action;;1;true]
+button[0.8,6.8;3.6,0.8;save;Save event]
+button[4.4,6.8;3.6,0.8;cancel;Cancel]
+button[0,0;0.5,8;expand_list;<]
+
+EXPANDED:
+formspec_version[6]
+size[13.4,8]
+label[5.8,0.5;Event type]
+dropdown[5.8,0.7;7.2,1;action;;1;true]
+button[5.8,6.8;3.6,0.8;save;Save event]
+button[9.4,6.8;3.6,0.8;cancel;Cancel]
+label[0.7,0.5;Registered items]
+textlist[0.7,0.7;4.6,5.5;;;1;false]
+image[0.7,6.4;1.2,1.2;]
+textarea[2,6.3;3.3,1.4;;;Item + desc]
+box[5.525,0.2;0.05,7.6;#202020]
+button[0,0;0.5,8;collapse_list;>]
+]]
+
 function mc_tutorial.show_tutorials(player)
     local context = get_context(player)
     local tutorials = mc_tutorial.tutorials:to_table()
@@ -810,8 +882,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
             if fields.eventlist_add_event then
                 context.selected_event = context.selected_event or 1
-                minetest.chat_send_player(pname, "[Tutorial] Coming soon!")
-                -- TODO
+                return mc_tutorial.show_event_popop_fs(player)
             end
             if fields.eventlist_add_group then
                 context.selected_event = context.selected_event or 1
@@ -984,6 +1055,43 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if reload then
             save_context(player, context)
             mc_tutorial.show_record_fs(player)
+        end
+    end
+
+    if formname == "mc_tutorial:record_epop" then
+        local reload = false
+
+        if fields.action then
+            context.epop.selected = fields.action
+            reload = true
+        end
+
+        if fields.expand_list then
+            context.epop.expand = true
+            reload = true
+        end
+        if fields.collapse_list then
+            context.epop.expand = false
+            reload = true
+        end
+
+        if fields.save then
+            -- TODO: save event to event list
+            minetest.chat_send_player(pname, "[Tutorial] Event saving coming soon!")
+            context.epop = nil
+            save_context(player, context)
+            return mc_tutorial.show_record_fs(player)
+        end
+        if fields.cancel or fields.quit then
+            minetest.chat_send_player(pname, "[Tutorial] No event was added.")
+            context.epop = nil
+            save_context(player, context)
+            return mc_tutorial.show_record_fs(player)
+        end
+
+        if reload then
+            save_context(player, context)
+            mc_tutorial.show_event_popop_fs(player)
         end
     end
 end)
