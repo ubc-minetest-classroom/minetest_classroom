@@ -129,7 +129,7 @@ function mc_tutorial.tutorial_progress_listener(player)
             end
 
             -- Perform checks for appropriate listeners
-            if next(action_checks) then
+            if action_checks and next(action_checks) then
                 for index,_ in pairs(action_checks) do
                     if listener_map[pdata.active.sequence[index].action] then
                         listener_map[pdata.active.sequence[index].action](index)
@@ -145,6 +145,38 @@ function mc_tutorial.tutorial_progress_listener(player)
     end
 end
 
+--- Handles action group setup, if applicable
+function mc_tutorial.initialize_action_group(pdata)
+    local seq_step = pdata.active.sequence[pdata.active.seq_index]
+    if seq_step and seq_step.action == mc_tutorial.ACTION.GROUP then
+        if seq_step.g_type == mc_tutorial.GROUP.START then
+            -- iterate and map indices in group
+            local length = 0
+            pdata.active.sequence[pdata.active.seq_index].g_remaining = pdata.active.sequence[pdata.active.seq_index].g_remaining or {}
+
+            local i = pdata.active.seq_index + 1
+            while pdata.active.sequence[i].action ~= mc_tutorial.ACTION.GROUP or pdata.active.sequence[i].g_type ~= mc_tutorial.GROUP.END or pdata.active.sequence[i].g_id ~= seq_step.g_id do
+                pdata.active.sequence[pdata.active.seq_index].g_remaining[i] = true
+                length = length + 1
+                i = i + 1
+            end
+
+            if length ~= 0 then
+                -- group has actions, verify initialization
+                pdata.active.sequence[pdata.active.seq_index].g_length = length
+            else
+                -- empty group, skip
+                pdata.active.seq_index = pdata.active.seq_index + 1
+                mc_tutorial.initialize_action_group(pdata)
+            end
+        else
+            -- not the start of a group, skip
+            pdata.active.seq_index = pdata.active.seq_index + 1
+            mc_tutorial.initialize_action_group(pdata)
+        end
+    end
+end
+
 -- This function is used to update the search index on completion of an action and check if the tutorial is completed.
 -- If tutorial is completed, then initiate the on_complettion callbacks: give tool, give item, grant priv.
 function mc_tutorial.completed_action(player, g_index)
@@ -154,48 +186,24 @@ function mc_tutorial.completed_action(player, g_index)
 
     local function handle_increment()
         pdata.active.seq_index = pdata.active.seq_index + 1
-        
-        -- Handle action group setup if applicable
-        local seq_step = pdata.active.sequence[pdata.active.seq_index]
-        if seq_step and seq_step.action == mc_tutorial.ACTION.GROUP then
-            if seq_step.g_type == mc_tutorial.GROUP.START then
-                -- iterate and map indices in group
-                local length = 0
-                pdata.active.sequence[pdata.active.seq_index].g_remaining = pdata.active.sequence[pdata.active.seq_index].g_remaining or {}
-
-                local i = pdata.active.seq_index + 1
-                while pdata.active.sequence[i].action ~= mc_tutorial.ACTION.GROUP or pdata.active.sequence[i].g_type ~= mc_tutorial.GROUP.END or pdata.active.sequence[i].g_id ~= seq_step.g_id do
-                    pdata.active.sequence[pdata.active.seq_index].g_remaining[i] = true
-                    length = length + 1
-                    i = i + 1
-                end
-
-                if length ~= 0 then
-                    pdata.active.sequence[pdata.active.seq_index].g_length = length
-                else
-                    -- empty group, skip
-                    handle_increment()
-                end
-            else
-                -- not the start of a group, skip
-                handle_increment()
-            end
-        end
+        mc_tutorial.initialize_action_group(pdata)
     end
 
     -- Action was successfully completed, so play a sound
     minetest.sound_play("bell", {gain = 1.0, pitch = 1.0, to_player = pname}, true)
 
     -- Update the sequence index or remaining action list
-    if pdata.active.sequence[pdata.active.seq_index].action == mc_tutorial.ACTION.GROUP and g_index then
-        pdata.active.sequence[pdata.active.seq_index].g_remaining[g_index] = nil
-        if not next(pdata.active.sequence[pdata.active.seq_index].g_remaining) then
-            -- all group actions complete, jump out of group
-            pdata.active.seq_index = pdata.active.seq_index + pdata.active.sequence[pdata.active.seq_index].g_length
+    if pdata.active.sequence[pdata.active.seq_index] then
+        if pdata.active.sequence[pdata.active.seq_index].action == mc_tutorial.ACTION.GROUP and g_index then
+            pdata.active.sequence[pdata.active.seq_index].g_remaining[g_index] = nil
+            if not next(pdata.active.sequence[pdata.active.seq_index].g_remaining) then
+                -- all group actions complete, jump out of group
+                pdata.active.seq_index = pdata.active.seq_index + pdata.active.sequence[pdata.active.seq_index].g_length
+                handle_increment()
+            end
+        else
             handle_increment()
         end
-    else
-        handle_increment()
     end
 
     -- Check if tutorial is completed
@@ -250,7 +258,7 @@ function mc_tutorial.check_tutorial_progress(player, action, data)
             action_checks = pdata.active.sequence[pdata.active.seq_index].g_remaining
         end
 
-        if next(action_checks) then
+        if action_checks and next(action_checks) then
             -- match the action first since this callback might not even be relevant
             for index,_ in pairs(action_checks) do
                 if action == pdata.active.sequence[index].action then

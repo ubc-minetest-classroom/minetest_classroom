@@ -258,10 +258,20 @@ function mc_tutorial.show_record_fs(player)
         end
 
         local tutorials = mc_tutorial.tutorials:to_table()
+        local tutorials_exist = false
+        if tutorials and next(tutorials.fields) then
+            for id,_ in pairs(tutorials.fields) do
+                if tonumber(id) then
+                    tutorials_exist = true
+                    break
+                end
+            end
+        end
+
         local record_formtable = {
             "formspec_version[6]",
             "size[14.2,10]",
-            "tabheader[0,0;record_nav;Overview,Events,Rewards", tutorials and next(tutorials.fields) and ",Dependencies" or "", ";", context.tab or "1", ";false;false]"
+            "tabheader[0,0;record_nav;Overview,Events,Rewards", tutorials_exist and ",Dependencies" or "", ";", context.tab or "1", ";false;false]"
         }
         local tab_map = {
             ["1"] = function() -- OVERVIEW
@@ -607,25 +617,30 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
                 pdata.active = tutorial_to_start
                 mc_tutorial.active[pname] = tostring(context.tutorial_i_to_id[context.tutorial_selected])
+                mc_tutorial.initialize_action_group(pdata)
                 pmeta:set_string("mc_tutorial:tutorials", minetest.serialize(pdata))
                 minetest.chat_send_player(pname, "[Tutorial] Tutorial has started: "..pdata.active.title)
 
-                -- Check if there is an action in the sequence that requires the tutorial_progress_listener
-                -- This saves us from unnecessarily burning cycles server-side
-                local action_map = {
-                    [mc_tutorial.ACTION.POS] = true,
-                    [mc_tutorial.ACTION.LOOK_DIR] = true,
-                    [mc_tutorial.ACTION.LOOK_PITCH] = true,
-                    [mc_tutorial.ACTION.LOOK_YAW] = true,
-                    [mc_tutorial.ACTION.WIELD] = true,
-                    [mc_tutorial.ACTION.KEY] = true
-                }
-                local listener_needed = false
-                for _,event in ipairs(pdata.active.sequence) do
-                    listener_needed = action_map[event.action] or listener_needed
-                end
-                if listener_needed then
-                    minetest.after(0.1, mc_tutorial.tutorial_progress_listener, player)
+                if pdata.active.seq_index > pdata.active.length then
+                    mc_tutorial.completed_action(player)
+                else
+                    -- Check if there is an action in the sequence that requires the tutorial_progress_listener
+                    -- This saves us from unnecessarily burning cycles server-side
+                    local action_map = {
+                        [mc_tutorial.ACTION.POS] = true,
+                        [mc_tutorial.ACTION.LOOK_DIR] = true,
+                        [mc_tutorial.ACTION.LOOK_PITCH] = true,
+                        [mc_tutorial.ACTION.LOOK_YAW] = true,
+                        [mc_tutorial.ACTION.WIELD] = true,
+                        [mc_tutorial.ACTION.KEY] = true
+                    }
+                    local listener_needed = false
+                    for _,event in ipairs(pdata.active.sequence) do
+                        listener_needed = action_map[event.action] or listener_needed
+                    end
+                    if listener_needed then
+                        minetest.after(0.1, mc_tutorial.tutorial_progress_listener, player)
+                    end
                 end
                 -- TODO: add HUD and/or formspec to display the instructions for the tutorial
             end
@@ -800,7 +815,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
             if fields.eventlist_add_group then
                 context.selected_event = context.selected_event or 1
-                if mc_tutorial.record.temp[pname].sequence[context.selected_event].action == mc_tutorial.ACTION.GROUP then
+                if not mc_tutorial.record.temp[pname].sequence[context.selected_event] then
+                    minetest.chat_send_player(pname, "[Tutorial] Groups can not be added to empty tutorials.")
+                elseif mc_tutorial.record.temp[pname].sequence[context.selected_event].action == mc_tutorial.ACTION.GROUP then
                     minetest.chat_send_player(pname, "[Tutorial] Groups can not be added around group markers.")
                 elseif group_parity_is_odd(context.selected_event, mc_tutorial.record.temp[pname].sequence) then
                     minetest.chat_send_player(pname, "[Tutorial] Groups can not be added inside other groups.")
@@ -822,22 +839,30 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     table.insert(context.events, context.selected_event, "#CCFFFFGROUP "..group.. " {")
 
                     mc_tutorial.record.temp[pname].next_group = group + 1
+                    mc_tutorial.record.temp[pname].has_actions = true
                 end
             end
             if fields.eventlist_delete then
                 context.selected_event = context.selected_event or 1
-                local removed = table.remove(mc_tutorial.record.temp[pname].sequence, context.selected_event)
-                table.remove(context.events, context.selected_event)
-                if removed.action == mc_tutorial.ACTION.GROUP then
-                    for i,event in pairs(mc_tutorial.record.temp[pname].sequence) do
-                        if event.action == mc_tutorial.ACTION.GROUP and event.g_id == removed.g_id then
-                            table.remove(mc_tutorial.record.temp[pname].sequence, i)
-                            table.remove(context.events, i)
-                            break
+                if not mc_tutorial.record.temp[pname].sequence[context.selected_event] then
+                    minetest.chat_send_player(pname, "[Tutorial] There are no actions to delete.")
+                else
+                    local removed = table.remove(mc_tutorial.record.temp[pname].sequence, context.selected_event)
+                    table.remove(context.events, context.selected_event)
+                    if removed.action == mc_tutorial.ACTION.GROUP then
+                        for i,event in pairs(mc_tutorial.record.temp[pname].sequence) do
+                            if event.action == mc_tutorial.ACTION.GROUP and event.g_id == removed.g_id then
+                                table.remove(mc_tutorial.record.temp[pname].sequence, i)
+                                table.remove(context.events, i)
+                                break
+                            end
                         end
                     end
+                    if #mc_tutorial.record.temp[pname].sequence <= 0 then
+                        mc_tutorial.record.temp[pname].has_actions = false
+                    end
+                    context.selected_event = math.max(1, math.min(context.selected_event, #mc_tutorial.record.temp[pname].sequence))
                 end
-                context.selected_event = math.max(1, math.min(context.selected_event, #mc_tutorial.record.temp[pname].sequence))
             end
             if fields.eventlist_duplicate then
                 context.selected_event = context.selected_event or 1
@@ -845,9 +870,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     internal = mc_tutorial.record.temp[pname].sequence[context.selected_event],
                     external = context.events[context.selected_event]
                 }
-                if copy.internal.action ~= mc_tutorial.ACTION.GROUP then
+                if not copy.internal or not copy.external then
+                    minetest.chat_send_player(pname, "[Tutorial] There are no actions to duplicate.")
+                elseif copy.internal.action ~= mc_tutorial.ACTION.GROUP then
                     table.insert(mc_tutorial.record.temp[pname].sequence, context.selected_event + 1, copy.internal)
                     table.insert(context.events, context.selected_event + 1, copy.external)
+                    mc_tutorial.record.temp[pname].has_actions = true
                 else
                     -- TODO: allow entire groups to be duplicated
                     minetest.chat_send_player(pname, "[Tutorial] Group markers can not be duplicated.")
@@ -855,7 +883,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
             if fields.eventlist_edit then
                 context.selected_event = context.selected_event or 1
-                if mc_tutorial.record.temp[pname].sequence[context.selected_event].action ~= mc_tutorial.ACTION.GROUP then
+                if not mc_tutorial.record.temp[pname].sequence[context.selected_event] then
+                    minetest.chat_send_player(pname, "[Tutorial] There are no actions to edit.")
+                elseif mc_tutorial.record.temp[pname].sequence[context.selected_event].action ~= mc_tutorial.ACTION.GROUP then
                     minetest.chat_send_player(pname, "[Tutorial] Coming soon!")
                 else
                     minetest.chat_send_player(pname, "[Tutorial] Group markers can not be edited.")
