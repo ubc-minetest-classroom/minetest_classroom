@@ -67,7 +67,6 @@ function Realm:Save_Schematic(schematicName, author, mode)
     settings:set("schematic_size_y", self.EndPos.y - self.StartPos.y)
     settings:set("schematic_size_z", self.EndPos.z - self.StartPos.z)
 
-
     local utmInfo = self:get_data("UTMInfo")
 
     if (utmInfo ~= nil) then
@@ -75,7 +74,6 @@ function Realm:Save_Schematic(schematicName, author, mode)
         settings:set("utm_easting", utmInfo.easting)
         settings:set("utm_northing", utmInfo.northing)
     end
-
 
     local settingsWrote = settings:write()
 
@@ -168,8 +166,8 @@ function Realm:Load_Schematic(schematic, config)
         vm:write_to_map(true)
     end
 
-    if (config.backgroundSound ~= nil) then
-        self:set_data("backgroundSound", config.backgroundSound)
+    for k, v in pairs(config.miscData) do
+        self:set_data(k, v)
     end
 
     if (config.tableName ~= nil) then

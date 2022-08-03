@@ -83,9 +83,14 @@ function schematicManager.getSchematic(key)
     local utm_origin_easting = tonumber(settings:get("utm_origin_easting")) or 0
     local utm_origin_northing = tonumber(settings:get("utm_origin_northing")) or 0
 
-    --It would be nice to have this set through an arbitrary data option and linked to the teleport_function_in_name. But for now, we'll just hardcode it as an option.
-    local backgroundSound = settings:get("backgroundSound") or nil
+    local _miscData = {}
 
+    local settingNames = settings:get_names()
+    for k, v in pairs(settingNames) do
+        if (tostring(k):find("^d_")) then
+            _miscData[string.gsub(k, "d_", "")] = v
+        end
+    end
 
 
     local _spawnPoint = { x = spawn_pos_x, y = spawn_pos_y, z = spawn_pos_z }
@@ -94,7 +99,7 @@ function schematicManager.getSchematic(key)
 
     local config = { author = _author, name = _name, format = _format, spawnPoint = _spawnPoint, schematicSize = _schematicSize,
                      tableName = schematic_table_name, onTeleportInFunction = teleport_function_in_name, onTeleportOutFunction = teleport_function_out_name,
-                     onSchematicPlaceFunction = realm_create_function_name, onRealmDeleteFunction = realm_delete_function_name, utmInfo = _utmInfo, backgroundSound = backgroundSound }
+                     onSchematicPlaceFunction = realm_create_function_name, onRealmDeleteFunction = realm_delete_function_name, utmInfo = _utmInfo, miscData = _miscData }
 
     return schematic, config
 end
