@@ -315,7 +315,7 @@ local function can_place_deco(deco, data, vi, pattern)
     return false
 end
 
-local function place_deco(deco, data, a, vm, minp, maxp, blockseed, seaLevel)
+local function place_deco(deco, data, a, vm, minp, maxp, blockseed, realmOriginY)
     local ps = PcgRandom(blockseed + 53)
     local carea_size = maxp.x - minp.x + 1
 
@@ -442,7 +442,8 @@ local function place_deco(deco, data, a, vm, minp, maxp, blockseed, seaLevel)
                         end
                     end
 
-                    if y >= (deco.y_min + seaLevel) and y <= (deco.y_max + seaLevel) and y >= minp.y and y <= maxp.y then
+                --    if y >= (deco.y_min + seaLevel) and y <= (deco.y_max + seaLevel) and y >= minp.y and y <= maxp.y then
+                    if y >= (deco.y_min + realmOriginY) and y <= (deco.y_max + realmOriginY) and y >= minp.y and y <= maxp.y then
                         local biome_ok = true
                         if deco.use_biomes and #biomemap > 0 then
                             local biome_here = biomemap[mapindex]
@@ -454,6 +455,7 @@ local function place_deco(deco, data, a, vm, minp, maxp, blockseed, seaLevel)
                         if biome_ok then
                             local pos = { x = x, y = y, z = z }
                             if can_place_deco(deco, data, a:index(x, y, z), pattern) then
+                                Debug.log(deco.name .. " at " .. pos.x .. "," .. pos.y .. "," .. pos.z)
                                 deco:generate(vm, ps, pos, false)
                             end
                         end
@@ -470,14 +472,14 @@ local function get_blockseed(p, seed)
     return seed + p.z * 38134234 + p.y * 42123 + p.x * 23
 end
 
-local function place_all_decos(data, a, vm, minp, maxp, seed, seaLevel)
+local function place_all_decos(data, a, vm, minp, maxp, seed, realmOriginY)
     local emin = vm:get_emerged_area()
     local blockseed = get_blockseed(emin, seed)
 
     local nplaced = 0
 
     for i, deco in pairs(decos) do
-        nplaced = nplaced + place_deco(deco, data, a, vm, minp, maxp, blockseed, seaLevel)
+        nplaced = nplaced + place_deco(deco, data, a, vm, minp, maxp, blockseed, realmOriginY)
     end
 
     return nplaced
@@ -562,10 +564,10 @@ biomegen = {
     dust_top_nodes = dust_top_nodes,
 }
 
-function biomegen.generate_all(data, a, vm, minp, maxp, seed, seaLevel)
+function biomegen.generate_all(data, a, vm, minp, maxp, seed, seaLevel, realmOriginY)
     generate_biomes(data, a, minp, maxp, seed, seaLevel)
     vm:set_data(data)
-    place_all_decos(data, a, vm, minp, maxp, seed, seaLevel)
+    place_all_decos(data, a, vm, minp, maxp, seed, realmOriginY)
     minetest.generate_ores(vm, minp, maxp)
     vm:get_data(data)
     dust_top_nodes(data, a, vm, minp, maxp, seaLevel)
