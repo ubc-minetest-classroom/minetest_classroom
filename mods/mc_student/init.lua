@@ -4,8 +4,6 @@ minetest_classroom.reports = minetest.get_mod_storage()
 minetest_classroom.mc_students = {teachers = {}}
 mc_student = {path = minetest.get_modpath("mc_student")}
 
-dofile(mc_student.path .. "/tutorialbook.lua")
-
 -- Local variables
 local tool_name = "mc_student:notebook"
 local priv_table = {interact = true}
