@@ -216,10 +216,11 @@ commands["regen"] = {
         local seaLevel = math.floor((requestedRealm.EndPos.y - requestedRealm.StartPos.y) * 0.4) + requestedRealm.StartPos.y
         Debug.log("Sea level:" .. seaLevel)
 
-        local seed = requestedRealm:get_data("worldSeed")
-        local seaLevel = requestedRealm:get_data("worldSeaLevel")
-        local heightGen = requestedRealm:get_data("worldMapGenerator")
-        local decGen = requestedRealm:get_data("worldDecoratorName")
+        local seed = requestedRealm:get_data("genSeed")
+        local heightGen = requestedRealm:get_data("genMapGenerator")
+        local decGen = requestedRealm:get_data("genDecoratorName")
+
+        local seaLevel = requestedRealm:get_data("seaLevel")
 
         if (seed == nil or seed == "nil") then
             return false, "Realm does not have any saved seed information."
@@ -645,7 +646,7 @@ commands["coordinates"] = {
                 return true, "enabled position hud element for format " .. format .. "."
             elseif (format == "nil" or format == "none") then
                 pmeta:set_string("positionHudMode", "")
-                mc_worldManager.RemovePositionHud(minetest.get_player_by_name(name))
+                mc_worldManager.RemoveHud(minetest.get_player_by_name(name))
                 return true, "disabled position hud element."
             end
             return false, "invalid format."

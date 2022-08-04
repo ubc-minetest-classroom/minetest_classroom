@@ -82,6 +82,8 @@ function schematicManager.getSchematic(key)
     local utm_hemisphere = settings:get("utm_hemisphere") or "N"
     local utm_origin_easting = tonumber(settings:get("utm_origin_easting")) or 0
     local utm_origin_northing = tonumber(settings:get("utm_origin_northing")) or 0
+    local elevation_offset = tonumber(settings:get("elevation_offset")) or 0
+
 
     local _spawnPoint = { x = spawn_pos_x, y = spawn_pos_y, z = spawn_pos_z }
     local _schematicSize = { x = schematic_size_x, y = schematic_size_y, z = schematic_size_z }
@@ -90,6 +92,8 @@ function schematicManager.getSchematic(key)
     local config = { author = _author, name = _name, format = _format, spawnPoint = _spawnPoint, schematicSize = _schematicSize,
                      tableName = schematic_table_name, onTeleportInFunction = teleport_function_in_name, onTeleportOutFunction = teleport_function_out_name,
                      onSchematicPlaceFunction = realm_create_function_name, onRealmDeleteFunction = realm_delete_function_name, utmInfo = _utmInfo }
+    config.elevationOffset = elevation_offset
+
 
     return schematic, config
 end
