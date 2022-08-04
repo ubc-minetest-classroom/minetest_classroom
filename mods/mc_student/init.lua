@@ -1,22 +1,3 @@
----- LOCAL VERSION ------- 
-
-local mc_student_classrooms = {
-	"formspec_version[6]",
-	"size[6.5,7.5]",
-	"label[2.5,0.5;Classrooms]",
-	"pwdfield[0.6,5.8;3,0.5;accesscode;Enter Access Code]",
-	"button[5.3,6.7;1,0.6;join;Join]",
-	"button[0.2,6.7;1,0.6;back;Back]",
-	"button[4,5.7;2,0.6;register;Register]",
-	"textlist[0.6,0.9;5.4,4.3;realms;example realm;1;false]"
-}
-
-local function show_classrooms(player)
-	if mc_helpers.checkPrivs(player,priv_table) then
-		minetest.show_formspec(player:get_player_name(), "mc_student:classrooms", table.concat(mc_student_classrooms,""))
-	end
-end
-
 
 -- Global variables
 minetest_classroom.reports = minetest.get_mod_storage()
@@ -29,17 +10,22 @@ dofile(mc_student.path .. "/tutorialbook.lua")
 local tool_name = "mc_student:notebook"
 local priv_table = {interact = true}
 
--- Split pos in coordlist from character "x=1 y=2 z=3" to numeric table {1,2,3}
-local function pos_split (inputstr)
-	local t={}
-	for str in string.gmatch(inputstr, "([^=%s]+)") do
-		table.insert(t, str)
+minetest.register_on_joinplayer(function(player)
+	if minetest.check_player_privs(player, { teacher = true }) then
+		minetest_classroom.mc_students.teachers[player:get_player_name()] = true
 	end
-	local tt={x=tonumber(t[2]),z=tonumber(t[6]),y=tonumber(t[4])}
-	return tt
-end
+end)
 
--- Define an initial formspec that will redirect to different formspecs depending on what the student wants to do
+minetest.register_on_leaveplayer(function(player)
+	minetest_classroom.mc_students.teachers[player:get_player_name()] = nil
+end)
+
+------------------------------------
+--- FORMSPEC DEFINITIONS/HELPERS ---
+------------------------------------
+
+-------------------------
+--- MAIN STUDENT MENU ---
 local mc_student_menu = {
 	"formspec_version[5]",
 	"size[10,9]",
@@ -60,18 +46,45 @@ local function show_student_menu(player)
 		return true
 	end
 end
+-----------------------------
 
-minetest.register_on_joinplayer(function(player)
-	if minetest.check_player_privs(player, { teacher = true }) then
-		minetest_classroom.mc_students.teachers[player:get_player_name()] = true
+
+------------------
+--- CLASSROOMS ---
+local mc_student_classrooms = {
+	"formspec_version[6]",
+	"size[6.5,7.5]",
+	"label[2.5,0.5;Classrooms]",
+	"pwdfield[0.6,5.8;3,0.5;accesscode;Enter Access Code]",
+	"button[5.3,6.7;1,0.6;join;Join]",
+	"button[0.2,6.7;1,0.6;back;Back]",
+	"button[4,5.7;2,0.6;register;Register]",
+	"textlist[0.6,0.9;5.4,4.3;realms;example realm;1;false]"
+}
+
+local function show_classrooms(player)
+	if mc_helpers.checkPrivs(player,priv_table) then
+		minetest.show_formspec(player:get_player_name(), "mc_student:classrooms", table.concat(mc_student_classrooms,""))
 	end
-end)
+end
 
-minetest.register_on_leaveplayer(function(player)
-	minetest_classroom.mc_students.teachers[player:get_player_name()] = nil
-end)
+function check_access_code(submitted, codes)
+	local found = false
+	local loc = 1
+	for _,v in pairs(codes) do
+	    if v == submitted then
+		    local found = true
+		    return loc
+	    end
+	    loc = loc + 1
+	end
+    return found
+end
+----------------------
 
--- Define the Report formspec
+
+----------------------
+--- REPORT ---
 local mc_student_report = {
 	"formspec_version[5]",
 	"size[7,7]",
@@ -85,6 +98,42 @@ local function show_report(player)
 	local pname = player:get_player_name()
 	minetest.show_formspec(pname, "mc_student:report", table.concat(mc_student_report,""))
 	return true
+end
+-----------------------
+
+
+-----------------------
+--- MARKER ---
+local mc_student_marker = {
+	"formspec_version[5]",
+	"size[7,6.5]",
+	"position[0.3,0.5]",
+	"label[1.8,0.8;Add text to your marker]",
+	"button[0.7,5.2;2,0.8;back;Back]",
+	"button_exit[2.9,5.2;2,0.8;submit;Submit]",
+	"textarea[0.7,1.5;5.6,3.1;message;; ]"
+}
+
+	local function show_marker(player)
+	if mc_helpers.checkPrivs(player,priv_table) then
+		local pname = player:get_player_name()
+		minetest.show_formspec(pname, "mc_student:marker", table.concat(mc_student_marker,""))
+		return true
+	end
+end
+----------------------
+
+
+-------------------
+--- COORDINATES ---
+-- Split pos in coordlist from character "x=1 y=2 z=3" to numeric table {1,2,3}
+local function pos_split (inputstr)
+	local t={}
+	for str in string.gmatch(inputstr, "([^=%s]+)") do
+		table.insert(t, str)
+	end
+	local tt={x=tonumber(t[2]),z=tonumber(t[6]),y=tonumber(t[4])}
+	return tt
 end
 
 -- Define the Coordinates formspec
@@ -145,64 +194,13 @@ local function record_coordinates(player,message)
 		show_coordinates(player)
 	end
 end
+------------------------
 
--- Define the Access Code formspec
-local mc_student_accesscode = {
-	"formspec_version[5]",
-	"size[5,3]",
-	"label[0.6,0.5;Enter an Access Code]",
-	"pwdfield[0.5,0.9;3.9,0.8;accesscode;]",
-	"button_exit[0.9,2;3,0.8;submit;Submit]",
-	"button_exit[4.4,0;0.6,0.5;exit;X]"
-}
 
-local function show_accesscode(player)
-	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:accesscode", table.concat(mc_student_accesscode,""))
-		return true
-	end
-end
+------------------------------------
+--- FORMSPEC AND TOOL MANAGEMENT ---
+------------------------------------
 
-local mc_student_accesscode_fail = {
-	"formspec_version[5]",
-	"size[5,4.2]",
-	"label[0.6,0.5;Enter Your Access Code]",
-	"pwdfield[0.5,0.9;3.9,0.8;accesscode;]",
-	"button_exit[0.9,2;3,0.8;submit;Submit]",
-	"label[0.9,3.2;Invalid access code.]",
-	"label[1.2,3.7;Please try again.]",
-	"button_exit[4.4,0;0.6,0.5;exit;X]"
-}
-
-local function show_accesscode_fail(player)
-	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:accesscode_fail", table.concat(mc_student_accesscode_fail,""))
-		return true
-	end
-end
-
--- Define place a marker formspec
-local mc_student_marker = {
-	"formspec_version[5]",
-	"size[7,6.5]",
-	"position[0.3,0.5]",
-	"label[1.8,0.8;Add text to your marker]",
-	"button[0.7,5.2;2,0.8;back;Back]",
-	"button_exit[2.9,5.2;2,0.8;submit;Submit]",
-	"textarea[0.7,1.5;5.6,3.1;message;; ]"
-}
-
-	local function show_marker(player)
-	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:marker", table.concat(mc_student_marker,""))
-		return true
-	end
-end
-
--- Processing the form from the menu
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if string.sub(formname, 1, 10) ~= "mc_student" then
 		return false
@@ -211,7 +209,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	local wait = os.clock()
 	while os.clock() - wait < 0.05 do end --popups don't work without this
 
-	-- Menu
 	if formname == "mc_student:menu" then
 		if fields.spawn then
 			local spawnRealm = mc_worldManager.GetSpawnRealm()
@@ -411,36 +408,28 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 end)
 
-function check_access_code(submitted, codes)
-	local found = false
-	local loc = 1
-	for _,v in pairs(codes) do
-	    if v == submitted then
-		    local found = true
-		    return loc
-	    end
-	    loc = loc + 1
-	end
-    return found
-end
-
 -- The student notebook for accessing the student actions
 minetest.register_tool(tool_name , {
 	description = "Notebook for students",
 	inventory_image = "notebook.png",
 	_mc_tool_privs = priv_table,
-	-- Left-click the tool activates the teacher menu
+	
 	on_use = function (itemstack, player, pointed_thing)
         local pname = player:get_player_name()
-		-- Check for adequate privileges
 		if mc_helpers.checkPrivs(player,priv_table) then
 			show_student_menu(player)
 		end
 	end,
-	-- Destroy the controller on_drop to keep things tidy
+	
 	on_drop = function(itemstack, dropper, pos)
 	end,
 })
+-------------------------------
+
+
+----------------------
+--- MARKER HELPERS ---
+----------------------
 
 -- Functions and variables for placing markers
 hud = mhud.init()
@@ -618,3 +607,44 @@ function place_marker(player,message)
 		minetest.chat_send_player(pname,pname..": You are not allowed to place markers. Please submit a report from your notebook to request this privilege.")
 	end
 end
+
+
+
+
+
+-- -- Define the Access Code formspec
+-- local mc_student_accesscode = {
+-- 	"formspec_version[5]",
+-- 	"size[5,3]",
+-- 	"label[0.6,0.5;Enter an Access Code]",
+-- 	"pwdfield[0.5,0.9;3.9,0.8;accesscode;]",
+-- 	"button_exit[0.9,2;3,0.8;submit;Submit]",
+-- 	"button_exit[4.4,0;0.6,0.5;exit;X]"
+-- }
+
+-- local function show_accesscode(player)
+-- 	if mc_helpers.checkPrivs(player,priv_table) then
+-- 		local pname = player:get_player_name()
+-- 		minetest.show_formspec(pname, "mc_student:accesscode", table.concat(mc_student_accesscode,""))
+-- 		return true
+-- 	end
+-- end
+
+-- local mc_student_accesscode_fail = {
+-- 	"formspec_version[5]",
+-- 	"size[5,4.2]",
+-- 	"label[0.6,0.5;Enter Your Access Code]",
+-- 	"pwdfield[0.5,0.9;3.9,0.8;accesscode;]",
+-- 	"button_exit[0.9,2;3,0.8;submit;Submit]",
+-- 	"label[0.9,3.2;Invalid access code.]",
+-- 	"label[1.2,3.7;Please try again.]",
+-- 	"button_exit[4.4,0;0.6,0.5;exit;X]"
+-- }
+
+-- local function show_accesscode_fail(player)
+-- 	if mc_helpers.checkPrivs(player,priv_table) then
+-- 		local pname = player:get_player_name()
+-- 		minetest.show_formspec(pname, "mc_student:accesscode_fail", table.concat(mc_student_accesscode_fail,""))
+-- 		return true
+-- 	end
+-- end
