@@ -12,9 +12,7 @@ The `magnify_default_nodes` and `magnify_flowers_nodes` mods contain information
 
 ### Screenshots
 
-<img src = "screenshots/magnify_modpack_standard_viewer.png" alt = "Species viewer" width = "480" height = "250">
-<img src = "screenshots/magnify_modpack_technical_viewer.png" alt = "Technical viewer" width = "480" height = "250">
-<img src = "screenshots/magnify_modpack_technical_locator.png" alt = "Species locator" width = "480" height = "250">
+<img src = "screenshots/magnify_modpack_standard_viewer.png" alt = "Species viewer" width = "384" height = "200"> <img src = "screenshots/magnify_modpack_technical_viewer.png" alt = "Technical viewer" width = "384" height = "200"> <img src = "screenshots/magnify_modpack_technical_locator.png" alt = "Species locator" width = "384" height = "200">
 
 ## Registering plant species using the `magnify` API
 
