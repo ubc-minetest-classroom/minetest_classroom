@@ -1,4 +1,4 @@
-# magnify
+# `magnify`
 
 Adds a magnifying glass tool and inventory plant compenium for viewing information about various plant species in the MineTest world
 
@@ -12,7 +12,7 @@ Adds a magnifying glass tool and inventory plant compenium for viewing informati
 #### `magnify.register_species(def_table, nodes)  -->  string`
 
 Registers a species in the `magnify` species database  
-Should only be called on mod load-in
+**Should only be called on mod load-in**
 
 - Parameters:
   - `def_table` (*`table`*): Species definition table
