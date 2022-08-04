@@ -603,6 +603,7 @@ commands["blocks"] = {
 }
 
 commands["coordinates"] = {
+    privs = { interact = true },
     func = function(name, params)
         local operation = tostring(params[1])
         local format = tostring(params[2])
@@ -610,6 +611,12 @@ commands["coordinates"] = {
         local playerRealm = Realm.GetRealmFromPlayer(minetest.get_player_by_name(name))
 
         if (operation == "set") then
+            local hasPrivs, missing = minetest.check_player_privs(name, { teacher = true })
+
+            if (not hasPrivs) then
+                return false, "You do not have permission to set realm coordinates. Missing: " .. tostring(missing)
+            end
+
             if (format == "UTM") then
                 if (utmInfo == nil) then
                     utmInfo = { easting = tonumber(params[3]), northing = tonumber(params[4]), zone = tonumber(params[5]), utm_is_north = tostring(params[6]) }
