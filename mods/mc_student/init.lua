@@ -1,16 +1,33 @@
+---- LOCAL VERSION ------- 
+
+local mc_student_classrooms = {
+	"formspec_version[6]",
+	"size[6.5,7.5]",
+	"label[2.5,0.5;Classrooms]",
+	"pwdfield[0.6,5.8;3,0.5;accesscode;Enter Access Code]",
+	"button[5.3,6.7;1,0.6;join;Join]",
+	"button[0.2,6.7;1,0.6;back;Back]",
+	"button[4,5.7;2,0.6;register;Register]",
+	"textlist[0.6,0.9;5.4,4.3;realms;example realm;1;false]"
+}
+
+local function show_classrooms(player)
+	if mc_helpers.checkPrivs(player,priv_table) then
+		minetest.show_formspec(player:get_player_name(), "mc_student:classrooms", table.concat(mc_student_classrooms,""))
+	end
+end
+
+
 -- Global variables
 minetest_classroom.reports = minetest.get_mod_storage()
 minetest_classroom.mc_students = {teachers = {}}
-mc_student = {
-	path = minetest.get_modpath("mc_student"),
-	priv_table = {interact = true}
-}
+mc_student = {path = minetest.get_modpath("mc_student")}
 
 dofile(mc_student.path .. "/tutorialbook.lua")
 
 -- Local variables
 local tool_name = "mc_student:notebook"
-local priv_table = mc_student.priv_table
+local priv_table = {interact = true}
 
 -- Split pos in coordlist from character "x=1 y=2 z=3" to numeric table {1,2,3}
 local function pos_split (inputstr)
@@ -28,7 +45,7 @@ local mc_student_menu = {
 	"size[10,9]",
 	"label[3.1,0.7;What do you want to do?]",
 	"button[1,1.6;3.8,1.3;spawn;Go Home]",
-	"button[5.2,1.6;3.8,1.3;accesscode;Join Classroom]",
+	"button[5.2,1.6;3.8,1.3;classrooms;Join Classroom]",
 	"button[1,3.3;3.8,1.3;coordinates;My Coordinates]",
 	"button[5.2,3.3;3.8,1.3;marker;Place a Marker]",
 	"button[1,5;3.8,1.3;taskstudent;View Tasks]",
@@ -203,8 +220,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			show_report(player)
 		elseif fields.coordinates then
 			show_coordinates(player)
-		elseif fields.accesscode then
-			show_accesscode(player)
+		elseif fields.classrooms then
+			-- show_accesscode(player)
+			show_classrooms(player)
 		elseif fields.marker then
 			show_marker(player)
 		elseif fields.taskstudent then
@@ -214,6 +232,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			else
 				minetest.chat_send_player(pname,pname..": No task was found. Message your instructor if you were expecting a task.")
 			end
+		end
+	end
+
+	if formname == "mc_student:classrooms" then
+		if fields.back then
+			show_student_menu(player)
 		end
 	end
 
