@@ -38,6 +38,21 @@ minetest.register_node("unbreakable_map_barrier:barrierSolid", {
 	drop = "",
 })
 
+minetest.register_node("unbreakable_map_barrier:barrierGround", {
+	description = "Indestructible Map Block Barrier",
+	backface_culling = false,
+	tiles = {"barrierVoid.png"},
+	paramtype = "light",
+	sunlight_propagates = true,
+	is_ground_content = false,
+	on_blast = function() end,
+	on_destruct = function () end,
+	can_dig = function() return false end,
+	diggable = false,
+	pointable = true, -- The player can highlight it
+	drop = "",
+})
+
 minetest.register_chatcommand("mapbarrier", {
 	params = "<x0>,<x1>,<y0>,<y1>,<z0>,<z1>",
 	description = "Generate an unbreakable map barrier",

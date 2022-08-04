@@ -158,7 +158,7 @@ local function generate_biomes(data, a, minp, maxp, seed, seaLevel)
             local depth_water_top = 0
             local depth_riverbed = 0
 
-            local biome_y_min = -31000
+            local biome_y_min = minp.y
             local y_start = maxp.y
             local vi = a:index(x, maxp.y, z)
             local ystride = a.ystride
