@@ -52,8 +52,6 @@ local function initialize(chulens, seaLevel, seed)
     nobj_heat = minetest.get_perlin_map(np_heat, chulens2d)
     nobj_heat_blend = minetest.get_perlin_map(noiseparams('mg_biome_np_heat_blend'), chulens2d)
 
-
-
     nobj_humid = minetest.get_perlin_map(np_humidity, chulens2d)
     nobj_humid_blend = minetest.get_perlin_map(noiseparams('mg_biome_np_humidity_blend'), chulens2d)
 
@@ -315,7 +313,7 @@ local function can_place_deco(deco, data, vi, pattern)
     return false
 end
 
-local function place_deco(deco, data, a, vm, minp, maxp, blockseed, realmOriginY)
+local function place_deco(deco, data, a, vm, minp, maxp, blockseed, realmOriginY, placementTable)
     local ps = PcgRandom(blockseed + 53)
     local carea_size = maxp.x - minp.x + 1
 
@@ -442,7 +440,6 @@ local function place_deco(deco, data, a, vm, minp, maxp, blockseed, realmOriginY
                         end
                     end
 
-                --    if y >= (deco.y_min + seaLevel) and y <= (deco.y_max + seaLevel) and y >= minp.y and y <= maxp.y then
                     if y >= (deco.y_min + realmOriginY) and y <= (deco.y_max + realmOriginY) and y >= minp.y and y <= maxp.y then
                         local biome_ok = true
                         if deco.use_biomes and #biomemap > 0 then
@@ -452,11 +449,12 @@ local function place_deco(deco, data, a, vm, minp, maxp, blockseed, realmOriginY
                             end
                         end
 
-                        if biome_ok then
-                            local pos = { x = x, y = y, z = z }
+                        local pos = { x = x, y = y, z = z }
+                        if biome_ok and (ptable.get(placementTable, pos) == nil) then
+
                             if can_place_deco(deco, data, a:index(x, y, z), pattern) then
-                                Debug.log(deco.name .. " at " .. pos.x .. "," .. pos.y .. "," .. pos.z)
                                 deco:generate(vm, ps, pos, false)
+                                ptable.store(placementTable, pos, true)
                             end
                         end
                     end
@@ -476,10 +474,12 @@ local function place_all_decos(data, a, vm, minp, maxp, seed, realmOriginY)
     local emin = vm:get_emerged_area()
     local blockseed = get_blockseed(emin, seed)
 
+    local placementTable = {}
+
     local nplaced = 0
 
     for i, deco in pairs(decos) do
-        nplaced = nplaced + place_deco(deco, data, a, vm, minp, maxp, blockseed, realmOriginY)
+        nplaced = nplaced + place_deco(deco, data, a, vm, minp, maxp, blockseed, realmOriginY, placementTable)
     end
 
     return nplaced
