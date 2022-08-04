@@ -125,16 +125,23 @@ Realm.lastRealmPosition = { xStart = Realm.const.bufferSize,
 Realm.maxRealmSize = { x = 0, y = 0, z = 0 }
 Realm.EmptyChunks = {}
 
-function Realm.CalculateStartEndPosition(areaInBlocks)
+---@private
+---CalculateStartEndPosition
+---Calculates the start and end positions of the realm based on the area parameter.
+---Also reserves the space so that other realms do not steal it from the calling realm
+---when creating a new realm.
+---@param area table realm area in nodes
+---@return table, table startPos, endPos
+function Realm.CalculateStartEndPosition(area)
 
     -- Note that all of the coordinates used in this function are in "gridSpace"
     -- This roughly correlates to the chunk coordinates in MineTest
     -- 1 unit in gridSpace is 80 blocks in worldSpace
 
     -- calculate our realm size in grid units
-    local realmSize = { x = math.ceil(areaInBlocks.x / 80),
-                        y = math.ceil(areaInBlocks.y / 80),
-                        z = math.ceil(areaInBlocks.z / 80) }
+    local realmSize = { x = math.ceil(area.x / 80),
+                        y = math.ceil(area.y / 80),
+                        z = math.ceil(area.z / 80) }
 
     local reuseBin = false
     local StartPos = { x = 0, y = 0, z = 0 }
@@ -218,10 +225,12 @@ function Realm.CalculateStartEndPosition(areaInBlocks)
     return StartPos, EndPos
 end
 
+---@public
+---markSpaceAsFree
+---Sets the space delineated by the startPos and endPos coordinate pairs to be free for use by other realms.
+---@param startPos table startPos coordinates in gridSpace
+---@param endPos table endPos coordinates in gridSpace
 function Realm.markSpaceAsFree(startPos, endPos)
-    Debug.logCoords(startPos, "start pos")
-    Debug.logCoords(endPos, "end pos")
-
     -- Crashes on a value of 3 when deleting spawns, but only when deleting spawns. I don't know why.
     -- The values in the calling function 'Delete' are all correct.
     -- Somehow, the value is turning from '3' to nil between method calls.
@@ -239,6 +248,10 @@ function Realm.markSpaceAsFree(startPos, endPos)
     table.insert(Realm.EmptyChunks, entry)
 end
 
+
+---consolidateEmptySpace
+---Consolidates the empty space between realms into congruent areas.
+---@return table
 function Realm.consolidateEmptySpace()
     -- Generate a point grid from the freespace table
     -- Generate volumes from the point data
@@ -499,6 +512,11 @@ function Realm:RunFunctionFromTable(table, player)
     end
 end
 
+---@public
+---ContainsCoordinate
+---Checks if a coordinate is within the realm.
+---@param coordinate table coordinate pair in world space.
+---@return boolean Whether the coordinate is contained in the realm.
 function Realm:ContainsCoordinate(coordinate)
     if (coordinate.x < self.StartPos.x or coordinate.x > self.EndPos.x) then
         return false
