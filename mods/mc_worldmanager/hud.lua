@@ -12,9 +12,9 @@ function mc_worldManager.UpdateRealmHud(player)
     if (not mc_worldManager.hud:exists(player, "worldManager:currentRealm")) then
         mc_worldManager.hud:add(player, "worldManager:currentRealm", {
             hud_elem_type = "text",
-            position = { x = 1, y = 0 },
-            offset = { x = -16, y = 5 },
-            alignment = { x = "left", y = "down" },
+            position = { x = 0, y = 1 },
+            offset = { x = 5, y = -5 },
+            alignment = { x = "right", y = "up" },
             text = createRealmInfoHudString(player),
             color = 0xFFFFFF,
         })
@@ -22,9 +22,9 @@ function mc_worldManager.UpdateRealmHud(player)
 
     mc_worldManager.hud:change(player, "worldManager:currentRealm", {
         hud_elem_type = "text",
-        position = { x = 1, y = 0 },
-        offset = { x = -16, y = 5 },
-        alignment = { x = "left", y = "down" },
+        position = { x = 0, y = 1 },
+        offset = { x = 5, y = -5 },
+        alignment = { x = "right", y = "up" },
         text = createRealmInfoHudString(player),
         color = 0xFFFFFF,
     })
@@ -79,9 +79,9 @@ function mc_worldManager.UpdatePositionHud(player, positionMode)
     if (not mc_worldManager.hud:exists(player, "worldManager:position")) then
         mc_worldManager.hud:add(player, "worldManager:position", {
             hud_elem_type = "text",
-            position = { x = 1, y = 0 },
-            offset = { x = -16, y = 25 },
-            alignment = { x = "left", y = "down" },
+            position = { x = 0, y = 1 },
+            offset = { x = 5, y = -25 },
+            alignment = { x = "right", y = "up" },
             text = "",
             color = 0xFFFFFF,
         })
@@ -90,9 +90,9 @@ function mc_worldManager.UpdatePositionHud(player, positionMode)
     if (not mc_worldManager.hud:exists(player, "worldManager:elevation")) then
         mc_worldManager.hud:add(player, "worldManager:elevation", {
             hud_elem_type = "text",
-            position = { x = 1, y = 0 },
-            offset = { x = -16, y = 45 },
-            alignment = { x = "left", y = "down" },
+            position = { x = 0, y = 1 },
+            offset = { x = 5, y = -45 },
+            alignment = { x = "right", y = "up" },
             text = "",
             color = 0xFFFFFF,
         })
@@ -103,9 +103,9 @@ function mc_worldManager.UpdatePositionHud(player, positionMode)
 
     mc_worldManager.hud:change(player, "worldManager:position", {
         hud_elem_type = "text",
-        position = { x = 1, y = 0 },
-        offset = { x = -16, y = 25 },
-        alignment = { x = "left", y = "down" },
+        position = { x = 0, y = 1 },
+        offset = { x = 5, y = -25 },
+        alignment = { x = "right", y = "up" },
         text = positionText[positionMode](player, realm),
         color = 0xFFFFFF,
     })
@@ -116,9 +116,9 @@ function mc_worldManager.UpdatePositionHud(player, positionMode)
 
     mc_worldManager.hud:change(player, "worldManager:elevation", {
         hud_elem_type = "text",
-        position = { x = 1, y = 0 },
-        offset = { x = -16, y = 45 },
-        alignment = { x = "left", y = "down" },
+        position = { x = 0, y = 1 },
+        offset = { x = 5, y = -45 },
+        alignment = { x = "right", y = "up" },
         text = "Elevation: " .. math.ceil(player:get_pos().y - seaLevel) .. " m",
         color = 0xFFFFFF,
     })
