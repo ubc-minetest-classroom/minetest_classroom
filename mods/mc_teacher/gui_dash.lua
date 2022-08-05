@@ -941,5 +941,5 @@ minetest.register_tool(tool_name, {
     end,
 })
 if minetest.get_modpath("mc_toolhandler") then
-    mc_toolhandler.register_tool_manager(tool_name, {privs = priv_table})
+    mc_toolhandler.register_tool_manager(tool_name, {privs = priv_table, inv_override = "main"})
 end

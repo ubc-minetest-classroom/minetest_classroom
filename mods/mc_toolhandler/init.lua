@@ -115,6 +115,7 @@ function mc_toolhandler.register_tool_manager(tool, options)
     -- Set default options
     options.privs = options.privs or {teacher = true}
     options.allow_take = options.allow_take or false
+    options.inv_override = options.inv_override or nil
 
     -- Register callbacks
     -- Give the tool to any player who joins with adequate privileges or take it away if they do not have them
@@ -124,8 +125,8 @@ function mc_toolhandler.register_tool_manager(tool, options)
 
         if not list and mc_helpers.checkPrivs(player, options.privs) then
             -- Player should have the tool but does not: give one copy
-            player:get_inventory():add_item(mc_toolhandler.default_inv, tool)
-            if mc_toolhandler.default_inv ~= "main" then
+            player:get_inventory():add_item(options.inv_override or mc_toolhandler.default_inv, tool)
+            if (options.inv_override or mc_toolhandler.default_inv) ~= "main" then
                 minetest.chat_send_player(player:get_player_name(), "New tool added to toolbox: "..tool)
             end
         elseif not mc_helpers.checkPrivs(player, options.privs) then
@@ -161,8 +162,8 @@ function mc_toolhandler.register_tool_manager(tool, options)
         if mc_helpers.checkPrivs(player, options.privs) then
             if not list then
                 -- Player should have the tool but does not: give one copy
-                player:get_inventory():add_item(mc_toolhandler.default_inv, tool)
-                if mc_toolhandler.default_inv ~= "main" then
+                player:get_inventory():add_item(options.inv_override or mc_toolhandler.default_inv, tool)
+                if (options.inv_override or mc_toolhandler.default_inv) ~= "main" then
                     minetest.chat_send_player(name, "New tool added to toolbox: "..tool)
                 end
             elseif player_has_item_copies(player, ItemStack(tool)) then
@@ -221,8 +222,9 @@ function mc_toolhandler.register_group_manager(tools, options)
 
     -- Set default options
     options.privs = options.privs or {teacher = true}
-    options.default_tool = options.default_tool or tools[1] or get_first_v(tools)
     options.allow_take = options.allow_take or false
+    options.inv_override = options.inv_override or nil
+    options.default_tool = options.default_tool or tools[1] or get_first_v(tools)
 
     if not minetest.registered_tools[options.default_tool] or not mc_helpers.tableHas(tools, options.default_tool) then
         return false -- default tool invalid
@@ -238,8 +240,8 @@ function mc_toolhandler.register_group_manager(tools, options)
 
         if not list and mc_helpers.checkPrivs(player, options.privs) then
             -- Player should have the tool but does not: give one copy
-            player:get_inventory():add_item(mc_toolhandler.default_inv, options.default_tool)
-            if mc_toolhandler.default_inv ~= "main" then
+            player:get_inventory():add_item(options.inv_override or mc_toolhandler.default_inv, options.default_tool)
+            if (options.inv_override or mc_toolhandler.default_inv) ~= "main" then
                 minetest.chat_send_player(player:get_player_name(), "New tool added to toolbox: "..options.default_tool)
             end
         elseif not mc_helpers.checkPrivs(player, options.privs) then
@@ -273,8 +275,8 @@ function mc_toolhandler.register_group_manager(tools, options)
         if mc_helpers.checkPrivs(player, options.privs) then
             if not list then
                 -- Player should have the tool but does not: give one copy
-                player:get_inventory():add_item(mc_toolhandler.default_inv, options.default_tool)
-                if mc_toolhandler.default_inv ~= "main" then
+                player:get_inventory():add_item(options.inv_override or mc_toolhandler.default_inv, options.default_tool)
+                if (options.inv_override or mc_toolhandler.default_inv) ~= "main" then
                     minetest.chat_send_player(name, "New tool added to toolbox: "..options.default_tool)
                 end
             elseif player_has_group_copies(player, group) then

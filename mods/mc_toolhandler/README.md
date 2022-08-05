@@ -18,7 +18,8 @@ Registers `tool` to be managed by `mc_toolhandler`
   ```lua
   local options = {
       privs = {teacher = true},   -- Table of privileges necessary to use the tool
-      allow_take = false          -- Whether the tool is allowed to be taken out of the player inventory or not
+      allow_take = false,         -- Whether the tool is allowed to be taken out of the player inventory or not
+      inv_override = nil          -- Player inventory to put the tool into when it is given (nil = default inventory)
   }
   ```
   
@@ -43,6 +44,7 @@ Registers a group of similar tools to be managed by `mc_toolhandler` as if they 
   local options = {
       privs = {teacher = true},   -- Table of privileges necessary to use the tool
       allow_take = false,         -- Whether the tool is allowed to be taken out of the player inventory or not
+      inv_override = nil,         -- Player inventory to put the tool into when it is given (nil = default inventory)
       default_tool = tools[1]     -- Group member to treat as the "primary" tool instance and give by default
   }
   ```
