@@ -60,6 +60,9 @@ local mc_student_classrooms = {
 	"textlist[0.6,0.9;5.4,4.3;realms;;1]"
 }
 
+local classroomRealms = {}
+local selectedClassroom = 1
+
 local function show_classrooms(player)
 	if mc_helpers.checkPrivs(player,priv_table) then
 		local textlist = "textlist[0.6,0.9;5.4,4.3;realms;;1]"
@@ -67,6 +70,8 @@ local function show_classrooms(player)
 
 		for i,realm in ipairs(Realm.realmDict) do
 			if realm:getCategory().joinable(realm,player) then
+				classroomRealms[i] = realm
+
 				if not is_first then
 					textlist = textlist:sub(1, -4) .. "," .. realm.Name .. ";1]"
 				else
@@ -246,8 +251,21 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 
 	if formname == "mc_student:classrooms" then
+		local event = minetest.explode_textlist_event(fields.realms)
+
 		if fields.back then
 			show_student_menu(player)
+		end
+
+		if fields.realms then
+			if event.type == "CHG" then
+				selectedClassroom = event.index
+			end
+		end
+
+		if fields.join then
+			local realm = classroomRealms[selectedClassroom]
+			realm:TeleportPlayer(player)
 		end
 	end
 
