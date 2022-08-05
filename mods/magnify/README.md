@@ -51,14 +51,14 @@ local my_species = {
     sci_name = "",        -- Scientific name of species
     com_name = "",        -- Common name of species
     fam_name = "",        -- Family name of species
+
     cons_status = {       -- Conservation statuses of species
         ns_global = "",       -- NatureServe global status
         ns_bc = "",           -- NatureServe BC status
         bc_list = ""          -- BC List (Red Blue List) status
     },
-
-    height = "",          -- Species height
     region = "",          -- Native region/range of species (displayed as "Found in [region]")
+    height = "",          -- Species height
     more_info = "",       -- Extended description of species
     bloom = "",           -- The way the species blooms
 
