@@ -53,37 +53,6 @@ minetest.register_on_joinplayer(function(player)
         }
         pmeta:set_string("tutorials", minetest.serialize(pdata))
     end
-
-    -- When a player joins, check if they have the correct priv and then give the tutorialbook and/or the recording tool
-	local inv = player:get_inventory()
-	-- tutorialbook
-    if inv:contains_item("main", ItemStack("tutorial:tutorialbook")) then
-		if tutorial.checkPrivs(player,tutorial.player_priv_table) then
-			return
-		else
-			inv:remove_item('main', 'tutorial:tutorialbook')
-		end
-	else
-		if tutorial.checkPrivs(player,tutorial.player_priv_table) then
-			inv:add_item('main', 'tutorial:tutorialbook')
-		else
-			return
-		end
-	end
-    -- recording_tool
-    if inv:contains_item("main", ItemStack("tutorial:recording_tool")) then
-		if tutorial.checkPrivs(player,tutorial.recorder_priv_table) then
-			return
-		else
-			inv:remove_item('main', 'tutorial:recording_tool')
-		end
-	else
-		if tutorial.checkPrivs(player,tutorial.recorder_priv_table) then
-			inv:add_item('main', 'tutorial:recording_tool')
-		else
-			return
-		end
-	end
 end)
 
 function tutorial.show_record_fs(player)
