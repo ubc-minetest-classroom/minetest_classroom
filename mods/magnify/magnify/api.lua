@@ -3,20 +3,6 @@
 -----------------------
 
 --- @public
---- Returns true if `table` has at least one defined key-value pair, false if not, nil if `table` is not a table
---- @param table Table to check
---- @return boolean or nil
-function magnify.table_has_pairs(table)
-    if type(table) ~= "table" then
-        return nil
-    end
-    for _ in pairs(table) do
-        return true
-    end
-    return false
-end
-
---- @public
 --- Returns true if any of the keys or values in `table` match `val`, false otherwise
 --- @param table The table to check
 --- @param val The key/value to check for
@@ -76,7 +62,7 @@ end
 --- @return string or nil
 --- @see README.md > API > Registration
 function magnify.register_species(def_table, nodes)
-    if not magnify.table_has_pairs(nodes) then
+    if type(nodes) ~= "table" or not next(nodes) then
         return nil -- no nodes given
     end
 

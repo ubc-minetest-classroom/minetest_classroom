@@ -1,4 +1,4 @@
-# magnify
+# `magnify`
 
 Adds a magnifying glass tool and inventory plant compenium for viewing information about various plant species in the MineTest world
 
@@ -7,12 +7,10 @@ Adds a magnifying glass tool and inventory plant compenium for viewing informati
 
 ## API
 
-### Registration
-
-#### `magnify.register_species(def_table, nodes)  -->  string`
+### `magnify.register_species(def_table, nodes)  -->  string`
 
 Registers a species in the `magnify` species database  
-Should only be called on mod load-in
+**Should only be called on mod load-in**
 
 - Parameters:
   - `def_table` (*`table`*): Species definition table
@@ -22,19 +20,22 @@ Should only be called on mod load-in
         sci_name = "",        -- Scientific name of species
         com_name = "",        -- Common name of species
         fam_name = "",        -- Family name of species
+
         cons_status = {       -- Conservation statuses of species
             ns_global = "",       -- NatureServe global status
             ns_bc = "",           -- NatureServe BC status
             bc_list = ""          -- BC List (Red Blue List) status
         },
-        height = "",          -- Species height
-        bloom = "",           -- The way the species blooms
         region = "",          -- Native region/range of species (displayed as "Found in [region]")
+        height = "",          -- Species height
+        more_info = "",       -- Extended description of species
+        bloom = "",           -- The way the species blooms
+
         texture = {""},       -- Images of species (in `mod/textures`) - can be a string if only one image
         model_obj = "",       -- Model file (in `mod/models`)
         model_rot_x = 0,      -- Initial rotation of model about x-axis (in degrees; defaults to 0)
         model_rot_y = 0,      -- Initial rotation of model about y-axis (in degrees; defaults to 180)
-        more_info = "",       -- Extended description of species
+
         external_link = "",   -- Link to page with more species information
         img_copyright = "",   -- Copyright owner of species image (displayed as "Image (c) [img_copyright]")
         img_credit = ""       -- Author of species image (displayed as "Image courtesy of [img_credit]")
@@ -61,28 +62,26 @@ Should only be called on mod load-in
     }
     ```
 
-#### `magnify.register_plant(def_table, nodes)  -->  string`
+### `magnify.register_plant(def_table, nodes)  -->  string`
 
 Identical to `magnify.register_species`  
 **Deprecated**: use `magnify.register_species` instead
 
-#### `magnify.clear_nodes(nodes)`
+### `magnify.clear_nodes(nodes)`
 
 Clears the nodes in `nodes` from the `magnify` species database, then clears any species that are no longer associated with any nodes as a result of clearing the nodes in `nodes`
 
 - Parameters:
   - `nodes` (*`table`*): Table of stringified nodes (`mod_name:node_name`) to clear
 
-#### `magnify.clear_ref(ref)`
+### `magnify.clear_ref(ref)`
 
 Clears a species and all its associated nodes from the `magnify` species database
 
 - Parameters:
   - `ref` (*`string`*): Reference key of the species to clear
 
-### General
-
-#### `magnify.get_ref(node)  -->  string`
+### `magnify.get_ref(node)  -->  string`
 
 Returns the reference key associated with `node` in the `magnify` species database
 
@@ -93,7 +92,7 @@ Returns the reference key associated with `node` in the `magnify` species databa
   *OR*
   - `nil` if `node` is invalid or not registered in the `magnify` species database
 
-#### `magnify.get_species_from_ref(ref)  -->  table, table`
+### `magnify.get_species_from_ref(ref)  -->  table, table`
 
 Returns the species definition table of the species indexed at `ref` in the `magnify` species database, and a list of nodes the species is associated with
 
@@ -105,7 +104,7 @@ Returns the species definition table of the species indexed at `ref` in the `mag
   *OR*
   - `nil` if `ref` is invalid
 
-#### `magnify.get_all_registered_species()  -->  table, table`
+### `magnify.get_all_registered_species()  -->  table, table`
 
 Returns a human-readable list of all species registered in the `magnify` species database, and a list of reference keys corresponding to them  
 Each species and its corresponding reference key will be at the same index in both lists
@@ -114,7 +113,7 @@ Each species and its corresponding reference key will be at the same index in bo
   - *`table`*: Names of all registered species, formatted as "Common name (Scientific name)"
   - *`table`*: Reference keys for all registered species, in the same order as the list of names
 
-#### `magnify.build_formspec_from_ref(ref, is_exit, is_inv)  -->  string, string`
+### `magnify.build_formspec_from_ref(ref, is_exit, is_inv)  -->  string, string`
 
 Builds the general species information formspec for the species indexed at `ref` in the `magnify` species database  
 
@@ -128,9 +127,9 @@ Builds the general species information formspec for the species indexed at `ref`
   *OR*
   - `nil` if `ref` is invalid
 
-### Utility
+## Helper functions
 
-#### `magnify.table_has(table, val)  -->  boolean`
+### `magnify.table_has(table, val)  -->  boolean`
 
 Returns `true` if any of the keys or values in `table` match `val`, `false` otherwise
 
@@ -139,14 +138,3 @@ Returns `true` if any of the keys or values in `table` match `val`, `false` othe
   - `val` (*`any`*): The key/value to check for
 - Returns:
   - *`boolean`*: Whether `val` exists in `table` or not
-
-#### `magnify.table_has_pairs(table)  -->  boolean`
-
-Returns `true` if `table` has at least one defined key-value pair, `false` if not, `nil` if `table` is not a table
-
-- Parameters:
-  - `table` (*`table`*): The table to check
-- Returns:
-  - *`boolean`*: Whether `table` contains any defined key-value pairs or not
-  *OR*
-  - `nil` if `table` is not a table
