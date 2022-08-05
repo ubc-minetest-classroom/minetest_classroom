@@ -107,7 +107,7 @@ minetest.register_tool("mc_tf:tutorialbook" , {
 })
 
 if minetest.get_modpath("mc_toolhandler") then
-	mc_toolhandler.register_tool_manager("mc_tf:tutorialbook", {privs = {shout = true}})
+	mc_toolhandler.register_tool_manager("mc_tf:tutorialbook", {privs = {shout = true}, inv_override = "main"})
 end
 
 minetest.register_alias("tutorialbook", "mc_tf:tutorialbook")
