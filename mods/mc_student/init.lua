@@ -57,11 +57,26 @@ local mc_student_classrooms = {
 	"button[5.3,6.7;1,0.6;join;Join]",
 	"button[0.2,6.7;1,0.6;back;Back]",
 	"button[4,5.7;2,0.6;register;Register]",
-	"textlist[0.6,0.9;5.4,4.3;realms;example realm;1;false]"
+	"textlist[0.6,0.9;5.4,4.3;realms;;1]"
 }
 
 local function show_classrooms(player)
 	if mc_helpers.checkPrivs(player,priv_table) then
+		local textlist = "textlist[0.6,0.9;5.4,4.3;realms;;1]"
+		local is_first = true
+
+		for i,realm in ipairs(Realm.realmDict) do
+			if realm:getCategory().joinable(realm,player) then
+				if not is_first then
+					textlist = textlist:sub(1, -4) .. "," .. realm.Name .. ";1]"
+				else
+					textlist = textlist:sub(1, -4) .. realm.Name .. ";1]"
+					is_first = false
+				end	
+			end
+		end
+
+		mc_student_classrooms[#mc_student_classrooms] = textlist
 		minetest.show_formspec(player:get_player_name(), "mc_student:classrooms", table.concat(mc_student_classrooms,""))
 	end
 end
