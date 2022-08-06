@@ -1,3 +1,5 @@
+local bit = dofile(minetest.get_modpath("mc_helpers") .. "/numberlua.lua")
+
 -- Register the punch, dig, and place callbacks
 minetest.register_on_punchnode(function(pos, node, player, pointed_thing)
     local pname = player:get_player_name()
@@ -61,12 +63,24 @@ minetest.register_globalstep(function(dtime)
             -- Listen for keystroke, if triggered
             if timer > 1 and mc_tutorial.record.listener.key[pname] == "track" then
                 reset_timer = true
-                local key_control = player:get_player_control()
-    
-                if key_control.up or key_control.down or key_control.right or key_control.left or key_control.aux1 or key_control.jump or key_control.sneak then
+                local bit_map = {
+                    [0x001] = "up",
+                    [0x002] = "down",
+                    [0x004] = "left",
+                    [0x008] = "right",
+                    [0x010] = "jump",
+                    [0x020] = "aux1",
+                    [0x040] = "sneak",
+                    [0x200] = "zoom",
+                }
+                local key_bits = player:get_player_control_bits()
+
+                if bit.band(0x27F, key_bits) > 0 then
                     local keys = {}
-                    for k,v in pairs(key_control) do
-                        if v then table.insert(keys, k) end
+                    for b,v in pairs(bit_map) do
+                        if bit.band(b, key_bits) > 0 then
+                            table.insert(keys, v)
+                        end
                     end
                     local msg = "[Tutorial] Keystroke "..table.concat(keys, " + ").." recorded."
                     minetest.chat_send_player(pname, msg)

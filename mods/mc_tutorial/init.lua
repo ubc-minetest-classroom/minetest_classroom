@@ -34,12 +34,25 @@ mc_tutorial = {
         LOOK_YAW = 6,
         LOOK_PITCH = 7,
         LOOK_DIR = 8,
-        POS = 9,
-        GROUP = 10
+        POS_ABS = 9,
+        GROUP = 10,
+        -- WIP beyond this point
+        POS_REL = 11, 
+        MSG_CHAT = 12,
+        MSG_POPUP = 13,
+        INV_PUT = 14,
+        INV_TAKE = 15,
+        INV_MOVE = 16,
+        CRAFT = 17,
     },
     GROUP = { -- group type constants
         START = 1,
         END = 2
+    },
+    SIDEBAR = {
+        NONE = 0,
+        ITEM = 1,
+        KEY = 2
     }
 }
 -- local constants
@@ -201,7 +214,7 @@ function mc_tutorial.show_record_fs(player)
                     local yaw = math.deg(vector.angle(vector.new(0, 0, 1), yaw_vect or vector.new(0, 0, 1)))
                     return nil, "look in direction "..(event.dir and "(yaw = "..(math.sign(yaw_vect.x) == -1 and (360 - yaw) or yaw).."°, pitch = "..math.sign(event.dir.y)*math.deg(vector.angle(event.dir, yaw_vect)).."°)" or "[?]")
                 end,
-                [mc_tutorial.ACTION.POS] = function(event)
+                [mc_tutorial.ACTION.POS_ABS] = function(event)
                     return nil, "go to position "..(event.pos and "(x = "..event.pos.x..", y = "..event.pos.y..", z = "..event.pos.z..")" or "[?]")
                 end,
                 [mc_tutorial.ACTION.GROUP] = function(event)
@@ -446,45 +459,124 @@ function mc_tutorial.show_record_options_fs(player)
 	return true
 end
 
-function mc_tutorial.show_event_popop_fs(player)
+function mc_tutorial.show_event_popop_fs(player, is_edit)
     local pname = player:get_player_name()
 	if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
         -- Event popup for adding/editing events in a tutorial
         local context = get_context(pname)
         local temp = mc_tutorial.record.temp[pname] or {}
+
+        local action_map = {
+            [mc_tutorial.ACTION.PUNCH] = {
+                name = "Punch node (PUNCH)",
+                fs_elem = function()
+                    return {} -- stub
+                end,
+            },
+            [mc_tutorial.ACTION.DIG] = {
+                name = "Dig node (DIG)",
+                fs_elem = function()
+                    return {} -- stub
+                end,
+            },
+            [mc_tutorial.ACTION.PLACE] = {
+                name = "Place node (PLACE)",
+                fs_elem = function()
+                    return {} -- stub
+                end,
+            },
+            [mc_tutorial.ACTION.WIELD] = {
+                name = "Wield item (WIELD)",
+                fs_elem = function()
+                    return {} -- stub
+                end,
+            },
+            [mc_tutorial.ACTION.KEY] = {
+                name = "Press keys (KEY)",
+                fs_elem = function()
+                    return {} -- stub
+                end,
+            },
+            [mc_tutorial.ACTION.LOOK_YAW] = {
+                name = "Look in horizontal direction (LOOK_YAW)",
+                fs_elem = function()
+                    return {} -- stub
+                end,
+            },
+            [mc_tutorial.ACTION.LOOK_PITCH] = {
+                name = "Look in vertical direction (LOOK_PITCH)",
+                fs_elem = function()
+                    return {} -- stub
+                end,
+            },
+            [mc_tutorial.ACTION.LOOK_DIR] = {
+                name = "Look in direction (LOOK_DIR)",
+                fs_elem = function()
+                    return {} -- stub
+                end,
+            },
+            [mc_tutorial.ACTION.POS_ABS] = {
+                name = "Go to position (POS_ABS)",
+                fs_elem = function()
+                    return {} -- stub
+                end,
+            },
+        }
+
         if not context.epop then
             context.epop = {
+                is_edit = is_edit or false,
                 expand = false,
                 selected = 1,
+                actions = {},
+                i_to_action = {},
+                sidebar_list = {},
+                sidebar_mode = mc_tutorial.SIDEBAR.NONE
             }
+
+            for k,data in pairs(action_map) do
+                table.insert(context.epop.actions, data.name)
+                context.epop.i_to_action[#context.epop.actions] = k
+            end
         end
 
         local epop_fs = {
             "formspec_version[6]",
-            "size[0", context.epop.expand and 13.4 or 8.4, ",8]",
-            "container[", context.epop.expand and 5 or 0, ",0]",
+            "size[0", context.epop.expand and 14 or 8.4, ",8]",
+            "container[", context.epop.expand and 5.6 or 0, ",0]",
             "label[0.8,0.5;Event type]",
-            "dropdown[0.8,0.7;7.2,1;action;;", context.epop.selected or 1, ";true]",
+            "dropdown[0.8,0.7;7.2,1;action;", table.concat(context.epop.actions, ","), ";", context.epop.selected or 1, ";true]",
             "button[0.8,6.8;3.6,0.8;save;Save event]",
             "button[4.4,6.8;3.6,0.8;cancel;Cancel]",
         }
 
-        -- insert action-specific information from action map
-
+        if action_map[context.epop.i_to_action[context.epop.selected]] then
+            table.insert(epop_fs, table.concat(action_map[context.epop.i_to_action[context.epop.selected]].fs_elem()))
+        end
         table.insert(epop_fs, "container_end[]")
 
         if context.epop.expand then
+            local new_mode = context.epop.i_to_action[context.epop.selected] == mc_tutorial.ACTION.KEY and mc_tutorial.SIDEBAR.KEY or mc_tutorial.SIDEBAR.ITEM
+            local sidebar_list = {}
+            if key_action then
+                sidebar_list = {"up", "down", "left", "right", "aux1", "jump", "sneak", "zoom"}
+            else
+                -- TODO
+            end
+                    
             table.insert(epop_fs, table.concat({
-                "label[0.7,0.5;Registered items]",
-                "textlist[0.7,0.7;4.6,5.5;;;1;false]",
-                "image[0.7,6.4;1.2,1.2;]",
-                "textarea[2,6.3;3.3,1.4;;;Item + desc]",
-                "box[5.525,0.2;0.05,7.6;#202020]",
+                "label[0.7,0.5;", key_action and "Available keys" or "Registered items", "]",
+                "textlist[0.7,0.7;5.2,5.5;sidebar_list;", table.concat(sidebar_list, ","), ";", context.epop.sidebar_selected or 1, ";false]",
+                key_action and "" or "image[0.7,6.4;1.2,1.2;]",
+                "textarea[2,6.3;3.9,1.4;;;Item + desc]",
+                "box[6.125,0.2;0.05,7.6;#202020]",
                 "button[0,0;0.5,8;collapse_list;>]",
+                "tooltip[collapse_list;Collapse]",
             }))
         else
             table.insert(epop_fs, table.concat({
                 "button[0,0;0.5,8;expand_list;<]",
+                "tooltip[expand_list;Expand]",
             }))
         end
 
@@ -505,16 +597,16 @@ button[0,0;0.5,8;expand_list;<]
 
 EXPANDED:
 formspec_version[6]
-size[13.4,8]
-label[5.8,0.5;Event type]
-dropdown[5.8,0.7;7.2,1;action;;1;true]
-button[5.8,6.8;3.6,0.8;save;Save event]
-button[9.4,6.8;3.6,0.8;cancel;Cancel]
+size[14,8]
+label[6.4,0.5;Event type]
+dropdown[6.4,0.7;7.2,1;action;;1;true]
+button[6.4,6.8;3.6,0.8;save;Save event]
+button[10,6.8;3.6,0.8;cancel;Cancel]
 label[0.7,0.5;Registered items]
-textlist[0.7,0.7;4.6,5.5;;;1;false]
+textlist[0.7,0.7;5.2,5.5;items;;1;false]
 image[0.7,6.4;1.2,1.2;]
-textarea[2,6.3;3.3,1.4;;;Item + desc]
-box[5.525,0.2;0.05,7.6;#202020]
+textarea[2,6.3;3.9,1.4;;;Item + desc]
+box[6.125,0.2;0.05,7.6;#202020]
 button[0,0;0.5,8;collapse_list;>]
 ]]
 
@@ -699,7 +791,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     -- Check if there is an action in the sequence that requires the tutorial_progress_listener
                     -- This saves us from unnecessarily burning cycles server-side
                     local action_map = {
-                        [mc_tutorial.ACTION.POS] = true,
+                        [mc_tutorial.ACTION.POS_ABS] = true,
                         [mc_tutorial.ACTION.LOOK_DIR] = true,
                         [mc_tutorial.ACTION.LOOK_PITCH] = true,
                         [mc_tutorial.ACTION.LOOK_YAW] = true,
@@ -727,7 +819,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
         if fields.getpos then
             local pos = player:get_pos()
-            local reg_success = mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.POS, {pos = pos})
+            local reg_success = mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.POS_ABS, {pos = pos})
             if reg_success ~= false then
                 minetest.chat_send_player(pname, "[Tutorial] Your current position was recorded. Continue to record new actions or left-click the tool to end the recording.")
             else
@@ -882,7 +974,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
             if fields.eventlist_add_event then
                 context.selected_event = context.selected_event or 1
-                return mc_tutorial.show_event_popop_fs(player)
+                return mc_tutorial.show_event_popop_fs(player, false)
             end
             if fields.eventlist_add_group then
                 context.selected_event = context.selected_event or 1
@@ -957,7 +1049,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 if not mc_tutorial.record.temp[pname].sequence[context.selected_event] then
                     minetest.chat_send_player(pname, "[Tutorial] There are no actions to edit.")
                 elseif mc_tutorial.record.temp[pname].sequence[context.selected_event].action ~= mc_tutorial.ACTION.GROUP then
-                    minetest.chat_send_player(pname, "[Tutorial] Coming soon!")
+                    return mc_tutorial.show_event_popop_fs(player, true)
                 else
                     minetest.chat_send_player(pname, "[Tutorial] Group markers can not be edited.")
                 end
@@ -1072,6 +1164,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
         if fields.collapse_list then
             context.epop.expand = false
+            context.epop.sidebar_mode = mc_tutorial.SIDEBAR.NONE
             reload = true
         end
 

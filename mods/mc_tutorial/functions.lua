@@ -1,3 +1,5 @@
+local bit = dofile(minetest.get_modpath("mc_helpers") .. "/numberlua.lua")
+
 function mc_tutorial.check_privs(player, priv_table)
     local priv_table = priv_table or {interact = true}
     local name = player:get_player_name()
@@ -57,7 +59,7 @@ function mc_tutorial.tutorial_progress_listener(player)
     if pdata.active and not mc_tutorial.record.active[pname] then
         -- Figure out the type of action to call the correct listener
         local listener_map = {
-            [mc_tutorial.ACTION.POS] = function(index)
+            [mc_tutorial.ACTION.POS_ABS] = function(index)
                 minetest.chat_send_player(pname, "[Tutorial] Listening for position...")
 
                 pdata.player_seq.pos = player:get_pos()
@@ -105,16 +107,25 @@ function mc_tutorial.tutorial_progress_listener(player)
             [mc_tutorial.ACTION.KEY] = function(index)
                 minetest.chat_send_player(pname, "[Tutorial] Listening for keystroke...")
 
-                pdata.player_seq.key_control = player:get_player_control()
-                if pdata.player_seq.key_control.up or pdata.player_seq.key_control.down or pdata.player_seq.key_control.right or pdata.player_seq.key_control.left or pdata.player_seq.key_control.aux1 or pdata.player_seq.key_control.jump or pdata.player_seq.key_control.sneak then
+                local bit_map = {
+                    [0x001] = "up",
+                    [0x002] = "down",
+                    [0x004] = "left",
+                    [0x008] = "right",
+                    [0x010] = "jump",
+                    [0x020] = "aux1",
+                    [0x040] = "sneak",
+                    [0x200] = "zoom",
+                }
+                local key_bits = player:get_player_control_bits()
+                if bit.band(0x27F, key_bits) > 0 then
                     pdata.player_seq.keys = {}
-                    -- TODO: redesign (concat + sequence may be arbitrary)
-                    for k,v in pairs(pdata.player_seq.key_control) do
-                        if v then
-                            table.insert(pdata.player_seq.keys, k)
+                    for b,v in pairs(bit_map) do
+                        if bit.band(b, key_bits) > 0 then
+                            table.insert(pdata.player_seq.keys, v)
                         end
                     end
-                    if table.concat(pdata.player_seq.keys, " ") == table.concat(pdata.active.sequence[index].key, " ") then
+                    if table.concat(table.sort(pdata.player_seq.keys), " ") == table.concat(table.sort(pdata.active.sequence[index].key), " ") then
                         mc_tutorial.completed_action(player, index)
                     end
                 end
