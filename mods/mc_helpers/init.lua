@@ -172,6 +172,7 @@ function mc_helpers.getInventoryItemLocation(inv, itemstack)
         end
     end
     return nil
+end
 
 function mc_helpers.round(x, n)
     return tonumber(string.format("%." .. n .. "f", x))
