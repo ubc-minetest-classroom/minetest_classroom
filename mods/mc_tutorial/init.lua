@@ -470,55 +470,73 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
             [mc_tutorial.ACTION.PUNCH] = {
                 name = "Punch node (PUNCH)",
                 fs_elem = function()
-                    return {} -- stub
+                    return {
+                        "label[0.8,2.5;punch]",
+                    } -- stub
                 end,
             },
             [mc_tutorial.ACTION.DIG] = {
                 name = "Dig node (DIG)",
                 fs_elem = function()
-                    return {} -- stub
+                    return {
+                        "label[0.8,2.5;dig]",
+                    } -- stub
                 end,
             },
             [mc_tutorial.ACTION.PLACE] = {
                 name = "Place node (PLACE)",
                 fs_elem = function()
-                    return {} -- stub
+                    return {
+                        "label[0.8,2.5;place]",
+                    } -- stub
                 end,
             },
             [mc_tutorial.ACTION.WIELD] = {
                 name = "Wield item (WIELD)",
                 fs_elem = function()
-                    return {} -- stub
+                    return {
+                        "label[0.8,2.5;wield]",
+                    } -- stub
                 end,
             },
             [mc_tutorial.ACTION.KEY] = {
                 name = "Press keys (KEY)",
                 fs_elem = function()
-                    return {} -- stub
+                    return {
+                        "label[0.8,2.5;kiki]",
+                    } -- stub
                 end,
             },
             [mc_tutorial.ACTION.LOOK_YAW] = {
                 name = "Look in horizontal direction (LOOK_YAW)",
                 fs_elem = function()
-                    return {} -- stub
+                    return {
+                        "label[0.8,2.5;yawss]",
+                    } -- stub
                 end,
             },
             [mc_tutorial.ACTION.LOOK_PITCH] = {
                 name = "Look in vertical direction (LOOK_PITCH)",
                 fs_elem = function()
-                    return {} -- stub
+                    return {
+                        "label[0.8,2.5;pitch?]",
+                    } -- stub
                 end,
             },
             [mc_tutorial.ACTION.LOOK_DIR] = {
                 name = "Look in direction (LOOK_DIR)",
                 fs_elem = function()
-                    return {} -- stub
+                    return {
+                        "label[0.8,2.5;dir x 3]",
+                    } -- stub
                 end,
             },
             [mc_tutorial.ACTION.POS_ABS] = {
                 name = "Go to position (POS_ABS)",
                 fs_elem = function()
-                    return {} -- stub
+                    return {
+                        "label[0.8,2.5;absolutely wonderful!]",
+                    } -- stub
                 end,
             },
         }
@@ -530,8 +548,11 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 selected = 1,
                 actions = {},
                 i_to_action = {},
-                sidebar_list = {},
-                sidebar_mode = mc_tutorial.SIDEBAR.NONE
+                sidebar = {
+                    list = {},
+                    mode = mc_tutorial.SIDEBAR.NONE,
+                    selected = 1
+                }
             }
 
             for k,data in pairs(action_map) do
@@ -545,7 +566,7 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
             "size[0", context.epop.expand and 14 or 8.4, ",8]",
             "container[", context.epop.expand and 5.6 or 0, ",0]",
             "label[0.8,0.5;Event type]",
-            "dropdown[0.8,0.7;7.2,1;action;", table.concat(context.epop.actions, ","), ";", context.epop.selected or 1, ";true]",
+            "dropdown[0.8,0.7;7.2,0.8;action;", table.concat(context.epop.actions, ","), ";", context.epop.selected or 1, ";true]",
             "button[0.8,6.8;3.6,0.8;save;Save event]",
             "button[4.4,6.8;3.6,0.8;cancel;Cancel]",
         }
@@ -557,18 +578,28 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
 
         if context.epop.expand then
             local new_mode = context.epop.i_to_action[context.epop.selected] == mc_tutorial.ACTION.KEY and mc_tutorial.SIDEBAR.KEY or mc_tutorial.SIDEBAR.ITEM
-            local sidebar_list = {}
-            if key_action then
-                sidebar_list = {"up", "down", "left", "right", "aux1", "jump", "sneak", "zoom"}
-            else
-                -- TODO
+            if new_mode ~= context.epop.sidebar.mode then
+                context.epop.sidebar.mode = new_mode
+                context.epop.sidebar.list = {}
+                context.epop.sidebar.selected = 1
+
+                if context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY then
+                    context.epop.sidebar.list = {"up", "down", "left", "right", "aux1", "jump", "sneak", "zoom"}
+                else
+                    for item,_ in pairs(minetest.registered_items) do
+                        if mc_helpers.trim(item) ~= "" then
+                            table.insert(context.epop.sidebar.list, mc_helpers.trim(item))
+                        end
+                    end
+                end
+                table.sort(context.epop.sidebar.list)
             end
                     
             table.insert(epop_fs, table.concat({
-                "label[0.7,0.5;", key_action and "Available keys" or "Registered items", "]",
-                "textlist[0.7,0.7;5.2,5.5;sidebar_list;", table.concat(sidebar_list, ","), ";", context.epop.sidebar_selected or 1, ";false]",
-                key_action and "" or "image[0.7,6.4;1.2,1.2;]",
-                "textarea[2,6.3;3.9,1.4;;;Item + desc]",
+                "label[0.7,0.5;", context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY and "Available keys" or "Registered items", "]",
+                "textlist[0.7,0.7;5.2,5.5;sidebar_list;", table.concat(context.epop.sidebar.list, ","), ";", context.epop.sidebar.selected or 1, ";false]",
+                context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY and "" or "image[0.7,6.4;1.2,1.2;mc_tutorial_cancel.png]",
+                "textarea[", context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY and "0.7,6.3;5.2,1.4" or "2,6.3;3.9,1.4", ";;;Item + desc]",
                 "box[6.125,0.2;0.05,7.6;#202020]",
                 "button[0,0;0.5,8;collapse_list;>]",
                 "tooltip[collapse_list;Collapse]",
@@ -590,7 +621,7 @@ CONDENSED:
 formspec_version[6]
 size[8.4,8]
 label[0.8,0.5;Event type]
-dropdown[0.8,0.7;7.2,1;action;;1;true]
+dropdown[0.8,0.7;7.2,0.8;action;;1;true]
 button[0.8,6.8;3.6,0.8;save;Save event]
 button[4.4,6.8;3.6,0.8;cancel;Cancel]
 button[0,0;0.5,8;expand_list;<]
@@ -599,7 +630,7 @@ EXPANDED:
 formspec_version[6]
 size[14,8]
 label[6.4,0.5;Event type]
-dropdown[6.4,0.7;7.2,1;action;;1;true]
+dropdown[6.4,0.7;7.2,0.8;action;;1;true]
 button[6.4,6.8;3.6,0.8;save;Save event]
 button[10,6.8;3.6,0.8;cancel;Cancel]
 label[0.7,0.5;Registered items]
@@ -1154,7 +1185,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         local reload = false
 
         if fields.action then
-            context.epop.selected = fields.action
+            context.epop.selected = tonumber(fields.action)
             reload = true
         end
 
@@ -1164,7 +1195,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
         if fields.collapse_list then
             context.epop.expand = false
-            context.epop.sidebar_mode = mc_tutorial.SIDEBAR.NONE
+            context.epop.sidebar.mode = mc_tutorial.SIDEBAR.NONE
             reload = true
         end
 
