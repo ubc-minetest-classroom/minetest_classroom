@@ -1,5 +1,5 @@
-local c_stone = minetest.get_content_id("mapgen_stone")
-local c_water = minetest.get_content_id("mapgen_water_source")
+local c_stone = minetest.get_content_id("default:stone")
+local c_water = minetest.get_content_id("default:water_source")
 local c_air = minetest.get_content_id("air")
 local c_dirt = minetest.get_content_id("default:dirt")
 local c_dirtGrass = minetest.get_content_id("default:dirt_with_grass")
@@ -234,8 +234,8 @@ Realm.WorldGen.RegisterMapDecorator("v2",
 
 Realm.WorldGen.RegisterMapDecorator("biomegen", function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
     Debug.log("Calling biomegen map decorator")
-    biomegen.set_elevation_chill(0)
-    biomegen.generate_all(data, area, vm, startPos, endPos, seed, seaLevel)
+    biomegen.set_elevation_chill(0.5)
+    biomegen.generate_all(data, area, vm, startPos, endPos, seed, seaLevel - 2, startPos.y)
 end)
 
 

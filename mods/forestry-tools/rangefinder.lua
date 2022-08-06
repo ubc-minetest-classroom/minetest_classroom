@@ -1,11 +1,10 @@
 --[[ TODO
--- Add random chance for noise/skipping when raycast hits nodes with:
-  -- node group: leaves, sapling
-  -- drawtype: plantlike, plantlike_rooted
--- Treat plant casts as imprecise (round to whole rather than decimal)
 -- Add calculation/cast outputs to HUD instead of chat
 -- Auto-reset?
--- Implement altername left-click actions (?)
+-- Implement alternate left-click actions (?)
+-- Implement AZ and ML-AZ modes
+  -- AZ = reading at current point (basically, compass)
+  -- ML-AZ = direction from cast 1 to cast 2 (angle between N and ray vector)
 ]]
 
 --[[ CURRENT CONTROL SCHEME
@@ -52,6 +51,7 @@ local MRHUD_ARROW_DEFAULTS = {
 }
 local TOOL_NAME = "forestry_tools:rangefinder"
 
+forestry_tools.rangefinder = {}
 local hud = mhud.init()
 local mrhud_mode_hud = mhud.init()
 
@@ -75,26 +75,134 @@ local function set_mode(meta, routine)
     meta:set_int("mode", tonumber(routine))
 end
 
+-- Replaces player's current copy of itemstack with the given copy of itemstack
+local function save_item_meta(player, itemstack)
+    local stack_name = itemstack:get_name()
+    if player:get_wielded_item():get_name() == stack_name then
+        player:set_wielded_item(itemstack)
+    else
+        local inv = player:get_inventory()
+        for lname,list in pairs(inv:get_lists()) do
+            for i,item in pairs(list) do
+                if item:get_name() == stack_name then
+                    inv:set_stack(lname, i, itemstack)
+                    return
+                end
+            end
+        end
+    end
+end
+
 -- Constrains val to the open domain defined by [min, max]
 local function constrain(min, val, max)
     return math.max(min, math.min(max, val))
 end
 
+-- Returns the precision that should be used for rounding the rangefinder's output based on the least precise rangefinder measurement recorded
+local function get_precision(meta)
+    local prec_table = minetest.deserialize(meta:get("precs") or minetest.serialize({}))
+    local precision = 1
+    local precision_map = {
+        [true] = 1,
+        [false] = 0,
+        ["angle"] = 1
+    }
+    for i,prec in ipairs(prec_table) do
+        precision = precision * precision_map[prec]
+    end
+    return precision
+end
+
+-- Returns the precision for a single cast, as above
+local function get_single_precision(meta, cast_num)
+    local prec_table = minetest.deserialize(meta:get("precs") or minetest.serialize({}))
+    local precision_map = {
+        [true] = 1,
+        [false] = 0,
+        ["angle"] = 0
+    }
+    return precision_map[prec_table[cast_num]]
+end
+
+-- Stores values into the rangefinder's display metadata, allowing them to be displayed the next time the rangefinder is selected
+local function store_display_meta(meta, output, desc)
+    meta:set_string("display_output", output)
+    meta:set_string("display_desc", desc)
+end
+
+-- Updates the main rangefinder display's text, changing it to the given output text and description
+local function update_display(player, meta, output, desc)
+    local function get_output_def(col, offset, z_index)
+        return {
+            hud_elem_type = "text",
+            position = {x = 0.5, y = 0.08},
+            alignment = {x = 0, y = 0},
+            offset = offset or {x = 0, y = 0},
+            color = col or 0xFFFFFF,
+            scale = {x = 100, y = 100},
+            text = output or "-----",
+            text_scale = 8,
+            style = 5,
+            z_index = z_index or 4
+        }
+    end
+    local function get_desc_def(col, offset, z_index)
+        return {
+            hud_elem_type = "text",
+            position = {x = 0.5, y = 0.16},
+            alignment = {x = 0, y = 0},
+            offset = offset or {x = 0, y = 0},
+            color = col or 0xFFFFFF,
+            scale = {x = 100, y = 100},
+            text = desc or "awaiting cast",
+            text_scale = 2,
+            style = 4,
+            z_index = z_index or 2
+        }
+    end
+
+    if not hud:get(player, TOOL_NAME..":output") then
+        hud:add(player, TOOL_NAME..":output", get_output_def())
+        hud:add(player, TOOL_NAME..":output_desc", get_desc_def())
+        hud:add(player, TOOL_NAME..":output_shadow", get_output_def(0x000000, {x = 3, y = 3}, 3))
+        hud:add(player, TOOL_NAME..":output_desc_shadow", get_desc_def(0x000000, {x = 2, y = 2}, 1))
+    else
+        hud:change(player, TOOL_NAME..":output", get_output_def())
+        hud:change(player, TOOL_NAME..":output_desc", get_desc_def())
+        hud:change(player, TOOL_NAME..":output_shadow", get_output_def(0x000000, {x = 3, y = 3}, 3))
+        hud:change(player, TOOL_NAME..":output_desc_shadow", get_desc_def(0x000000, {x = 2, y = 2}, 1))
+    end
+    store_display_meta(meta, output, desc)
+end
+
+local function clear_display_callback(player)
+    local pname = player:get_player_name()
+    if forestry_tools["rangefinder"][pname] then
+        forestry_tools["rangefinder"][pname]["cancel"]()
+        forestry_tools["rangefinder"][pname] = nil
+    end
+end
+
 -- Clears all the logged casts from the rangefinder's metadata
 local function clear_saved_casts(player, itemstack, log_if_empty)
+    clear_display_callback(player)
+
     local meta = itemstack:get_meta()
     local count = 0
     meta:set_string("casts", "")
     local mark_table = minetest.deserialize(meta:get("marks") or minetest.serialize({}))
-    for i,id in pairs(mark_table) do
-        if hud:get(player, id) then
-            hud:remove(player, id)
+    for i,mark in pairs(mark_table) do
+        local mark_id = (type(mark) == "table" and mark.id) or mark -- compatibility
+        if hud:get(player, mark_id) then
+            hud:remove(player, mark_id)
         end
         count = count + 1
     end
     meta:set_string("marks", "")
+    meta:set_string("precs", "")
 
     if count > 0 then
+        update_display(player, meta)
         minetest.chat_send_player(player:get_player_name(), "Rangefinder memory cleared, ready to start new measurement")
     elseif log_if_empty then
         minetest.chat_send_player(player:get_player_name(), "Rangefinder memory empty, no measurements cleared")
@@ -104,20 +212,27 @@ end
 
 -- Clears the last logged cast from the rangefinder's metadata
 local function undo_last_cast(player, itemstack)
+    clear_display_callback(player)
+
     local meta = itemstack:get_meta()
     local cast_table = minetest.deserialize(meta:get("casts") or minetest.serialize({}))
     local mark_table = minetest.deserialize(meta:get("marks") or minetest.serialize({}))
+    local prec_table = minetest.deserialize(meta:get("precs") or minetest.serialize({}))
 
-    if #cast_table > 0 and #mark_table > 0 then
+    if #cast_table > 0 and #mark_table > 0 and #prec_table > 0 then
         table.remove(cast_table)
         meta:set_string("casts", minetest.serialize(cast_table))
+        table.remove(prec_table)
+        meta:set_string("precs", minetest.serialize(prec_table))
 
-        local marker_id = table.remove(mark_table)
-        if hud:get(player, marker_id) then
-            hud:remove(player, marker_id)
+        local mark = table.remove(mark_table)
+        local mark_id = (type(mark) == "table" and mark.id) or mark -- compatibility
+        if hud:get(player, mark_id) then
+            hud:remove(player, mark_id)
         end
         meta:set_string("marks", minetest.serialize(mark_table))
 
+        update_display(player, meta)
         minetest.chat_send_player(player:get_player_name(), "Previous cast cleared from rangefinder memory")
     else
         minetest.chat_send_player(player:get_player_name(), "Rangefinder memory empty, no measurements cleared")
@@ -128,7 +243,7 @@ end
 
 -- Adds a cast market to the world
 local function add_cast_marker(player, pos, is_angle)
-    return hud:add(player, nil, {
+    local marker_id = hud:add(player, nil, {
         hud_elem_type = "image_waypoint",
         world_pos = pos,
         text = is_angle and "forestry_tools_rf_anglemarker.png" or "forestry_tools_rf_marker.png",
@@ -136,31 +251,32 @@ local function add_cast_marker(player, pos, is_angle)
         z_index = is_angle and -301 or -300,
         alignment = {x = 0, y = 0}
     })
+    return {id = marker_id, pos = pos, is_angle = is_angle}
 end
 
--- Gets the first valid block hit by the ray
+-- Returns the first valid block hit by the ray, and whether the hit is accurate or not
 local function get_first_valid_hit(ray, dir)
     local rng = PcgRandom(os.clock())
 
     local hit = ray:next()
     while hit do
         if hit.type == "object" then
-            return hit -- always hit objects
+            return hit, true -- always hit objects
         elseif hit.type == "node" then
             local node = minetest.get_node(hit.under)
             local node_def = minetest.registered_nodes[node.name]
             if node_def then
                 if node_def.drawtype == "plantlike" or node_def.drawtype == "plantlike_rooted" then
-                    -- plantlike: 60% chance to detect normally, 40% chance to skip
+                    -- plantlike: 70% chance to detect normally, 30% chance to skip
                     local rng_gen = rng:next(1, 100)
-                    if rng_gen > 40 then
-                        return hit
+                    if rng_gen > 30 then
+                        return hit, false
                     end
                 elseif node_def.groups["leaves"] or node_def.groups["sapling"] then
                     -- defined as plant: 5% chance to detect normally, 85% chance to detect with random noise, 10% chance to skip
                     local rng_gen = rng:next(1, 100)
                     if rng_gen > 95 then
-                        return hit
+                        return hit, false
                     elseif rng_gen > 10 then
                         local noise_mod = rng:next(0, 65535) / 65535
                         local noise_vector = vector.multiply(dir, noise_mod)
@@ -168,11 +284,11 @@ local function get_first_valid_hit(ray, dir)
 
                         local noisy_hit = table.copy(hit)
                         noisy_hit.intersection_point = {x = hit_point.x + noise_vector.x, y = hit_point.y + noise_vector.y, z = hit_point.z + noise_vector.z}
-                        return noisy_hit
+                        return noisy_hit, false
                     end
                 else
                     -- not a plant: valid
-                    return hit
+                    return hit, true
                 end
             end
         end
@@ -188,6 +304,7 @@ local function track_raycast_hit(player, itemstack)
         -- log hit in rangefinder
         local cast_table = minetest.deserialize(meta:get("casts") or minetest.serialize({}))
         local mark_table = minetest.deserialize(meta:get("marks") or minetest.serialize({}))
+        local prec_table = minetest.deserialize(meta:get("precs") or minetest.serialize({}))
         local routine = get_routine(meta)
 
         if #cast_table >= ROUTINES[routine]["casts"] then
@@ -197,7 +314,7 @@ local function track_raycast_hit(player, itemstack)
 
         local player_pos = vector.offset(player:get_pos(), 0, player:get_properties().eye_height, 0)
         local ray = minetest.raycast(player_pos, vector.add(player_pos, vector.multiply(player:get_look_dir(), RAY_RANGE)))
-        local cast_point, first_hit = ray:next(), get_first_valid_hit(ray, player:get_look_dir())
+        local cast_point, first_hit, is_precise = ray:next(), get_first_valid_hit(ray, player:get_look_dir())
 
         if not first_hit then
             -- no objects/nodes within range, note failed hit
@@ -207,14 +324,17 @@ local function track_raycast_hit(player, itemstack)
 
         local dir = vector.direction(cast_point.intersection_point, first_hit.intersection_point)
         local dist = vector.distance(cast_point.intersection_point, first_hit.intersection_point)
-        table.insert(cast_table, {dir = dir, dist = dist, pos = first_hit.intersection_point})
+        local is_angle = routine == 2 and #mark_table ~= 0
+
+        -- display hit on screen + log info in rangefinder
+        table.insert(cast_table, {dir = dir, dist = dist})
         meta:set_string("casts", minetest.serialize(cast_table))
-
-        -- display hit on screen + log ID in rangefinder
-        table.insert(mark_table, add_cast_marker(player, first_hit.intersection_point, routine == 2 and #mark_table ~= 0))
+        table.insert(mark_table, add_cast_marker(player, first_hit.intersection_point, is_angle))
         meta:set_string("marks", minetest.serialize(mark_table))
+        table.insert(prec_table, is_precise or (is_angle and "angle"))
+        meta:set_string("precs", minetest.serialize(prec_table))
 
-        local table_length = math.min(#cast_table, #mark_table)
+        local table_length = math.min(#cast_table, #mark_table, #prec_table)
         local casts_reached = table_length >= ROUTINES[routine]["casts"]
         return itemstack, table_length, casts_reached
     end
@@ -471,7 +591,7 @@ local function round_to_decim_places(num, places, as_string)
     else
         local num_string = tostring(round_num)
         local whole = string.sub(num_string, 1, -1 - places)
-        local decim = string.sub(num_string, -places)
+        local decim = places > 0 and string.sub(num_string, -places) or ""
         return decim ~= "" and (whole ~= "" and whole or "0").."."..decim or (whole ~= "" and whole or "0")
     end
 end
@@ -482,7 +602,7 @@ local function cosine_law(a, b, theta)
 end
 
 -- Calculates the final output for the rangefinder to display
-local function rangefinder_calc(meta)
+local function rangefinder_calc(meta, pmeta)
     local casts = minetest.deserialize(meta:get_string("casts"))
     local routine, mode = get_routine(meta), get_mode(meta)
     if not casts or #casts < ROUTINES[routine]["casts"] then
@@ -515,7 +635,11 @@ local function rangefinder_calc(meta)
                 return 100 * verti_dist / horiz_dist
             end,
             [5] = function() -- AZ
-                return routine..":"..mode -- stub
+                local slope_dir = casts[1]["dir"]
+                local declination = pmeta:get_int("declination") -- magnetic declination value from compass
+                local yaw = vector.rotate(vector.new(slope_dir.x, 0, slope_dir.z), vector.new(0, math.rad(declination), 0))
+                local theta = math.deg(vector.angle(vector.new(0, 0, 1), yaw))
+                return math.sign(yaw.x) == -1 and (360 - theta) or theta
             end
         },
         [2] = { -- height (HT)
@@ -561,7 +685,13 @@ local function rangefinder_calc(meta)
                 return 100 * verti_dist / horiz_dist
             end,
             [5] = function() -- AZ
-                return routine..":"..mode -- stub
+                local vect_a = vector.multiply(casts[1]["dir"], casts[1]["dist"])
+                local vect_b = vector.multiply(casts[2]["dir"], casts[2]["dist"])
+                local slope_vect = vector.subtract(vect_b, vect_a)
+                local declination = pmeta:get_int("declination") -- magnetic declination value from compass
+                local yaw = vector.rotate(vector.new(slope_vect.x, 0, slope_vect.z), vector.new(0, math.rad(declination), 0))
+                local theta = math.deg(vector.angle(vector.new(0, 0, 1), yaw))
+                return math.sign(yaw.x) == -1 and (360 - theta) or theta
             end
         }
     }
@@ -610,11 +740,15 @@ local function rangefinder_mode_switch(itemstack, player, pointed_thing)
     if cur_routine ~= new_routine then
         clear_saved_casts(player, itemstack)
     else
-        local result = rangefinder_calc(meta)
-        if result then
-            local round_res = round_to_decim_places(result, 1, true)
-            minetest.chat_send_player(player:get_player_name(), "Measurement for new mode: "..round_res..ROUTINES[new_routine]["modes"][new_mode]["unit"])
-        end
+        minetest.after(0.1, function(player, meta, routine, mode, itemstack)
+            local result = rangefinder_calc(meta, player:get_meta())
+            if result then
+                local round_res = round_to_decim_places(result, get_precision(meta), true)
+                clear_display_callback(player)
+                update_display(player, meta, round_res..ROUTINES[new_routine]["modes"][new_mode]["unit"], "final measurement")
+                save_item_meta(player, itemstack)
+            end
+        end, player, meta, new_routine, new_mode, itemstack)
     end
     return itemstack
 end
@@ -646,20 +780,34 @@ minetest.register_tool(TOOL_NAME, {
                     
                     -- log cast distance
                     if cast_num then
-                        local casts = minetest.deserialize(meta:get_string("casts"))
-                        if casts[cast_num] then
-                            local cast_dist = round_to_decim_places(casts[cast_num]["dist"], 1, true)
-                            minetest.chat_send_player(pname, "Cast "..cast_num.." logged - distance: "..cast_dist.."m")
-                        end
+                        minetest.after(0.1, function(player, meta, cast_num)
+                            local casts = minetest.deserialize(meta:get_string("casts"))
+                            if casts[cast_num] then
+                                local cast_dist = round_to_decim_places(casts[cast_num]["dist"], get_single_precision(meta, cast_num), true)
+                                clear_display_callback(player)
+                                update_display(player, meta, cast_dist.."m", "cast "..cast_num)
+                            end
+                        end, player, meta, cast_num)
                     end
                     -- perform and log calculation
                     if cast_complete then
-                        local result = rangefinder_calc(meta)
-                        local routine, mode = get_routine(meta), get_mode(meta)
-                        if result then
-                            local round_res = round_to_decim_places(result, 1, true)
-                            minetest.chat_send_player(pname, "Final measurement: "..round_res..ROUTINES[routine]["modes"][mode]["unit"])
-                        end
+                        minetest.after(0.2, function(player, meta, itemstack)
+                            local result = rangefinder_calc(meta, player:get_meta())
+                            local routine, mode = get_routine(meta), get_mode(meta)
+                            if result then
+                                local round_res = round_to_decim_places(result, get_precision(meta), true)
+                                if ROUTINES[routine]["casts"] == 1 then
+                                    clear_display_callback(player)
+                                    update_display(player, meta, round_res..ROUTINES[routine]["modes"][mode]["unit"], "final measurement")
+                                else
+                                    -- store callback ID in case another mode is selected
+                                    local output = round_res..ROUTINES[routine]["modes"][mode]["unit"]
+                                    store_display_meta(meta, output, "final measurement")
+                                    save_item_meta(player, itemstack)
+                                    forestry_tools["rangefinder"][pname] = minetest.after(1.2, update_display, player, meta, output, "final measurement")
+                                end
+                            end
+                        end, player, meta, new_stack)
                     end
                 end
     
@@ -680,7 +828,6 @@ minetest.register_alias("rangefinder", TOOL_NAME)
 
 minetest.register_globalstep(function(dtime)
     local online_players = minetest.get_connected_players()
-
     if #online_players == 0 then
         return
     end
@@ -690,6 +837,16 @@ minetest.register_globalstep(function(dtime)
         if wield:get_name() == TOOL_NAME then
             if not hud:get(player, TOOL_NAME..":MRHUD:routine") then
                 update_rf_mode_hud(player, wield)
+                local meta = wield:get_meta()
+                local mark_table = minetest.deserialize(meta:get("marks") or minetest.serialize({}))
+                for i,mark in ipairs(mark_table) do
+                    if type(mark) == "table" then
+                        mark_table[i] = add_cast_marker(player, mark.pos, mark.is_angle)
+                    end
+                end
+                meta:set_string("marks", minetest.serialize(mark_table))
+                update_display(player, meta, meta:get("display_output"), meta:get("display_desc"))
+                player:set_wielded_item(wield)
             end
             local keys = player:get_player_control()
             if keys.zoom then

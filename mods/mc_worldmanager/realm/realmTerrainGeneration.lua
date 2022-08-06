@@ -14,6 +14,22 @@ function Realm.WorldGen.RegisterHeightMapGenerator(name, heightMapGeneratorFunct
     heightMapGenerator[name] = heightMapGeneratorFunction
 end
 
+function Realm.WorldGen.GetHeightmapGenerators()
+    local keyset={}
+    for k,v in pairs(heightMapGenerator) do
+        keyset[#keyset+1]=k
+    end
+    return keyset
+end
+
+function Realm.WorldGen.GetTerrainDecorator()
+    local keyset={}
+    for k,v in pairs(MapDecorator) do
+        keyset[#keyset+1]=k
+    end
+    return keyset
+end
+
 function Realm.WorldGen.RegisterMapDecorator(name, NodeDecoratorFunction, VegetationDecoratorFunction)
     if (MapDecorator[name] ~= nil) then
         Debug.log("MapDecorator " .. name .. " already exists.")
@@ -25,10 +41,12 @@ end
 
 function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecoratorName)
 
-    self:set_data("worldSeed", seed)
-    self:set_data("worldSeaLevel", seaLevel)
-    self:set_data("worldMapGenerator", heightMapGeneratorName)
-    self:set_data("worldDecoratorName", mapDecoratorName)
+    self:set_data("genSeed", seed)
+    self:set_data("genMapGenerator", heightMapGeneratorName)
+    self:set_data("genDecoratorName", mapDecoratorName)
+
+    self:set_data("seaLevel", seaLevel)
+
 
     local heightMapGen = heightMapGenerator[heightMapGeneratorName]
     local mapDecorator = MapDecorator[mapDecoratorName]
@@ -67,5 +85,5 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     local oldSpawnPos = self.SpawnPoint
     local surfaceLevel = ptable.get2D(heightMapTable, { x = oldSpawnPos.x, y = oldSpawnPos.z })
 
-    self:UpdateSpawn(self:WorldToLocalPosition({ x = oldSpawnPos.x, y = surfaceLevel, z = oldSpawnPos.z }))
+    self:UpdateSpawn(self:WorldToLocalSpace({ x = oldSpawnPos.x, y = surfaceLevel, z = oldSpawnPos.z }))
 end
