@@ -125,7 +125,10 @@ function mc_tutorial.tutorial_progress_listener(player)
                             table.insert(pdata.player_seq.keys, v)
                         end
                     end
-                    if table.concat(table.sort(pdata.player_seq.keys), " ") == table.concat(table.sort(pdata.active.sequence[index].key), " ") then
+                    table.sort(pdata.player_seq.keys)
+                    table.sort(pdata.active.sequence[index].key)
+
+                    if table.concat(pdata.player_seq.keys, " ") == table.concat(pdata.active.sequence[index].key, " ") then
                         mc_tutorial.completed_action(player, index)
                     end
                 end
