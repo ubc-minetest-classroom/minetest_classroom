@@ -67,7 +67,6 @@ function Realm:Save_Schematic(schematicName, author, mode)
     settings:set("schematic_size_y", self.EndPos.y - self.StartPos.y)
     settings:set("schematic_size_z", self.EndPos.z - self.StartPos.z)
 
-
     local utmInfo = self:get_data("UTMInfo")
 
     if (utmInfo ~= nil) then
@@ -75,7 +74,6 @@ function Realm:Save_Schematic(schematicName, author, mode)
         settings:set("utm_easting", utmInfo.easting)
         settings:set("utm_northing", utmInfo.northing)
     end
-
 
     local settingsWrote = settings:write()
 
@@ -175,6 +173,8 @@ function Realm:Load_Schematic(schematic, config)
         minetest.place_schematic_on_vmanip(vm, schematicStartPos, schematic .. ".mts", 0, nil, true)
         vm:write_to_map(true)
     end
+
+    self:set_data("seaLevel", self.StartPos.y + config.elevationOffset)
 
     if (config.tableName ~= nil) then
         if (config.onSchematicPlaceFunction ~= nil) then
