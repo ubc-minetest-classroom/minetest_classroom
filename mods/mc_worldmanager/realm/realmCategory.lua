@@ -5,7 +5,11 @@ function Realm.RegisterCategory(categoryDefinition)
 end
 
 function Realm:setCategoryKey(category)
-    self:set_data("category", category)
+    if (category == nil or category == "nil" or category == "") then
+        self:set_data("category", "default")
+    else
+        self:set_data("category", category)
+    end
 end
 
 function Realm:getCategory()
@@ -17,6 +21,10 @@ function Realm:getCategory()
     local categoryObject = Realm.categories[string.lower(category)]
 
     return categoryObject
+end
+
+function Realm.getRegisteredCategories()
+    return Realm.categories
 end
 
 function Realm:AddOwner(ownerName)

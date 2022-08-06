@@ -4,16 +4,21 @@
 ---@public
 ---Save_Schematic
 ---@return string, boolean The filepath of the schematic; whether the settings file wrote succesfully.
-function Realm:Save_Schematic(author, mode)
+function Realm:Save_Schematic(schematicName, author, mode)
+
+    if (schematicName == nil or schematicName == "nil" or schematicName == "") then
+        schematicName = self.Name
+    end
+
     author = author or "unknown"
     mode = mode or "old"
 
-    local folderpath = minetest.get_worldpath() .. "/schematics/"
+    local folderpath = minetest.get_worldpath() .. "\\realmSchematics\\"
 
     minetest.mkdir(folderpath)
 
-    local fileName = "Realm " .. self.ID .. " " .. math.random(0, 9999) .. os.date(" %Y%m%d %H%M%S")
-    local filepath = folderpath .. "/" .. fileName
+    local fileName = schematicName
+    local filepath = folderpath .. fileName
 
     if (mode == "exschem") then
         exschem.save(self.StartPos, self.EndPos, false, 40, filepath, 0,
@@ -49,20 +54,6 @@ function Realm:Save_Schematic(author, mode)
         minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
     end
 
-    fileName = fileName .. os.date(" %Y%m%d %H%M")
-
-    local filepath = folderpath .. "\\" .. fileName
-
-    --minetest.create_schematic(self.StartPos, self.EndPos, nil, filepath .. ".mts", nil)
-
-    local file, err = io.open(filepath .. ".mts", "wb")
-    if err then
-        return 0
-    end
-    local schematic, count = worldedit.serialize(self.StartPos, self.EndPos)
-    file:write(schematic)
-    file:close()
-
     local settings = Settings(filepath .. ".conf")
     settings:set("author", author)
     settings:set("name", self.Name)
@@ -76,7 +67,21 @@ function Realm:Save_Schematic(author, mode)
     settings:set("schematic_size_y", self.EndPos.y - self.StartPos.y)
     settings:set("schematic_size_z", self.EndPos.z - self.StartPos.z)
 
+    local utmInfo = self:get_data("UTMInfo")
+
+    if (utmInfo ~= nil) then
+        settings:set("utm_zone", utmInfo.zone)
+        settings:set("utm_easting", utmInfo.easting)
+        settings:set("utm_northing", utmInfo.northing)
+    end
+
     local settingsWrote = settings:write()
+
+    if (settingsWrote == false) then
+        Debug.log("Unable to save realm; Settings did not write correctly...")
+    end
+
+    schematicManager.registerSchematicPath(schematicName, filepath)
 
     return filepath, settingsWrote
 end
@@ -87,11 +92,17 @@ end
 ---@return boolean whether the schematic fit entirely in the realm when loading.
 function Realm:Load_Schematic(schematic, config)
 
-    --TODO: Add code to check if the realm is large enough to support the schematic; If not, create a new realm that can;
-    local schematicEndPos = self:LocalToWorldPosition(config.schematicSize)
+    local schematicStartPos = self:LocalToWorldSpace(config.startOffset)
 
+    --TODO: Add code to check if the realm is large enough to support the schematic; If not, create a new realm that can;
+    local schematicEndPos = self:LocalToWorldSpace(config.schematicSize)
     if (schematicEndPos.x > self.EndPos.x or schematicEndPos.y > self.EndPos.y or schematicEndPos.z > self.EndPos.z) then
-        Debug.log("Schematic is too large for realm")
+
+        Debug.log("Schematic is too large for realm, creating a new realm with the same name but larger size")
+
+        local realm = Realm:New(self.Name, schematicEndPos, true)
+        self:Delete()
+        self = realm
     else
         if (schematicEndPos.x == nil or schematicEndPos == 0) then
             schematicEndPos.x = 80
@@ -111,12 +122,17 @@ function Realm:Load_Schematic(schematic, config)
         self.EndPos = schematicEndPos
     end
 
+    if (config.utmInfo ~= nil) then
+        self:set_data("UTMInfo", config.utmInfo)
+    end
+
+
 
 
 
     --exschem is having issues loading random chunks, need to debug
     if (config.format == "exschem") then
-        exschem.load(self.StartPos, self.StartPos, 0, {}, schematic, 0,
+        exschem.load(schematicStartPos, schematicStartPos, 0, {}, schematic, 0,
                 function(id, time, errcode, err)
                     Debug.log("Loading " .. id .. time)
 
@@ -142,21 +158,23 @@ function Realm:Load_Schematic(schematic, config)
         end
 
         local decompressed = mc_helpers.decompress(data)
-        worldedit.deserialize(self.StartPos, decompressed)
+        worldedit.deserialize(schematicStartPos, decompressed)
     elseif (config.format == "procedural") then
         -- do nothing if we're a procedural map; it will be taking care of by the onSchematicPlaceFunction
     else
         -- Read data into LVM
         local vm = minetest.get_voxel_manip()
-        local emin, emax = vm:read_from_map(self.StartPos, self.EndPos)
+        local emin, emax = vm:read_from_map(schematicStartPos, self.EndPos)
         local a = VoxelArea:new {
             MinEdge = emin,
             MaxEdge = emax
         }
 
-        minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic .. ".mts", 0, nil, true)
+        minetest.place_schematic_on_vmanip(vm, schematicStartPos, schematic .. ".mts", 0, nil, true)
         vm:write_to_map(true)
     end
+
+    self:set_data("seaLevel", self.StartPos.y + config.elevationOffset)
 
     if (config.tableName ~= nil) then
         if (config.onSchematicPlaceFunction ~= nil) then
@@ -175,6 +193,7 @@ function Realm:Load_Schematic(schematic, config)
         if (config.onRealmDeleteFunction ~= nil) then
             table.insert(self.RealmDeleteTable, { tableName = config.tableName, functionName = config.onRealmDeleteFunction })
         end
+
     end
 
     self:UpdateSpawn(config.spawnPoint)
@@ -193,7 +212,7 @@ function Realm:NewFromSchematic(name, key)
     if (config.format ~= "procedural") then
         --TODO: temporarily disabled for UBC because it doesn't work with super large worlds;
         -- Need to emerge chunks as we create barriers
-        newRealm:CreateBarriers()
+        newRealm:CreateBarriersFast()
     end
 
     -- Realm:CreateTeleporter()

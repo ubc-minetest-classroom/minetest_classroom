@@ -54,27 +54,27 @@ end
 function Realm:CreateBarriers()
     local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
     local pos2 = { x = self.StartPos.x, y = self.EndPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrierAir")
 
     local pos1 = { x = self.EndPos.x, y = self.StartPos.y, z = self.StartPos.z }
     local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrierAir")
 
     local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
     local pos2 = { x = self.EndPos.x, y = self.StartPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrierAir")
 
     local pos1 = { x = self.StartPos.x, y = self.EndPos.y, z = self.StartPos.z }
     local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrierAir")
 
     local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
     local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.StartPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrierAir")
 
     local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.EndPos.z }
     local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrier")
+    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrierAir")
 end
 
 ---Helper function to set cubic areas of nodes based on world coordinates and node type
@@ -137,7 +137,9 @@ function Realm:CreateBarriersFast()
             return
         end
 
-        local barrierNode = minetest.get_content_id("unbreakable_map_barrier:barrier")
+        local barrierNodeAir = minetest.get_content_id("unbreakable_map_barrier:barrierAir")
+        local barrierNodeSolid = minetest.get_content_id("unbreakable_map_barrier:barrierSolid")
+        local barrierNodeVoid = minetest.get_content_id("unbreakable_map_barrier:barrierGround")
         local airNode = minetest.get_content_id("air")
 
         -- Read data into LVM
@@ -158,8 +160,18 @@ function Realm:CreateBarriersFast()
                     -- This can probably be optimized but it's fast enough for now.
                     if (x >= context.startPos.x and x <= context.endPos.x) and (y >= context.startPos.y and y <= context.endPos.y) and (z >= context.startPos.z and z <= context.endPos.z) then
                         if (x == context.startPos.x or x == context.endPos.x) or (y == context.startPos.y or y == context.endPos.y) or (z == context.startPos.z or z == context.endPos.z) then
+
                             local index = a:index(x, y, z)
-                            data[index] = barrierNode
+
+                            if (y == context.startPos.y) then
+                                data[index] = barrierNodeVoid
+                            elseif (data[index] ~= airNode) then
+                                data[index] = barrierNodeSolid
+                            else
+                                data[index] = barrierNodeAir
+                            end
+
+
                         end
                     else
                         local index = a:index(x, y, z)
@@ -180,7 +192,10 @@ function Realm:CreateBarriersFast()
     context.startPos = self.StartPos
     context.endPos = self.EndPos
 
-    minetest.emerge_area(context.startPos, context.endPos, emerge_callback, context)
+    local realmStartPos = { x = self.StartPos.x - 16, y = self.StartPos.y - 16, z = self.StartPos.z - 16 }
+    local realmEndPos = { x = self.EndPos.x + 16, y = self.EndPos.y + 16, z = self.EndPos.z + 16 }
+
+    minetest.emerge_area(realmStartPos, realmEndPos, emerge_callback, context)
 
     minetest.chat_send_all("[INFO] Started creating barriers for realm, block placement might act unresponsive for a moment.")
 end
