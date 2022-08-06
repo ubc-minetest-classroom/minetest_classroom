@@ -52,8 +52,6 @@ local function initialize(chulens, seaLevel, seed)
     nobj_heat = minetest.get_perlin_map(np_heat, chulens2d)
     nobj_heat_blend = minetest.get_perlin_map(noiseparams('mg_biome_np_heat_blend'), chulens2d)
 
-
-
     nobj_humid = minetest.get_perlin_map(np_humidity, chulens2d)
     nobj_humid_blend = minetest.get_perlin_map(noiseparams('mg_biome_np_humidity_blend'), chulens2d)
 
@@ -140,12 +138,21 @@ local function get_biome_at_index(i, pos, seaLevel)
     end
 
 
-            --(math.max(pos.y - seaLevel, seaLevel + 20 - pos.y) * elevation_chill * 0.5)
+    --(math.max(pos.y - seaLevel, seaLevel + 20 - pos.y) * elevation_chill * 0.5)
 
     return calc_biome_from_noise(heat, humid, pos, seaLevel)
 end
 
-local function generate_biomes(data, a, minp, maxp, seed, seaLevel)
+local function generate_biomes(data, a, minp, maxp, seed, seaLevel, forcedBiomeName)
+
+    local forcedBiome
+    if (forcedBiomeName ~= nil) then
+        forcedBiome = biomes[forcedBiomeName]
+        if (forcedBiome == nil) then
+            return
+        end
+    end
+
     local chulens = { x = maxp.x - minp.x + 1, y = maxp.y - minp.y + 1, z = maxp.z - minp.z + 1 }
 
     local index = 1
@@ -192,7 +199,14 @@ local function generate_biomes(data, a, minp, maxp, seed, seaLevel)
                         (air_above or not biome or y < biome_y_min)
 
                 if is_stone_surface or is_water_surface then
-                    biome = get_biome_at_index(index, { x = x, y = y, z = z }, seaLevel)
+
+                    if (forcedBiome ~= nil) then
+                        biome = forcedBiome
+                    else
+                        biome = get_biome_at_index(index, { x = x, y = y, z = z }, seaLevel)
+                    end
+                    Debug.log("biome: " .. biome.name)
+
                     biome_stone = biome.node_stone
 
                     if not biomemap[index] and is_stone_surface then
