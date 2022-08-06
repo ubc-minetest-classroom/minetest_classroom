@@ -39,9 +39,7 @@ local mc_student_menu = {
 
 local function show_student_menu(player)
 	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:menu", table.concat(mc_student_menu,""))
-		return true
+		minetest.show_formspec(player:get_player_name(), "mc_student:menu", table.concat(mc_student_menu,""))
 	end
 end
 -----------------------------
@@ -144,6 +142,8 @@ end
 
 -------------------
 --- COORDINATES ---
+local selectedCoord = 1
+
 -- Split pos in coordlist from character "x=1 y=2 z=3" to numeric table {1,2,3}
 local function pos_split (inputstr)
 	local t={}
@@ -154,39 +154,41 @@ local function pos_split (inputstr)
 	return tt
 end
 
--- Define the Coordinates formspec
-local function show_coordinates(player)
-	local pname = player:get_player_name()
-	mc_student_coordinates = {
-		"formspec_version[5]",
-		"size[15,10]",
-		"label[6.3,0.5;Coordinates Stored]"
-	}
+mc_student_coordinates = {
+	"formspec_version[6]",
+	"size[11.1,9.3]",
+	"label[4.3,0.4;Coordinates Stored]",
+	"button[7.4,7.6;3.3,0.6;record;Record]",
+	"button[7.3,8.5;1.6,0.6;delete;Delete]",
+	"button[9.3,8.5;1.4,0.6;go;Go]",
+	"button[5.1,8.5;1.7,0.6;clear;Clear All]",
+	"button[0.4,8.5;1.2,0.6;back;Back]",
+	"textarea[0.4,7.6;6.8,0.6;note;Add a note describing your current location;]"
+}
 
+local function show_coordinates(player)
 	-- Get the stored coordinates for the player
 	local pmeta = player:get_meta()
 	pdata = minetest.deserialize(pmeta:get_string("coordinates"))
 	if pdata == nil then
 		-- No coordinates stored, so return an empty list element
-		mc_student_coordinates[#mc_student_coordinates + 1] = "textlist[0.3,1;14.4,7.5;;No Coordinates Stored;1;false]"
+		mc_student_coordinates[#mc_student_coordinates + 1] = "textlist[0.4,0.7;10.3,6.4;coordlist;No Coordinates Stored;1;false]"
 	else
-		mc_student_coordinates[#mc_student_coordinates + 1] = "textlist[0.3,1;14.4,7.5;coordlist;"
+		mc_student_coordinates[#mc_student_coordinates + 1] = "textlist[0.4,0.7;10.3,6.4;coordlist;"
 		-- Some coordinates were found, so iterate the list
 		pxyz = pdata.coords
 		pnotes = pdata.notes
-		for i in pairs(pxyz) do
-			mc_student_coordinates[#mc_student_coordinates + 1] = pxyz[i] .. " " .. pnotes[i] .. ","
+		
+		if pxyz then
+			for i in pairs(pxyz) do
+				mc_student_coordinates[#mc_student_coordinates + 1] = pxyz[i] .. "\\, " .. pnotes[i] .. ","
+			end
 		end
+
 		mc_student_coordinates[#mc_student_coordinates + 1] = ";1;false]"
 	end
 
-	mc_student_coordinates[#mc_student_coordinates + 1] = "button[0.1,9.1;1.6,0.8;back;Back]"
-	mc_student_coordinates[#mc_student_coordinates + 1] = "button[1.9,9.1;1.4,0.8;go;Go]"
-	mc_student_coordinates[#mc_student_coordinates + 1] = "button[3.5,9.1;1.9,0.8;deleteall;Delete All]"
-	mc_student_coordinates[#mc_student_coordinates + 1] = "button[5.6,9.1;1.6,0.8;record;Record]"
-	mc_student_coordinates[#mc_student_coordinates + 1] = "field[7.4,9.1;7.3,0.8;message;Note;Add a note to record at your current location]"
-	minetest.show_formspec(pname, "mc_student:coordinates", table.concat(mc_student_coordinates,""))
-	return true
+	minetest.show_formspec(player:get_player_name(), "mc_student:coordinates", table.concat(mc_student_coordinates,""))
 end
 
 local function record_coordinates(player,message)
@@ -220,12 +222,18 @@ end
 ------------------------------------
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
+	local pmeta = player:get_meta()
+
 	if string.sub(formname, 1, 10) ~= "mc_student" then
 		return false
 	end
 
 	local wait = os.clock()
 	while os.clock() - wait < 0.05 do end --popups don't work without this
+
+	if fields.back then
+		show_student_menu(player)
+	end
 
 	if formname == "mc_student:menu" then
 		if fields.spawn then
@@ -253,10 +261,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mc_student:classrooms" then
 		local event = minetest.explode_textlist_event(fields.realms)
 
-		if fields.back then
-			show_student_menu(player)
-		end
-
 		if fields.realms then
 			if event.type == "CHG" then
 				selectedClassroom = event.index
@@ -270,10 +274,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 
 	if formname == "mc_student:report" then
-		if fields.back then
-			show_student_menu(player)
 		-- Checking for nil (caused by player pressing escape instead of Back) ensures the game does not crash
-		elseif fields.report ~= " " and fields.report ~= nil then
+		if fields.report ~= " " and fields.report ~= nil then
 			local pname = player:get_player_name()
 
 			-- Count the number of words, by counting for replaced spaces
@@ -317,9 +319,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 
 	if formname == "mc_student:marker" then
-		if fields.back then
-			show_student_menu(player)
-		elseif fields.message then
+		if fields.message then
 			place_marker(player,fields.message)
 		elseif fields.message == nil then
 			return true
@@ -327,28 +327,50 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 
 	if formname == "mc_student:coordinates" then
-		if fields.back then
-			show_student_menu(player)
-		elseif fields.record then
-			record_coordinates(player,fields.message)
-		elseif fields.coordlist then
-			local event = minetest.explode_textlist_event(fields.coordlist)
-		    	if event.type == "CHG" then
-			-- "CHG" = something is selected in the list
-				context.selected = event.index
-		    	end
-		elseif fields.go then
-			local pname = player:get_player_name()
-			local pmeta = player:get_meta()
-			if not context.selected then
-				context.selected = 1
+		local event = minetest.explode_textlist_event(fields.coordlist)
+
+		if fields.record then
+			record_coordinates(player,fields.note)
+		end
+
+		if fields.coordlist then
+			if event.type == "CHG" then
+				selectedCoord = event.index
+				minetest.chat_send_player(player:get_player_name(), selectedCoord)
 			end
-		    	local temp = minetest.deserialize(pmeta:get_string("coordinates"))
-		    	local new_pos_char = temp.coords[context.selected]
+		end
+
+		if fields.go then
+			-- if not context.selected then context.selected = 1 end
+		    local new_pos_char = minetest.deserialize(pmeta:get_string("coordinates")).coords[selectedCoord]
 			local new_pos_tab = pos_split(new_pos_char)
-		    	player:set_pos(new_pos_tab)
-		elseif fields.deleteall then
-			local pmeta = player:get_meta()
+		    player:set_pos(new_pos_tab)
+		end
+
+		if fields.delete then
+			-- if not context.selected then context.selected = 1 end
+			local data = minetest.deserialize(pmeta:get_string("coordinates"))
+			local newCoords, newNotes = {}, {}	
+
+			for i in ipairs(data.coords) do
+				if i ~= selectedCoord then
+					table.insert(newCoords, data.coords[i])
+				end
+			end
+
+			for i in ipairs(data.notes) do
+				if i ~= selectedCoord then
+					table.insert(newNotes, data.notes[i])
+				end
+			end	
+
+			-- minetest.chat_send_player(player:get_player_name(), "Coords: " .. minetest.serialize(newCoords))
+			local newData = {coords = newCoords, notes = newNotes}
+			pmeta:set_string("coordinates", minetest.serialize(newData))
+			show_coordinates(player)
+		end
+
+		if fields.clear then
 			pmeta:set_string("coordinates", nil)
 			show_coordinates(player)
 		end
