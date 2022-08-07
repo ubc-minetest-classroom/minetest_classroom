@@ -176,44 +176,48 @@ local function show_coordinates(player)
 	if pdata == nil then
 		table.insert(coordsList, "No Coordinates Stored")
 	else
-		pxyz = pdata.coords
-		pnotes = pdata.notes
+		local prealms = pdata.realms
+		local pxyz = pdata.coords
+		local pnotes = pdata.notes
 
 		if pxyz then
 			for i in pairs(pxyz) do
 				if i == #pxyz then
-					table.insert(coordsList, pxyz[i] .. "\\, " .. pnotes[i])
+					table.insert(coordsList, Realm.GetRealm(prealms[i]).Name .. " " .. pxyz[i] .. "\\, " .. pnotes[i])
 				else
-					table.insert(coordsList, pxyz[i] .. "\\, " .. pnotes[i] .. ",")
+					table.insert(coordsList, Realm.GetRealm(prealms[i]).Name .. " " .. pxyz[i] .. "\\, " .. pnotes[i] .. ",")
 				end
 			end
 		end
 	end
 
-	mc_student_coordinates[#mc_student_coordinates] = "textlist[0.4,0.7;10.3,6.4;coordlist;" .. table.concat(coordsList, "") .. ";1;false]"
+	mc_student_coordinates[#mc_student_coordinates] = "textlist[0.4,0.7;10.3,6.4;coordlist;" .. table.concat(coordsList, "") .. "]"
 	minetest.show_formspec(player:get_player_name(), "mc_student:coordinates", table.concat(mc_student_coordinates,""))
 end
 
 local function record_coordinates(player,message)
 	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		pmeta = player:get_meta()
+		local pmeta = player:get_meta()
 		local pos = player:get_pos()
+		local realmID = pmeta:get_int("realm")
 		temp = minetest.deserialize(pmeta:get_string("coordinates"))
+
 		if temp == nil then
 			datanew = {
+				realms = { realmID, },
 				coords = {"x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z), },
 				notes = { message, },
 			}
 		else
+			table.insert(temp.realms, realmID)
 			table.insert(temp.coords, "x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z))
 			table.insert(temp.notes, message)
-			datanew = {coords = temp.coords, notes = temp.notes, }
+			datanew = {realms = temp.realms, coords = temp.coords, notes = temp.notes, }
 		end
+
 		pmeta:set_string("coordinates", minetest.serialize(datanew))
 		temp = nil
-		minetest.chat_send_player(pname,pname..": Your position was recorded in your notebook.")
-		-- Update the formspec
+		minetest.chat_send_player(player:get_player_name(), player:get_player_name() ..": Your position was recorded in your notebook.")
 		show_coordinates(player)
 	end
 end
@@ -268,9 +272,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			if event.type == "CHG" then
 				selectedClassroom = event.index
 			end
-		end
-
-		if fields.join then
+		elseif fields.join then
 			local realm = classroomRealms[selectedClassroom]
 			realm:TeleportPlayer(player)
 		end
@@ -334,21 +336,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 		if fields.record then
 			record_coordinates(player,fields.note)
-		end
-
-		if fields.coordlist then
+		elseif fields.coordlist then
 			if event.type == "CHG" then
 				selectedCoord = event.index
 			end
-		end
-
-		if fields.go then
+		elseif fields.go then
 		    local new_pos_char = minetest.deserialize(pmeta:get_string("coordinates")).coords[selectedCoord]
 			local new_pos_tab = pos_split(new_pos_char)
 		    player:set_pos(new_pos_tab)
-		end
-
-		if fields.delete then
+		elseif fields.delete then
 			local data = minetest.deserialize(pmeta:get_string("coordinates"))
 			local newCoords, newNotes = {}, {}	
 
@@ -367,9 +363,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			local newData = {coords = newCoords, notes = newNotes}
 			pmeta:set_string("coordinates", minetest.serialize(newData))
 			show_coordinates(player)
-		end
-
-		if fields.clear then
+		elseif fields.clear then
 			pmeta:set_string("coordinates", nil)
 			show_coordinates(player)
 		end
