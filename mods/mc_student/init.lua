@@ -163,31 +163,34 @@ mc_student_coordinates = {
 	"button[9.3,8.5;1.4,0.6;go;Go]",
 	"button[5.1,8.5;1.7,0.6;clear;Clear All]",
 	"button[0.4,8.5;1.2,0.6;back;Back]",
-	"textarea[0.4,7.6;6.8,0.6;note;Add a note describing your current location;]"
+	"textarea[0.4,7.6;6.8,0.6;note;Add a note describing your current location;]",
+	"textlist[0.4,0.7;10.3,6.4;coordlist;;1;false]" 
 }
 
 local function show_coordinates(player)
 	-- Get the stored coordinates for the player
+	local coordsList = {}
 	local pmeta = player:get_meta()
 	pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+
 	if pdata == nil then
-		-- No coordinates stored, so return an empty list element
-		mc_student_coordinates[#mc_student_coordinates + 1] = "textlist[0.4,0.7;10.3,6.4;coordlist;No Coordinates Stored;1;false]"
+		table.insert(coordsList, "No Coordinates Stored")
 	else
-		mc_student_coordinates[#mc_student_coordinates + 1] = "textlist[0.4,0.7;10.3,6.4;coordlist;"
-		-- Some coordinates were found, so iterate the list
 		pxyz = pdata.coords
 		pnotes = pdata.notes
-		
+
 		if pxyz then
 			for i in pairs(pxyz) do
-				mc_student_coordinates[#mc_student_coordinates + 1] = pxyz[i] .. "\\, " .. pnotes[i] .. ","
+				if i == #pxyz then
+					table.insert(coordsList, pxyz[i] .. "\\, " .. pnotes[i])
+				else
+					table.insert(coordsList, pxyz[i] .. "\\, " .. pnotes[i] .. ",")
+				end
 			end
 		end
-
-		mc_student_coordinates[#mc_student_coordinates + 1] = ";1;false]"
 	end
 
+	mc_student_coordinates[#mc_student_coordinates] = "textlist[0.4,0.7;10.3,6.4;coordlist;" .. table.concat(coordsList, "") .. ";1;false]"
 	minetest.show_formspec(player:get_player_name(), "mc_student:coordinates", table.concat(mc_student_coordinates,""))
 end
 
@@ -352,15 +355,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			local data = minetest.deserialize(pmeta:get_string("coordinates"))
 			local newCoords, newNotes = {}, {}	
 
-			for i in ipairs(data.coords) do
+			for _,coord in ipairs(data.coords) do
 				if i ~= selectedCoord then
-					table.insert(newCoords, data.coords[i])
+					table.insert(newCoords, coord)
 				end
 			end
 
-			for i in ipairs(data.notes) do
+			for _,note in ipairs(data.notes) do
 				if i ~= selectedCoord then
-					table.insert(newNotes, data.notes[i])
+					table.insert(newNotes, note)
 				end
 			end	
 
