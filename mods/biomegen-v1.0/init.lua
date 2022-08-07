@@ -32,8 +32,11 @@ local c_water
 local c_rwater
 
 local biomes, decos
+local forcedBiome
 
-local function initialize(chulens, seaLevel, seed)
+local function initialize(chulens, seaLevel, seed, _forcedBiome)
+
+
     print("[biomegen] Initializing")
 
     local noiseparams = minetest.get_mapgen_setting_noiseparams
@@ -63,6 +66,15 @@ local function initialize(chulens, seaLevel, seed)
 
     biomes = make_biomelist()
     decos = make_decolist()
+
+    if (biomes[_forcedBiome] ~= nil) then
+        forcedBiome = _forcedBiome
+    elseif (_forcedBiome ~= nil) then
+        forcedBiome = nil
+        Debug.log("[biomegen] Invalid forced biome.")
+    else
+        forcedBiome = nil
+    end
 end
 
 local biomemap = {}
@@ -131,6 +143,11 @@ local function calc_biome_from_noise(heat, humid, pos, seaLevel)
 end
 
 local function get_biome_at_index(i, pos, seaLevel)
+
+    if (forcedBiome ~= nil) then
+        return biomes[forcedBiome]
+    end
+
     local heat = heatmap[i] - (math.max(pos.y, seaLevel) * elevation_chill)
     local humid = humidmap[i] + (seaLevel - pos.y) * elevation_chill -- -30
     if (pos.y >= seaLevel + 30) then
@@ -145,19 +162,11 @@ end
 
 local function generate_biomes(data, a, minp, maxp, seed, seaLevel, forcedBiomeName)
 
-    local forcedBiome
-    if (forcedBiomeName ~= nil) then
-        forcedBiome = biomes[forcedBiomeName]
-        if (forcedBiome == nil) then
-            return
-        end
-    end
-
     local chulens = { x = maxp.x - minp.x + 1, y = maxp.y - minp.y + 1, z = maxp.z - minp.z + 1 }
 
     local index = 1
 
-    initialize(chulens, seaLevel, seed)
+    initialize(chulens, seaLevel, seed, forcedBiomeName)
 
     calculate_noises(minp)
 
@@ -200,12 +209,8 @@ local function generate_biomes(data, a, minp, maxp, seed, seaLevel, forcedBiomeN
 
                 if is_stone_surface or is_water_surface then
 
-                    if (forcedBiome ~= nil) then
-                        biome = forcedBiome
-                    else
-                        biome = get_biome_at_index(index, { x = x, y = y, z = z }, seaLevel)
-                    end
-                    Debug.log("biome: " .. biome.name)
+
+                    biome = get_biome_at_index(index, { x = x, y = y, z = z }, seaLevel)
 
                     biome_stone = biome.node_stone
 
