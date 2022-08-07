@@ -339,35 +339,31 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		if fields.coordlist then
 			if event.type == "CHG" then
 				selectedCoord = event.index
-				minetest.chat_send_player(player:get_player_name(), selectedCoord)
 			end
 		end
 
 		if fields.go then
-			-- if not context.selected then context.selected = 1 end
 		    local new_pos_char = minetest.deserialize(pmeta:get_string("coordinates")).coords[selectedCoord]
 			local new_pos_tab = pos_split(new_pos_char)
 		    player:set_pos(new_pos_tab)
 		end
 
 		if fields.delete then
-			-- if not context.selected then context.selected = 1 end
 			local data = minetest.deserialize(pmeta:get_string("coordinates"))
 			local newCoords, newNotes = {}, {}	
 
-			for _,coord in ipairs(data.coords) do
+			for i,coord in ipairs(data.coords) do
 				if i ~= selectedCoord then
 					table.insert(newCoords, coord)
 				end
 			end
 
-			for _,note in ipairs(data.notes) do
+			for i,note in ipairs(data.notes) do
 				if i ~= selectedCoord then
 					table.insert(newNotes, note)
 				end
 			end	
 
-			-- minetest.chat_send_player(player:get_player_name(), "Coords: " .. minetest.serialize(newCoords))
 			local newData = {coords = newCoords, notes = newNotes}
 			pmeta:set_string("coordinates", minetest.serialize(newData))
 			show_coordinates(player)
