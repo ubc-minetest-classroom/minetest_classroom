@@ -588,8 +588,8 @@ biomegen = {
     dust_top_nodes = dust_top_nodes,
 }
 
-function biomegen.generate_all(data, a, vm, minp, maxp, seed, seaLevel)
-    generate_biomes(data, a, minp, maxp, seed, seaLevel)
+function biomegen.generate_all(data, a, vm, minp, maxp, seed, seaLevel, forcedBiomeName)
+    generate_biomes(data, a, minp, maxp, seed, seaLevel, forcedBiomeName)
     vm:set_data(data)
     place_all_decos(data, a, vm, minp, maxp, seed, seaLevel)
     minetest.generate_ores(vm, minp, maxp)

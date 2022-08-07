@@ -235,14 +235,19 @@ Realm.WorldGen.RegisterMapDecorator("v2",
 Realm.WorldGen.RegisterMapDecorator("biomegen", function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
     Debug.log("Calling biomegen map decorator")
     biomegen.set_elevation_chill(0.5)
-    biomegen.generate_all(data, area, vm, startPos, endPos, seed, seaLevel - 2)
+    biomegen.generate_all(data, area, vm, startPos, endPos, seed, seaLevel + 1)
 end)
 
 Realm.WorldGen.RegisterMapDecorator("biomegen_v2", function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
     Debug.log("Calling biomegen map decorator v2")
     biomegen.set_elevation_chill(0.5)
-    biomegen.generate_biomes(data, area, startPos, endPos, seed, seaLevel - 2, "rainforest")
-    -- biomegen.generate_all(data, area, vm, startPos, endPos, seed, seaLevel - 2)
+    biomegen.generate_biomes(data, area, startPos, endPos, seed, seaLevel, "rainforest")
+    vm:set_data(data)
+    biomegen.place_all_decos(data, area, vm, startPos, endPos, seed, seaLevel)
+    minetest.generate_ores(vm, startPos, endPos)
+    vm:get_data(data)
+    biomegen.dust_top_nodes(data, area, vm, startPos, endPos, seaLevel)
+
 end)
 
 
