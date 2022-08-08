@@ -105,6 +105,41 @@ Realm.WorldGen.RegisterHeightMapGenerator("v2", function(startPos, endPos, vm, a
     return heightMapTable
 end)
 
+Realm.WorldGen.RegisterHeightMapGenerator("dnr", function(startPos, endPos, vm, area, data, seed, realmFloorLevel, seaLevel)
+    Debug.log("Calling heightmap generator DNR")
+
+    local heightMapTable = {}
+
+    for posZ = startPos.z, endPos.z do
+        for posY = startPos.y, endPos.y do
+            for posX = startPos.x, endPos.x do
+
+                local vi = area:index(posX, posY, posZ)
+                if (data[vi] ~= c_water and data[vi] ~= c_air) then
+                    data[vi] = c_stone
+
+                    local previousHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
+
+                    if (previousHeight == nil) then
+                        previousHeight = realmFloorLevel
+                    end
+
+                    if (posY > previousHeight) then
+                        ptable.store2D(heightMapTable, { x = posX, y = posZ }, posY)
+                    end
+                end
+
+                if (data[vi] ~= c_stone and posY <= seaLevel) then
+                    data[vi] = c_water
+                end
+            end
+        end
+
+    end
+
+    return heightMapTable
+end)
+
 Realm.WorldGen.RegisterMapDecorator("v1", function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
     Debug.log("Calling map decorator v1")
 
