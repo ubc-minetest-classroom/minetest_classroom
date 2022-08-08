@@ -71,7 +71,7 @@ local function initialize(chulens, seaLevel, seed, _forcedBiome)
         forcedBiome = _forcedBiome
     elseif (_forcedBiome ~= nil) then
         forcedBiome = nil
-        Debug.log("[biomegen] Invalid forced biome.")
+        Debug.log("[biomegen] Forced biome not found: " .. _forcedBiome)
     else
         forcedBiome = nil
     end
@@ -595,4 +595,8 @@ function biomegen.generate_all(data, a, vm, minp, maxp, seed, seaLevel, forcedBi
     minetest.generate_ores(vm, minp, maxp)
     vm:get_data(data)
     dust_top_nodes(data, a, vm, minp, maxp, seaLevel)
+end
+
+function biomegen.get_biomes()
+    return make_biomelist()
 end

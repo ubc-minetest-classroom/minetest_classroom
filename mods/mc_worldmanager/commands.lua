@@ -179,7 +179,7 @@ commands["gen"] = {
         local decGen = params[3]
 
         local seaLevel = requestedRealm.StartPos.y
-        if (params[4] == "" or params[4] == nil) then
+        if (tonumber(params[4]) == nil) then
             seaLevel = seaLevel + 30
         else
             seaLevel = seaLevel + tonumber(params[4])
@@ -196,8 +196,8 @@ commands["gen"] = {
 
         local extraGenParams = {}
         if (params[5] ~= nil) then
-            for i = 5, #params do
-                extraGenParams[i - 4] = params[i]
+            for i = 6, #params do
+                table.insert(extraGenParams, params[i])
             end
         end
 
@@ -249,6 +249,18 @@ commands["regen"] = {
         return true
     end,
     help = "realm regen <realmID> - Regenerates the terrain of a realm.", }
+
+commands["biomes"] = { func = function(name, params)
+    minetest.chat_send_player(name, "Biome Key")
+    local biomes = biomegen.get_biomes()
+    local count = 0
+    for k, v in pairs(biomes) do
+        count = count + 1
+        minetest.chat_send_player(name, v.name)
+    end
+    return true, "Listed all " .. tostring(count) .. " biomes."
+end,
+help = "realm biomes - Lists all biomes.", }
 
 commands["seed"] = { func = function(name, params)
     local realmID = params[1]
