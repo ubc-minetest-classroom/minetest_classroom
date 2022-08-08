@@ -224,7 +224,7 @@ commands["regen"] = {
         Debug.log("Sea level:" .. seaLevel)
 
         local seed = requestedRealm:get_data("worldSeed")
-        local seaLevel = requestedRealm:get_data("worldSeaLevel")
+        local seaLevel = requestedRealm:get_data("seaLevel")
         local heightGen = requestedRealm:get_data("worldMapGenerator")
         local decGen = requestedRealm:get_data("worldDecoratorName")
         local extraGenParams = requestedRealm:get_data("worldExtraGenParams")

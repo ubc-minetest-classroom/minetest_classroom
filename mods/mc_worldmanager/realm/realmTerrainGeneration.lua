@@ -42,7 +42,7 @@ end
 function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecoratorName, paramTable)
 
     self:set_data("worldSeed", seed)
-    self:set_data("worldSeaLevel", seaLevel)
+    self:set_data("seaLevel", seaLevel)
     self:set_data("worldMapGenerator", heightMapGeneratorName)
     self:set_data("worldDecoratorName", mapDecoratorName)
     self:set_data("worldExtraGenParams", paramTable)
