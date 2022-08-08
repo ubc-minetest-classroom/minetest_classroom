@@ -8,7 +8,7 @@ local c_sand = minetest.get_content_id("default:sand")
 local c_grass = minetest.get_content_id("default:grass_1")
 local c_rose = minetest.get_content_id("flowers:rose")
 
-Realm.WorldGen.RegisterHeightMapGenerator("v1", function(startPos, endPos, vm, area, data, seed, realmFloorLevel, seaLevel)
+Realm.WorldGen.RegisterHeightMapGenerator("v1", function(startPos, endPos, vm, area, data, seed, realmFloorLevel, seaLevel, paramTable)
     Debug.log("Calling heightmap generator v1")
 
     local mainPerlin = minetest.get_perlin(seed, 4, 0.5, 100)
@@ -49,7 +49,7 @@ Realm.WorldGen.RegisterHeightMapGenerator("v1", function(startPos, endPos, vm, a
     return heightMapTable
 end)
 
-Realm.WorldGen.RegisterHeightMapGenerator("v2", function(startPos, endPos, vm, area, data, seed, realmFloorLevel, seaLevel)
+Realm.WorldGen.RegisterHeightMapGenerator("v2", function(startPos, endPos, vm, area, data, seed, realmFloorLevel, seaLevel, paramTable)
     Debug.log("Calling heightmap generator v2")
 
     local mainPerlin = minetest.get_perlin(seed, 4, 0.5, 100)
@@ -105,7 +105,7 @@ Realm.WorldGen.RegisterHeightMapGenerator("v2", function(startPos, endPos, vm, a
     return heightMapTable
 end)
 
-Realm.WorldGen.RegisterMapDecorator("v1", function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
+Realm.WorldGen.RegisterMapDecorator("v1", function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel, paramTable)
     Debug.log("Calling map decorator v1")
 
     local erosionPerlin = minetest.get_perlin(seed * 2, 4, 0.5, 400)
@@ -143,7 +143,7 @@ Realm.WorldGen.RegisterMapDecorator("v1", function(startPos, endPos, vm, area, d
 end)
 
 Realm.WorldGen.RegisterMapDecorator("v2",
-        function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
+        function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel, paramTable)
             Debug.log("Calling map decorator v2")
 
             local erosionPerlin = minetest.get_perlin(seed * 2, 4, 0.5, 400)
@@ -192,7 +192,7 @@ Realm.WorldGen.RegisterMapDecorator("v2",
 
         end,
 
-        function(startPos, endPos, area, data, heightMapTable, decoratorData, seed, seaLevel)
+        function(startPos, endPos, area, data, heightMapTable, decoratorData, seed, seaLevel, paramTable)
             Debug.log("Calling map decorator v2")
 
             local treedef = {
@@ -232,22 +232,14 @@ Realm.WorldGen.RegisterMapDecorator("v2",
 
         end)
 
-Realm.WorldGen.RegisterMapDecorator("biomegen", function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
+Realm.WorldGen.RegisterMapDecorator("biomegen", function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel, paramTable)
     Debug.log("Calling biomegen map decorator")
+
+    local forcedBiomeName = nil
+    if (paramTable ~= nil) then
+        forcedBiomeName = paramTable[1]
+    end
+
     biomegen.set_elevation_chill(0.5)
-    biomegen.generate_all(data, area, vm, startPos, endPos, seed, seaLevel + 1)
+    biomegen.generate_all(data, area, vm, startPos, endPos, seed, seaLevel + 1, forcedBiomeName)
 end)
-
-Realm.WorldGen.RegisterMapDecorator("biomegen_v2", function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
-    Debug.log("Calling biomegen map decorator v2")
-    biomegen.set_elevation_chill(0.5)
-    biomegen.generate_biomes(data, area, startPos, endPos, seed, seaLevel, "rainforest")
-    vm:set_data(data)
-    biomegen.place_all_decos(data, area, vm, startPos, endPos, seed, seaLevel)
-    minetest.generate_ores(vm, startPos, endPos)
-    vm:get_data(data)
-    biomegen.dust_top_nodes(data, area, vm, startPos, endPos, seaLevel)
-
-end)
-
-

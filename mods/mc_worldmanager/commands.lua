@@ -178,11 +178,6 @@ commands["gen"] = {
         local heightGen = params[2]
         local decGen = params[3]
 
-        local seed = tonumber(params[5])
-        if (seed == nil) then
-            seed = math.random(1, 999999999)
-        end
-
         local seaLevel = requestedRealm.StartPos.y
         if (params[4] == "" or params[4] == nil) then
             seaLevel = seaLevel + 30
@@ -194,7 +189,19 @@ commands["gen"] = {
             heightGen = "default"
         end
 
-        if (requestedRealm:GenerateTerrain(seed, seaLevel, heightGen, decGen) == false) then
+        local seed = tonumber(params[5])
+        if (seed == nil) then
+            seed = math.random(1, 999999999)
+        end
+
+        local extraGenParams = {}
+        if (params[5] ~= nil) then
+            for i = 5, #params do
+                extraGenParams[i - 4] = params[i]
+            end
+        end
+
+        if (requestedRealm:GenerateTerrain(seed, seaLevel, heightGen, decGen, extraGenParams) == false) then
             return false, "Failed to generate terrain"
         end
 
@@ -220,6 +227,7 @@ commands["regen"] = {
         local seaLevel = requestedRealm:get_data("worldSeaLevel")
         local heightGen = requestedRealm:get_data("worldMapGenerator")
         local decGen = requestedRealm:get_data("worldDecoratorName")
+        local extraGenParams = requestedRealm:get_data("worldExtraGenParams")
 
         if (seed == nil or seed == "nil") then
             return false, "Realm does not have any saved seed information."
@@ -233,7 +241,7 @@ commands["regen"] = {
             return false, "Realm does not have any saved decorator information. Please try to manually regenerate world with gen command, seed " .. tostring(seed) .. " and height generator name " .. tostring(heightGen)
         end
 
-        requestedRealm:GenerateTerrain(seed, seaLevel, heightGen, decGen)
+        requestedRealm:GenerateTerrain(seed, seaLevel, heightGen, decGen, extraGenParams)
 
         Debug.log("Creating barrier...")
         requestedRealm:CreateBarriersFast()

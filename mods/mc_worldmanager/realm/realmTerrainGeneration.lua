@@ -39,12 +39,13 @@ function Realm.WorldGen.RegisterMapDecorator(name, NodeDecoratorFunction, Vegeta
     VegetationDecorator[name] = VegetationDecoratorFunction
 end
 
-function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecoratorName)
+function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecoratorName, paramTable)
 
     self:set_data("worldSeed", seed)
     self:set_data("worldSeaLevel", seaLevel)
     self:set_data("worldMapGenerator", heightMapGeneratorName)
     self:set_data("worldDecoratorName", mapDecoratorName)
+    self:set_data("worldExtraGenParams", paramTable)
 
     local heightMapGen = heightMapGenerator[heightMapGeneratorName]
     local mapDecorator = MapDecorator[mapDecoratorName]
@@ -63,11 +64,11 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     }
 
     local data = vm:get_data()
-    local heightMapTable = heightMapGen(self.StartPos, self.EndPos, vm, area, data, seed, self.StartPos.y, seaLevel)
+    local heightMapTable = heightMapGen(self.StartPos, self.EndPos, vm, area, data, seed, self.StartPos.y, seaLevel, paramTable)
 
     local decoratorData = { }
     if mapDecorator ~= nil then
-        decoratorData = mapDecorator(self.StartPos, self.EndPos, vm, area, data, heightMapTable, seed, seaLevel)
+        decoratorData = mapDecorator(self.StartPos, self.EndPos, vm, area, data, heightMapTable, seed, seaLevel, paramTable)
     end
 
     Debug.log("Saving and loading map...")
@@ -76,7 +77,7 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     vm:write_to_map()
 
     if (vegetationDecorator ~= nil) then
-        vegetationDecorator(self.StartPos, self.EndPos, area, data, heightMapTable, decoratorData, seed, seaLevel)
+        vegetationDecorator(self.StartPos, self.EndPos, area, data, heightMapTable, decoratorData, seed, seaLevel, paramTable)
     end
 
     -- Set our new spawnpoint
