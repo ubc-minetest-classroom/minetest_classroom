@@ -39,7 +39,7 @@ Realm.WorldGen.RegisterHeightMapGenerator("v1", function(startPos, endPos, vm, a
                     surfaceHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
                 end
 
-                if (posY < surfaceHeight) then
+                if (posY <= surfaceHeight) then
                     data[vi] = c_stone
                 elseif (posY < seaLevel) then
                     data[vi] = c_water
@@ -95,7 +95,7 @@ Realm.WorldGen.RegisterHeightMapGenerator("v2", function(startPos, endPos, vm, a
                     surfaceHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
                 end
 
-                if (posY < surfaceHeight) then
+                if (posY <= surfaceHeight) then
                     data[vi] = c_stone
                 elseif (posY < seaLevel) then
                     data[vi] = c_water
@@ -168,7 +168,7 @@ Realm.WorldGen.RegisterMapDecorator("v1", function(startPos, endPos, vm, area, d
                         data[vi] = c_dirt
                     end
 
-                    if (posY >= surfaceHeight - 1 and data[vi] == c_dirt) then
+                    if (posY == surfaceHeight and data[vi] == c_dirt) then
                         if (posY <= seaLevel) then
                             data[vi] = c_sand
                             if (data[viBelow] == c_dirt) then
@@ -211,7 +211,7 @@ Realm.WorldGen.RegisterMapDecorator("v2",
                                 data[vi] = c_dirt
                             end
 
-                            if (posY >= surfaceHeight - 1 and data[vi] == c_dirt) then
+                            if (posY == surfaceHeight and data[vi] == c_dirt) then
                                 if (posY <= seaLevel) then
                                     data[vi] = c_sand
                                     if (data[viBelow] == c_dirt) then
