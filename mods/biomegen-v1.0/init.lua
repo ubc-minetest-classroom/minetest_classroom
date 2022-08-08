@@ -144,7 +144,7 @@ end
 
 local function get_biome_at_index(i, pos, seaLevel)
 
-    if (forcedBiome ~= nil) then
+    if (forcedBiome ~= nil and pos.y > seaLevel) then
         return biomes[forcedBiome]
     end
 
