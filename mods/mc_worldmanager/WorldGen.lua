@@ -164,11 +164,11 @@ Realm.WorldGen.RegisterMapDecorator("v1", function(startPos, endPos, vm, area, d
 
                 if (data[vi] == c_stone) then
                     local surfaceHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
-                    if (posY > surfaceHeight - ((1 - erosionPerlin:get_2d({ x = posX, y = posZ })) * 5)) then
+                    if (posY >= surfaceHeight - ((1 - erosionPerlin:get_2d({ x = posX, y = posZ })) * 5)) then
                         data[vi] = c_dirt
                     end
 
-                    if (posY >= surfaceHeight and data[vi] == c_dirt) then
+                    if (posY >= surfaceHeight - 1 and data[vi] == c_dirt) then
                         if (posY <= seaLevel) then
                             data[vi] = c_sand
                             if (data[viBelow] == c_dirt) then
@@ -207,11 +207,11 @@ Realm.WorldGen.RegisterMapDecorator("v2",
                             local fertilityNoise = fertilityPerlin:get_2d({ x = posX, y = posZ })
 
                             local surfaceHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
-                            if (posY > surfaceHeight - ((1 - erosionNoise) * 5)) then
+                            if (posY >= surfaceHeight - ((1 - erosionNoise) * 5)) then
                                 data[vi] = c_dirt
                             end
 
-                            if (posY >= surfaceHeight and data[vi] == c_dirt) then
+                            if (posY >= surfaceHeight - 1 and data[vi] == c_dirt) then
                                 if (posY <= seaLevel) then
                                     data[vi] = c_sand
                                     if (data[viBelow] == c_dirt) then
