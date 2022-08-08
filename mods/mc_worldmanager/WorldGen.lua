@@ -237,7 +237,6 @@ Realm.WorldGen.RegisterMapDecorator("biomegen", function(startPos, endPos, vm, a
 
     biomegen.set_elevation_chill(0.5)
     biomegen.generate_all(data, area, vm, startPos, endPos, seed, seaLevel - 2, startPos.y)
-end)
 
     local forcedBiomeName = nil
     if (paramTable ~= nil) then
