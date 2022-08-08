@@ -162,7 +162,7 @@ commands["gen"] = {
                     minetest.chat_send_player(name, v)
                 end
 
-                return true, "Listed an terrain generators and decorators."
+                return true, "Listed all terrain generators and decorators."
             end
         end
 
@@ -210,7 +210,7 @@ commands["gen"] = {
 
         return true, "Generated terrain in realm: " .. tostring(realmID) .. " using seed " .. tostring(seed)
     end,
-    help = "realm gen <list> | (<realmID> <heightGenKey> [<terrainDecKey>] ([<seaLevel>] [<seed>]) - Generate a realm", }
+    help = "realm gen <list> | (<realmID> <heightGenKey> [<terrainDecKey>] ([<seaLevel>] [<seed>] [(optional param1), (optional param2) ...]) - Generate a realm", }
 
 commands["regen"] = {
     func = function(name, params)
