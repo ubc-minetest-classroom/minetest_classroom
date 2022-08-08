@@ -2,6 +2,11 @@ local function makePlayerImmortal(player)
     local groups = player:get_armor_groups() or {}
     groups["immortal"] = 1
     player:set_armor_groups(groups)
+    
+    local prop_table = player:get_properties()
+    if prop_table.hp_max then
+        player:set_hp(prop_table.hp_max, "immortality")
+    end
 end
 
 local function makePlayerMortal(player)
