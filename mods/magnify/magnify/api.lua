@@ -352,21 +352,21 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
             "style_type[textarea;font_size=*1.25]",
             "textarea[0.45,2.4;8.6,1;;;", minetest.formspec_escape(info.sci_name or "Scientific name unknown"), "]",
             "style_type[textarea;font_size=*2.25;font=mono,bold]",
-            "textarea[0.45,2.9;8.6,1.8;;;", minetest.formspec_escape(info.com_name or "Common name unknown"), "]",
+            "textarea[0.45,2.9;8.6,2;;;", minetest.formspec_escape(info.com_name or "Common name unknown"), "]",
             "style_type[textarea;font=normal;font_size=*1]",
         
             -- TODO: add tag labels dynamically
-            "box[0.5,4.1;1.4,0.6;", status_col or "#9192A3", "]",
-            "label[0.7,4.4;Status]",
-            "box[2.1,4.1;1.2,0.6;#00FF00]",
-            "label[2.3,4.4;Type]",
-            "box[3.5,4.1;1.5,0.6;#00FF00]",
-            "label[3.7,4.4;Type 2]",
-            "box[5.2,4.1;1.5,0.6;#FFA500]",
-            "label[5.4,4.4;Type 3]",
+            "box[0.5,5.3;1.4,0.6;", status_col or "#9192A3", "]",
+            "label[0.7,5.6;Status]",
+            "box[2.1,5.3;1.2,0.6;#00FF00]",
+            "label[2.3,5.6;Type]",
+            "box[3.5,5.3;1.5,0.6;#00FF00]",
+            "label[3.7,5.6;Type 2]",
+            "box[5.2,5.3;1.5,0.6;#FFA500]",
+            "label[5.4,5.6;Type 3]",
         
             "image[", "9.3,1.5;7.4,4.15;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
-            "textarea[", "0.2,6.3;9,5.7", ";;;", -- info area
+            "textarea[", "0.2,6.45;9,5.55", ";;;", -- info area
             --"- ", minetest.formspec_escape(cons_status_desc or "Conservation status unknown"), "\n",
             "- ", minetest.formspec_escape((info.region and "Found in "..info.region) or "Location range unknown"), "\n",
             "- ", minetest.formspec_escape(info.height or "Height unknown"), "\n",
@@ -399,7 +399,7 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
     
         table.insert(formtable_v3, table.concat({
             "style_type[textarea;font=normal,italic;font_size=*0.85]",
-            "textarea[", "9.3,5.65;7.4,0.7", ";;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
+            "textarea[", "9.3,5.7;7.4,0.5", ";;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
             "box[0,12.2;17,0.4;#FFFFFF]",
             "label[0.1,12.4;Source:]", 
         }))
