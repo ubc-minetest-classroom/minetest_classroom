@@ -235,14 +235,19 @@ Realm.WorldGen.RegisterMapDecorator("v2",
 Realm.WorldGen.RegisterMapDecorator("biomegen", function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel, paramTable)
     Debug.log("Calling biomegen map decorator")
 
-    biomegen.set_elevation_chill(0.5)
-    biomegen.generate_all(data, area, vm, startPos, endPos, seed, seaLevel - 2, startPos.y)
-
     local forcedBiomeName = nil
+    local elevation_chill = 0.5
     if (paramTable ~= nil) then
-        forcedBiomeName = paramTable[1]
+        if (tonumber(paramTable[1]) ~= nil) then
+            elevation_chill = tonumber(paramTable[1])
+            if (paramTable[2] ~= nil) then
+                forcedBiomeName = tostring(paramTable[2])
+            end
+        elseif (paramTable[2] == nil and paramTable[1] ~= nil) then
+            forcedBiomeName = paramTable[1]
+        end
     end
 
-    biomegen.set_elevation_chill(0.5)
+    biomegen.set_elevation_chill(elevation_chill)
     biomegen.generate_all(data, area, vm, startPos, endPos, seed, seaLevel + 1, forcedBiomeName)
 end)
