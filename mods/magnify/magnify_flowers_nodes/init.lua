@@ -187,7 +187,7 @@ local waterlily = {
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Nuphar%20polysepala",
     img_copyright = "Marshal Hedin, licensed under CC BY 2.0"
 }
-magnify.register_species(waterlily, {"flowers:waterlily"})
+magnify.register_species(waterlily, {"flowers:waterlily", "flowers:waterlily_waving"})
 
 local agaric = {
     sci_name = "Amanita muscaria",

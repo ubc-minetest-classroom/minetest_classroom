@@ -2,8 +2,8 @@ magnify = {
     path = minetest.get_modpath("magnify"),
     S = minetest.get_translator("magnify"),
     species = {ref = minetest.get_mod_storage(), node = {}},
-    map = {}
-    context = {}
+    map = {},
+    context = {},
 }
 -- DATABASE HARD RESET SNIPPET: ONLY USE FOR DEBUGGING PURPOSES
 --magnify.species.ref:from_table(nil)
@@ -14,9 +14,7 @@ dofile(magnify.path.."/map.lua")
 -- constants
 local tool_name = "magnify:magnifying_tool"
 local priv_table = {interact = true}
-local MENU = 1
-local STANDARD_VIEW = 2
-local TECH_VIEW = 3
+local MENU, STANDARD_VIEW, TECH_VIEW = 1, 2, 3
 
 -- Checks for adequate privileges
 local function check_perm(player)
@@ -41,8 +39,9 @@ minetest.register_tool(tool_name, {
             return nil
         else
             local pname = player:get_player_name()
-            local node = minetest.get_node(pointed_thing.under).name
-            local ref_key = magnify.get_ref(node)
+
+            local node = {under = minetest.get_node(pointed_thing.under).name, above = minetest.get_node(pointed_thing.above).name}
+            local ref_key = magnify.get_ref(node.under) or magnify.get_ref(node.above)
     
             if ref_key then
                 -- try to build formspec
@@ -249,7 +248,7 @@ button[0,6.2;6.2,0.6;locate;Locate nearest node]
 
 --- Return the plant compendium formspec, built from the given list of species
 --- @return formspec string, size
-local function get_compendium_formspec(species_list, context)
+local function get_compendium_formspec(context)
     local size = "size[17,12.6]"
     local formtable = {
         "formspec_version[6]", size,
@@ -263,13 +262,13 @@ local function get_compendium_formspec(species_list, context)
         "button[9.1,1.3;2,0.8;search_x;        Clear]",
         "image[9.1,1.3;0.8,0.8;texture.png]",
         "box[0.4,2.4;3.5,0.7;#FFFFFF]",
-        "label[1.6,2.8;Family]",
+        "label[1.7,2.8;Family]",
         "textlist[0.4,3.2;3.5,9;;;1;false]",
         "box[4,2.4;3.5,0.7;#FFFFFF]",
-        "label[5.2,2.8;Genus]",
+        "label[5.3,2.8;Genus]",
         "textlist[4,3.2;3.5,9;;;1;false]",
         "box[7.6,2.4;3.5,0.7;#FFFFFF]",
-        "label[8.7,2.8;Species]",
+        "label[8.8,2.8;Species]",
         "textlist[7.6,3.2;3.5,9;;;1;false]",
         "box[11.5,1.3;5.1,0.8;#000000]",
         "label[13.7,1.7;Filter]",
@@ -291,8 +290,7 @@ local function get_compendium_formspec(species_list, context)
         "checkbox[11.8,9.9;cons_g5;G5 (Secure);false]",
         "checkbox[11.8,10.4;cons_na;GNR/GU/GNA (Unranked);false]",
 
-        --[[
-        "bgcolor[#00FF00;true]", -- #172e1b
+        --[["bgcolor[#00FF00;true]", -- #172e1b
         "set_focus[species_list]",
         "textlist[0,0;7.8,3.75;species_list;", table.concat(species_list, ","), ";", context.species_selected or 1, ";false]",
         "button[0,4.05;4,0.6;standard_view;View Species]",
@@ -318,13 +316,13 @@ image[6.9,1.3;0.8,0.8;]
 button[9.1,1.3;2,0.8;search_x;        Clear]
 image[9.1,1.3;0.8,0.8;]
 box[0.4,2.4;3.5,0.7;#FFFFFF]
-label[1.6,2.8;Family]
+label[1.7,2.8;Family]
 textlist[0.4,3.2;3.5,9;;;1;false]
 box[4,2.4;3.5,0.7;#FFFFFF]
-label[5.2,2.8;Genus]
+label[5.3,2.8;Genus]
 textlist[4,3.2;3.5,9;;;1;false]
 box[7.6,2.4;3.5,0.7;#FFFFFF]
-label[8.7,2.8;Species]
+label[8.8,2.8;Species]
 textlist[7.6,3.2;3.5,9;;;1;false]
 box[11.5,1.3;5.1,0.8;#000000]
 label[13.7,1.7;Filter]
@@ -370,7 +368,7 @@ local function species_search_filter(query, species_list, ref_list)
 end
 
 -- Registers the plant compendium as an inventory tab
-sfinv.register_page("magnify:compendium", {
+--[[sfinv.register_page("magnify:compendium", {
     title = "Plant Compendium", -- add translations
     get = function(self, player, context)
         if context.species_view == STANDARD_VIEW or context.species_view == TECH_VIEW then
@@ -403,7 +401,7 @@ sfinv.register_page("magnify:compendium", {
             for i,ref in pairs(ref_list) do
                 context.species_i_to_ref[i] = tonumber(ref)
             end
-            local formspec,size = get_compendium_formspec(species_list, context)
+            local formspec,size = get_compendium_formspec(context)
             -- create menu
             return sfinv.make_formspec(player, context, formspec, false, size)
         end
@@ -469,23 +467,60 @@ sfinv.register_page("magnify:compendium", {
         -- only shows the compendium to players with adequate privileges
         return check_perm(player)
     end
-})
+})]]
 
-if minetest.get_modpath("sfinv") then
+-- Registers the plant compendium as an inventory button on the main inventory page
+-- Partially based on the inventory button implementation in Minetest-WorldEdit
+if minetest.get_modpath("sfinv") ~= nil then
+    local default_get = sfinv.pages[sfinv.get_homepage_name()].get
+    sfinv.override_page(sfinv.get_homepage_name(), {
+		get = function(self, player, context)
+            if check_perm(player) then
+			    return table.concat({
+                    default_get(self, player, context),
+                    "image_button[7,0;1,1;magnify_magnifying_tool.png;magnify_plant_compendium;]",
+                    "tooltip[magnify_plant_compendium;Plant Compendium]"
+                })
+            end
+		end
+	})
 
-minetest.register_on_player_receive_fields(function(player, formname, fields)
-    -- inventory check
-    if formname == "" or formname == "magnify:compendium" then
-        -- handle compendium functions
-        return
-    elseif formname == "magnify:view" then
-        -- handle viewer functions
-        return
-    elseif formname == "magnify:tech_view" then
-        -- handle technical functions
-        return
-    end
-end)
+    minetest.register_on_player_receive_fields(function(player, formname, fields)
+        local pname = player:get_player_name()
+        local form_action = formname
+    
+        -- inventory handler
+        if formname == "" then
+            if fields.magnify_plant_compendium then
+                magnify.context[pname] = {
+                    page = MENU,
+                }
+                player:set_inventory_formspec(get_compendium_formspec(magnify.context[pname]))
+                return
+            elseif not magnify.context[pname] then
+                return
+            end
+    
+            if magnify.context[pname].page == MENU and fields.back then
+                sfinv.set_page(player, sfinv.get_homepage_name(player))
+                sfinv.set_player_inventory_formspec(player)
+                magnify.context[pname] = nil
+                return
+            end
+    
+            form_action = (magnify.context[pname].page == MENU and "magnify:compendium") or (magnify.context[pname].page == STANDARD_VIEW and "magnify:view") or (magnify.context[pname].page == TECH_VIEW and "magnify:tech_view") or form_action
+        end
+    
+        -- formspec action handler
+        if form_action == "magnify:compendium" then
+            -- handle compendium functions
+        elseif form_action == "magnify:view" then
+            -- handle viewer functions
+        elseif form_action == "magnify:tech_view" then
+            -- handle technical functions
+        end
+    end)
+end
 
 -- Storage cleanup function: removes any registered species that do not have any nodes associated with them
 minetest.register_on_mods_loaded(function()

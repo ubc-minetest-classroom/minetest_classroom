@@ -334,28 +334,29 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
         local formtable_v3 = {
             "formspec_version[6]", size,
         
-            -- TODO: add style elements
-        
             "box[0,0;17,0.6;#FFFFFF]",
             "label[6.7,0.3;Plant Compendium]",
-            "button", is_exit and "_exit" or "", "[0.8,0.8;1,0.6;back;Back]",
+            "button", is_exit and "_exit" or "", "[0.2,0.8;1.6,0.6;back;      Back]",
             "image[0.2,0.8;0.6,0.6;texture.png]",
-            "button[8.1,0.8;2.6,0.6;locate;Locate in World]",
+            "button[7.5,0.8;3.2,0.6;locate;      Locate in World]",
             "image[7.5,0.8;0.6,0.6;texture.png]",
-            "button[11.5,0.8;3.5,0.6;view;View in Compendium]",
+            "button[10.9,0.8;4.1,0.6;view;      View in Compendium]",
             "image[10.9,0.8;0.6,0.6;texture.png]",
-            "button[15.8,0.8;1,0.6;save;Save]",
+            "button[15.2,0.8;1.6,0.6;save;      Save]",
             "image[15.2,0.8;0.6,0.6;texture.png]",
             "box[0.2,1.4;16.6,4.8;#FFFFFF]",
             "box[0.3,1.5;8.9,4.6;#000000]",
 
-            --"box[", (is_inv and "0,0;10,1.6") or "0.4,0.4;12,1.6", ";", minetest.formspec_escape(status_col or "#9192A3"), "]",
-            "label[0.5,2.45;", minetest.formspec_escape(info.sci_name or "Scientific name unknown"), "]",
-            "label[0.5,3;", minetest.formspec_escape(info.com_name or "Common name unknown"), "]",
-            "label[0.5,1.9;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
+            "style_type[textarea;font=mono]",
+            "textarea[0.45,1.7;8.6,0.8;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
+            "style_type[textarea;font_size=*1.25]",
+            "textarea[0.45,2.4;8.6,1;;;", minetest.formspec_escape(info.sci_name or "Scientific name unknown"), "]",
+            "style_type[textarea;font_size=*2.25;font=mono,bold]",
+            "textarea[0.45,2.9;8.6,1.8;;;", minetest.formspec_escape(info.com_name or "Common name unknown"), "]",
+            "style_type[textarea;font=normal;font_size=*1]",
         
             -- TODO: add tag labels dynamically
-            "box[0.5,4.1;1.4,0.6;#0000FF]",
+            "box[0.5,4.1;1.4,0.6;", status_col or "#9192A3", "]",
             "label[0.7,4.4;Status]",
             "box[2.1,4.1;1.2,0.6;#00FF00]",
             "label[2.3,4.4;Type]",
@@ -365,8 +366,6 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
             "label[5.4,4.4;Type 3]",
         
             "image[", "9.3,1.5;7.4,4.15;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
-            --"box[", (is_inv and "10.3,3.7;3.35,3.65") or "12.8,4.7;4.2,4.2", ";#789cbf]",
-
             "textarea[", "0.2,6.3;9,5.7", ";;;", -- info area
             --"- ", minetest.formspec_escape(cons_status_desc or "Conservation status unknown"), "\n",
             "- ", minetest.formspec_escape((info.region and "Found in "..info.region) or "Location range unknown"), "\n",
@@ -380,12 +379,13 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
             "image_button[11.2,6.3;1.8,1;", type(info.texture) == "table" and info.texture[3] or "test.png", ";;;false;false]",
             "image_button[13.1,6.3;1.8,1;", type(info.texture) == "table" and info.texture[4] or "test.png", ";;;false;false]",
             "image_button[15,6.3;1.8,1;", type(info.texture) == "table" and info.texture[5] or "test.png", ";;;false;false]",
-          }
+        }
         
         if model_spec_loc then
               -- add model + image 6
               local model_spec = read_obj_textures(model_spec_loc)
               table.insert(formtable_v3, table.concat({
+                "style[plant_model;bgcolor=#789cbf]",
                 "model[", "9.3,7.4;3.7,4.6", ";plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";", info.model_rot_x or "0", ",", info.model_rot_y or "180", ";false;true;;]",
                 "image[", "13.1,7.4;3.7,4.6", ";", (type(info.texture) == "table" and info.texture[6]) or "test.png", "]",
               }))
@@ -398,6 +398,7 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
           end
     
         table.insert(formtable_v3, table.concat({
+            "style_type[textarea;font=normal,italic;font_size=*0.85]",
             "textarea[", "9.3,5.65;7.4,0.7", ";;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
             "box[0,12.2;17,0.4;#FFFFFF]",
             "label[0.1,12.4;Source:]", 
@@ -410,25 +411,24 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
     end
 end
 
---[[ formtable clean copies, for editing
--- V3
+--[[ V3 formtable clean copy, for editing
 formspec_version[6]
 size[17,12.6]
 box[0,0;17,0.6;#FFFFFF]
 label[6.7,0.3;Plant Compendium]
-button[0.8,0.8;1,0.6;back;Back]
+button[0.2,0.8;1.6,0.6;back;      Back]
 image[0.2,0.8;0.6,0.6;texture.png]
-button[8.1,0.8;2.6,0.6;locate;Locate in World]
+button[7.5,0.8;3.2,0.6;locate;      Locate in World]
 image[7.5,0.8;0.6,0.6;texture.png]
-button[11.5,0.8;3.5,0.6;view;View in Compendium]
+button[10.9,0.8;4.1,0.6;view;      View in Compendium]
 image[10.9,0.8;0.6,0.6;texture.png]
-button[15.8,0.8;1,0.6;save;Save]
+button[15.2,0.8;1.6,0.6;save;      Save]
 image[15.2,0.8;0.6,0.6;texture.png]
 box[0.2,1.4;16.6,4.8;#FFFFFF]
 box[0.3,1.5;8.9,4.6;#000000]
-label[0.5,1.9;Family:]
-label[0.5,2.45;Scientific Name]
-label[0.5,3;COMMON NAME]
+textarea[0.45,1.7;8.6,0.8;;;Family:]
+textarea[0.45,2.4;8.6,1;;;Scientific Name]
+textarea[0.45,2.9;8.6,1.8;;;COMMON NAME]
 box[0.5,4.1;1.4,0.6;#0000FF]
 label[0.7,4.4;Status]
 box[2.1,4.1;1.2,0.6;#00FF00]
