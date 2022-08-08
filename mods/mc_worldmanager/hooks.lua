@@ -32,7 +32,7 @@ minetest.register_on_joinplayer(function(player, last_login)
         pmeta:set_string("universalPrivs", minetest.serialize(minetest.get_player_privs(player:get_player_name())))
     end
 
-    mc_worldManager.CreateRealmHud(player)
+    mc_worldManager.UpdateRealmHud(player)
 
     local realm = Realm.GetRealmFromPlayer(player)
     if (realm ~= nil) then

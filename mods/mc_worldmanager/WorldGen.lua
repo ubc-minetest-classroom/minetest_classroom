@@ -234,8 +234,8 @@ Realm.WorldGen.RegisterMapDecorator("v2",
 
 Realm.WorldGen.RegisterMapDecorator("biomegen", function(startPos, endPos, vm, area, data, heightMapTable, seed, seaLevel)
     Debug.log("Calling biomegen map decorator")
-    biomegen.set_elevation_chill(0)
-    biomegen.generate_all(data, area, vm, startPos, endPos, seed, seaLevel)
+    biomegen.set_elevation_chill(0.5)
+    biomegen.generate_all(data, area, vm, startPos, endPos, seed, seaLevel - 2, startPos.y)
 end)
 
 
