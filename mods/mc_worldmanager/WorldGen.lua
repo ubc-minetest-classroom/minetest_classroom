@@ -8,6 +8,10 @@ local c_sand = minetest.get_content_id("default:sand")
 local c_grass = minetest.get_content_id("default:grass_1")
 local c_rose = minetest.get_content_id("flowers:rose")
 
+local c_barrierAir = minetest.get_content_id("unbreakable_map_barrier:barrierAir")
+local c_barrierSolid = minetest.get_content_id("unbreakable_map_barrier:barrierSolid")
+local c_barrierGround = minetest.get_content_id("unbreakable_map_barrier:barrierGround")
+
 Realm.WorldGen.RegisterHeightMapGenerator("v1", function(startPos, endPos, vm, area, data, seed, realmFloorLevel, seaLevel)
     Debug.log("Calling heightmap generator v1")
 
@@ -114,17 +118,22 @@ Realm.WorldGen.RegisterHeightMapGenerator("dnr", function(startPos, endPos, vm, 
         for posY = startPos.y, endPos.y do
             for posX = startPos.x, endPos.x do
 
+                -- Generate a height map from the existing map
+                local previousHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
+                if (previousHeight == nil) then
+                    previousHeight = realmFloorLevel
+                end
+
+
                 local vi = area:index(posX, posY, posZ)
-                if (data[vi] ~= c_water and data[vi] ~= c_air) then
+
+                if (data[vi] == c_barrierAir or data[vi] == c_barrierGround or data[vi] == c_barrierSolid) then
+                    data[vi] = c_air
+                elseif (data[vi] ~= c_water and data[vi] ~= c_air) then
                     data[vi] = c_stone
 
-                    local previousHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
-
-                    if (previousHeight == nil) then
-                        previousHeight = realmFloorLevel
-                    end
-
                     if (posY > previousHeight) then
+                        -- If we are above the previously recorded height, store the new height.
                         ptable.store2D(heightMapTable, { x = posX, y = posZ }, posY)
                     end
                 end
@@ -159,7 +168,7 @@ Realm.WorldGen.RegisterMapDecorator("v1", function(startPos, endPos, vm, area, d
                         data[vi] = c_dirt
                     end
 
-                    if (posY >= surfaceHeight - 1 and data[vi] == c_dirt) then
+                    if (posY >= surfaceHeight and data[vi] == c_dirt) then
                         if (posY <= seaLevel) then
                             data[vi] = c_sand
                             if (data[viBelow] == c_dirt) then
@@ -202,7 +211,7 @@ Realm.WorldGen.RegisterMapDecorator("v2",
                                 data[vi] = c_dirt
                             end
 
-                            if (posY >= surfaceHeight - 1 and data[vi] == c_dirt) then
+                            if (posY >= surfaceHeight and data[vi] == c_dirt) then
                                 if (posY <= seaLevel) then
                                     data[vi] = c_sand
                                     if (data[viBelow] == c_dirt) then
@@ -255,11 +264,14 @@ Realm.WorldGen.RegisterMapDecorator("v2",
                 local treeZ = ps:next(startPos.z, endPos.z)
                 local treeY = ptable.get2D(heightMapTable, { x = treeX, y = treeZ })
 
-                if (treeY > seaLevel) then
-                    local vi = area:index(treeX, treeY - 1, treeZ)
+                if (treeY ~= nil and treeY > seaLevel) then
+                    local vi = area:index(treeX, treeY, treeZ)
+
                     if (data[vi] == c_dirtGrass) then
                         local pos = { x = treeX, y = treeY, z = treeZ }
+                        local posAbove = { x = treeX, y = treeY + 1, z = treeZ }
                         minetest.remove_node(pos)
+                        minetest.remove_node(posAbove)
                         minetest.spawn_tree(pos, treedef)
                     end
                 end
