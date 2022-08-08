@@ -3,6 +3,7 @@ magnify = {
     S = minetest.get_translator("magnify"),
     species = {ref = minetest.get_mod_storage(), node = {}},
     map = {}
+    context = {}
 }
 -- DATABASE HARD RESET SNIPPET: ONLY USE FOR DEBUGGING PURPOSES
 --magnify.species.ref:from_table(nil)
@@ -48,7 +49,7 @@ minetest.register_tool(tool_name, {
                 local species_formspec = magnify.build_formspec_from_ref(ref_key, true, false)
                 if species_formspec then
                     -- good: open formspec
-                    minetest.show_formspec(pname, "magnifying_tool:identify", species_formspec)
+                    minetest.show_formspec(pname, "magnify:identify", species_formspec)
                 else
                     -- bad: display corrupted node message in chat
                     minetest.chat_send_player(pname, "An entry for this item exists, but could not be found in the species database.\nPlease contact an administrator and ask them to check your server's species database files to ensure all species were registered properly.")
@@ -217,7 +218,7 @@ local function get_expanded_species_formspec(ref)
     if info and nodes then
         local sorted_nodes = table.sort(nodes)
         local size = "size[12.4,6.7]"
-        local formtable = {    
+        local formtable = {
             "formspec_version[5]", size,
             "box[0,0;12.2,0.8;#9192a3]",
             "label[4.8,0.2;Technical Information]",
@@ -249,7 +250,48 @@ button[0,6.2;6.2,0.6;locate;Locate nearest node]
 --- Return the plant compendium formspec, built from the given list of species
 --- @return formspec string, size
 local function get_compendium_formspec(species_list, context)
+    local size = "size[17,12.6]"
     local formtable = {
+        "formspec_version[6]", size,
+        "box[0,0;17,0.6;#FFFFFF]",
+        "label[6.7,0.3;Plant Compendium]",
+        "button[0,0;1.7,0.6;back;      Back]",
+        "image[0,0;0.6,0.6;texture.png]",
+        "field[0.4,1.3;6.5,0.8;search;Search by common/scientific name;]",
+        "button[6.9,1.3;2.2,0.8;search_go;        Search]",
+        "image[6.9,1.3;0.8,0.8;texture.png]",
+        "button[9.1,1.3;2,0.8;search_x;        Clear]",
+        "image[9.1,1.3;0.8,0.8;texture.png]",
+        "box[0.4,2.4;3.5,0.7;#FFFFFF]",
+        "label[1.6,2.8;Family]",
+        "textlist[0.4,3.2;3.5,9;;;1;false]",
+        "box[4,2.4;3.5,0.7;#FFFFFF]",
+        "label[5.2,2.8;Genus]",
+        "textlist[4,3.2;3.5,9;;;1;false]",
+        "box[7.6,2.4;3.5,0.7;#FFFFFF]",
+        "label[8.7,2.8;Species]",
+        "textlist[7.6,3.2;3.5,9;;;1;false]",
+        "box[11.5,1.3;5.1,0.8;#000000]",
+        "label[13.7,1.7;Filter]",
+        "box[11.5,2.1;5.1,8.8;#FFFFFF]",
+        "label[11.8,2.5;Form:]",
+        "checkbox[11.8,3;form_tree;Tree;false]",
+        "checkbox[11.8,3.5;form_shrub;Shrub;false]",
+        "label[11.8,4.2;Leaves:]",
+        "checkbox[11.8,4.7;leaf_conif;Coniferous;false]",
+        "checkbox[11.8,5.2;leaf_decid;Deciduous;false]",
+        "checkbox[11.8,5.7;leaf_ever;Evergreen;false]",
+        "label[11.8,6.4;Conservation Status:]",
+        "checkbox[11.8,6.9;cons_gx;GX (Presumed Extinct);false]",
+        "checkbox[11.8,7.4;cons_gh;GH (Possibly Extinct);false]",
+        "checkbox[11.8,7.9;cons_g1;G1 (Critcally Imperiled);false]",
+        "checkbox[11.8,8.4;cons_g2;G2 (Imperiled);false]",
+        "checkbox[11.8,8.9;cons_g3;G3 (Vulnerable);false]",
+        "checkbox[11.8,9.4;cons_g4;G4 (Apparently Secure);false]",
+        "checkbox[11.8,9.9;cons_g5;G5 (Secure);false]",
+        "checkbox[11.8,10.4;cons_na;GNR/GU/GNA (Unranked);false]",
+
+        --[[
         "bgcolor[#00FF00;true]", -- #172e1b
         "set_focus[species_list]",
         "textlist[0,0;7.8,3.75;species_list;", table.concat(species_list, ","), ";", context.species_selected or 1, ";false]",
@@ -258,10 +300,52 @@ local function get_compendium_formspec(species_list, context)
         "field_close_on_enter[search;false]",
         "field[0.3,5.72;5.56,1;search;Search for a species", (context.species_search and " (current: \""..minetest.formspec_escape(context.species_search).."\")") or "", ";]",
         "button[5.5,5.4;1.3,1;search_search;Search]",
-        "button[6.7,5.4;1.3,1;search_clear;Clear]"
+        "button[6.7,5.4;1.3,1;search_clear;Clear]"]]
     }
-    return table.concat(formtable, "")
+    return table.concat(formtable, ""), size
 end
+
+--[[
+formspec_version[6]
+size[17,12.6]
+box[0,0;17,0.6;#FFFFFF]
+label[6.7,0.3;Plant Compendium]
+button[0,0;1.7,0.6;back;      Back]
+image[0,0;0.6,0.6;]
+field[0.4,1.3;6.5,0.8;search;Search by common/scientific name;]
+button[6.9,1.3;2.2,0.8;search_go;        Search]
+image[6.9,1.3;0.8,0.8;]
+button[9.1,1.3;2,0.8;search_x;        Clear]
+image[9.1,1.3;0.8,0.8;]
+box[0.4,2.4;3.5,0.7;#FFFFFF]
+label[1.6,2.8;Family]
+textlist[0.4,3.2;3.5,9;;;1;false]
+box[4,2.4;3.5,0.7;#FFFFFF]
+label[5.2,2.8;Genus]
+textlist[4,3.2;3.5,9;;;1;false]
+box[7.6,2.4;3.5,0.7;#FFFFFF]
+label[8.7,2.8;Species]
+textlist[7.6,3.2;3.5,9;;;1;false]
+box[11.5,1.3;5.1,0.8;#000000]
+label[13.7,1.7;Filter]
+box[11.5,2.1;5.1,8.8;#FFFFFF]
+label[11.8,2.5;Form:]
+checkbox[11.8,3;form_tree;Tree;false]
+checkbox[11.8,3.5;form_shrub;Shrub;false]
+label[11.8,4.2;Leaves:]
+checkbox[11.8,4.7;leaf_conif;Coniferous;false]
+checkbox[11.8,5.2;leaf_decid;Deciduous;false]
+checkbox[11.8,5.7;leaf_ever;Evergreen;false]
+label[11.8,6.4;Conservation Status:]
+checkbox[11.8,6.9;cons_gx;GX (Presumed Extinct);false]
+checkbox[11.8,7.4;cons_gh;GH (Possibly Extinct);false]
+checkbox[11.8,7.9;cons_g1;G1 (Critcally Imperiled);false]
+checkbox[11.8,8.4;cons_g2;G2 (Imperiled);false]
+checkbox[11.8,8.9;cons_g3;G3 (Vulnerable);false]
+checkbox[11.8,9.4;cons_g4;G4 (Apparently Secure);false]
+checkbox[11.8,9.9;cons_g5;G5 (Secure);false]
+checkbox[11.8,10.4;cons_na;GNR/GU/GNA (Unranked);false]
+]]
 
 --- Filters lists of all species down to species whose reference keys, common names, scientific names or family names contain the substring `query`
 --- @param query Substring to search for
@@ -319,8 +403,9 @@ sfinv.register_page("magnify:compendium", {
             for i,ref in pairs(ref_list) do
                 context.species_i_to_ref[i] = tonumber(ref)
             end
+            local formspec,size = get_compendium_formspec(species_list, context)
             -- create menu
-            return sfinv.make_formspec(player, context, get_compendium_formspec(species_list, context), false)
+            return sfinv.make_formspec(player, context, formspec, false, size)
         end
     end,
     on_enter = function(self, player, context)
@@ -328,13 +413,13 @@ sfinv.register_page("magnify:compendium", {
         context.species_selected = context.species_selected or 1
     end,
     on_player_receive_fields = function(self, player, context, fields)
-        if fields.key_enter_field == "search" or fields.search_search then
+        if fields.key_enter_field == "search" or fields.search_go then
             -- note search query + reset selection
             context.species_search = fields.search
             context.species_selected = 1
             -- refresh inventory formspec
             sfinv.set_player_inventory_formspec(player)
-        elseif fields.search_clear then
+        elseif fields.search_x then
             -- clear search + reset selection
             context.species_search = nil
             context.species_selected = 1
@@ -385,6 +470,22 @@ sfinv.register_page("magnify:compendium", {
         return check_perm(player)
     end
 })
+
+if minetest.get_modpath("sfinv") then
+
+minetest.register_on_player_receive_fields(function(player, formname, fields)
+    -- inventory check
+    if formname == "" or formname == "magnify:compendium" then
+        -- handle compendium functions
+        return
+    elseif formname == "magnify:view" then
+        -- handle viewer functions
+        return
+    elseif formname == "magnify:tech_view" then
+        -- handle technical functions
+        return
+    end
+end)
 
 -- Storage cleanup function: removes any registered species that do not have any nodes associated with them
 minetest.register_on_mods_loaded(function()
