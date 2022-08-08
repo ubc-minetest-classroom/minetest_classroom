@@ -127,9 +127,9 @@ Realm.WorldGen.RegisterHeightMapGenerator("dnr", function(startPos, endPos, vm, 
 
                 local vi = area:index(posX, posY, posZ)
 
-                if (data[vi] == c_barrierAir or data[vi] == c_barrierGround or data[vi] == c_barrierSolid) then
+                if (data[vi] == c_barrierAir or data[vi] == c_barrierGround or data[vi] == c_barrierSolid or data[vi] == c_water) then
                     data[vi] = c_air
-                elseif (data[vi] ~= c_water and data[vi] ~= c_air) then
+                elseif (data[vi] ~= c_air) then
                     data[vi] = c_stone
 
                     if (posY > previousHeight) then
