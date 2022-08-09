@@ -84,5 +84,5 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     local oldSpawnPos = self.SpawnPoint
     local surfaceLevel = ptable.get2D(heightMapTable, { x = oldSpawnPos.x, y = oldSpawnPos.z })
 
-    self:UpdateSpawn(self:WorldToLocalSpace({ x = oldSpawnPos.x, y = surfaceLevel, z = oldSpawnPos.z }))
+    self:UpdateSpawn(self:WorldToLocalSpace({ x = oldSpawnPos.x, y = surfaceLevel + 1, z = oldSpawnPos.z }))
 end
