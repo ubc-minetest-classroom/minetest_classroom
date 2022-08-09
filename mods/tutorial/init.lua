@@ -39,8 +39,8 @@ tutorial.check_dir_tolerance = tutorial.fetch_setting("check_dir_tolerance")
 
 minetest.register_on_joinplayer(function(player)
     -- Load player meta
-    pmeta = player:get_meta()
-    pdata = minetest.deserialize(pmeta:get_string("tutorials"))
+    local pmeta = player:get_meta()
+    local pdata = minetest.deserialize(pmeta:get_string("tutorials"))
     if pdata == nil or next(pdata) == nil then
         -- Nothing to see here so initialize and serialize a table to hold everything
         pdata = {}
