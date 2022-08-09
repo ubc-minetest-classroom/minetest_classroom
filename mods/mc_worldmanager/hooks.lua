@@ -58,6 +58,7 @@ minetest.register_on_joinplayer(function(player, last_login)
     local realm = Realm.GetRealmFromPlayer(player)
     if (realm ~= nil) then
         realm:RegisterPlayer(player)
+        realm:RunTeleportInFunctions(player)
     end
 
 end)
@@ -74,6 +75,7 @@ minetest.register_on_leaveplayer(function(player, timed_out)
     realm = Realm.GetRealmFromPlayer(player)
     if (realm ~= nil) then
         realm:DeregisterPlayer(player)
+        realm:RunTeleportOutFunctions(player)
     end
 end)
 

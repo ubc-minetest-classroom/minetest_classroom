@@ -125,3 +125,7 @@ function mc_worldManager.UpdatePositionHud(player, positionMode)
 
     return true
 end
+
+Realm.RegisterOnJoinCallback(function(realm, player)
+    mc_worldManager.UpdateRealmHud(player)
+end)
