@@ -176,6 +176,46 @@ local function concat_col_field_list(list, separator)
     return table.concat(col_list, separator)
 end
 
+local event_action_map = {
+    [mc_tutorial.ACTION.PUNCH] = function(event)
+        return nil, "punch node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " with "..event.tool or "")
+    end,
+    [mc_tutorial.ACTION.DIG] = function(event)
+        return nil, "dig node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " with "..event.tool or "")
+    end,
+    [mc_tutorial.ACTION.PLACE] = function(event)
+        return nil, "place node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " while wielding "..event.tool or "")
+    end,
+    [mc_tutorial.ACTION.WIELD] = function(event)
+        return nil, "wield "..(event.tool and (event.tool == "" and "nothing" or event.tool) or "[?]")
+    end,
+    [mc_tutorial.ACTION.KEY] = function(event)
+        return nil, "press key"..(event.key and (#event.key > 1 and "s " or " ")..table.concat(event.key, " + ") or " [?]")
+    end,
+    [mc_tutorial.ACTION.LOOK_YAW] = function(event)
+        return nil, "look at yaw (horizontal) "..(event.dir and math.deg(event.dir).."°" or "[?]")
+    end,
+    [mc_tutorial.ACTION.LOOK_PITCH] = function(event)
+        return nil, "look at pitch (vertical) "..(event.dir and math.deg(event.dir).."°" or "[?]")
+    end,
+    [mc_tutorial.ACTION.LOOK_DIR] = function(event)
+        -- directional vector: simplify representation?
+        local yaw_vect = event.dir and vector.new(event.dir.x, 0, event.dir.z)
+        local yaw = math.deg(vector.angle(vector.new(0, 0, 1), yaw_vect or vector.new(0, 0, 1)))
+        return nil, "look in direction "..(event.dir and "(yaw = "..(math.sign(yaw_vect.x) == -1 and (360 - yaw) or yaw).."°, pitch = "..math.sign(event.dir.y)*math.deg(vector.angle(event.dir, yaw_vect)).."°)" or "[?]")
+    end,
+    [mc_tutorial.ACTION.POS_ABS] = function(event)
+        return nil, "go to position "..(event.pos and "(x = "..event.pos.x..", y = "..event.pos.y..", z = "..event.pos.z..")" or "[?]")
+    end,
+    [mc_tutorial.ACTION.GROUP] = function(event)
+        if event.g_type == mc_tutorial.GROUP.START then
+            return "#CCFFFF", "GROUP "..(event.g_id or "[?]").." {"
+        else
+            return "#CCFFFF", "} END GROUP "..(event.g_id or "[?]")
+        end
+    end,
+}
+
 function mc_tutorial.show_record_fs(player)
     local pname = player:get_player_name()
 	if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
@@ -186,49 +226,10 @@ function mc_tutorial.show_record_fs(player)
         -- Get all recorded events
         if not context.events then
             local events = {}
-            local action_map = {
-                [mc_tutorial.ACTION.PUNCH] = function(event)
-                    return nil, "punch node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " with "..event.tool or "")
-                end,
-                [mc_tutorial.ACTION.DIG] = function(event)
-                    return nil, "dig node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " with "..event.tool or "")
-                end,
-                [mc_tutorial.ACTION.PLACE] = function(event)
-                    return nil, "place node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " while wielding "..event.tool or "")
-                end,
-                [mc_tutorial.ACTION.WIELD] = function(event)
-                    return nil, "wield "..(event.tool and (event.tool == "" and "nothing" or event.tool) or "[?]")
-                end,
-                [mc_tutorial.ACTION.KEY] = function(event)
-                    return nil, "press key"..(event.key and (#event.key > 1 and "s " or " ")..table.concat(event.key, " + ") or " [?]")
-                end,
-                [mc_tutorial.ACTION.LOOK_YAW] = function(event)
-                    return nil, "look at yaw (horizontal) "..(event.dir and math.deg(event.dir).."°" or "[?]")
-                end,
-                [mc_tutorial.ACTION.LOOK_PITCH] = function(event)
-                    return nil, "look at pitch (vertical) "..(event.dir and math.deg(event.dir).."°" or "[?]")
-                end,
-                [mc_tutorial.ACTION.LOOK_DIR] = function(event)
-                    -- directional vector: simplify representation?
-                    local yaw_vect = event.dir and vector.new(event.dir.x, 0, event.dir.z)
-                    local yaw = math.deg(vector.angle(vector.new(0, 0, 1), yaw_vect or vector.new(0, 0, 1)))
-                    return nil, "look in direction "..(event.dir and "(yaw = "..(math.sign(yaw_vect.x) == -1 and (360 - yaw) or yaw).."°, pitch = "..math.sign(event.dir.y)*math.deg(vector.angle(event.dir, yaw_vect)).."°)" or "[?]")
-                end,
-                [mc_tutorial.ACTION.POS_ABS] = function(event)
-                    return nil, "go to position "..(event.pos and "(x = "..event.pos.x..", y = "..event.pos.y..", z = "..event.pos.z..")" or "[?]")
-                end,
-                [mc_tutorial.ACTION.GROUP] = function(event)
-                    if event.g_type == mc_tutorial.GROUP.START then
-                        return "#CCFFFF", "GROUP "..(event.g_id or "[?]").." {"
-                    else
-                        return "#CCFFFF", "} END GROUP "..(event.g_id or "[?]")
-                    end
-                end,
-            }
 
             for i,event in ipairs(mc_tutorial.record.temp[pname].sequence) do
                 if event.action then
-                    local col, event_string = action_map[event.action](event)
+                    local col, event_string = event_action_map[event.action](event)
                     table.insert(events, (col or "")..minetest.formspec_escape(event_string or ""))
                 else
                     table.insert(events, "#FFCCCC"..minetest.formspec_escape("[?]"))
@@ -464,38 +465,39 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
 	if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
         -- Event popup for adding/editing events in a tutorial
         local context = get_context(pname)
-        local temp = mc_tutorial.record.temp[pname] or {}
 
         local action_map = {
             [mc_tutorial.ACTION.PUNCH] = {
                 name = "Punch node (PUNCH)",
                 fs_elem = function()
                     return {
-                        "label[0.8,2.5;punch]",
-                    } -- stub
+                        "field[0.4,2.3;7,0.8;node;Punch (node);", context.epop.fields.node or "", "]",
+                        "field[0.4,3.6;7,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
+                    }
                 end,
             },
             [mc_tutorial.ACTION.DIG] = {
                 name = "Dig node (DIG)",
                 fs_elem = function()
                     return {
-                        "label[0.8,2.5;dig]",
-                    } -- stub
+                        "field[0.4,2.3;7,0.8;node;Dig (node);", context.epop.fields.node or "", "]",
+                        "field[0.4,3.6;7,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
+                    }
                 end,
             },
             [mc_tutorial.ACTION.PLACE] = {
                 name = "Place node (PLACE)",
                 fs_elem = function()
                     return {
-                        "label[0.8,2.5;place]",
-                    } -- stub
+                        "field[0.4,2.3;7,0.8;node;Place (node);", context.epop.fields.node or "", "]",
+                    }
                 end,
             },
             [mc_tutorial.ACTION.WIELD] = {
                 name = "Wield item (WIELD)",
                 fs_elem = function()
                     return {
-                        "label[0.8,2.5;wield]",
+                        "field[0.4,2.3;7,0.8;tool;Wield (item);", context.epop.fields.tool or "", "]",
                     } -- stub
                 end,
             },
@@ -511,7 +513,7 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 name = "Look in horizontal direction (LOOK_YAW)",
                 fs_elem = function()
                     return {
-                        "label[0.8,2.5;yawss]",
+                        "field[0.4,2.3;7,0.8;yaw;Yaw (horizontal degrees);", context.epop.fields.yaw or "", "]",
                     } -- stub
                 end,
             },
@@ -519,7 +521,7 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 name = "Look in vertical direction (LOOK_PITCH)",
                 fs_elem = function()
                     return {
-                        "label[0.8,2.5;pitch?]",
+                        "field[0.4,2.3;7,0.8;pitch;Pitch (vertical degrees);", context.epop.fields.pitch or "", "]",
                     } -- stub
                 end,
             },
@@ -527,7 +529,17 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 name = "Look in direction (LOOK_DIR)",
                 fs_elem = function()
                     return {
-                        "label[0.8,2.5;dir x 3]",
+                        "label[3.8,2.7;+]",
+                        "field[0.4,2.3;3.3,0.8;yaw;Yaw (horiz. degrees);", context.epop.fields.yaw or "", "]",
+                        "field[4.1,2.3;3.3,0.8;pitch;Pitch (verti. degrees);", context.epop.fields.pitch or "", "]",
+                        "label[3.3,3.5;-- OR --]",
+                        "label[0.4,4;Direction vector]",
+                        "label[0.4,4.6;X =]",
+                        "label[2.8,4.6;Y =]",
+                        "label[5.2,4.6;Z =]",
+                        "field[1,4.2;1.6,0.8;dynamic_x;;", context.epop.fields.dir and context.epop.fields.dir.x or "", "]",
+                        "field[3.4,4.2;1.6,0.8;dynamic_y;;", context.epop.fields.dir and context.epop.fields.dir.y or "", "]",
+                        "field[5.8,4.2;1.6,0.8;dynamic_z;;", context.epop.fields.dir and context.epop.fields.dir.z or "", "]",
                     } -- stub
                 end,
             },
@@ -535,8 +547,14 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 name = "Go to position (POS_ABS)",
                 fs_elem = function()
                     return {
-                        "label[0.8,2.5;absolutely wonderful!]",
-                    } -- stub
+                        "label[0.4,2.1;Go to (position)]",
+                        "label[0.4,2.7;X =]",
+                        "label[2.8,2.7;Y =]",
+                        "label[5.2,2.7;Z =]",
+                        "field[1,2.3;1.6,0.8;dynamic_x;;", context.epop.fields.pos and context.epop.fields.pos.x or "", "]",
+                        "field[3.4,2.3;1.6,0.8;dynamic_y;;", context.epop.fields.pos and context.epop.fields.pos.y or "", "]",
+                        "field[5.8,2.3;1.6,0.8;dynamic_z;;", context.epop.fields.pos and context.epop.fields.pos.z or "", "]",
+                    }
                 end,
             },
         }
@@ -548,33 +566,54 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 selected = 1,
                 actions = {},
                 i_to_action = {},
+                fields = {},
                 sidebar = {
                     list = {},
                     mode = mc_tutorial.SIDEBAR.NONE,
                     selected = 1
-                }
+                },
             }
 
             for k,data in pairs(action_map) do
                 table.insert(context.epop.actions, data.name)
                 context.epop.i_to_action[#context.epop.actions] = k
             end
+
+            local temp = mc_tutorial.record.temp[pname]
+            if context.epop.is_edit and temp and temp[context.selected_event] then
+                -- select current event
+                local edit_action = temp[context.selected_event]["action"]
+                for i,a in ipairs(i_to_action) do
+                    if a == edit_action then
+                        context.epop.selected = i
+                        break
+                    end
+                end
+                -- populate fields
+                context.epop.fields = {
+                    tool = temp[context.selected_event]["tool"],
+                    node = temp[context.selected_event]["node"],
+                    pos = temp[context.selected_event]["pos"],
+                    dir = edit_action == mc_tutorial.ACTION.LOOK_DIR and temp[context.selected_event]["dir"] or nil,
+                    yaw = edit_action == mc_tutorial.ACTION.LOOK_PITCH and nil or edit_action == mc_tutorial.ACTION.LOOK_DIR and nil or temp[context.selected_event]["dir"],
+                    pitch = edit_action == mc_tutorial.ACTION.LOOK_YAW and nil or edit_action == mc_tutorial.ACTION.LOOK_DIR and nil or temp[context.selected_event]["dir"],
+                    key = temp[context.selected_event]["key"],
+                }
+            end
         end
 
         local epop_fs = {
             "formspec_version[6]",
-            "size[0", context.epop.expand and 14 or 8.4, ",8]",
-            "container[", context.epop.expand and 5.6 or 0, ",0]",
-            "label[0.8,0.5;Event type]",
-            "dropdown[0.8,0.7;7.2,0.8;action;", table.concat(context.epop.actions, ","), ";", context.epop.selected or 1, ";true]",
-            "button[0.8,6.8;3.6,0.8;save;Save event]",
-            "button[4.4,6.8;3.6,0.8;cancel;Cancel]",
+            "size[0", context.epop.expand and 14.4 or 8.4, ",8]",
+            "label[0.4,0.5;Event type]",
+            "dropdown[0.4,0.7;7,0.8;action;", table.concat(context.epop.actions, ","), ";", context.epop.selected or 1, ";true]",
+            "button[0.4,6.8;3.5,0.8;save;Save event]",
+            "button[3.9,6.8;3.5,0.8;cancel;Cancel]",
         }
 
         if action_map[context.epop.i_to_action[context.epop.selected]] then
             table.insert(epop_fs, table.concat(action_map[context.epop.i_to_action[context.epop.selected]].fs_elem()))
         end
-        table.insert(epop_fs, "container_end[]")
 
         if context.epop.expand then
             local new_mode = context.epop.i_to_action[context.epop.selected] == mc_tutorial.ACTION.KEY and mc_tutorial.SIDEBAR.KEY or mc_tutorial.SIDEBAR.ITEM
@@ -596,17 +635,17 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
             end
                     
             table.insert(epop_fs, table.concat({
-                "label[0.7,0.5;", context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY and "Available keys" or "Registered items", "]",
-                "textlist[0.7,0.7;5.2,5.5;sidebar_list;", table.concat(context.epop.sidebar.list, ","), ";", context.epop.sidebar.selected or 1, ";false]",
-                context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY and "" or "image[0.7,6.4;1.2,1.2;mc_tutorial_cancel.png]",
-                "textarea[", context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY and "0.7,6.3;5.2,1.4" or "2,6.3;3.9,1.4", ";;;Item + desc]",
-                "box[6.125,0.2;0.05,7.6;#202020]",
-                "button[0,0;0.5,8;collapse_list;>]",
+                "label[8,0.5;", context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY and "Available keys" or "Registered items", "]",
+                "textlist[8,0.7;5.4,5.5;sidebar_list;", table.concat(context.epop.sidebar.list, ","), ";", context.epop.sidebar.selected or 1, ";false]",
+                context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY and "" or "image[8,6.4;1.2,1.2;mc_tutorial_cancel.png]",
+                "textarea[", context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY and "7.9,6.3;5.5,1.4" or "9.3,6.3;4.1,1.4", ";;;Item + desc]",
+                "box[7.675,0.2;0.05,7.6;#202020]",
+                "button[13.8,0;0.6,8;collapse_list;<]",
                 "tooltip[collapse_list;Collapse]",
             }))
         else
             table.insert(epop_fs, table.concat({
-                "button[0,0;0.5,8;expand_list;<]",
+                "button[7.8,0;0.6,8;expand_list;>]",
                 "tooltip[expand_list;Expand]",
             }))
         end
@@ -620,25 +659,25 @@ end
 CONDENSED:
 formspec_version[6]
 size[8.4,8]
-label[0.8,0.5;Event type]
-dropdown[0.8,0.7;7.2,0.8;action;;1;true]
-button[0.8,6.8;3.6,0.8;save;Save event]
-button[4.4,6.8;3.6,0.8;cancel;Cancel]
-button[0,0;0.5,8;expand_list;<]
+label[0.4,0.5;Event type]
+dropdown[0.4,0.7;7,0.8;action;;1;true]
+button[0.4,6.8;3.5,0.8;save;Save event]
+button[3.9,6.8;3.5,0.8;cancel;Cancel]
+button[7.8,0;0.6,8;expand_list;>]
 
 EXPANDED:
 formspec_version[6]
-size[14,8]
-label[6.4,0.5;Event type]
-dropdown[6.4,0.7;7.2,0.8;action;;1;true]
-button[6.4,6.8;3.6,0.8;save;Save event]
-button[10,6.8;3.6,0.8;cancel;Cancel]
-label[0.7,0.5;Registered items]
-textlist[0.7,0.7;5.2,5.5;items;;1;false]
-image[0.7,6.4;1.2,1.2;]
-textarea[2,6.3;3.9,1.4;;;Item + desc]
-box[6.125,0.2;0.05,7.6;#202020]
-button[0,0;0.5,8;collapse_list;>]
+size[14.4,8]
+label[0.4,0.5;Event type]
+dropdown[0.4,0.7;7,0.8;action;;1;true]
+button[0.4,6.8;3.5,0.8;save;Save event]
+button[3.9,6.8;3.5,0.8;cancel;Cancel]
+label[8,0.5;Available items]
+textlist[8,0.7;5.4,5.5;sidebar_list;;1;false]
+image[8,6.4;1.2,1.2;]
+textarea[9.3,6.3;4.1,1.3;;;Item + desc]
+box[7.675,0.2;0.05,7.6;#202020]
+button[13.8,0;0.6,8;collapse_list;<]
 ]]
 
 function mc_tutorial.show_tutorials(player)
@@ -1165,11 +1204,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
             -- Ensure global temp is recycled + context is cleared
             mc_tutorial.record.temp[pname] = nil
+            mc_tutorial.record.edit[pname] = nil
+            mc_tutorial.record.active[pname] = nil
             save_context(player, nil)
             return -- formspec was closed, do not continue
         elseif fields.quit then -- forced quit
             minetest.chat_send_player(pname, "[Tutorial] No tutorial was saved.")
             mc_tutorial.record.temp[pname] = nil
+            mc_tutorial.record.edit[pname] = nil
+            mc_tutorial.record.active[pname] = nil
             save_context(player, nil)
             return -- formspec was closed, do not continue
         end
@@ -1200,8 +1243,58 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
 
         if fields.save then
-            -- TODO: save event to event list
-            minetest.chat_send_player(pname, "[Tutorial] Event saving coming soon!")
+            local action_map = {
+                [mc_tutorial.ACTION.PUNCH] = function()
+                    return {node = fields.node or "", tool = fields.tool or ""}
+                end,
+                [mc_tutorial.ACTION.DIG] = function()
+                    return {node = fields.node or "", tool = fields.tool or ""}
+                end,
+                [mc_tutorial.ACTION.PLACE] = function()
+                    return {node = fields.node or ""}
+                end,
+                [mc_tutorial.ACTION.WIELD] = function()
+                    return {tool = fields.tool or ""}
+                end,
+                --[[[mc_tutorial.ACTION.KEY] = function()
+                    return {} -- TODO
+                end,]]
+                [mc_tutorial.ACTION.LOOK_YAW] = function()
+                    return {dir = fields.yaw or ""}
+                end,
+                [mc_tutorial.ACTION.LOOK_PITCH] = function()
+                    return {dir = fields.pitch or ""}
+                end,
+                --[[[mc_tutorial.ACTION.LOOK_DIR] = function()
+                    if fields.yaw ~= "" or fields.pitch ~= "" then
+                        return {} -- TODO
+                    else
+                        return {x = fields.pos_x or "0", y = fields.pos_y or "0", z = fields.pos_z or "0"}
+                    end
+                end,]]
+                [mc_tutorial.ACTION.POS_ABS] = function()
+                    return {x = fields.pos_x or "0", y = fields.pos_y or "0", z = fields.pos_z or "0"}
+                end,
+            }
+
+            local action = context.epop.i_to_action[context.epop.selected]
+            if action_map[action] then
+                local action_table = action_map[action]()
+                if context.epop.is_edit then
+                    -- Replace action
+                    mc_tutorial.update_tutorial_action(player, context.selected_event, action, action_map[action]())
+                    local col, event_string = event_action_map[action](action_table)
+                    context.events[context.selected_event] = (col or "")..minetest.formspec_escape(event_string or "")
+                else
+                    -- Add new action to end of list
+                    mc_tutorial.register_tutorial_action(player, action, action_table)
+                    local col, event_string = event_action_map[action](action_table)
+                    table.insert(context.events, (col or "")..minetest.formspec_escape(event_string or ""))
+                end
+                minetest.chat_send_player(pname, "[Tutorial] Event saved!")
+            else
+                minetest.chat_send_player(pname, "[Tutorial] No event was saved.")
+            end
             context.epop = nil
             save_context(player, context)
             return mc_tutorial.show_record_fs(player)

@@ -34,7 +34,7 @@ function mc_tutorial.register_tutorial_action(player, action, action_table)
     end
     local pname = player:get_player_name()
 
-    if mc_tutorial.check_privs(player,mc_tutorial.recorder_priv_table) and mc_tutorial.record.active[pname] then
+    if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) and (mc_tutorial.record.active[pname] or mc_tutorial.record.edit[pname]) then
         if not mc_tutorial.record.temp[pname] then
             -- This is the first entry for the tutorial, apply default values
             mc_tutorial.record.temp[pname] = mc_tutorial.get_temp_shell()
@@ -46,7 +46,22 @@ function mc_tutorial.register_tutorial_action(player, action, action_table)
     mc_tutorial.record.temp[pname].has_actions = true
 end
 
--- If needed, this function runs continuously after starting a mc_tutorial.
+function mc_tutorial.update_tutorial_action(player, i, new_action, new_action_table)
+    -- Every entry must have an action and an action table
+    local pname = player:get_player_name()
+    if not new_action or type(new_action_table) ~= "table" or not mc_tutorial.record.temp[pname] then
+        return false
+    end
+
+    if mc_tutorial.check_privs(player,mc_tutorial.recorder_priv_table) and (mc_tutorial.record.active[pname] or mc_tutorial.record.edit[pname]) then
+        new_action_table["action"] = new_action
+        mc_tutorial.record.temp[pname].sequence[i] = new_action_table
+    end
+
+    mc_tutorial.record.temp[pname].has_actions = true
+end
+
+-- If needed, this function runs continuously after starting a tutorial.
 -- It listens for specific actions in the sequence that do not have callbacks (punch, dig, place).
 -- If the action is heard, then it checks against the expected value.
 -- if the action matches the expected value, then the listener registers the completed action.
