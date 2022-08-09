@@ -178,6 +178,15 @@ commands["gen"] = {
         local heightGen = params[2]
         local decGen = params[3]
 
+        if (tonumber(params[4]) == nil and params[4] ~= nil and (params[4] ~= "default")) then
+            return false, "Invalid seaLevel: " .. tostring(params[4]).. " - must be a number or default"
+        end
+
+        if (tonumber(params[5]) == nil and params[5] ~= nil and (params[5] ~= "random")) then
+            return false, "Invalid seed: " .. tostring(params[5]).. " - must be a number or random"
+        end
+
+
         local seaLevel = requestedRealm.StartPos.y
         if (tonumber(params[4]) == nil) then
             seaLevel = seaLevel + 30
