@@ -54,7 +54,7 @@ local selectedRealm = 0
 function mc_tutorialFramework.addTutorialEntry(name, description, schematic)
         name = name or "Unknown Tutorial"
         description = description or "Unknown Tutorial"
-        schematic = schematic or "shack"
+        schematic = schematic or nil
 
         -- Add tutorial to the text list
 		local textlist = mc_tf_menu[#mc_tf_menu]
@@ -70,11 +70,6 @@ function mc_tutorialFramework.addTutorialEntry(name, description, schematic)
 
         table.insert(tutorialTable, { name = name, description = description, schematic = schematic})
 end
-
-mc_tutorialFramework.addTutorialEntry("Introduction", "Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.")
-mc_tutorialFramework.addTutorialEntry("Test", "testing", "shack")
-mc_tutorialFramework.addTutorialEntry("Movement", "This tutorial explains how to walk in different directions, jump, and fly. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.", "movementTutorial")
-mc_tutorialFramework.addTutorialEntry("Punch a Block", "This tutorial explains how to punch/destroy/mine blocks using various tools. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.", "punchABlock")
 
 local function show_tutorial_menu(player)
 	if check_perm(player) then
@@ -94,7 +89,6 @@ end
 minetest.register_tool("mc_tf:tutorialbook" , {
 	description = "Tutorial book",
 	inventory_image = "tutorial_book.png",
-	_mc_privs = { shout = true },
 	-- Left-click the tool activates the tutorial menu
 	on_use = function (itemstack, user, pointed_thing)
         local pname = user:get_player_name()
@@ -111,6 +105,10 @@ minetest.register_tool("mc_tf:tutorialbook" , {
 	on_drop = function(itemstack, dropper, pos)
 	end,
 })
+
+if minetest.get_modpath("mc_toolhandler") then
+	mc_toolhandler.register_tool_manager("mc_tf:tutorialbook", {privs = {shout = true}, inv_override = "main"})
+end
 
 minetest.register_alias("tutorialbook", "mc_tf:tutorialbook")
 tutorialbook = minetest.registered_aliases[tutorialbook] or tutorialbook
@@ -137,33 +135,31 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 	end
 
-	if fields.teleport then
-		if selectedRealm ~= 0 and selectedRealm ~= nil then
-			selectedRealm = mc_realmportals.CreateGetRealm(tutorialTable[selectedRealm].name, tutorialTable[selectedRealm].schematic)
-			selectedRealm:TeleportPlayer(player)
-		end
-	end
+    if fields.teleport then
+        if selectedEntry ~= 1 and selectedEntry ~= nil then
+
+            Debug.log(selectedEntry)
+
+            local tutorialInfo = tutorialTable[selectedEntry]
+
+            if (tutorialInfo == nil) then
+                Debug.log("Tutorial not found")
+                return
+            end
+
+            local realmName = tutorialInfo.name
+            local realmSchematic = tutorialInfo.schematic
+            local realm = mc_worldManager.GetCreateInstancedRealm(realmName, player, realmSchematic, true)
+
+            realm:TeleportPlayer(player)
+        end
+    end
 end)
 
---[[ handled in mc_toolhandler
--- Give the tutorialbook to any player who joins with shout privileges or take them away if they do not have shout
-minetest.register_on_joinplayer(function(player)
-	local inv = player:get_inventory()
-	if inv:contains_item("main", ItemStack("mc_tf:tutorialbook")) then
-		if check_perm(player) then
-			return
-		else
-			player:get_inventory():remove_item('main', 'mc_tf:tutorialbook')
-		end
-	else
-		if check_perm(player) then
-			player:get_inventory():add_item('main', 'mc_tf:tutorialbook')
-		else
-			return
-		end
-	end
-end)
-]]
+mc_tutorialFramework.addTutorialEntry("Introduction", "Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.")
+mc_tutorialFramework.addTutorialEntry("Test", "testing", "shack")
+mc_tutorialFramework.addTutorialEntry("Movement", "This tutorial explains how to walk in different directions, jump, and fly. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.", "movementTutorial")
+mc_tutorialFramework.addTutorialEntry("Punch a Block", "This tutorial explains how to punch/destroy/mine blocks using various tools. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.", "punchABlock")
 
 --    END TUTORIAL FUNCTIONS    --
 ----------------------------------

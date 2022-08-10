@@ -1,10 +1,16 @@
 -- Global variables
 minetest_classroom.reports = minetest.get_mod_storage()
 minetest_classroom.mc_students = {teachers = {}}
+mc_student = {
+	path = minetest.get_modpath("mc_student"),
+	priv_table = {interact = true}
+}
+
+dofile(mc_student.path .. "/tutorialbook.lua")
 
 -- Local variables
 local tool_name = "mc_student:notebook"
-local priv_table = {interact = true}
+local priv_table = mc_student.priv_table
 
 -- Split pos in coordlist from character "x=1 y=2 z=3" to numeric table {1,2,3}
 local function pos_split (inputstr)
@@ -107,8 +113,8 @@ local function record_coordinates(player,message)
 		temp = minetest.deserialize(pmeta:get_string("coordinates"))
 		if temp == nil then
 			datanew = {
-				coords = {"x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z), }, 
-				notes = { message, }, 
+				coords = {"x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z), },
+				notes = { message, },
 			}
 		else
 			table.insert(temp.coords, "x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z))
@@ -151,7 +157,7 @@ local mc_student_accesscode_fail = {
 	"label[1.2,3.7;Please try again.]",
 	"button_exit[4.4,0;0.6,0.5;exit;X]"
 }
-	
+
 local function show_accesscode_fail(player)
 	if mc_helpers.checkPrivs(player,priv_table) then
 		local pname = player:get_player_name()
@@ -179,101 +185,20 @@ local mc_student_marker = {
 	end
 end
 
-----------------------------------
---    TUTORIAL BOOK FUNCTIONS   --
-----------------------------------
-
--- Define a formspec that will describe tutorials and give the option to teleport to selected tutorial realm
-local mc_student_tutorial_menu = {
-	"formspec_version[5]",
-	"size[13,10]",
-	"button[0.2,0.2;4.6,0.8;intro;Introduction]",
-	"box[0.2,8.4;10.2,1.4;#505050]",
-	"button[0.2,1.2;4.6,0.8;mov;Movement]",
-	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]",
-	"textarea[5,0.2;7.8,8;text;;Welcome to Minetest Classroom! To access tutorials, select the topic you would like to learn about on the left. Tutorials can also be accessed via portals that will teleport you to the tutorial relevant to the area you are in. To use a portal, stand in the wormhole until it transports you to a new area. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in.]",
-	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]",
-	"box[10.7,8.4;2.1,1.4;#C0C0C0]",
-	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
-}
-
-local function show_tutorial_menu(player)
-	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:tutorial_menu", table.concat(mc_student_tutorial_menu,""))
-		return true
-	end
-end
-
-mc_student_mov = {
-	"formspec_version[5]",
-	"size[13,10]",
-	"button[0.2,0.2;4.6,0.8;intro;Introduction]",
-	"box[0.2,8.4;10.2,1.4;#505050]",
-	"button[0.2,1.2;4.6,0.8;mov;Movement]",
-	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]",
-	"textarea[5,0.2;7.8,8;text;;This tutorial explains how to walk in different directions, jump, and fly. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.]",
-	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]",
-	"box[10.7,8.4;2.1,1.4;#C0C0C0]",
-	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
-}
-
-local function show_mov(player) 
-	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:mov", table.concat(mc_student_mov,""))
-		return true
-	end
-end
-
-mc_student_punch = {
-    "formspec_version[5]",
-	"size[13,10]" ,
-	"button[0.2,0.2;4.6,0.8;intro;Introduction]",
-	"box[0.2,8.4;10.2,1.4;#505050]",
-	"button[0.2,1.2;4.6,0.8;mov;Movement]",
-	"button[0.2,2.2;4.6,0.8;punch;Punch A Block]",
-	"textarea[5,0.2;7.8,8;text;;This tutorial explains how to punch and place blocks, which will allow you to add materials to your inventory and build. To enter the tutorial, press the 'Teleport to Tutorial' button below. Once you are in the tutorial realm, you can use the portal again to return to the area you were previously in. If you need a reminder on how to use portals, go to 'Introduction'.]",
-	"button[0.4,8.7;9.8,0.8;teleport;Teleport to Tutorial]",
-	"box[10.7,8.4;2.1,1.4;#C0C0C0]",
-	"button_exit[11,8.65;1.5,0.9;exit;Exit]"
-}
-
-local function show_punch(player) 
-	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:punch", table.concat(mc_student_punch,""))
-		return true
-	end
-end
-
-----------------------------------
---    END TUTORIAL FUNCTIONS    --
-----------------------------------
-
 -- Processing the form from the menu
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if string.sub(formname, 1, 10) ~= "mc_student" then
 		return false
 	end
-	
+
 	local wait = os.clock()
 	while os.clock() - wait < 0.05 do end --popups don't work without this
 
 	-- Menu
-	if formname == "mc_student:menu" then 
-        if fields.spawn then
-            -- TODO: dynamically extract the static spawn point from the minetest.conf file
-            -- local cmeta = Settings(minetest.get_modpath("mc_teacher").."/maps/"..map..".conf")
-            -- local spawn_pos_x = tonumber(cmeta:get("spawn_pos_x"))
-            -- local spawn_pos_y = tonumber(cmeta:get("spawn_pos_y"))
-            -- local spawn_pos_z = tonumber(cmeta:get("spawn_pos_z"))
-            local spawn_pos = {
-                x = 1426,
-                y = 92,
-                z = 1083,
-            }
-            player:set_pos(spawn_pos)
+	if formname == "mc_student:menu" then
+		if fields.spawn then
+			local spawnRealm = mc_worldManager.GetSpawnRealm()
+			spawnRealm:TeleportPlayer(player)
         elseif fields.report then
 			show_report(player)
 		elseif fields.coordinates then
@@ -298,7 +223,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		-- Checking for nil (caused by player pressing escape instead of Back) ensures the game does not crash
 		elseif fields.report ~= " " and fields.report ~= nil then
 			local pname = player:get_player_name()
-			
+
 			-- Count the number of words, by counting for replaced spaces
 			-- Number of spaces = Number of words - 1
 			local _, count = string.gsub(fields.report, " ", "")
@@ -311,18 +236,21 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 			-- Append list of teachers in-game
 			local teachers = ""
+
 			for teacher in pairs(minetest_classroom.mc_students.teachers) do
-				local teachers = teachers .. teacher .. ", "
+				teachers = teachers .. teacher .. ", "
 			end
 
-			if teachers ~= "" then
+			if #minetest_classroom.mc_students.teachers then
 				local msg = '[REPORT] ' .. msg .. " (teachers online: " .. teachers:sub(1, -3) .. ")"
 				-- Send report to any teacher currently connected
 				for teacher in pairs(minetest_classroom.mc_students.teachers) do
 					minetest.chat_send_player(teacher, minetest.colorize("#FF00FF", msg))
+					minetest.sound_play("report_alert", {to_player = teacher, gain = 1.0, pitch = 1.0,}, true)
+
 				end
 			end
-			
+
 			-- Archive the report in mod storage
 			local key = pname.." "..tostring(os.date("%d-%m-%Y %H:%M:%S"))
 			minetest_classroom.reports:set_string(key,
@@ -336,7 +264,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF0000","Error: Please add a message to your report."))
 		end
 	end
-	
+
 	if formname == "mc_student:marker" then
 		if fields.back then
 			show_student_menu(player)
@@ -346,7 +274,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			return true
 		end
 	end
-	
+
 	if formname == "mc_student:coordinates" then
 		if fields.back then
 			show_student_menu(player)
@@ -374,17 +302,17 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			show_coordinates(player)
 		end
 	end
-	
+
 	if formname == "mc_student:accesscode" or formname == "mc_student:accesscode_fail" then
 		if fields.exit then
 			return
 		end
-		
+
 		local pname = player:get_player_name()
-		
+
 		-- Get the classrooms from modstorage
 		local temp = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
-			
+
 		if temp ~= nil then
 			-- Get the classroom accesscodes
 			local loc = check_access_code(fields.accesscode,temp.access_code)
@@ -405,6 +333,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						end_year = { mdata.end_year[loc] },
 						end_month = { mdata.end_month[loc] },
 						end_day = { mdata.end_day[loc] },
+						realm_id = { mdata.realm_id[loc] },
 					}
 					pmeta:set_string("classrooms", minetest.serialize(classroomdata))
 				else
@@ -426,6 +355,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						end_year = pdata.end_year,
 						end_month = pdata.end_month,
 						end_day = pdata.end_day,
+						realm_id = pdata.realm_id,
 					}
 				end
 
@@ -433,38 +363,27 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				if tonumber(mdata.end_year[loc]) < tonumber(os.date("%Y")) and months[mdata.end_month[loc]] < tonumber(os.date("%m")) and tonumber(mdata.end_day[loc]) < tonumber(os.date("%d")) then
 					minetest.chat_send_player(pname,pname..": The access code you entered has expired. Please contact your instructor.")
 				else
-					-- Send the student to the classroom spawn pos
-					player:set_pos(mdata.spawn_pos[loc])
+
+                    local realm = Realm.GetRealm(mdata.realm_id[loc])
+
+                    if (realm ~= nil) then
+
+                        local students = realm:get_data("students")
+                        if students == nil then
+                            students = {}
+                        end
+                        students[player:get_player_name()] = true
+                        realm:set_data("students", students)
+
+                        realm:TeleportPlayer(player)
+                        minetest.chat_send_player(pname, pname .. ": You have been teleported to the classroom.")
+                    end
 				end
 			else
 				show_accesscode_fail(player)
-			end		
+			end
 		else
-			return	
-		end
-	end
-
-	if formname == "mc_student:tutorial_menu" then
-        if fields.mov then
-			show_mov(player)
-		elseif fields.punch then
-			show_punch(player)
-		end
-	end
-
-	if formname == "mc_student:mov" then
-        if fields.intro then
-            show_tutorial_menu(player)
-		elseif fields.punch then
-			show_punch(player)
-		end
-	end
-
-	if formname == "mc_student:punch" then
-        if fields.intro then
-            show_tutorial_menu(player)
-		elseif fields.mov then
-			show_mov(player)
+			return
 		end
 	end
 end)
@@ -486,7 +405,6 @@ end
 minetest.register_tool(tool_name , {
 	description = "Notebook for students",
 	inventory_image = "notebook.png",
-	_mc_privs = priv_table,
 	-- Left-click the tool activates the teacher menu
 	on_use = function (itemstack, player, pointed_thing)
         local pname = player:get_player_name()
@@ -500,87 +418,9 @@ minetest.register_tool(tool_name , {
 	end,
 })
 
---[[
--- Give the notebook and tutorialbook to any player who joins with shout privileges or take them away if they do not have shout
-
--- Tool handling functions:
-    -- Give the notebook to any player who joins with adequate privileges or take away the notebook if they do not have them
-    -- Give the notebook to any player who is granted adequate privileges
-    -- Take the notebook away from anyone who is revoked privileges and no longer has adequate ones
-minetest.register_on_joinplayer(function(player)
-	local inv = player:get_inventory()
-	if inv:contains_item("main", ItemStack(tool_name)) then
-		-- Player has the notebook
-		if mc_helpers.checkPrivs(player,priv_table) then
-			-- The player should have the notebook
-			return
-		else
-			-- The player should not have the notebook
-			player:get_inventory():remove_item('main', tool_name)
-		end
-	else
-		-- Player does not have the notebook
-		if mc_helpers.checkPrivs(player,priv_table) then
-			-- The player should have the notebook
-			player:get_inventory():add_item('main', tool_name)
-		else
-			-- The player should not have the notebook
-			return
-		end
-	end
-
-	-- Keeping as separate statement for now in case we don't want the tutorialbook as its own item
-	if inv:contains_item("main", ItemStack("mc_student:tutorialbook")) then
-		if mc_helpers.checkPrivs(player,priv_table) then
-			return
-		else
-			player:get_inventory():remove_item('main', 'mc_student:tutorialbook')
-		end
-	else
-		if mc_helpers.checkPrivs(player,priv_table) then
-			player:get_inventory():add_item('main', 'mc_student:tutorialbook')
-		else
-			return
-		end
-	end
-end)
-
--- Give the notebook to any player who is granted adequate privileges
-minetest.register_on_priv_grant(function(name, granter, priv)
-    -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not mc_helpers.tableHas(priv_table, priv) or not minetest.get_player_by_name(name) then
-        return true -- skip this callback, continue to next callback
-    end
-
-    local player = minetest.get_player_by_name(name)
-    local inv = player:get_inventory()
-
-    if (not inv:contains_item("main", ItemStack(tool_name))) and mc_helpers.checkPrivs(player,priv_table) then
-        -- Give the player the tool
-        player:get_inventory():add_item('main', tool_name)
-    end
-
-    return true -- continue to next callback
-end)
-
--- Take the notebook away from anyone who is revoked privileges and no longer has adequate ones
-minetest.register_on_priv_revoke(function(name, revoker, priv)
-    -- Check if priv has an effect on the privileges needed for the tool
-    if name == nil or not mc_helpers.tableHas(priv_table, priv) or not minetest.get_player_by_name(name) then
-        return true -- skip this callback, continue to next callback
-    end
-
-    local player = minetest.get_player_by_name(name)
-    local inv = player:get_inventory()
-	
-    if inv:contains_item("main", ItemStack(tool_name)) and (not mc_helpers.checkPrivs(player,priv_table)) then
-        -- Take the tool away from the player
-        player:get_inventory():remove_item('main', tool_name)
-    end
-
-    return true -- continue to next callback
-end)
-]]
+if minetest.get_modpath("mc_toolhandler") then
+	mc_toolhandler.register_tool_manager(tool_name, {privs = priv_table, inv_override = "main"})
+end
 
 -- Functions and variables for placing markers
 hud = mhud.init()
@@ -604,7 +444,7 @@ function add_marker(pname, message, pos, owner)
 		})
 	end
 end
-	
+
 function markers.add(pname, msg, pos)
 
 	if markers[pname] then
@@ -707,7 +547,7 @@ function place_marker(player,message)
 			true, false
 		))
 		local pointed = ray:next()
-		
+
 		if message == "" then
 			message = "Look here!"
 		end

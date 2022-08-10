@@ -27,7 +27,6 @@ minetest.register_tool(tool_name, {
     _doc_items_longdesc = "This tool can be used to quickly learn more about about one's closer environment. It identifies and analyzes plant-type blocks and it shows extensive information about the thing on which it is used.",
     _doc_items_usagehelp = "Punch any block resembling a plant you wish to learn more about. This will open up the appropriate help entry.",
     _doc_items_hidden = false,
-    _mc_privs = priv_table,
     tool_capabilities = {},
     range = 10,
     groups = { disable_repair = 1 }, 
@@ -72,6 +71,10 @@ minetest.register_tool(tool_name, {
         end
     end
 })
+
+if minetest.get_modpath("mc_toolhandler") then
+	mc_toolhandler.register_tool_manager(tool_name, {privs = priv_table})
+end
 
 -- Register tool aliases for convenience
 minetest.register_alias("magnify:magnifying_glass", tool_name)
@@ -440,6 +443,8 @@ end
             elseif context.species_view == TECH_VIEW then
                 formtable,size = get_expanded_species_formspec(ref)
             end
+                
+            minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
 
             if not formtable then
                 formtable = "label[0,0;Uh oh, something went wrong...]button[0,0.5;5,0.6;back;Back]" -- fallback
