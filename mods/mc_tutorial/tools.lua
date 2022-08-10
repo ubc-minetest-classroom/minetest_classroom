@@ -2,7 +2,6 @@
 minetest.register_tool("mc_tutorial:tutorialbook" , {
 	description = "Tutorial book",
 	inventory_image = "mc_tutorial_tutorialbook.png",
-    _mc_tool_privs = mc_tutorial.player_priv_table,
 	-- Left-click the tool activates the tutorial menu
 	on_use = function(itemstack, player, pointed_thing)
         local pname = player:get_player_name()
@@ -16,9 +15,12 @@ minetest.register_tool("mc_tutorial:tutorialbook" , {
         return
 	end,
 })
-
 minetest.register_alias("tutorialbook", "mc_tutorial:tutorialbook")
 mc_tutorial.tutorialbook = minetest.registered_aliases[tutorialbook] or mc_tutorial.tutorialbook
+
+if minetest.get_modpath("mc_toolhandler") then
+	mc_toolhandler.register_tool_manager("mc_tutorial:tutorialbook", {privs = mc_tutorial.player_priv_table, inv_override = "main"})
+end
 
 local function open_recording_menu(itemstack, player, pointed_thing)
     local pname = player:get_player_name()
@@ -41,7 +43,6 @@ minetest.register_tool("mc_tutorial:recording_tool", {
     _doc_items_longdesc = "This tool can be used to record a sequence of action callbacks (punch, dig, place, position, look directions, and key strikes) that are stored in a tutorial table.",
     _doc_items_usagehelp = "Using the tool (left-click) to start the recording, perform some actions, and use it again to stop the recording sequence. While a recording is active, right-click the tool to access additional recording options.",
     _doc_items_hidden = false,
-    _mc_tool_privs = mc_tutorial.recorder_priv_table,
     tool_capabilities = {},
     range = 100,
     groups = { disable_repair = 1 }, 
@@ -84,3 +85,7 @@ minetest.register_tool("mc_tutorial:recording_tool", {
 
 minetest.register_alias("recording_tool", "mc_tutorial:recording_tool")
 mc_tutorial.recording_tool = minetest.registered_aliases[recording_tool] or mc_tutorial.recording_tool
+
+if minetest.get_modpath("mc_toolhandler") then
+	mc_toolhandler.register_tool_manager("mc_tutorial:recording_tool", {privs = mc_tutorial.recorder_priv_table})
+end
