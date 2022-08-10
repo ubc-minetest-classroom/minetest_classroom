@@ -81,12 +81,17 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     end
 
     -- Set our new spawnpoint
-    local oldSpawnPos = self.SpawnPoint
-    local surfaceLevel = ptable.get2D(heightMapTable, { x = oldSpawnPos.x, y = oldSpawnPos.z })
+    local spawnPos = self.SpawnPoint
+    local surfaceLevel = ptable.get2D(heightMapTable, { x = spawnPos.x, y = spawnPos.z })
 
     if (surfaceLevel == nil) then
-        surfaceLevel = self.EndPos.y - 5
+        local spawnPos = { x = (self.StartPos.x + self.EndPos.x) / 2, y = (self.StartPos.y + self.EndPos.y) / 2, z = (self.StartPos.z + self.EndPos.z) / 2 }
+        surfaceLevel = ptable.get2D(heightMapTable, { x = spawnPos.x, y = spawnPos.z })
+
+        if (surfaceLevel == nil) then
+            surfaceLevel = self.EndPos.y - 5
+        end
     end
 
-    self:UpdateSpawn(self:WorldToLocalSpace({ x = oldSpawnPos.x, y = surfaceLevel + 1, z = oldSpawnPos.z }))
+    self:UpdateSpawn(self:WorldToLocalSpace({ x = spawnPos.x, y = surfaceLevel + 1, z = spawnPos.z }))
 end
