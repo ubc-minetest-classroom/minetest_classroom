@@ -144,16 +144,6 @@ end
 --- COORDINATES ---
 local selectedCoord = 0
 
--- Split pos in coordlist from character "x=1 y=2 z=3" to numeric table {1,2,3}
-local function pos_split (inputstr)
-	local t={}
-	for str in string.gmatch(inputstr, "([^=%s]+)") do
-		table.insert(t, str)
-	end
-	local tt={x=tonumber(t[2]),z=tonumber(t[6]),y=tonumber(t[4])}
-	return tt
-end
-
 mc_student_coordinates = {
 	"formspec_version[6]",
 	"size[11.1,9.3]",
@@ -179,16 +169,38 @@ local function show_coordinates(player)
 		table.insert(coordsList, "No Coordinates Stored")
 	else
 		local prealms = pdata.realms
-		local pxyz = pdata.coords
+		local pcoords = pdata.coords
+		local pxyz = pdata.coords1
 		local pnotes = pdata.notes
 
 		if pxyz then
 			for i in pairs(pxyz) do
-				if i == #pxyz then
-					table.insert(coordsList, Realm.GetRealm(prealms[i]).Name .. " " .. pxyz[i] .. "\\, " .. pnotes[i])
+				local realm = Realm.GetRealm(prealms[i])
+				local pos = pcoords[i]
+				local worldStr = "x=" .. math.floor(pos.x) .. " y=" .. math.floor(pos.y) .. " z=" .. math.floor(pos.z)
+				local utm = realm:WorldToUTMSpace(pos)
+				local utmStr = "x=" .. math.floor(utm.x) .. " y=" .. math.floor(utm.y) .. " z=" .. math.floor(utm.z)
+				local latlong = realm:WorldToLatLongSpace(pos)
+				local latLongStr = "x=" .. math.floor(latlong.x) .. " z=" .. math.floor(latlong.z)
+				local entry = realm.Name .. " "
+
+				if utm then
+					entry = entry .. utmStr
 				else
-					table.insert(coordsList, Realm.GetRealm(prealms[i]).Name .. " " .. pxyz[i] .. "\\, " .. pnotes[i] .. ",")
+					entry = entry .. worldStr
 				end
+
+				if latlong then
+					entry = entry .. "\\, LL:" .. latLongStr
+				end
+
+				entry = entry .. "\\, " .. pnotes[i]
+
+				if i ~= #pxyz then
+					entry = entry .. ","
+				end
+
+				table.insert(coordsList, entry)
 			end
 		end
 	end
@@ -207,14 +219,16 @@ local function record_coordinates(player,message)
 		if temp == nil then
 			datanew = {
 				realms = { realmID, },
-				coords = {"x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z), },
+				coords = { pos, }, 
+				coords1 = {"x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z), },
 				notes = { message, },
 			}
 		else
 			table.insert(temp.realms, realmID)
-			table.insert(temp.coords, "x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z))
+			table.insert(temp.coords, pos)
+			table.insert(temp.coords1, "x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z))
 			table.insert(temp.notes, message)
-			datanew = {realms = temp.realms, coords = temp.coords, notes = temp.notes, }
+			datanew = {realms = temp.realms, coords = temp.coords, coords1 = temp.coords1, notes = temp.notes, }
 		end
 
 		pmeta:set_string("coordinates", minetest.serialize(datanew))
@@ -344,9 +358,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 		elseif fields.go then
 			if selectedCoord ~= 0 then
-				local new_pos_char = minetest.deserialize(pmeta:get_string("coordinates")).coords[selectedCoord]
-				local new_pos_tab = pos_split(new_pos_char)
-				player:set_pos(new_pos_tab)
+				local new_pos = minetest.deserialize(pmeta:get_string("coordinates")).coords[selectedCoord]
+				player:set_pos(new_pos)
 			end
 		elseif fields.delete then
 			local data = minetest.deserialize(pmeta:get_string("coordinates"))
