@@ -142,7 +142,7 @@ end
 
 -------------------
 --- COORDINATES ---
-local selectedCoord = 1
+local selectedCoord = 0
 
 -- Split pos in coordlist from character "x=1 y=2 z=3" to numeric table {1,2,3}
 local function pos_split (inputstr)
@@ -168,6 +168,8 @@ mc_student_coordinates = {
 }
 
 local function show_coordinates(player)
+	selectedCoord = 0
+
 	-- Get the stored coordinates for the player
 	local coordsList = {}
 	local pmeta = player:get_meta()
@@ -341,9 +343,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				selectedCoord = event.index
 			end
 		elseif fields.go then
-		    local new_pos_char = minetest.deserialize(pmeta:get_string("coordinates")).coords[selectedCoord]
-			local new_pos_tab = pos_split(new_pos_char)
-		    player:set_pos(new_pos_tab)
+			if selectedCoord ~= 0 then
+				local new_pos_char = minetest.deserialize(pmeta:get_string("coordinates")).coords[selectedCoord]
+				local new_pos_tab = pos_split(new_pos_char)
+				player:set_pos(new_pos_tab)
+			end
 		elseif fields.delete then
 			local data = minetest.deserialize(pmeta:get_string("coordinates"))
 			local newCoords, newNotes = {}, {}	
