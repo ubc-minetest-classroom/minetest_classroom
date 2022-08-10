@@ -225,6 +225,32 @@ function magnify.get_all_registered_species()
     return name_table, ref_keys
 end
 
+--- @public
+--- Returns a tree of all the species registered in the `magnify` species database, indexed by family name
+--- Each family points to a table indexed by genus name, each genus points to a table indexed by species name, each species points to its associated reference key
+--- @return table
+function magnify.get_registered_species_tree()
+    local storage_data = magnify.species.ref:to_table()
+    local fam_list = {}
+
+    for k,v in pairs(storage_data.fields) do
+        local info = minetest.deserialize(v)
+        if info and tonumber(k) then
+            local split_table = info.sci_name and string.split(info.sci_name, " ", false, 1)
+            if split_table then
+                local genus, species = unpack(split_table)
+                local genus_list = fam_list[info.fam_name] or {}
+                local species_list = genus_list[genus] or {}
+
+                species_list[species] = k
+                genus_list[genus] = species_list
+                fam_list[info.fam_name] = genus_list
+            end
+        end
+    end
+    return fam_list
+end
+
 --- @private
 --- Returns the path of obj in origin's mod directory, or nil if obj could not be found
 --- @param origin Name of mod whose directory should be searched
@@ -338,14 +364,14 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
             "label[6.7,0.3;Plant Compendium]",
             "button", is_exit and "_exit" or "", "[0.2,0.8;1.6,0.6;back;      Back]",
             "image[0.2,0.8;0.6,0.6;texture.png]",
-            "button[7.5,0.8;3.2,0.6;locate;      Locate in World]",
-            "image[7.5,0.8;0.6,0.6;texture.png]",
-            "button[10.9,0.8;4.1,0.6;view;      View in Compendium]",
-            "image[10.9,0.8;0.6,0.6;texture.png]",
-            "button[15.2,0.8;1.6,0.6;save;      Save]",
-            "image[15.2,0.8;0.6,0.6;texture.png]",
-            "box[0.2,1.4;16.6,4.8;#FFFFFF]",
-            "box[0.3,1.5;8.9,4.6;#000000]",
+            "button[3.9,0.8;4.1,0.6;view;      View in Compendium]",
+            "image[3.9,0.8;0.6,0.6;texture.png]",
+            "button[8.1,0.8;3.2,0.6;locate;      Locate in World]",
+            "image[8.1,0.8;0.6,0.6;texture.png]",
+            "button[11.4,0.8;3,0.6;tech_view;      Technical Info]",
+            "image[11.4,0.8;0.6,0.6;texture.png]",
+            "button[14.5,0.8;2.3,0.6;favourite;      Favourite]",
+            "image[14.5,0.8;0.6,0.6;texture.png]",
 
             "style_type[textarea;font=mono]",
             "textarea[0.45,1.7;8.6,0.8;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
@@ -383,19 +409,19 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
         
         if model_spec_loc then
               -- add model + image 6
-              local model_spec = read_obj_textures(model_spec_loc)
-              table.insert(formtable_v3, table.concat({
+            local model_spec = read_obj_textures(model_spec_loc)
+            table.insert(formtable_v3, table.concat({
                 "style[plant_model;bgcolor=#789cbf]",
                 "model[", "9.3,7.4;3.7,4.6", ";plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";", info.model_rot_x or "0", ",", info.model_rot_y or "180", ";false;true;;]",
                 "image[", "13.1,7.4;3.7,4.6", ";", (type(info.texture) == "table" and info.texture[6]) or "test.png", "]",
-              }))
+            }))
         else
-              -- add images 6 + 7
-              table.insert(formtable_v3, table.concat({
+            -- add images 6 + 7
+            table.insert(formtable_v3, table.concat({
                 "image[9.3,7.4;3.7,4.6;", (type(info.texture) == "table" and info.texture[6]) or "test.png", "]",
                 "image[13.1,7.4;3.7,4.6;", (type(info.texture) == "table" and info.texture[7]) or "test.png", "]",
-              }))
-          end
+            }))
+        end
     
         table.insert(formtable_v3, table.concat({
             "style_type[textarea;font=normal,italic;font_size=*0.85]",
@@ -418,26 +444,27 @@ box[0,0;17,0.6;#FFFFFF]
 label[6.7,0.3;Plant Compendium]
 button[0.2,0.8;1.6,0.6;back;      Back]
 image[0.2,0.8;0.6,0.6;texture.png]
-button[7.5,0.8;3.2,0.6;locate;      Locate in World]
-image[7.5,0.8;0.6,0.6;texture.png]
-button[10.9,0.8;4.1,0.6;view;      View in Compendium]
-image[10.9,0.8;0.6,0.6;texture.png]
-button[15.2,0.8;1.6,0.6;save;      Save]
-image[15.2,0.8;0.6,0.6;texture.png]
+button[3.9,0.8;4.1,0.6;view;      View in Compendium]
+image[3.9,0.8;0.6,0.6;texture.png]
+button[8.1,0.8;3.2,0.6;locate;      Locate in World]
+image[8.1,0.8;0.6,0.6;texture.png]
+button[11.4,0.8;3,0.6;tech_view;      Technical Info]
+image[11.4,0.8;0.6,0.6;texture.png]
+button[14.5,0.8;2.3,0.6;favourite;      Favourite]
+image[14.5,0.8;0.6,0.6;texture.png]
 box[0.2,1.4;16.6,4.8;#FFFFFF]
 box[0.3,1.5;8.9,4.6;#000000]
 textarea[0.45,1.7;8.6,0.8;;;Family:]
 textarea[0.45,2.4;8.6,1;;;Scientific Name]
 textarea[0.45,2.9;8.6,1.8;;;COMMON NAME]
-box[0.5,4.1;1.4,0.6;#0000FF]
-label[0.7,4.4;Status]
-box[2.1,4.1;1.2,0.6;#00FF00]
-label[2.3,4.4;Type]
-box[3.5,4.1;1.5,0.6;#00FF00]
-label[3.7,4.4;Type 2]
-box[5.2,4.1;1.5,0.6;#FFA500]
-label[5.4,4.4;Type 3]
-textarea[0.5,5.3;8.6,0.7;;Other common names:;Add names here!]
+box[0.5,5.3;1.4,0.6;#9192A3]
+label[0.7,5.6;Status]
+box[2.1,5.3;1.2,0.6;#00FF00]
+label[2.3,5.6;Type]
+box[3.5,5.3;1.5,0.6;#00FF00]
+label[3.7,5.6;Type 2]
+box[5.2,5.3;1.5,0.6;#FFA500]
+label[5.4,5.6;Type 3]
 image[9.3,1.5;7.4,4.15;texture.png]
 textarea[9.3,5.65;7.4,0.7;;;Image (c) author]
 textarea[0.2,6.3;9,5.7;;;Add information here!]

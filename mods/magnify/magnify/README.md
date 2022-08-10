@@ -2,7 +2,7 @@
 
 Adds a magnifying glass tool and inventory plant compenium for viewing information about various plant species in the MineTest world
 
-*Version: v0.10.0*  
+*Version: v0.10.1*  
 *Dependencies: [`sfinv`](https://github.com/rubenwardy/sfinv)*
 
 ## API
@@ -103,6 +103,14 @@ Returns the species definition table of the species indexed at `ref` in the `mag
   - *`table`*: Table of all nodes associated with the species  
   *OR*
   - `nil` if `ref` is invalid
+
+### `magnify.get_registered_species_tree()  -->  table`
+
+Returns a tree of all the species registered in the `magnify` species database, indexed by family name
+Each family points to a table indexed by genus name, each genus points to a table indexed by species name, each species points to its associated reference key
+
+- Returns:
+  - *`table`*: Tree containing all registered species, indexed by family name
 
 ### `magnify.get_all_registered_species()  -->  table, table`
 

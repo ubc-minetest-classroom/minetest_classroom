@@ -4,8 +4,8 @@ magnify.map.ns_bc = {
     ["S3"] = {col = "#e0dd10", desc = "Special concern"}, -- colour TBD
     ["S2"] = {col = "#f7ab31", desc = "Imperiled"}, -- colour TBD
     ["S1"] = {col = "#f25e44", desc = "Critically imperiled"}, -- colour TBD
-    ["SH"] = {col = "#5c5152", desc = "Possibly extirpated"}, -- colour TBD
-    ["SX"] = {col = "#242424", desc = "Presumed extirpated"}, -- colour TBD
+    ["SH"] = {col = "#5c5152", desc = "Possibly extinct"}, -- colour TBD
+    ["SX"] = {col = "#242424", desc = "Presumed extinct"}, -- colour TBD
     ["SU"] = {col = "#87877f", desc = "Unrankable"}, -- colour TBD
     ["NR"] = {col = "#808080", desc = "Unranked"},
     ["SNR"] = {col = "#808080", desc = "Unranked"},
@@ -19,8 +19,8 @@ magnify.map.ns_global = {
     ["G3"] = {col = "#e0dd10", desc = "Vulnerable"}, -- colour TBD
     ["G2"] = {col = "#f7ab31", desc = "Imperiled"}, -- colour TBD
     ["G1"] = {col = "#f25e44", desc = "Critically imperiled"}, -- colour TBD
-    ["GH"] = {col = "#5c5152", desc = "Possibly extirpated"}, -- colour TBD
-    ["GX"] = {col = "#242424", desc = "Presumed extirpated"}, -- colour TBD
+    ["GH"] = {col = "#5c5152", desc = "Possibly extinct"}, -- colour TBD
+    ["GX"] = {col = "#242424", desc = "Presumed extinct"}, -- colour TBD
     ["GU"] = {col = "#87877f", desc = "Unrankable"}, -- colour TBD
     ["NR"] = {col = "#808080", desc = "Unranked"},
     ["GNR"] = {col = "#808080", desc = "Unranked"},
