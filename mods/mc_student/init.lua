@@ -236,6 +236,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 			-- Append list of teachers in-game
 			local teachers = ""
+
 			for teacher in pairs(minetest_classroom.mc_students.teachers) do
 				teachers = teachers .. teacher .. ", "
 			end
@@ -404,7 +405,6 @@ end
 minetest.register_tool(tool_name , {
 	description = "Notebook for students",
 	inventory_image = "notebook.png",
-	_mc_tool_privs = priv_table,
 	-- Left-click the tool activates the teacher menu
 	on_use = function (itemstack, player, pointed_thing)
         local pname = player:get_player_name()
@@ -417,6 +417,10 @@ minetest.register_tool(tool_name , {
 	on_drop = function(itemstack, dropper, pos)
 	end,
 })
+
+if minetest.get_modpath("mc_toolhandler") then
+	mc_toolhandler.register_tool_manager(tool_name, {privs = priv_table, inv_override = "main"})
+end
 
 -- Functions and variables for placing markers
 hud = mhud.init()
