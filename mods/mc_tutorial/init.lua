@@ -580,11 +580,14 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
             end
 
             local temp = mc_tutorial.record.temp[pname]
+            context.selected_event = context.selected_event or 1
             if context.epop.is_edit and temp and temp[context.selected_event] then
                 -- select current event
                 local edit_action = temp[context.selected_event]["action"]
-                for i,a in ipairs(i_to_action) do
-                    if a == edit_action then
+                for i,k in pairs(context.epop.i_to_action) do
+                    minetest.log(k .. " : " .. edit_action)
+                    if k == edit_action then
+                        minetest.log(i)
                         context.epop.selected = i
                         break
                     end
