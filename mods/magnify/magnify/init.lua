@@ -21,6 +21,31 @@ local function check_perm(player)
     return minetest.check_player_privs(player:get_player_name(), priv_table)
 end
 
+local function get_context(player)
+    local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name()) or ""
+    if not magnify.context[pname] then
+        magnify.context[pname] = {
+            save = function(self)
+                magnify.context[pname] = self
+            end,
+            page = 0,
+            family = {
+                selected = 1,
+                list = {}
+            },
+            genus = {
+                selected = 1,
+                list = {}
+            },
+            species = {
+                selected = 1,
+                list = {}
+            },
+        }
+    end
+    return magnify.context[pname]
+end
+
 -- Registers the magnifying glass tool
 minetest.register_tool(tool_name, {
     description = "Magnifying Glass",
@@ -47,7 +72,9 @@ minetest.register_tool(tool_name, {
                 local species_formspec = magnify.build_formspec_from_ref(ref_key, true, false)
                 if species_formspec then
                     -- good: open formspec
-                    minetest.show_formspec(pname, "magnify:identify", species_formspec)
+                    local context = get_context(pname)
+                    context.ref = ref_key
+                    minetest.show_formspec(pname, "magnify:view", species_formspec)
                 else
                     -- bad: display corrupted node message in chat
                     minetest.chat_send_player(pname, "An entry for this item exists, but could not be found in the species database.\nPlease contact an administrator and ask them to check your server's species database files to ensure all species were registered properly.")
@@ -100,13 +127,20 @@ minetest.register_craft({
     }
 })
 
---- Return the reference key of the species at the given index in the species list
---- @param i_to_ref Table matching indices to reference key numbers
---- @param index The position in the species list to get the reference key for
+--- Return the reference key of the species that is currently selected
+--- @param context Magnify player context table
 --- @return string
---- @see magnify.get_all_registered_species()
-local function get_species_ref(i_to_ref, index)
-    return i_to_ref[index]
+local function get_selected_species_ref(context)
+    if context.ref then
+        return context.ref
+    end
+
+    local sel = {
+        f = context.family.list[context.family.selected] or "",
+        g = context.genus.list[context.genus.selected] or "",
+        s = context.species.list[context.species.selected] or "",
+    }
+    return context.tree and context.tree[sel.f] and context.tree[sel.f][sel.g] and context.tree[sel.f][sel.g][sel.s]
 end
 
 --- Dynamically creates a square table of node images
@@ -278,9 +312,21 @@ local function get_compendium_formspec(context)
         table.insert(context.genus.list, minetest.formspec_escape("#CCFFCC[Select a genus]"))
         table.sort(context.genus.list)
     
+        if context.genus.shift then
+            for i,g in ipairs(context.genus.list) do
+                if g == context.genus.shift then
+                    context.genus.shift = nil
+                    context.genus.selected = i
+                    break
+                end
+            end
+            if context.genus.shift then
+                context.genus.selected = 1
+            end
+        end
         if context.genus.selected > 1 then
             -- build species list
-            local genus = context.list.family[context.genus.selected]
+            local genus = context.genus.list[context.genus.selected]
             local species_list = genus_list[genus]
             for spec,_ in pairs(species_list) do
                 table.insert(context.species.list, spec)
@@ -549,66 +595,116 @@ if minetest.get_modpath("sfinv") ~= nil then
 
     minetest.register_on_player_receive_fields(function(player, formname, fields)
         local pname = player:get_player_name()
+        local context = get_context(pname)
         local form_action = formname
-    
+
         -- inventory handler
         if formname == "" then
             if fields.magnify_plant_compendium then
-                magnify.context[pname] = {
-                    page = MENU,
-                    family = {
-                        selected = 1,
-                        list = {}
-                    },
-                    genus = {
-                        selected = 1,
-                        list = {}
-                    },
-                    species = {
-                        selected = 1,
-                        list = {}
-                    },
-                    save = function(self)
-                        magnify.context[pname] = self
-                    end,
-                }
-                player:set_inventory_formspec(get_compendium_formspec(magnify.context[pname]))
-                return
-            elseif not magnify.context[pname] then
-                return
+                context.page = MENU
+                return player:set_inventory_formspec(get_compendium_formspec(context))
             end
-    
-            if magnify.context[pname].page == MENU and fields.back then
-                sfinv.set_page(player, sfinv.get_homepage_name(player))
-                sfinv.set_player_inventory_formspec(player)
-                magnify.context[pname] = nil
-                return
+            
+            if context.page and context.page >= 1 then -- magnify inventory view active
+                if fields.quit then
+                    sfinv.set_page(player, sfinv.get_homepage_name(player))
+                    sfinv.set_player_inventory_formspec(player)
+                    return context.save(nil)
+                end
+                if fields.back then
+                    if context.page == MENU then
+                        sfinv.set_page(player, sfinv.get_homepage_name(player))
+                        sfinv.set_player_inventory_formspec(player)
+                        return context.save(nil)
+                    elseif context.page == STANDARD_VIEW then
+                        context.page = MENU
+                        return player:set_inventory_formspec(get_compendium_formspec(context))
+                    end
+                end
+                form_action = (context.page == MENU and "magnify:compendium") or (context.page == STANDARD_VIEW and "magnify:view") or (context.page == TECH_VIEW and "magnify:tech_view") or form_action
             end
-    
-            form_action = (magnify.context[pname].page == MENU and "magnify:compendium") or (magnify.context[pname].page == STANDARD_VIEW and "magnify:view") or (magnify.context[pname].page == TECH_VIEW and "magnify:tech_view") or form_action
         end
     
         -- formspec action handler
         if form_action == "magnify:compendium" then
+            local reload = false
+
             -- handle compendium functions
-            --if fields.family_list then
-        
-            --end
+            if fields.family_list then
+                local event = minetest.explode_textlist_event(fields.family_list)
+                if event.type == "CHG" then
+                    if context.family.selected ~= tonumber(event.index) then
+                        -- Reset all lower levels
+                        context.genus.selected = 1
+                        context.species.selected = 1
+                    end
+                    context.family.selected = tonumber(event.index)
+                    reload = true
+                end
+            end
+            if fields.genus_list then
+                local event = minetest.explode_textlist_event(fields.genus_list)
+                if event.type == "CHG" then
+                    if context.genus.selected ~= tonumber(event.index) then
+                        -- Reset all lower levels
+                        context.species.selected = 1
+                    end
+                    context.genus.selected = tonumber(event.index)
+                    reload = true
+
+                    -- Find appropriate family if genus was selected first
+                    if context.family.selected <= 1 then
+                        local genus = context.genus.list[context.genus.selected]
+                        for fam,list in pairs(context.tree) do
+                            if magnify.table_has(list, genus) then
+                                for i,f in ipairs(context.family.list) do
+                                    if f == fam then
+                                        context.family.selected = i
+                                        break
+                                    end
+                                end
+                                break
+                            end
+                        end
+                        -- Set flag to update genus
+                        context.genus.shift = genus
+                    end
+                end
+            end
+            if fields.species_list then
+                local event = minetest.explode_textlist_event(fields.species_list)
+                if event.type == "CHG" then
+                    context.species.selected = tonumber(event.index)
+                elseif event.type == "DCL" then
+                    -- open viewer
+                    local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false)
+                    if view_fs then
+                        context.page = STANDARD_VIEW
+                        return player:set_inventory_formspec(view_fs)
+                    end
+                end
+            end
+
+            if reload == true then
+                return player:set_inventory_formspec(get_compendium_formspec(context))
+            end
         elseif form_action == "magnify:view" then
             -- handle viewer functions
             if fields.locate then
-                --[[
-                local ref = get_species_ref(context.species_i_to_ref, context.species_selected)
+                local ref = get_selected_species_ref(context)
                 local info,nodes = magnify.get_species_from_ref(ref)
 
                 if not context.search_in_progress then
                     context.search_in_progress = true
                     minetest.chat_send_player(player:get_player_name(), "Searching for nearby nodes, please wait...")
-                    search_for_nearby_node(player, context, nodes)
+                    minetest.after(0.1, search_for_nearby_node, player, context, nodes)
                 else
                     minetest.chat_send_player(player:get_player_name(), "There is already a node search in progress! Please wait for your current search to finish before starting another.")
                 end
-                ]]
+            end
+
+            if (fields.back or fields.quit) and formname == "magnify:view" then
+                context.save(nil)
             end
         elseif form_action == "magnify:tech_view" then
             -- handle technical functions

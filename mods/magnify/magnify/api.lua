@@ -347,10 +347,9 @@ end
 --- Builds the general species information formspec for the species indexed at `ref` in the `magnify` species database 
 --- @param ref Reference key of the species
 --- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
---- @param is_inv true if the formspec is being used in the player inventory, false otherwise
 --- @return (formspec string, formspec "size[]" string) or nil
-function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
-    local info = minetest.deserialize(magnify.species.ref:get(ref))
+function magnify.build_formspec_from_ref(ref, is_exit)
+    local info = ref and minetest.deserialize(magnify.species.ref:get(ref))
   
     if info ~= nil then
         -- entry good, return V3 formspec
@@ -372,6 +371,8 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
             "image[11.4,0.8;0.6,0.6;texture.png]",
             "button[14.5,0.8;2.3,0.6;favourite;      Favourite]",
             "image[14.5,0.8;0.6,0.6;texture.png]",
+            "box[0.2,1.4;16.6,4.8;#FFFFFF]",
+            "box[0.3,1.5;8.9,4.6;#000000]",
 
             "style_type[textarea;font=mono]",
             "textarea[0.45,1.7;8.6,0.8;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
