@@ -131,6 +131,7 @@ function Realm:Load_Schematic(schematic, config)
 
 
     --exschem is having issues loading random chunks, need to debug
+    --Looks like it fails when there are unknown nodes...
     if (config.format == "exschem") then
         exschem.load(schematicStartPos, schematicStartPos, 0, {}, schematic, 0,
                 function(id, time, errcode, err)
@@ -174,7 +175,13 @@ function Realm:Load_Schematic(schematic, config)
         vm:write_to_map(true)
     end
 
+
+    for k, v in pairs(config.miscData) do
+        self:set_data(k, v)
+    end
+
     self:set_data("seaLevel", self.StartPos.y + config.elevationOffset)
+
 
     if (config.tableName ~= nil) then
         if (config.onSchematicPlaceFunction ~= nil) then
@@ -214,9 +221,6 @@ function Realm:NewFromSchematic(name, key)
         -- Need to emerge chunks as we create barriers
         newRealm:CreateBarriersFast()
     end
-
-    -- Realm:CreateTeleporter()
-
 
     newRealm:CallOnCreateCallbacks()
 

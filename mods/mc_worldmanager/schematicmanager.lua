@@ -94,6 +94,15 @@ function schematicManager.getSchematic(key)
     local elevation_offset = tonumber(settings:get("elevation_offset")) or 0
 
 
+    local _miscData = {}
+
+    local settingNames = settings:get_names()
+    for k, v in pairs(settingNames) do
+        if (mc_helpers.starts(string.lower(tostring(v)), "d_")) then
+            _miscData[string.gsub(v, "d_", "", 1)] = settings:get(v)
+        end
+    end
+
     local _spawnPoint = { x = spawn_pos_x, y = spawn_pos_y, z = spawn_pos_z }
     local _schematicSize = { x = schematic_size_x, y = schematic_size_y, z = schematic_size_z }
     local _startOffset = { x = offset_x, y = offset_y, z = offset_z }
@@ -101,7 +110,7 @@ function schematicManager.getSchematic(key)
 
     local config = { author = _author, name = _name, format = _format, spawnPoint = _spawnPoint, schematicSize = _schematicSize,
                      tableName = schematic_table_name, onTeleportInFunction = teleport_function_in_name, onTeleportOutFunction = teleport_function_out_name,
-                     onSchematicPlaceFunction = realm_create_function_name, onRealmDeleteFunction = realm_delete_function_name, utmInfo = _utmInfo, startOffset = _startOffset }
+                     onSchematicPlaceFunction = realm_create_function_name, onRealmDeleteFunction = realm_delete_function_name, utmInfo = _utmInfo, miscData = _miscData, startOffset = _startOffset }
 
     config.elevationOffset = elevation_offset
 
