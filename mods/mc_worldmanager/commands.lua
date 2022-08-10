@@ -346,13 +346,18 @@ commands["setspawn"] = {
 
         local requestedRealm = Realm.GetRealmFromPlayer(player)
 
-        local position = requestedRealm:WorldToLocalSpace(player:get_pos())
+        local playerPosition = player:get_pos()
 
+        if (not requestedRealm:ContainsCoordinate(playerPosition)) then
+            return false, "You are not physically located in realm" .. tostring(requestedRealm.ID) .. " Please re-enter realm boundaries and try again."
+        end
+
+        local position = requestedRealm:WorldToLocalSpace(playerPosition)
         requestedRealm:UpdateSpawn(position)
 
         return true, "Updated spawnpoint for realm with ID: " .. requestedRealm.ID
     end,
-    help = "realm setspawn <realmID> - Set the spawnpoint of a realm.", }
+    help = "realm setspawn - Set the spawnpoint for the realm that you're currently located.", }
 
 commands["setspawnrealm"] = {
     func = function(name, params)

@@ -15,17 +15,17 @@ function Realm.WorldGen.RegisterHeightMapGenerator(name, heightMapGeneratorFunct
 end
 
 function Realm.WorldGen.GetHeightmapGenerators()
-    local keyset={}
-    for k,v in pairs(heightMapGenerator) do
-        keyset[#keyset+1]=k
+    local keyset = {}
+    for k, v in pairs(heightMapGenerator) do
+        keyset[#keyset + 1] = k
     end
     return keyset
 end
 
 function Realm.WorldGen.GetTerrainDecorator()
-    local keyset={}
-    for k,v in pairs(MapDecorator) do
-        keyset[#keyset+1]=k
+    local keyset = {}
+    for k, v in pairs(MapDecorator) do
+        keyset[#keyset + 1] = k
     end
     return keyset
 end
@@ -83,6 +83,10 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     -- Set our new spawnpoint
     local oldSpawnPos = self.SpawnPoint
     local surfaceLevel = ptable.get2D(heightMapTable, { x = oldSpawnPos.x, y = oldSpawnPos.z })
+
+    if (surfaceLevel == nil) then
+        surfaceLevel = self.EndPos.y - 5
+    end
 
     self:UpdateSpawn(self:WorldToLocalSpace({ x = oldSpawnPos.x, y = surfaceLevel + 1, z = oldSpawnPos.z }))
 end
