@@ -75,6 +75,24 @@ local function set_mode(meta, routine)
     meta:set_int("mode", tonumber(routine))
 end
 
+-- Replaces player's current copy of itemstack with the given copy of itemstack
+local function save_item_meta(player, itemstack)
+    local stack_name = itemstack:get_name()
+    if player:get_wielded_item():get_name() == stack_name then
+        player:set_wielded_item(itemstack)
+    else
+        local inv = player:get_inventory()
+        for lname,list in pairs(inv:get_lists()) do
+            for i,item in pairs(list) do
+                if item:get_name() == stack_name then
+                    inv:set_stack(lname, i, itemstack)
+                    return
+                end
+            end
+        end
+    end
+end
+
 -- Constrains val to the open domain defined by [min, max]
 local function constrain(min, val, max)
     return math.max(min, math.min(max, val))
@@ -722,12 +740,15 @@ local function rangefinder_mode_switch(itemstack, player, pointed_thing)
     if cur_routine ~= new_routine then
         clear_saved_casts(player, itemstack)
     else
-        local result = rangefinder_calc(meta, player:get_meta())
-        if result then
-            local round_res = round_to_decim_places(result, get_precision(meta), true)
-            clear_display_callback(player)
-            update_display(player, meta, round_res..ROUTINES[new_routine]["modes"][new_mode]["unit"], "final measurement")
-        end
+        minetest.after(0.1, function(player, meta, routine, mode, itemstack)
+            local result = rangefinder_calc(meta, player:get_meta())
+            if result then
+                local round_res = round_to_decim_places(result, get_precision(meta), true)
+                clear_display_callback(player)
+                update_display(player, meta, round_res..ROUTINES[new_routine]["modes"][new_mode]["unit"], "final measurement")
+                save_item_meta(player, itemstack)
+            end
+        end, player, meta, new_routine, new_mode, itemstack)
     end
     return itemstack
 end
@@ -758,29 +779,34 @@ minetest.register_tool(TOOL_NAME, {
                     
                     -- log cast distance
                     if cast_num then
-                        local casts = minetest.deserialize(meta:get_string("casts"))
-                        if casts[cast_num] then
-                            local cast_dist = round_to_decim_places(casts[cast_num]["dist"], get_single_precision(meta, cast_num), true)
-                            clear_display_callback(player)
-                            update_display(player, meta, cast_dist.."m", "cast "..cast_num)
-                        end
+                        minetest.after(0.1, function(player, meta, cast_num)
+                            local casts = minetest.deserialize(meta:get_string("casts"))
+                            if casts[cast_num] then
+                                local cast_dist = round_to_decim_places(casts[cast_num]["dist"], get_single_precision(meta, cast_num), true)
+                                clear_display_callback(player)
+                                update_display(player, meta, cast_dist.."m", "cast "..cast_num)
+                            end
+                        end, player, meta, cast_num)
                     end
                     -- perform and log calculation
                     if cast_complete then
-                        local result = rangefinder_calc(meta, player:get_meta())
-                        local routine, mode = get_routine(meta), get_mode(meta)
-                        if result then
-                            local round_res = round_to_decim_places(result, get_precision(meta), true)
-                            if ROUTINES[routine]["casts"] == 1 then
-                                clear_display_callback(player)
-                                update_display(player, meta, round_res..ROUTINES[routine]["modes"][mode]["unit"], "final measurement")
-                            else
-                                -- store callback ID in case another mode is selected
-                                local output = round_res..ROUTINES[routine]["modes"][mode]["unit"]
-                                store_display_meta(meta, output, "final measurement")
-                                forestry_tools["rangefinder"][pname] = minetest.after(1.2, update_display, player, meta, output, "final measurement")
+                        minetest.after(0.2, function(player, meta, itemstack)
+                            local result = rangefinder_calc(meta, player:get_meta())
+                            local routine, mode = get_routine(meta), get_mode(meta)
+                            if result then
+                                local round_res = round_to_decim_places(result, get_precision(meta), true)
+                                if ROUTINES[routine]["casts"] == 1 then
+                                    clear_display_callback(player)
+                                    update_display(player, meta, round_res..ROUTINES[routine]["modes"][mode]["unit"], "final measurement")
+                                else
+                                    -- store callback ID in case another mode is selected
+                                    local output = round_res..ROUTINES[routine]["modes"][mode]["unit"]
+                                    store_display_meta(meta, output, "final measurement")
+                                    save_item_meta(player, itemstack)
+                                    forestry_tools["rangefinder"][pname] = minetest.after(1.2, update_display, player, meta, output, "final measurement")
+                                end
                             end
-                        end
+                        end, player, meta, new_stack)
                     end
                 end
     

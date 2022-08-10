@@ -1,16 +1,14 @@
 -- Adapted from https://github.com/ClobberXD/mid_measure
 
--- 'Enum' to keep track of current operation
-local none_set, pos1_set, pos2_set = 0, 1, 2
-
-local distance
-local instances = {}
 local range = 30
-local timer_count = 0
+local instances = {}
 local data
 
 minetest.register_on_joinplayer(function(player)
-	local pmeta = player:get_meta()
+	instances[player:get_player_name()] = {
+		distance = 0,
+		timer_count = 0
+	}
 
 	data = {
 		pos1 = {x=0, y=0, z=0},
@@ -22,6 +20,7 @@ minetest.register_on_joinplayer(function(player)
 		mark_status = "none_set"
 	}
 
+	local pmeta = player:get_meta()
 	pmeta:set_string("measuring_tape", minetest.serialize(data))
 end)
 
@@ -82,7 +81,7 @@ function mark_pos1(player, pos)
 			
 	-- Auto-reset is disabled if auto_reset == 0
 	if auto_reset ~= 0 then
-		timer_count = timer_count + 1
+		instances[pname].timer_count = instances[pname].timer_count + 1
 		minetest.after(auto_reset, reset_check, player)
 	end
 end
@@ -126,14 +125,14 @@ function mark_pos2(player, pos)
 	hud:remove_all()
 	
 	-- Calculate the distance and display output
-	distance = math.floor(vector.distance(pos1, pos2) + 0.5)
+	instances[pname].distance = math.floor(vector.distance(pos1, pos2) + 0.5)
 
 	-- If the distance is within range, lay the tape between the start and end points
-	if distance > range then
+	if instances[pname].distance > range then
 		tell_player(pname, "Out of range! Maximum distance is 30m")
 	else
 		local newPos
-		for i = 1, distance - 1 do
+		for i = 1, instances[pname].distance - 1 do
 			if pos.x == pos1.x then
 				if pos.y == pos1.y then
 					newPos = changePos(pos, "z", i, player)
@@ -163,17 +162,19 @@ function mark_pos2(player, pos)
 			end
 		end
 
-		tell_player(pname, "Distance: " .. minetest.colorize("#FFFF00", distance) .. "m")
+		tell_player(pname, "Distance: " .. minetest.colorize("#FFFF00", instances[pname].distance) .. "m")
 	end
 end
 
 -- Prevents premature auto-reset
 function reset_check(player) 
-	if timer_count > 0 then
-		timer_count = timer_count - 1
+	local pname = player:get_player_name()
+
+	if instances[pname].timer_count > 0 then
+		instances[pname].timer_count = instances[pname].timer_count - 1
 	end
 
-	if timer_count == 0 then
+	if instances[pname].timer_count == 0 then
 		reset(player)
 	end
 end
@@ -185,7 +186,6 @@ function reset(player)
 	local data = minetest.deserialize(pmeta:get_string("measuring_tape"))
 
 	local mark_status = data.mark_status
-	-- local mark_status = pmeta:get_string("mark_status")
 
 	pos1 = data.pos1
 	pos2 = data.pos2
@@ -204,9 +204,9 @@ function reset(player)
 		minetest.swap_node(pos1, node1)
 		minetest.swap_node(pos2, node2)
 
-		if tape_nodes[2] ~= nil and orig_nodes[2] ~= nil then
-			for i = 1, distance - 1 do
-				minetest.swap_node(tape_nodes[i], orig_nodes[i])
+		if tape_nodes[1] ~= nil then
+			for i,tapeNode in ipairs(tape_nodes) do
+				minetest.swap_node(tapeNode, orig_nodes[i])
 			end
 		end
 	end

@@ -1,41 +1,114 @@
--- EXPORTED MAGNIFY FUNCTIONS
-magnify = {}
+-----------------------
+---     HELPERS     ---
+-----------------------
 
 --- @public
---- Registers a plant species in the `magnify` plant database
---- Should only be called on mod load-in 
---- @param def_table Plant species definition table
---- @param nodes Table of stringified nodes the species corresponds to in the MineTest world
---- @see README.md > API > Registration
-function magnify.register_plant(def_table, nodes)
-    local ref = magnify_plants:get("count") or 1
-    def_table["origin"] = minetest.get_current_modname()
+--- Returns true if any of the keys or values in `table` match `val`, false otherwise
+--- @param table The table to check
+--- @param val The key/value to check for
+--- @return boolean
+function magnify.table_has(table, val)
+    if not table or not val then return false end
+    for k,v in pairs(table) do
+        if k == val or v == val then return true end
+    end
+    return false
+end
 
-    local serial_table = minetest.serialize(def_table)
-    magnify_plants:set_string("ref_"..ref, serial_table)
-    for k,v in pairs(nodes) do
-        magnify_plants:set_string("node_"..v, "ref_"..ref)
+-----------------------
+---     GENERAL     ---
+-----------------------
+
+--- @private
+--- Searches for a reference key with information matching the information in def_table, and returns it if found, along with a string indicating the format of the reference key
+--- Otherwise, returns the next unused reference key
+--- @param def_table Species definition table
+--- @return string, string
+local function find_registration_ref(def_table)
+    -- search for a matching scientific name
+    local storage_data = magnify.species.ref:to_table()
+    for k,v in pairs(storage_data.fields) do
+        local data = minetest.deserialize(v)
+        if type(data) == "table" and def_table.sci_name and (def_table.sci_name == data.sci_name) then
+            if string.sub(tostring(k), 1, 4) == "ref_" then
+                return tostring(k), "v1"
+            else
+                return tostring(k), "v2"
+            end
+        end
     end
 
-    magnify_plants:set_int("count", ref + 1)
+    local count = tonumber(magnify.species.ref:get("count") or 1)
+    magnify.species.ref:set_int("count", count + 1)
+    return tostring(count), "v2"
 end
 
 --- @public
---- Returns the reference key associated with `node` in the `magnify` plant database
+--- Registers a species in the `magnify` species database
+--- Should only be called on mod load-in 
+--- @param def_table Species definition table
+--- @param nodes Table of stringified nodes the species corresponds to in the MineTest world
+--- @return string
+--- @deprecated use magnify.register_species instead
+function magnify.register_plant(def_table, nodes)
+    return magnify.register_species(def_table, nodes)
+end
+
+--- @public
+--- Registers a species in the `magnify` species database
+--- Should only be called on mod load-in 
+--- @param def_table Species definition table
+--- @param nodes Table of stringified nodes the species corresponds to in the MineTest world
+--- @return string or nil
+--- @see README.md > API > Registration
+function magnify.register_species(def_table, nodes)
+    if type(nodes) ~= "table" or not next(nodes) then
+        return nil -- no nodes given
+    end
+
+    local ref, format = find_registration_ref(def_table)
+    def_table["origin"] = minetest.get_current_modname()
+
+    -- migrate old format reference keys
+    if format ~= "v2" then
+        if format == "v1" then
+            magnify.species.ref:set_string(ref, "")
+            ref = string.sub(ref, 5)
+        else
+            return nil -- could not determine ref key
+        end
+    end
+
+    local serial_table = minetest.serialize(def_table)
+    magnify.species.ref:set_string(ref, serial_table)
+    for k,v in pairs(nodes) do
+        magnify.species.node[v] = ref
+    end
+
+    return ref
+end
+
+--- @public
+--- Returns the reference key associated with `node` in the `magnify` species database
 --- @param node Stringified node
 --- @return string or nil
 function magnify.get_ref(node)
-    return magnify_plants:get("node_"..node)
+    return tostring(magnify.species.node[node])
 end
 
 --- @public
---- Clears a plant species and all its associated nodes from the `magnify` plant database
---- @param ref Reference key of the plant species to clear
+--- Clears a species and all its associated nodes from the `magnify` species database
+--- @param ref Reference key of the species to clear
 function magnify.clear_ref(ref)
-    local storage_data = magnify_plants:to_table()
+    local storage_data = magnify.species.ref:to_table()
     for k,v in pairs(storage_data.fields) do
-        if k == ref or v == ref then
-            magnify_plants:set_string(k, "")
+        if tostring(k) == tostring(ref) then
+            magnify.species.ref:set_string(k, "")
+        end
+    end
+    for k,v in pairs(magnify.species.node) do
+        if tostring(v) == tostring(ref) then
+            magnify.species.node[k] = nil
         end
     end
 end
@@ -46,13 +119,13 @@ end
 --- @return string or nil
 local function clear_node_key(node)
     old_ref = magnify.get_ref(node)
-    magnify_plants:set_string("node_"..node, "")
+    magnify.species.node[node] = nil
     return old_ref
 end
 
 --- @public
---- Clears the nodes in `nodes` from the `magnify` plant database
---- Then, clears any plants species that are no longer associated with any nodes as a result of clearing the nodes in `nodes`
+--- Clears the nodes in `nodes` from the `magnify` species database,
+--- then clears any species that are no longer associated with any nodes as a result of clearing the nodes in `nodes`
 --- @param nodes Table of stringified nodes to clear
 function magnify.clear_nodes(nodes)
     -- remove node keys
@@ -61,9 +134,8 @@ function magnify.clear_nodes(nodes)
         table.insert(changed_refs, clear_node_key(node))
     end
 
-    -- check affected refs to ensure that node still point to them
-    local storage_data = magnify_plants:to_table()
-    for k,v in pairs(storage_data.fields) do
+    -- check affected refs to ensure that nodes still point to them
+    for k,v in pairs(magnify.species.node) do
         for i,ref in pairs(changed_refs) do
             if v == ref then
                 changed_refs[i] = nil
@@ -78,19 +150,18 @@ function magnify.clear_nodes(nodes)
 end
 
 --- @public
---- Returns the plant definition table the species indexed at `ref` in the `magnify` plant database, and a list of nodes the species is associated with
---- @param ref Reference key of the plant species
+--- Returns the species definition table the species indexed at `ref` in the `magnify` species database, and a list of nodes the species is associated with
+--- @param ref Reference key of the species
 --- @return table, table or nil
 function magnify.get_species_from_ref(ref)
-    local storage_data = magnify_plants:to_table()
     local output_nodes = {}
   
-    if magnify_plants:get(ref) then
-        local data = minetest.deserialize(magnify_plants:get_string(ref))
+    if magnify.species.ref:get(tostring(ref)) then
+        local data = minetest.deserialize(magnify.species.ref:get_string(tostring(ref)))
         if data then
-            for k,v in pairs(storage_data.fields) do
-                if v == ref then
-                    table.insert(output_nodes, string.sub(k, 6))
+            for k,v in pairs(magnify.species.node) do
+                if tostring(v) == tostring(ref) then
+                    table.insert(output_nodes, k)
                 end
             end
             return data,output_nodes
@@ -103,7 +174,7 @@ function magnify.get_species_from_ref(ref)
 end
 
 --- @private
---- Sorting comparison function for registered plant species
+--- Sorting comparison function for registered species
 --- Sorts by common name, then scientific name, in alphabetical order
 --- Fallbacks:
 --- If both ref_a and ref_b are invalid, returns ref_a < ref_b (default sort)
@@ -128,22 +199,19 @@ local function species_compare(ref_a, ref_b)
 end
 
 --- @public
---- Returns a human-readable list of all species registered in the `magnify` plant database, and a list of reference keys corresponding to them
+--- Returns a human-readable list of all species registered in the `magnify` species database, and a list of reference keys corresponding to them
 --- Each species and its corresponding reference key will be at the same index in both lists
 --- @return table, table
 function magnify.get_all_registered_species()
-    local storage_data = magnify_plants:to_table()
+    local storage_data = magnify.species.ref:to_table()
     local raw_name_table = {}
     local ref_keys = {}
 
     for k,v in pairs(storage_data.fields) do
-        if string.sub(k, 1, 4) == "ref_" then
-            local info = minetest.deserialize(v)
-            if info then
-                --local ref_num = string.sub(k, 5)
-                raw_name_table[k]  = info.com_name .. " (" .. info.sci_name .. ")"
-                table.insert(ref_keys, k)
-            end
+        local info = minetest.deserialize(v)
+        if info then
+            raw_name_table[k]  = info.com_name .. " (" .. info.sci_name .. ")"
+            table.insert(ref_keys, k)
         end
     end
 
@@ -229,19 +297,39 @@ local function read_obj_textures(target_obj)
     return textures
 end
 
+--- @private
+--- Gets the description for a conservation status and returns it as a string, and returns the colour associated with that status
+--- @param cons_status Plant definition cons_status field
+--- @return string, string
+local function get_cons_status_info(cons_status)
+    if cons_status then
+        local status = (type(cons_status) == "table" and cons_status.ns_bc) or cons_status
+        local status_info = magnify.map.ns_bc[status]
+        if status_info then
+            local desc = status_info["desc"]
+            return status..(desc and desc ~= "" and " - "..desc or ""), status_info["col"]
+        else
+            return status
+        end
+    else
+        return nil
+    end
+end
+
 --- @public
---- Builds the general plant information formspec for the species indexed at `ref` in the `magnify` plant database 
---- @param ref Reference key of the plant species
+--- Builds the general species information formspec for the species indexed at `ref` in the `magnify` species database 
+--- @param ref Reference key of the species
 --- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
 --- @param is_inv true if the formspec is being used in the player inventory, false otherwise
 --- @return (formspec string, formspec "size[]" string) or nil
 function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
-    local info = minetest.deserialize(magnify_plants:get(ref))
+    local info = minetest.deserialize(magnify.species.ref:get(ref))
     
     -- TODO: create V1 and V2 formtables
     if info ~= nil then
         -- entry good, return formspec
         local model_spec_loc = (info.model_obj and info.origin) and get_obj_directory(info.origin, info.model_obj)
+        local cons_status_desc, status_col = get_cons_status_info(info.cons_status)
         if model_spec_loc then
             -- v2: model and image
             local model_spec = read_obj_textures(model_spec_loc)
@@ -249,17 +337,17 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
             local formtable_v2 = {
                 "formspec_version[5]", size,
 
-                "box[", (is_inv and "0,0;10,1.6") or "0.4,0.4;12,1.6", ";", minetest.formspec_escape(info.status_col or "#9192A3"), "]",
+                "box[", (is_inv and "0,0;10,1.6") or "0.4,0.4;12,1.6", ";", minetest.formspec_escape(status_col or "#9192A3"), "]",
                 "textarea[", (is_inv and "0.45,0.08;10.4,0.7") or "0.45,0.45;12.4,0.7", ";;;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
                 "textarea[", (is_inv and "0.45,0.59;10.4,0.7") or "0.45,0.96;12.4,0.7", ";;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
-                "textarea[", (is_inv and "0.45,1.1;10.4,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
+                "textarea[", (is_inv and "0.45,1.1;10.4,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
 
-                "image[", (is_inv and "10.3,0") or "12.8,0.4", ";4.2,4.2;", info.texture or "test.png", "]",
+                "image[", (is_inv and "10.3,0") or "12.8,0.4", ";4.2,4.2;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
                 "box[", (is_inv and "10.3,3.7;3.35,3.65") or "12.8,4.7;4.2,4.2", ";#789cbf]",
                 "model[", (is_inv and "10.3,3.7") or "12.8,4.7", ";4.2,4.2;plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";", info.model_rot_x or "0", ",", info.model_rot_y or "180", ";false;true;;]",
 
                 "textarea[", (is_inv and "0.3,1.8;10.45,4.7") or "0.35,2.3;12.4,4.7", ";;;", -- info area
-                "- ", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "\n",
+                "- ", minetest.formspec_escape(cons_status_desc or "Conservation status unknown"), "\n",
                 "- ", minetest.formspec_escape((info.region and "Found in "..info.region) or "Location range unknown"), "\n",
                 "- ", minetest.formspec_escape(info.height or "Height unknown"), "\n",
                 "\n",
@@ -277,14 +365,14 @@ function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
             local formtable_v1 = {  
                 "formspec_version[5]", size,
                 
-                "box[", (is_inv and "0,0;9.6,1.6") or "0.4,0.4;11.6,1.6", ";", minetest.formspec_escape(info.status_col or "#9192a3"), "]",
+                "box[", (is_inv and "0,0;9.6,1.6") or "0.4,0.4;11.6,1.6", ";", minetest.formspec_escape(status_col or "#9192a3"), "]",
                 "textarea[", (is_inv and "0.45,0.08;10,0.7") or "0.45,0.45;12.4,0.7", ";;;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
                 "textarea[", (is_inv and "0.45,0.59;10,0.7") or "0.45,0.96;12.4,0.7", ";;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
-                "textarea[", (is_inv and "0.45,1.1;10,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]",
-                "image[", (is_inv and "9.9,0") or "12.4,0.4", ";5.7,5.7;", info.texture or "test.png", "]",
+                "textarea[", (is_inv and "0.45,1.1;10,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
+                "image[", (is_inv and "9.9,0") or "12.4,0.4", ";5.7,5.7;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
     
                 "textarea[", (is_inv and "0.3,1.8;10.05,4.3") or "0.35,2.3;12,4.4", ";;;", -- info area
-                "- ", minetest.formspec_escape(info.cons_status or "Conservation status unknown"), "\n",
+                "- ", minetest.formspec_escape(cons_status_desc or "Conservation status unknown"), "\n",
                 "- ", minetest.formspec_escape((info.region and "Found in "..info.region) or "Location range unknown"), "\n",
                 "- ", minetest.formspec_escape(info.height or "Height unknown"), "\n",
                 "\n",
@@ -311,7 +399,7 @@ box[0.4,0.4;12,1.6;", minetest.formspec_escape(info.status_col or "#9192A3"), "]
 textarea[0.45,0.45;12.4,0.7;;;", minetest.formspec_escape(info.sci_name or "N/A"), "]
 textarea[0.45,0.97;12.4,0.7;;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]
 textarea[0.45,1.47;12.4,0.7;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]
-image[12.8,0.4;4.2,4.2;", info.texture or "test.png", "]
+image[12.8,0.4;4.2,4.2;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]
 box[12.8,4.7;4.2,4.2;#789cbf]
 textarea[0.35,2.3;12.4,4.7;;;"add the original giant text box here"]
 textarea[0.35,7.2;12.4,0.7;;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]
@@ -324,21 +412,8 @@ box[0.4,0.4;11.6,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), 
 textarea[0.45,0.45;12,0.7;;;", minetest.formspec_escape(info.sci_name or "N/A"), "]
 textarea[0.45,0.97;12,0.7;;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]
 textarea[0.45,1.47;12,0.7;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]
-image[12.4,0.4;5.7,5.7;", minetest.formspec_escape(info.texture or "test.png"), "]
+image[12.4,0.4;5.7,5.7;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]
 textarea[0.35,2.3;12,4.4;;;"add the original giant text box here"]
 textarea[0.35,6.9;11.6,0.7;;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]
 button[12.4,6.4;5.4,0.9;back;Back]
 ]]
-
---- @public
---- Returns true if any of the keys or values in `table` match `val`, false otherwise
---- @param table The table to check
---- @param val The key/value to check for
---- @return boolean
-function magnify.table_has(table, val)
-    if not table or not val then return false end
-    for k,v in pairs(table) do
-        if k == val or v == val then return true end
-    end
-    return false
-end

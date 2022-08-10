@@ -139,6 +139,10 @@ function mc_helpers.trim(s)
     return s:match( "^%s*(.-)%s*$" )
 end
 
+function mc_helpers.starts(String,Start)
+    return string.sub(String,1,string.len(Start))==Start
+end
+
 
 function mc_helpers.shallowCopy(table)
     local copy = {}
