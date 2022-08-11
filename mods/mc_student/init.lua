@@ -170,33 +170,44 @@ local function show_coordinates(player)
 	else
 		local prealms = pdata.realms
 		local pcoords = pdata.coords
-		local pxyz = pdata.coords1
 		local pnotes = pdata.notes
 
-		if pxyz then
-			for i in pairs(pxyz) do
+		if pcoords then
+			for i in pairs(pcoords) do
 				local realm = Realm.GetRealm(prealms[i])
 				local pos = pcoords[i]
-				local worldStr = "x=" .. math.floor(pos.x) .. " y=" .. math.floor(pos.y) .. " z=" .. math.floor(pos.z)
 				local utm = realm:WorldToUTMSpace(pos)
-				local utmStr = "x=" .. math.floor(utm.x) .. " y=" .. math.floor(utm.y) .. " z=" .. math.floor(utm.z)
-				local latlong = realm:WorldToLatLongSpace(pos)
-				local latLongStr = "x=" .. math.floor(latlong.x) .. " z=" .. math.floor(latlong.z)
+				local latlong = realm:WorldToLatLongSpace(pos) 
 				local entry = realm.Name .. " "
 
+				local utmOrWorld
 				if utm then
-					entry = entry .. utmStr
+					utmOrWorld = utm
 				else
-					entry = entry .. worldStr
+					utmOrWorld = pos
 				end
 
+				entry = entry .. math.floor(utmOrWorld.x) .. "E " .. math.floor(utmOrWorld.z) .. "N " .. math.floor(utmOrWorld.y) .. "Z"
+
 				if latlong then
-					entry = entry .. "\\, LL:" .. latLongStr
+					entry = entry .. "\\, " .. math.abs(math.floor(latlong.x * 10000)/10000)
+					if latlong.x < 0 then
+						entry = entry .. "°S " 
+					else 
+						entry = entry .. "°N "
+					end
+					
+					entry = entry .. math.abs(math.floor(latlong.z * 10000)/10000)
+					if latlong.z < 0 then
+						entry = entry .. "°W"
+					else 
+						entry = entry .. "°E"
+					end
 				end
 
 				entry = entry .. "\\, " .. pnotes[i]
 
-				if i ~= #pxyz then
+				if i ~= #pcoords then
 					entry = entry .. ","
 				end
 
@@ -220,15 +231,13 @@ local function record_coordinates(player,message)
 			datanew = {
 				realms = { realmID, },
 				coords = { pos, }, 
-				coords1 = {"x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z), },
 				notes = { message, },
 			}
 		else
 			table.insert(temp.realms, realmID)
 			table.insert(temp.coords, pos)
-			table.insert(temp.coords1, "x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z))
 			table.insert(temp.notes, message)
-			datanew = {realms = temp.realms, coords = temp.coords, coords1 = temp.coords1, notes = temp.notes, }
+			datanew = {realms = temp.realms, coords = temp.coords, notes = temp.notes, }
 		end
 
 		pmeta:set_string("coordinates", minetest.serialize(datanew))
