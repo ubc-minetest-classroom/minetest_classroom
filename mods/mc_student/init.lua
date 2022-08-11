@@ -180,14 +180,11 @@ local function show_coordinates(player)
 				local latlong = realm:WorldToLatLongSpace(pos) 
 				local entry = realm.Name .. " "
 
-				local utmOrWorld
 				if utm then
-					utmOrWorld = utm
+					entry = entry .. math.floor(utm.x) .. "E " .. math.floor(utm.z) .. "N " .. math.floor(utm.y) .. "Z"
 				else
-					utmOrWorld = pos
+					entry = entry .. "x=" .. math.floor(pos.x) .. " y=" .. math.floor(pos.y) .. " z=" .. math.floor(pos.z)
 				end
-
-				entry = entry .. math.floor(utmOrWorld.x) .. "E " .. math.floor(utmOrWorld.z) .. "N " .. math.floor(utmOrWorld.y) .. "Z"
 
 				if latlong then
 					entry = entry .. "\\, " .. math.abs(math.floor(latlong.x * 10000)/10000)
