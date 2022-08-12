@@ -202,7 +202,9 @@ local function show_coordinates(player)
 					end
 				end
 
-				entry = entry .. "\\, " .. pnotes[i]
+				if pnotes[i] ~= "" then
+					entry = entry .. "\\, " .. pnotes[i]
+				end
 
 				if i ~= #pcoords then
 					entry = entry .. ","
