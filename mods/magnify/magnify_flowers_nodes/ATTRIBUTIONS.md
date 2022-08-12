@@ -1,11 +1,23 @@
 # Attributions
 
-- `textures/magnify_flowers_castilleja_miniata_var_miniata.jpg` by Thayne Tuason, licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
-  - Retrieved from [https://commons.wikimedia.org/wiki/File:Castilleja_miniata_var._miniata.jpg](https://commons.wikimedia.org/wiki/File:Castilleja_miniata_var._miniata.jpg)
-  - Cropped from original
-- `textures/magnify_flowers_fritillaria_affinis.jpg` by Jackie Chambers, licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-  - Retrieved from [https://botanyphoto.botanicalgarden.ubc.ca/2008/05/fritillaria-affinis/](https://botanyphoto.botanicalgarden.ubc.ca/2008/05/fritillaria-affinis/)
-  - Cropped from original
-- `textures/magnify_flowers_nuphar_polysepala.jpg` by Marshal Hedin, licensed under [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/)
-  - Retrieved from [https://commons.wikimedia.org/wiki/File:Nuphar_polysepala_(1).jpg](https://commons.wikimedia.org/wiki/File:Nuphar_polysepala_1.jpg)
-  - Cropped from original
+- `textures/magnify_flowers_amanita_muscaria.jpg` by Dr. Hans-Günter Wagner, licensed under [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/)
+  - Retrieved from [https://www.flickr.com/photos/145400091@N04/30534356533/](https://www.flickr.com/photos/145400091@N04/30534356533/)
+  - Downscaled from original
+- `textures/magnify_flowers_boletus_edulis.jpg` by Holger Krisp, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)
+  - Retrieved from [https://commons.wikimedia.org/wiki/File:%28Gemeine_Steinpilz%29_Boletus_edulis.jpg](https://commons.wikimedia.org/wiki/File:%28Gemeine_Steinpilz%29_Boletus_edulis.jpg)
+  - Downscaled from original
+- `textures/magnify_flowers_castilleja_miniata.jpg` by Walter Siegmund, licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)
+  - Retrieved from [https://commons.wikimedia.org/wiki/File:Castilleja_miniata_0641.JPG](https://commons.wikimedia.org/wiki/File:Castilleja_miniata_0641.JPG)
+  - Cropped and downscaled from original
+- `textures/magnify_flowers_eschscholzia_californica.jpg` by docentjoyce, licensed under [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/)
+  - Retrieved from [https://www.flickr.com/photos/99003655@N00/2356372732/](https://www.flickr.com/photos/99003655@N00/2356372732/)
+  - Cropped and downscaled from original
+- `textures/magnify_flowers_fritillaria_affinis.jpg` by Walter Siegmund, licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)
+  - Retrieved from [https://commons.wikimedia.org/wiki/File:Fritillaria_affinis_6603.JPG](https://commons.wikimedia.org/wiki/File:Fritillaria_affinis_6603.JPG)
+  - Cropped and downscaled from original
+- `textures/magnify_flowers_nuphar_polysepala.jpg` by Marshal Hedin, licensed under [CC BY-SA 2.0](https://creativecommons.org/licenses/by/2.0/)
+  - Retrieved from [https://commons.wikimedia.org/wiki/File:Nuphar_polysepala_(1).jpg](https://commons.wikimedia.org/wiki/File:Nuphar_polysepala_(1).jpg)
+  - Downscaled from original
+- `textures/magnify_flowers_plectritis_congesta.jpg` by Walter siegmund, licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/deed.en)
+  - Retrieved from [https://commons.wikimedia.org/wiki/File:Plectritis_congesta_6667.JPG](https://commons.wikimedia.org/wiki/File:Plectritis_congesta_6667.JPG)
+  - Downscaled from original

@@ -84,11 +84,11 @@ local rose = {
     height = "20 to 80 centimeters tall",
     bloom = "Blooms with a bracted terminal spike, with red, scarlet, or orange bracts",
     region = "BC and Western USA",
-    texture = "magnify_flowers_castilleja_miniata_var_miniata.jpg",
+    texture = "magnify_flowers_castilleja_miniata.jpg",
     model_obj = "magnify_flowers_castilleja_miniata.obj",
     more_info = "A stout, hairy perennial herb with a woody, scaly base. Typically found in areas such as meadows, grassy slopes, clearings, roadsides, and open forests.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Castilleja%20miniata%20var.%20miniata",
-    img_copyright = "Thayne Tuason, licensed under CC BY-SA 4.0"
+    img_copyright = "Walter Siegmund, licensed under CC BY-SA 3.0"
 }
 magnify.register_species(rose, {"flowers:rose"})
 
@@ -104,7 +104,7 @@ local poppy = {
     model_obj = "magnify_flowers_eschscholzia_californica.obj",
     more_info = "A short-lived, upright perennial herb originating from a deep taproot. Typically found in dry areas such as roadsides, rock outcrops, and wastelands.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Eschscholzia%20californica",
-    img_credit = "the UBC Botanical Garden"
+    img_copyright = "docentjoyce, licensed under CC BY 2.0"
 }
 magnify.register_species(poppy, {"flowers:tulip"})
 
@@ -136,7 +136,7 @@ local pearl = {
     model_obj = "magnify_flowers_anaphalis_margaritacea.obj",
     more_info = "A single-stemmed perennial herb with alternating leaves and white flowers. Typically found in meadows, open forests, fields, and along roadsides.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Anaphalis%20margaritacea",
-    img_credit = "Wikimedia Commons"
+    img_credit = "Pendragon39, via Wikimedia Commons"
 }
 magnify.register_species(pearl, {"flowers:dandelion_white"})
 
