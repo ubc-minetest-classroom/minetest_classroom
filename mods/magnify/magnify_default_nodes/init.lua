@@ -84,7 +84,7 @@ local JungleTree = {
     height = "Grows up to 24 meters tall",
     bloom = "Produces male flowers in long, droopy, reddish catkins or female flowers in short, woody, brown cones",
     region = "Coastal BC, Washington, Oregon, California and Southeast Alaska",
-    texture = {"magnify_alnus_rubra_01.jpg", "magnify_alnus_rubra_02.jpg"},
+    texture = {"magnify_default_alnus_rubra_01.jpg", "magnify_default_alnus_rubra_02.jpg"},
     model_obj = "magnify_default_alnus_rubra.obj",
     more_info = "Trees growing in the forest develop a slightly tapered trunk extending up to a narrow, rounded crown.",
     external_link = "https://www.for.gov.bc.ca/hfd/library/documents/treebook/redalder.htm"--,
@@ -115,11 +115,11 @@ local blueberry = {
     cons_status = {ns_bc = "S5"},
     bloom = "Blooms with pinkish red flowers from April to May",
     region = "Southwest BC and West Coast USA",
-    texture = "magnify_default_vaccinium_ovatum.jpg",
+    texture = {"magnify_default_vaccinium_ovatum_01.jpg", "magnify_default_vaccinium_ovatum_02.jpg"},
     model_obj = "magnify_default_vaccinium_ovatum.obj",
     more_info = "Can tolerate a wide range of light conditions and is very attractive to birds. Foliage is glossy and green with new red growth",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Vaccinium%20ovatum",
-    img_credit = "Gordon Leppig & Andrea J. Pickart"
+    img_credit = "Franz Xaver, licensed under CC BY-SA 3.0"
 }
 magnify.register_species(blueberry, {"default:blueberry_bush_leaves", "default:blueberry_bush_leaves_with_berries", "default:blueberries"})
 
@@ -147,7 +147,7 @@ local Acacia = {
     height = "Grows up to 25 metres tall",
     bloom = "Female flowers clustered on same tree, male flowers numerous in catkins",
     region = "Southeastern Vancouver Island and Gulf Islands",
-    texture = {"magnify_quercus_garryana_01.jpg", "magnify_quercus_garryana_02.jpg"}, 
+    texture = {"magnify_default_quercus_garryana_01.jpg", "magnify_default_quercus_garryana_02.jpg"}, 
     model_obj = "magnify_default_quercus_garryana.obj",
     more_info = "Deciduous tree with heavy, craggy branches, up to 25 m tall but often small, shrubby and as short as 1 m in dry, rocky habitats",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Quercus%20garryana"
@@ -211,11 +211,11 @@ local arbutus = {
     height = "6 to 30 meters tall",
     bloom = "Blooms with large clusters of drooping, urn-shaped white or pink corollas",
     region = "Southwest BC and West Coast USA",
-    texture = {"magnify_arbutus_menziesii_01.jpg", "magnify_arbutus_menziesii_02.jpg", "magnify_arbutus_menziesii_03.jpg", "magnify_arbutus_menziesii_04.jpg"},
+    texture = {"magnify_default_arbutus_menziesii_01.jpg", "magnify_default_arbutus_menziesii_02.jpg", "magnify_default_arbutus_menziesii_03.jpg", "magnify_default_arbutus_menziesii_04.jpg"},
     model_obj = "magnify_default_arbutus_menziesii.obj",
     more_info = "A broadleaf, shrublike tree with peeling brownish-red bark. Typically found in dry open forests and shallow-soiled rocky slopes",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Arbutus%20menziesii",
-    img_copyright = ""
+    --img_copyright = ""
 }
 magnify.register_species(arbutus, {"default:acacia_bush_stem", "default:acacia_bush_leaves", "default:acacia_bush_sapling"})
 
@@ -275,7 +275,7 @@ local PineBushNeedles_Stem = {
     height = "2 to 15 meters tall",
     bloom = "Flowers bloom ranging from May to June",
     region = "Coastal and Southeast BC, and West Coast USA", 
-    texture = {"magnify_taxus_brevifolia_01.jpg", "magnify_taxus_brevifolia_02.jpg", "magnify_taxus_brevifolia_03.jpg"},
+    texture = {"magnify_default_taxus_brevifolia_01.jpg", "magnify_default_taxus_brevifolia_02.jpg", "magnify_default_taxus_brevifolia_03.jpg"},
     model_obj = "magnify_default_taxus_brevifolia.obj",
     more_info = "A small tree, usually found as an understory tree in moist old growth forests growing beneath other larger trees",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Taxus%20brevifolia",
