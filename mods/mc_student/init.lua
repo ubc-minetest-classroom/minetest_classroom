@@ -146,15 +146,15 @@ local selectedCoord = 0
 
 mc_student_coordinates = {
 	"formspec_version[6]",
-	"size[11.1,9.3]",
-	"label[4.3,0.4;Coordinates Stored]",
-	"button[7.4,7.6;3.3,0.6;record;Record]",
-	"button[7.3,8.5;1.6,0.6;delete;Delete]",
-	"button[9.3,8.5;1.4,0.6;go;Go]",
-	"button[5.1,8.5;1.7,0.6;clear;Clear All]",
+	"size[13,9.3]",
+	"label[5.4,0.4;Coordinates Stored]",
+	"button[9.3,7.6;3.3,0.6;record;Record]",
+	"button[9.3,8.5;1.6,0.6;delete;Delete]",
+	"button[11.2,8.5;1.4,0.6;go;Go]",
+	"button[7.2,8.5;1.7,0.6;clear;Clear All]",
 	"button[0.4,8.5;1.2,0.6;back;Back]",
-	"textarea[0.4,7.6;6.8,0.6;note;Add a note describing your current location;]",
-	"textlist[0.4,0.7;10.3,6.4;coordlist;;1;false]" 
+	"textarea[0.4,7.6;8.5,0.6;note;Add a note describing your current location;]",
+	"textlist[0.4,0.7;12.2,6.4;coordlist;;1;false]" 
 }
 
 local function show_coordinates(player)
@@ -213,7 +213,7 @@ local function show_coordinates(player)
 		end
 	end
 
-	mc_student_coordinates[#mc_student_coordinates] = "textlist[0.4,0.7;10.3,6.4;coordlist;" .. table.concat(coordsList, "") .. "]"
+	mc_student_coordinates[#mc_student_coordinates] = "textlist[0.4,0.7;12.2,6.4;coordlist;" .. table.concat(coordsList, "") .. "]"
 	minetest.show_formspec(player:get_player_name(), "mc_student:coordinates", table.concat(mc_student_coordinates,""))
 end
 
@@ -369,21 +369,17 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 		elseif fields.delete then
 			local data = minetest.deserialize(pmeta:get_string("coordinates"))
-			local newCoords, newNotes = {}, {}	
+			local newCoords, newNotes, newRealms = {}, {}, {}	
 
 			for i,coord in ipairs(data.coords) do
 				if i ~= selectedCoord then
 					table.insert(newCoords, coord)
+					table.insert(newNotes, data.notes[i])
+					table.insert(newRealms, data.realms[i])
 				end
 			end
 
-			for i,note in ipairs(data.notes) do
-				if i ~= selectedCoord then
-					table.insert(newNotes, note)
-				end
-			end	
-
-			local newData = {coords = newCoords, notes = newNotes}
+			local newData = {coords = newCoords, notes = newNotes, realms = newRealms}
 			pmeta:set_string("coordinates", minetest.serialize(newData))
 			show_coordinates(player)
 		elseif fields.clear then
