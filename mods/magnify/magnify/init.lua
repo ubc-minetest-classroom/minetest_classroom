@@ -41,6 +41,11 @@ local function get_context(player)
                 selected = 1,
                 list = {}
             },
+      		filter = {
+        		form = {},
+        		leaf = {},
+        		status = {},
+      		}
         }
     end
     return magnify.context[pname]
@@ -283,6 +288,37 @@ button[6.2,6.2;6.2,0.6;back;Back]
 button[0,6.2;6.2,0.6;locate;Locate nearest node]
 ]]
 
+--- Filters lists of all species down to species whose reference keys, common names, scientific names or family names contain the substring `query`
+--- @param query Substring to search for
+--- @param tree Species tree
+--- @return table
+local function species_search_filter(query, tree)
+    local filtered_tree = {}
+	local count = 0
+    local function match_query(str)
+        return string.find(string.lower(str or ""), string.lower(query:trim()), 1, true)
+    end
+
+  	for fam,g_list in pairs(tree) do
+  		for gen,s_list in pairs(g_list) do
+      		for spec,ref in pairs(s_list) do
+				local species = magnify.get_species_from_ref(ref)
+        		local match = match_query(species.com_name) or match_query(species.sci_name) or match_query(species.fam_name) or match_query(ref) or match_query(magnify.map.family[species.fam_name])
+                if match then
+					-- add match to filtered tree
+          			local f_g_list = filtered_tree[fam] or {}
+    				local f_s_list = f_g_list[gen] or {}
+    				f_s_list[spec] = ref
+    				f_g_list[gen] = f_s_list
+    				filtered_tree[fam] = f_g_list
+          			count = count + 1
+        		end
+        	end
+        end
+    end
+    return filtered_tree, count
+end
+
 --- Return the plant compendium formspec, built from the given list of species
 --- @return formspec string, size
 local function get_compendium_formspec(context)
@@ -293,9 +329,25 @@ local function get_compendium_formspec(context)
     context.family.list = {}
     context.genus.list = {}
     context.species.list = {}
-      
+  
+  	local tree = context.tree
+    local count
+  	if context.search then
+    	tree,count = species_search_filter(context.search, tree)
+    end
+  	if context.filter.active then
+    	-- todo
+    end
+
+    -- Auto-select when only 1 species matches filter criteria
+    if count == 1 then
+        context.family.selected = 2
+        context.genus.selected = 2
+        context.species.selected = 2
+    end
+    	
     local genus_raw = {}
-    for fam,gen_raw in pairs(context.tree) do
+    for fam,gen_raw in pairs(tree) do
         table.insert(context.family.list, fam)
         table.insert(genus_raw, gen_raw)
     end
@@ -305,7 +357,7 @@ local function get_compendium_formspec(context)
     if context.family.selected > 1 then
         -- build specific genus list
         local family = context.family.list[context.family.selected]
-        local genus_list = context.tree[family]
+        local genus_list = tree[family]
         for gen,_ in pairs(genus_list) do
             table.insert(context.genus.list, gen)
         end
@@ -356,13 +408,12 @@ local function get_compendium_formspec(context)
         "label[6.7,0.3;Plant Compendium]",
         "button[0,0;1.7,0.6;back;      Back]",
         "image[0,0;0.6,0.6;texture.png]",
-        "field[0.4,1.3;6.7,0.7;search;Search by common/scientific name;]",
+        "field[0.4,1.3;6.7,0.7;search;Search by common/scientific name;", context.search or "", "]",
         "button[7.1,1.3;2.2,0.7;search_go;       Search]",
         "image[7.1,1.3;0.7,0.7;texture.png]",
         "button[9.2,1.3;1.9,0.7;search_x;       Clear]",
         "image[9.2,1.3;0.7,0.7;texture.png]",
-        --"image[14.8,1;1.8,1;species.png]",
-        --"textarea[11.5,0.9;3.3,1.1;;;]",
+    	
         "box[0.4,2.4;3.5,0.7;#A0A0A0]",
         "label[1.6,2.8;Family]",
         "textlist[0.4,3.2;3.5,9;family_list;", table.concat(context.family.list, ","), ";", context.family.selected or 1, ";false]",
@@ -372,11 +423,11 @@ local function get_compendium_formspec(context)
         "box[7.6,2.4;3.5,0.7;#A0A0A0]",
         "label[8.7,2.8;Species]",
         "textlist[7.6,3.2;3.5,9;species_list;", table.concat(context.species.list, ","), ";", context.species.selected or 1, ";false]",
-        
+    
         -- TODO: dynamically grab all tags and add as filters
         "container[0,1.1]",
-        "label[13.7,1.7;Filter]",
         "box[11.5,1.3;5.1,0.7;#A0A0A0]",
+		"label[13.7,1.7;Filter]",
         "box[11.5,2.0;5.1,7.5;#121212]",
         "label[11.8,2.5;Form:]",
         "checkbox[11.8,3;form_tree;Tree;false]",
@@ -395,6 +446,21 @@ local function get_compendium_formspec(context)
         "checkbox[11.8,9.0;cons_na;GNR/GU/GNA (Unranked);false]",
         "container_end[]",
     }
+	if context.species.selected > 1 then
+        local ref = get_selected_species_ref(context)
+        local info = magnify.get_species_from_ref(ref)
+
+        if info then
+		    table.insert(formtable, table.concat({
+                "style_type[textarea;font=bold]",
+                "textarea[11.5,0.9;5.3,0.8;;;", info.com_name or info.sci_name or "Species unknown", "]",
+                "button[11.5,1.3;5.1,0.7;view;View Species", info.texture and "            " or "", "]",
+                info.texture and "image[15.4,1.3;1.2,0.7;"..(type(info.texture) == "table" and info.texture[1] or info.texture).."]" or "",
+                "style_type[textarea;font=normal]",
+            }))
+        end
+    end
+
     return table.concat(formtable, ""), size
 end
 
@@ -410,8 +476,6 @@ button[7.1,1.3;2.2,0.7;search_go;       Search]
 image[7.1,1.3;0.7,0.7;texture.png]
 button[9.2,1.3;1.9,0.7;search_x;       Clear]
 image[9.2,1.3;0.7,0.7;texture.png]
-image[14.8,1;1.8,1;species.png]
-textarea[11.5,0.9;3.3,1.1;;;]
 box[0.4,2.4;3.5,0.7;#A0A0A0]
 label[1.7,2.8;Family]
 textlist[0.4,3.2;3.5,9;;;1;false]
@@ -422,13 +486,12 @@ box[7.6,2.4;3.5,0.7;#A0A0A0]
 label[8.8,2.8;Species]
 textlist[7.6,3.2;3.5,9;;;1;false]
 box[11.5,1.3;5.1,0.7;#A0A0A0]
-"label[13.7,1.7;Filter]
+label[13.7,1.7;Filter]
 box[11.5,2.0;5.1,7.9;#121212]
 label[11.8,2.5;Form:]
 checkbox[11.8,3;form_tree;Tree;false]
 checkbox[11.8,3.4;form_shrub;Shrub;false]
 label[11.8,4.1;Leaves:]
-checkbox[11.8,4.6;leaf_conif;Coniferous;false]
 checkbox[11.8,5.0;leaf_decid;Deciduous;false]
 checkbox[11.8,5.4;leaf_ever;Evergreen;false]
 label[11.8,6.1;Conservation Status:]
@@ -441,132 +504,6 @@ checkbox[11.8,8.6;cons_g4;G4 (Apparently Secure);false]
 checkbox[11.8,9;cons_g5;G5 (Secure);false]
 checkbox[11.8,9.4;cons_na;GNR/GU/GNA (Unranked);false]
 ]]
-
---- Filters lists of all species down to species whose reference keys, common names, scientific names or family names contain the substring `query`
---- @param query Substring to search for
---- @param species_list List of species name to filter
---- @param ref_list List of reference keys to filter
---- @return table, table
-local function species_search_filter(query, species_list, ref_list)
-    local filtered_lists = {species = {}, ref = {}}
-    local function match_query(str)
-        return string.find(string.lower(str), string.lower(query:trim()), 1, true)
-    end
-
-    for i,ref in ipairs(ref_list) do
-        local species = magnify.get_species_from_ref(ref)
-        local match = match_query(species.com_name) or match_query(species.sci_name) or match_query(species.fam_name) or match_query(ref)
-        if match then
-            table.insert(filtered_lists.species, species_list[i])
-            table.insert(filtered_lists.ref, ref_list[i])
-        end
-    end
-    return filtered_lists.species, filtered_lists.ref
-end
-
--- Registers the plant compendium as an inventory tab
---[[sfinv.register_page("magnify:compendium", {
-    title = "Plant Compendium", -- add translations
-    get = function(self, player, context)
-        if context.species_view == STANDARD_VIEW or context.species_view == TECH_VIEW then
-            -- create species/technical view
-            local pname = player:get_player_name()
-            local ref = get_species_ref(context.species_i_to_ref, context.species_selected)
-            
-            local formtable, size = nil, nil
-
-            if context.species_view == STANDARD_VIEW then
-                formtable,size = magnify.build_formspec_from_ref(ref, false, true)
-            elseif context.species_view == TECH_VIEW then
-                formtable,size = get_expanded_species_formspec(ref)
-            end
-                
-            minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
-
-            if not formtable then
-                formtable = "label[0,0;Uh oh, something went wrong...]button[0,0.5;5,0.6;back;Back]" -- fallback
-            end
-
-            return sfinv.make_formspec(player, context, formtable, false, size)
-        else
-            local species_list, ref_list = magnify.get_all_registered_species()
-            if context.species_search then
-                -- filter species by search results
-                species_list, ref_list = species_search_filter(context.species_search, species_list, ref_list)
-            end
-
-            -- log which species are present in the menu
-            context.species_i_to_ref = {}
-            for i,ref in pairs(ref_list) do
-                context.species_i_to_ref[i] = tonumber(ref)
-            end
-            local formspec,size = get_compendium_formspec(context)
-            -- create menu
-            return sfinv.make_formspec(player, context, formspec, false, size)
-        end
-    end,
-    on_enter = function(self, player, context)
-        context.species_view = context.species_view or MENU
-        context.species_selected = context.species_selected or 1
-    end,
-    on_player_receive_fields = function(self, player, context, fields)
-        if fields.key_enter_field == "search" or fields.search_go then
-            -- note search query + reset selection
-            context.species_search = fields.search
-            context.species_selected = 1
-            -- refresh inventory formspec
-            sfinv.set_player_inventory_formspec(player)
-        elseif fields.search_x then
-            -- clear search + reset selection
-            context.species_search = nil
-            context.species_selected = 1
-            -- refresh inventory formspec
-            sfinv.set_player_inventory_formspec(player)
-        elseif fields.species_list then
-            local event = minetest.explode_textlist_event(fields.species_list)
-            if event.type == "CHG" then
-                context.species_selected = event.index
-            end
-        elseif fields.standard_view or fields.technical_view then
-            if context.species_selected then
-                local pname = player:get_player_name()
-                local ref = get_species_ref(context.species_i_to_ref, context.species_selected)
-                
-                if magnify.get_species_from_ref(ref) then
-                    if fields.standard_view then -- standard
-                        context.species_view = STANDARD_VIEW
-                    else -- technical
-                        context.species_view = TECH_VIEW
-                    end
-                else
-                    minetest.chat_send_player(pname, "An entry for this species exists, but could not be found in the species database.\nPlease contact an administrator and ask them to check your server's species database files to ensure all species were registered properly.")
-                end
-
-                -- refresh inventory formspec
-                sfinv.set_player_inventory_formspec(player)
-            end
-        elseif fields.back then
-            context.species_view = MENU
-            -- refresh inventory formspec
-            sfinv.set_player_inventory_formspec(player)
-        elseif fields.locate then
-            local ref = get_species_ref(context.species_i_to_ref, context.species_selected)
-            local info,nodes = magnify.get_species_from_ref(ref)
-
-            if not context.search_in_progress then
-                context.search_in_progress = true
-                minetest.chat_send_player(player:get_player_name(), "Searching for nearby nodes, please wait...")
-                search_for_nearby_node(player, context, nodes)
-            else
-                minetest.chat_send_player(player:get_player_name(), "There is already a node search in progress! Please wait for your current search to finish before starting another.")
-            end
-        end
-    end,
-    is_in_nav = function(self, player, context)
-        -- only shows the compendium to players with adequate privileges
-        return check_perm(player)
-    end
-})]]
 
 -- Registers the plant compendium as an inventory button on the main inventory page
 -- Partially based on the inventory button implementation in Minetest-WorldEdit
@@ -666,15 +603,43 @@ if minetest.get_modpath("sfinv") ~= nil then
                 local event = minetest.explode_textlist_event(fields.species_list)
                 if event.type == "CHG" then
                     context.species.selected = tonumber(event.index)
+            		reload = true
                 elseif event.type == "DCL" then
                     -- open viewer
                     local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false)
                     if view_fs then
                         context.page = STANDARD_VIEW
+						minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
                         return player:set_inventory_formspec(view_fs)
                     end
                 end
             end
+        	if fields.view then
+          		-- open viewer
+                local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false)
+                if view_fs then
+                    context.page = STANDARD_VIEW
+					minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
+                    return player:set_inventory_formspec(view_fs)
+                end
+        	end
+          
+          	if fields.search_go --[[or fields.key_enter_field == "search"]] then
+				-- initialize search + reset selection
+            	context.search = fields.search or ""
+                context.family.selected = 1
+                context.genus.selected = 1
+                context.species.selected = 1
+            	reload = true
+        	end
+            if fields.search_x then
+				-- reset search + selection
+            	context.search = nil
+          		context.family.selected = 1
+                context.genus.selected = 1
+                context.species.selected = 1
+            	reload = true
+        	end
 
             if reload == true then
                 return player:set_inventory_formspec(get_compendium_formspec(context))
