@@ -251,6 +251,11 @@ function mc_tutorial.completed_action(player, g_index)
 
             -- TODO
             local player_privs = minetest.get_player_privs(pname)
+            -- add granted privs to universal priv table
+            if minetest.get_modpath("mc_worldmanager") then
+                mc_worldManager.grantUniversalPriv(player, pdata.active.on_completion.privs)
+            end
+            -- grant privs
             for _,priv in pairs(pdata.active.on_completion.privs) do
                 player_privs.priv = true
             end

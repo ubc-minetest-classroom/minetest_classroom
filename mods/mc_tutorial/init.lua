@@ -505,8 +505,19 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 name = "Press keys (KEY)",
                 fs_elem = function()
                     return {
-                        "label[0.8,2.5;kiki]",
-                    } -- stub
+                        "textarea[0.4,2.3;7,1.1;;Press (keys);]",
+                    }
+                end,
+                collapsed_elem = function() 
+                    return {
+                        "label[0.4,3.8;Open the sidebar to modify keys!]"
+                    }
+                end,
+                expanded_elem = function()
+                    return {
+                        "button[0.4,3.6;3.4,0.8;key_add;Add selected]",
+                        "button[4,3.6;3.4,0.8;key_delete;Remove selected]",
+                    }
                 end,
             },
             [mc_tutorial.ACTION.LOOK_YAW] = {
@@ -616,6 +627,11 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
 
         if action_map[context.epop.i_to_action[context.epop.selected]] then
             table.insert(epop_fs, table.concat(action_map[context.epop.i_to_action[context.epop.selected]].fs_elem()))
+            if not context.epop.expand and action_map[context.epop.i_to_action[context.epop.selected]].collapsed_elem then
+                table.insert(epop_fs, table.concat(action_map[context.epop.i_to_action[context.epop.selected]].collapsed_elem()))
+            elseif context.epop.expand and action_map[context.epop.i_to_action[context.epop.selected]].expanded_elem then
+                table.insert(epop_fs, table.concat(action_map[context.epop.i_to_action[context.epop.selected]].expanded_elem()))
+            end
         end
 
         if context.epop.expand then
