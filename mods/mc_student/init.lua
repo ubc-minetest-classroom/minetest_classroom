@@ -183,7 +183,7 @@ local function show_coordinates(player)
 					local entry = realm.Name .. " "
 
 					if utm then
-						entry = entry .. math.floor(utm.x) .. "E " .. math.floor(utm.z) .. "N Elev: " .. math.floor(utm.y)
+						entry = entry .. math.floor(utm.x) .. "E " .. math.floor(utm.z) .. "N Elev: " .. math.floor(utm.y) .. "m"
 					else
 						entry = entry .. "x=" .. math.floor(pos.x) .. " y=" .. math.floor(pos.y) .. " z=" .. math.floor(pos.z)
 					end
