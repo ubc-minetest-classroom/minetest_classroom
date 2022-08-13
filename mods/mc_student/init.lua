@@ -175,42 +175,45 @@ local function show_coordinates(player)
 		if pcoords then
 			for i in pairs(pcoords) do
 				local realm = Realm.GetRealm(prealms[i])
-				local pos = pcoords[i]
-				local utm = realm:WorldToUTMSpace(pos)
-				local latlong = realm:WorldToLatLongSpace(pos) 
-				local entry = realm.Name .. " "
 
-				if utm then
-					entry = entry .. math.floor(utm.x) .. "E " .. math.floor(utm.z) .. "N " .. math.floor(utm.y) .. "Z"
-				else
-					entry = entry .. "x=" .. math.floor(pos.x) .. " y=" .. math.floor(pos.y) .. " z=" .. math.floor(pos.z)
-				end
+				if realm then
+					local pos = pcoords[i]
+					local utm = realm:WorldToUTMSpace(pos)
+					local latlong = realm:WorldToLatLongSpace(pos) 
+					local entry = realm.Name .. " "
 
-				if latlong then
-					entry = entry .. "\\, " .. math.abs(math.floor(latlong.x * 10000)/10000)
-					if latlong.x < 0 then
-						entry = entry .. "°S " 
-					else 
-						entry = entry .. "°N "
+					if utm then
+						entry = entry .. math.floor(utm.x) .. "E " .. math.floor(utm.z) .. "N " .. math.floor(utm.y) .. "Z"
+					else
+						entry = entry .. "x=" .. math.floor(pos.x) .. " y=" .. math.floor(pos.y) .. " z=" .. math.floor(pos.z)
 					end
-					
-					entry = entry .. math.abs(math.floor(latlong.z * 10000)/10000)
-					if latlong.z < 0 then
-						entry = entry .. "°W"
-					else 
-						entry = entry .. "°E"
+
+					if latlong then
+						entry = entry .. "\\, " .. math.abs(math.floor(latlong.x * 10000)/10000)
+						if latlong.x < 0 then
+							entry = entry .. "°S " 
+						else 
+							entry = entry .. "°N "
+						end
+						
+						entry = entry .. math.abs(math.floor(latlong.z * 10000)/10000)
+						if latlong.z < 0 then
+							entry = entry .. "°W"
+						else 
+							entry = entry .. "°E"
+						end
 					end
-				end
 
-				if pnotes[i] ~= "" then
-					entry = entry .. "\\, " .. pnotes[i]
-				end
+					if pnotes[i] ~= "" then
+						entry = entry .. "\\, " .. pnotes[i]
+					end
 
-				if i ~= #pcoords then
-					entry = entry .. ","
-				end
+					if i ~= #pcoords then
+						entry = entry .. ","
+					end
 
-				table.insert(coordsList, entry)
+					table.insert(coordsList, entry)
+				end
 			end
 		end
 	end
@@ -366,8 +369,19 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 		elseif fields.go then
 			if selectedCoord ~= 0 then
-				local new_pos = minetest.deserialize(pmeta:get_string("coordinates")).coords[selectedCoord]
-				player:set_pos(new_pos)
+				local data = minetest.deserialize(pmeta:get_string("coordinates"))
+				local realm = Realm.GetRealm(data.realms[selectedCoord])
+
+				if realm then
+					if realm:getCategory().joinable(realm,player) then
+						realm:TeleportPlayer(player)
+						player:set_pos(data.coords[selectedCoord])
+					else
+						minetest.chat_send_player(player:get_player_name(), minetest.colorize("#ff0000","You no longer have access to this classroom"))
+					end
+				else
+					minetest.chat_send_player(player:get_player_name(), minetest.colorize("#ff0000","This classroom no longer exists"))
+				end
 			end
 		elseif fields.delete then
 			local data = minetest.deserialize(pmeta:get_string("coordinates"))
