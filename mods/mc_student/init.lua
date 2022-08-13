@@ -385,19 +385,27 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 		elseif fields.delete then
 			local data = minetest.deserialize(pmeta:get_string("coordinates"))
-			local newCoords, newNotes, newRealms = {}, {}, {}	
 
-			for i,coord in ipairs(data.coords) do
-				if i ~= selectedCoord then
-					table.insert(newCoords, coord)
-					table.insert(newNotes, data.notes[i])
-					table.insert(newRealms, data.realms[i])
+			if data then
+				local newData, newCoords, newNotes, newRealms = {}, {}, {}, {}	
+
+				if #(data.coords) > 1 then
+					for i,coord in ipairs(data.coords) do
+						if i ~= selectedCoord then
+							table.insert(newCoords, coord)
+							table.insert(newNotes, data.notes[i])
+							table.insert(newRealms, data.realms[i])
+						end
+					end
+
+					newData = {coords = newCoords, notes = newNotes, realms = newRealms}
+				else
+					newData = nil
 				end
-			end
 
-			local newData = {coords = newCoords, notes = newNotes, realms = newRealms}
-			pmeta:set_string("coordinates", minetest.serialize(newData))
-			show_coordinates(player)
+				pmeta:set_string("coordinates", minetest.serialize(newData))
+				show_coordinates(player)
+			end
 		elseif fields.clear then
 			pmeta:set_string("coordinates", nil)
 			show_coordinates(player)
