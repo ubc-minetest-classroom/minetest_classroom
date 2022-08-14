@@ -1,48 +1,12 @@
+
 -- Global variables
 minetest_classroom.reports = minetest.get_mod_storage()
 minetest_classroom.mc_students = {teachers = {}}
-mc_student = {
-	path = minetest.get_modpath("mc_student"),
-	priv_table = {interact = true}
-}
-
-dofile(mc_student.path .. "/tutorialbook.lua")
+mc_student = {path = minetest.get_modpath("mc_student")}
 
 -- Local variables
 local tool_name = "mc_student:notebook"
-local priv_table = mc_student.priv_table
-
--- Split pos in coordlist from character "x=1 y=2 z=3" to numeric table {1,2,3}
-local function pos_split (inputstr)
-	local t={}
-	for str in string.gmatch(inputstr, "([^=%s]+)") do
-		table.insert(t, str)
-	end
-	local tt={x=tonumber(t[2]),z=tonumber(t[6]),y=tonumber(t[4])}
-	return tt
-end
-
--- Define an initial formspec that will redirect to different formspecs depending on what the student wants to do
-local mc_student_menu = {
-	"formspec_version[5]",
-	"size[10,9]",
-	"label[3.1,0.7;What do you want to do?]",
-	"button[1,1.6;3.8,1.3;spawn;Go Home]",
-	"button[5.2,1.6;3.8,1.3;accesscode;Join Classroom]",
-	"button[1,3.3;3.8,1.3;coordinates;My Coordinates]",
-	"button[5.2,3.3;3.8,1.3;marker;Place a Marker]",
-	"button[1,5;3.8,1.3;taskstudent;View Tasks]",
-	"button[5.2,5;3.8,1.3;report;Report]",
-	"button_exit[3.1,6.7;3.8,1.3;exit;Exit]"
-}
-
-local function show_student_menu(player)
-	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:menu", table.concat(mc_student_menu,""))
-		return true
-	end
-end
+local priv_table = {interact = true}
 
 minetest.register_on_joinplayer(function(player)
 	if minetest.check_player_privs(player, { teacher = true }) then
@@ -54,7 +18,89 @@ minetest.register_on_leaveplayer(function(player)
 	minetest_classroom.mc_students.teachers[player:get_player_name()] = nil
 end)
 
--- Define the Report formspec
+------------------------------------
+--- FORMSPEC DEFINITIONS/HELPERS ---
+------------------------------------
+
+-------------------------
+--- MAIN STUDENT MENU ---
+local mc_student_menu = {
+	"formspec_version[5]",
+	"size[10,9]",
+	"label[3.1,0.7;What do you want to do?]",
+	"button[1,1.6;3.8,1.3;spawn;Go Home]",
+	"button[5.2,1.6;3.8,1.3;classrooms;Join Classroom]",
+	"button[1,3.3;3.8,1.3;coordinates;My Coordinates]",
+	"button[5.2,3.3;3.8,1.3;marker;Place a Marker]",
+	"button[1,5;3.8,1.3;taskstudent;View Tasks]",
+	"button[5.2,5;3.8,1.3;report;Report]",
+	"button_exit[3.1,6.7;3.8,1.3;exit;Exit]"
+}
+
+local function show_student_menu(player)
+	if mc_helpers.checkPrivs(player,priv_table) then
+		minetest.show_formspec(player:get_player_name(), "mc_student:menu", table.concat(mc_student_menu,""))
+	end
+end
+-----------------------------
+
+
+------------------
+--- CLASSROOMS ---
+local mc_student_classrooms = {
+	"formspec_version[6]",
+	"size[6.5,7.5]",
+	"label[2.5,0.5;Classrooms]",
+	"pwdfield[0.6,5.8;3,0.5;accesscode;Enter Access Code]",
+	"button[5.3,6.7;1,0.6;join;Join]",
+	"button[0.2,6.7;1,0.6;back;Back]",
+	"button[4,5.7;2,0.6;register;Register]",
+	"textlist[0.6,0.9;5.4,4.3;realms;;1]"
+}
+
+local classroomRealms = {}
+local selectedClassroom = 1
+
+local function show_classrooms(player)
+	if mc_helpers.checkPrivs(player,priv_table) then
+		local textlist = "textlist[0.6,0.9;5.4,4.3;realms;;1]"
+		local is_first = true
+
+		for i,realm in ipairs(Realm.realmDict) do
+			if realm:getCategory().joinable(realm,player) then
+				classroomRealms[i] = realm
+
+				if not is_first then
+					textlist = textlist:sub(1, -4) .. "," .. realm.Name .. ";1]"
+				else
+					textlist = textlist:sub(1, -4) .. realm.Name .. ";1]"
+					is_first = false
+				end	
+			end
+		end
+
+		mc_student_classrooms[#mc_student_classrooms] = textlist
+		minetest.show_formspec(player:get_player_name(), "mc_student:classrooms", table.concat(mc_student_classrooms,""))
+	end
+end
+
+function check_access_code(submitted, codes)
+	local found = false
+	local loc = 1
+	for _,v in pairs(codes) do
+	    if v == submitted then
+		    local found = true
+		    return loc
+	    end
+	    loc = loc + 1
+	end
+    return found
+end
+----------------------
+
+
+----------------------
+--- REPORT ---
 local mc_student_report = {
 	"formspec_version[5]",
 	"size[7,7]",
@@ -69,104 +115,11 @@ local function show_report(player)
 	minetest.show_formspec(pname, "mc_student:report", table.concat(mc_student_report,""))
 	return true
 end
+-----------------------
 
--- Define the Coordinates formspec
-local function show_coordinates(player)
-	local pname = player:get_player_name()
-	mc_student_coordinates = {
-		"formspec_version[5]",
-		"size[15,10]",
-		"label[6.3,0.5;Coordinates Stored]"
-	}
 
-	-- Get the stored coordinates for the player
-	local pmeta = player:get_meta()
-	pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-	if pdata == nil then
-		-- No coordinates stored, so return an empty list element
-		mc_student_coordinates[#mc_student_coordinates + 1] = "textlist[0.3,1;14.4,7.5;;No Coordinates Stored;1;false]"
-	else
-		mc_student_coordinates[#mc_student_coordinates + 1] = "textlist[0.3,1;14.4,7.5;coordlist;"
-		-- Some coordinates were found, so iterate the list
-		pxyz = pdata.coords
-		pnotes = pdata.notes
-		for i in pairs(pxyz) do
-			mc_student_coordinates[#mc_student_coordinates + 1] = pxyz[i] .. " " .. pnotes[i] .. ","
-		end
-		mc_student_coordinates[#mc_student_coordinates + 1] = ";1;false]"
-	end
-
-	mc_student_coordinates[#mc_student_coordinates + 1] = "button[0.1,9.1;1.6,0.8;back;Back]"
-	mc_student_coordinates[#mc_student_coordinates + 1] = "button[1.9,9.1;1.4,0.8;go;Go]"
-	mc_student_coordinates[#mc_student_coordinates + 1] = "button[3.5,9.1;1.9,0.8;deleteall;Delete All]"
-	mc_student_coordinates[#mc_student_coordinates + 1] = "button[5.6,9.1;1.6,0.8;record;Record]"
-	mc_student_coordinates[#mc_student_coordinates + 1] = "field[7.4,9.1;7.3,0.8;message;Note;Add a note to record at your current location]"
-	minetest.show_formspec(pname, "mc_student:coordinates", table.concat(mc_student_coordinates,""))
-	return true
-end
-
-local function record_coordinates(player,message)
-	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		pmeta = player:get_meta()
-		local pos = player:get_pos()
-		temp = minetest.deserialize(pmeta:get_string("coordinates"))
-		if temp == nil then
-			datanew = {
-				coords = {"x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z), },
-				notes = { message, },
-			}
-		else
-			table.insert(temp.coords, "x="..math.floor(pos.x).." z="..math.floor(pos.y).." y="..math.floor(pos.z))
-			table.insert(temp.notes, message)
-			datanew = {coords = temp.coords, notes = temp.notes, }
-		end
-		pmeta:set_string("coordinates", minetest.serialize(datanew))
-		temp = nil
-		minetest.chat_send_player(pname,pname..": Your position was recorded in your notebook.")
-		-- Update the formspec
-		show_coordinates(player)
-	end
-end
-
--- Define the Access Code formspec
-local mc_student_accesscode = {
-	"formspec_version[5]",
-	"size[5,3]",
-	"label[0.6,0.5;Enter an Access Code]",
-	"pwdfield[0.5,0.9;3.9,0.8;accesscode;]",
-	"button_exit[0.9,2;3,0.8;submit;Submit]",
-	"button_exit[4.4,0;0.6,0.5;exit;X]"
-}
-
-local function show_accesscode(player)
-	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:accesscode", table.concat(mc_student_accesscode,""))
-		return true
-	end
-end
-
-local mc_student_accesscode_fail = {
-	"formspec_version[5]",
-	"size[5,4.2]",
-	"label[0.6,0.5;Enter Your Access Code]",
-	"pwdfield[0.5,0.9;3.9,0.8;accesscode;]",
-	"button_exit[0.9,2;3,0.8;submit;Submit]",
-	"label[0.9,3.2;Invalid access code.]",
-	"label[1.2,3.7;Please try again.]",
-	"button_exit[4.4,0;0.6,0.5;exit;X]"
-}
-
-local function show_accesscode_fail(player)
-	if mc_helpers.checkPrivs(player,priv_table) then
-		local pname = player:get_player_name()
-		minetest.show_formspec(pname, "mc_student:accesscode_fail", table.concat(mc_student_accesscode_fail,""))
-		return true
-	end
-end
-
--- Define place a marker formspec
+-----------------------
+--- MARKER ---
 local mc_student_marker = {
 	"formspec_version[5]",
 	"size[7,6.5]",
@@ -184,9 +137,127 @@ local mc_student_marker = {
 		return true
 	end
 end
+----------------------
 
--- Processing the form from the menu
+
+-------------------
+--- COORDINATES ---
+local selectedCoord = 0
+
+mc_student_coordinates = {
+	"formspec_version[6]",
+	"size[13,9.3]",
+	"label[5.4,0.4;Coordinates Stored]",
+	"button[9.3,7.6;3.3,0.6;record;Record]",
+	"button[9.3,8.5;1.6,0.6;delete;Delete]",
+	"button[11.2,8.5;1.4,0.6;go;Go]",
+	"button[7.2,8.5;1.7,0.6;clear;Clear All]",
+	"button[0.4,8.5;1.2,0.6;back;Back]",
+	"textarea[0.4,7.6;8.5,0.6;note;Add a note describing your current location;]",
+	"textlist[0.4,0.7;12.2,6.4;coordlist;;1;false]" 
+}
+
+local function show_coordinates(player)
+	selectedCoord = 0
+
+	-- Get the stored coordinates for the player
+	local coordsList = {}
+	local pmeta = player:get_meta()
+	pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+
+	if pdata == nil then
+		table.insert(coordsList, "No Coordinates Stored")
+	else
+		local prealms = pdata.realms
+		local pcoords = pdata.coords
+		local pnotes = pdata.notes
+
+		if pcoords then
+			for i in pairs(pcoords) do
+				local realm = Realm.GetRealm(prealms[i])
+
+				if realm then
+					local pos = pcoords[i]
+					local utm = realm:WorldToUTMSpace(pos)
+					local latlong = realm:WorldToLatLongSpace(pos) 
+					local entry = realm.Name .. " "
+
+					if utm then
+						entry = entry .. math.floor(utm.x) .. "E " .. math.floor(utm.z) .. "N Elev: " .. math.floor(utm.y) .. "m"
+					else
+						entry = entry .. "x=" .. math.floor(pos.x) .. " y=" .. math.floor(pos.y) .. " z=" .. math.floor(pos.z)
+					end
+
+					if latlong then
+						entry = entry .. "\\, " .. math.abs(math.floor(latlong.x * 10000)/10000)
+						if latlong.x < 0 then
+							entry = entry .. "°S " 
+						else 
+							entry = entry .. "°N "
+						end
+						
+						entry = entry .. math.abs(math.floor(latlong.z * 10000)/10000)
+						if latlong.z < 0 then
+							entry = entry .. "°W"
+						else 
+							entry = entry .. "°E"
+						end
+					end
+
+					if pnotes[i] ~= "" then
+						entry = entry .. "\\, " .. pnotes[i]
+					end
+
+					if i ~= #pcoords then
+						entry = entry .. ","
+					end
+
+					table.insert(coordsList, entry)
+				end
+			end
+		end
+	end
+
+	mc_student_coordinates[#mc_student_coordinates] = "textlist[0.4,0.7;12.2,6.4;coordlist;" .. table.concat(coordsList, "") .. "]"
+	minetest.show_formspec(player:get_player_name(), "mc_student:coordinates", table.concat(mc_student_coordinates,""))
+end
+
+local function record_coordinates(player,message)
+	if mc_helpers.checkPrivs(player,priv_table) then
+		local pmeta = player:get_meta()
+		local pos = player:get_pos()
+		local realmID = pmeta:get_int("realm")
+		temp = minetest.deserialize(pmeta:get_string("coordinates"))
+
+		if temp == nil then
+			datanew = {
+				realms = { realmID, },
+				coords = { pos, }, 
+				notes = { message, },
+			}
+		else
+			table.insert(temp.realms, realmID)
+			table.insert(temp.coords, pos)
+			table.insert(temp.notes, message)
+			datanew = {realms = temp.realms, coords = temp.coords, notes = temp.notes, }
+		end
+
+		pmeta:set_string("coordinates", minetest.serialize(datanew))
+		temp = nil
+		minetest.chat_send_player(player:get_player_name(), player:get_player_name() ..": Your position was recorded in your notebook.")
+		show_coordinates(player)
+	end
+end
+------------------------
+
+
+------------------------------------
+--- FORMSPEC AND TOOL MANAGEMENT ---
+------------------------------------
+
 minetest.register_on_player_receive_fields(function(player, formname, fields)
+	local pmeta = player:get_meta()
+
 	if string.sub(formname, 1, 10) ~= "mc_student" then
 		return false
 	end
@@ -194,7 +265,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	local wait = os.clock()
 	while os.clock() - wait < 0.05 do end --popups don't work without this
 
-	-- Menu
+	if fields.back then
+		show_student_menu(player)
+	end
+
 	if formname == "mc_student:menu" then
 		if fields.spawn then
 			local spawnRealm = mc_worldManager.GetSpawnRealm()
@@ -203,8 +277,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			show_report(player)
 		elseif fields.coordinates then
 			show_coordinates(player)
-		elseif fields.accesscode then
-			show_accesscode(player)
+		elseif fields.classrooms then
+			-- show_accesscode(player)
+			show_classrooms(player)
 		elseif fields.marker then
 			show_marker(player)
 		elseif fields.taskstudent then
@@ -217,11 +292,22 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 	end
 
+	if formname == "mc_student:classrooms" then
+		local event = minetest.explode_textlist_event(fields.realms)
+
+		if fields.realms then
+			if event.type == "CHG" then
+				selectedClassroom = event.index
+			end
+		elseif fields.join then
+			local realm = classroomRealms[selectedClassroom]
+			realm:TeleportPlayer(player)
+		end
+	end
+
 	if formname == "mc_student:report" then
-		if fields.back then
-			show_student_menu(player)
 		-- Checking for nil (caused by player pressing escape instead of Back) ensures the game does not crash
-		elseif fields.report ~= " " and fields.report ~= nil then
+		if fields.report ~= " " and fields.report ~= nil then
 			local pname = player:get_player_name()
 
 			-- Count the number of words, by counting for replaced spaces
@@ -266,9 +352,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 
 	if formname == "mc_student:marker" then
-		if fields.back then
-			show_student_menu(player)
-		elseif fields.message then
+		if fields.message then
 			place_marker(player,fields.message)
 		elseif fields.message == nil then
 			return true
@@ -276,28 +360,54 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 
 	if formname == "mc_student:coordinates" then
-		if fields.back then
-			show_student_menu(player)
-		elseif fields.record then
-			record_coordinates(player,fields.message)
+		local event = minetest.explode_textlist_event(fields.coordlist)
+
+		if fields.record then
+			record_coordinates(player,fields.note)
 		elseif fields.coordlist then
-			local event = minetest.explode_textlist_event(fields.coordlist)
-		    	if event.type == "CHG" then
-			-- "CHG" = something is selected in the list
-				context.selected = event.index
-		    	end
-		elseif fields.go then
-			local pname = player:get_player_name()
-			local pmeta = player:get_meta()
-			if not context.selected then
-				context.selected = 1
+			if event.type == "CHG" then
+				selectedCoord = event.index
 			end
-		    	local temp = minetest.deserialize(pmeta:get_string("coordinates"))
-		    	local new_pos_char = temp.coords[context.selected]
-			local new_pos_tab = pos_split(new_pos_char)
-		    	player:set_pos(new_pos_tab)
-		elseif fields.deleteall then
-			local pmeta = player:get_meta()
+		elseif fields.go then
+			if selectedCoord ~= 0 then
+				local data = minetest.deserialize(pmeta:get_string("coordinates"))
+				local realm = Realm.GetRealm(data.realms[selectedCoord])
+
+				if realm then
+					if realm:getCategory().joinable(realm,player) then
+						realm:TeleportPlayer(player)
+						player:set_pos(data.coords[selectedCoord])
+					else
+						minetest.chat_send_player(player:get_player_name(), minetest.colorize("#ff0000","You no longer have access to this classroom"))
+					end
+				else
+					minetest.chat_send_player(player:get_player_name(), minetest.colorize("#ff0000","This classroom no longer exists"))
+				end
+			end
+		elseif fields.delete then
+			local data = minetest.deserialize(pmeta:get_string("coordinates"))
+
+			if data then
+				local newData, newCoords, newNotes, newRealms = {}, {}, {}, {}	
+
+				if #(data.coords) > 1 then
+					for i,coord in ipairs(data.coords) do
+						if i ~= selectedCoord then
+							table.insert(newCoords, coord)
+							table.insert(newNotes, data.notes[i])
+							table.insert(newRealms, data.realms[i])
+						end
+					end
+
+					newData = {coords = newCoords, notes = newNotes, realms = newRealms}
+				else
+					newData = nil
+				end
+
+				pmeta:set_string("coordinates", minetest.serialize(newData))
+				show_coordinates(player)
+			end
+		elseif fields.clear then
 			pmeta:set_string("coordinates", nil)
 			show_coordinates(player)
 		end
@@ -388,35 +498,28 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 end)
 
-function check_access_code(submitted, codes)
-	local found = false
-	local loc = 1
-	for _,v in pairs(codes) do
-	    if v == submitted then
-		    local found = true
-		    return loc
-	    end
-	    loc = loc + 1
-	end
-    return found
-end
-
 -- The student notebook for accessing the student actions
 minetest.register_tool(tool_name , {
 	description = "Notebook for students",
 	inventory_image = "notebook.png",
+	_mc_tool_privs = priv_table,
 	-- Left-click the tool activates the teacher menu
 	on_use = function (itemstack, player, pointed_thing)
         local pname = player:get_player_name()
-		-- Check for adequate privileges
 		if mc_helpers.checkPrivs(player,priv_table) then
 			show_student_menu(player)
 		end
 	end,
-	-- Destroy the controller on_drop to keep things tidy
+	
 	on_drop = function(itemstack, dropper, pos)
 	end,
 })
+-------------------------------
+
+
+----------------------
+--- MARKER HELPERS ---
+----------------------
 
 if minetest.get_modpath("mc_toolhandler") then
 	mc_toolhandler.register_tool_manager(tool_name, {privs = priv_table, inv_override = "main"})
@@ -598,3 +701,44 @@ function place_marker(player,message)
 		minetest.chat_send_player(pname,pname..": You are not allowed to place markers. Please submit a report from your notebook to request this privilege.")
 	end
 end
+
+
+
+
+
+-- -- Define the Access Code formspec
+-- local mc_student_accesscode = {
+-- 	"formspec_version[5]",
+-- 	"size[5,3]",
+-- 	"label[0.6,0.5;Enter an Access Code]",
+-- 	"pwdfield[0.5,0.9;3.9,0.8;accesscode;]",
+-- 	"button_exit[0.9,2;3,0.8;submit;Submit]",
+-- 	"button_exit[4.4,0;0.6,0.5;exit;X]"
+-- }
+
+-- local function show_accesscode(player)
+-- 	if mc_helpers.checkPrivs(player,priv_table) then
+-- 		local pname = player:get_player_name()
+-- 		minetest.show_formspec(pname, "mc_student:accesscode", table.concat(mc_student_accesscode,""))
+-- 		return true
+-- 	end
+-- end
+
+-- local mc_student_accesscode_fail = {
+-- 	"formspec_version[5]",
+-- 	"size[5,4.2]",
+-- 	"label[0.6,0.5;Enter Your Access Code]",
+-- 	"pwdfield[0.5,0.9;3.9,0.8;accesscode;]",
+-- 	"button_exit[0.9,2;3,0.8;submit;Submit]",
+-- 	"label[0.9,3.2;Invalid access code.]",
+-- 	"label[1.2,3.7;Please try again.]",
+-- 	"button_exit[4.4,0;0.6,0.5;exit;X]"
+-- }
+
+-- local function show_accesscode_fail(player)
+-- 	if mc_helpers.checkPrivs(player,priv_table) then
+-- 		local pname = player:get_player_name()
+-- 		minetest.show_formspec(pname, "mc_student:accesscode_fail", table.concat(mc_student_accesscode_fail,""))
+-- 		return true
+-- 	end
+-- end
