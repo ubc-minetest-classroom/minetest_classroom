@@ -1,8 +1,14 @@
--- Clear + reinitialize database to remove any unregistered plant species
-magnify_plants = minetest.get_mod_storage()
-magnify_plants:from_table(nil)
+magnify = {
+    path = minetest.get_modpath("magnify"),
+    S = minetest.get_translator("magnify"),
+    species = {ref = minetest.get_mod_storage(), node = {}},
+    map = {}
+}
+-- DATABASE HARD RESET SNIPPET: ONLY USE FOR DEBUGGING PURPOSES
+--magnify.species.ref:from_table(nil)
 
-dofile(minetest.get_modpath("magnify") .. "/api.lua")
+dofile(magnify.path.."/api.lua")
+dofile(magnify.path.."/map.lua")
 
 -- constants
 local tool_name = "magnify:magnifying_tool"
@@ -22,7 +28,6 @@ minetest.register_tool(tool_name, {
     _doc_items_longdesc = "This tool can be used to quickly learn more about about one's closer environment. It identifies and analyzes plant-type blocks and it shows extensive information about the thing on which it is used.",
     _doc_items_usagehelp = "Punch any block resembling a plant you wish to learn more about. This will open up the appropriate help entry.",
     _doc_items_hidden = false,
-    _mc_tool_privs = priv_table,
     tool_capabilities = {},
     range = 10,
     groups = { disable_repair = 1 }, 
@@ -45,7 +50,7 @@ minetest.register_tool(tool_name, {
                     minetest.show_formspec(pname, "magnifying_tool:identify", species_formspec)
                 else
                     -- bad: display corrupted node message in chat
-                    minetest.chat_send_player(pname, "An entry for this item exists, but could not be found in the plant database.\nPlease contact an administrator and ask them to check your server's plant database files to ensure all plants were registered properly.")
+                    minetest.chat_send_player(pname, "An entry for this item exists, but could not be found in the species database.\nPlease contact an administrator and ask them to check your server's species database files to ensure all species were registered properly.")
                 end
             else
                 -- bad: display failure message in chat
@@ -66,6 +71,10 @@ minetest.register_tool(tool_name, {
         end
     end
 })
+
+if minetest.get_modpath("mc_toolhandler") then
+	mc_toolhandler.register_tool_manager(tool_name, {privs = priv_table})
+end
 
 -- Register tool aliases for convenience
 minetest.register_alias("magnify:magnifying_glass", tool_name)
@@ -97,7 +106,7 @@ minetest.register_craft({
 --- @return string
 --- @see magnify.get_all_registered_species()
 local function get_species_ref(i_to_ref, index)
-    return "ref_"..i_to_ref[index]
+    return i_to_ref[index]
 end
 
 --- Dynamically creates a square table of node images
@@ -204,7 +213,7 @@ local function search_for_nearby_node(player, context, nodes)
 end
 
 --- Return the technical formspec for a species
---- @param ref Reference key of plant species
+--- @param ref Reference key of species
 --- @return formspec string, size
 local function get_expanded_species_formspec(ref)
     local info,nodes = magnify.get_species_from_ref(ref)
@@ -215,7 +224,7 @@ local function get_expanded_species_formspec(ref)
             "formspec_version[5]", size,
             "box[0,0;12.2,0.8;#9192a3]",
             "label[4.8,0.2;Technical Information]",
-            "label[0,1;", minetest.formspec_escape(info.com_name) or minetest.formspec_escape(info.sci_name) or "Unknown", " @ ", minetest.formspec_escape(ref), "]",
+            "label[0,1;", minetest.formspec_escape(info.com_name) or minetest.formspec_escape(info.sci_name) or "Unknown", " @ ref. ", minetest.formspec_escape(ref), "]",
             "textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
             "label[0,1.6;Associated nodes:]",
             "button[6.2,6.2;6.2,0.6;back;Back]",
@@ -313,7 +322,7 @@ sfinv.register_page("magnify:compendium", {
             -- log which species are present in the menu
             context.species_i_to_ref = {}
             for i,ref in pairs(ref_list) do
-                context.species_i_to_ref[i] = tonumber(string.sub(ref, 5))
+                context.species_i_to_ref[i] = tonumber(ref)
             end
             -- create menu
             return sfinv.make_formspec(player, context, get_compendium_formspec(species_list, context), false)
@@ -353,7 +362,7 @@ sfinv.register_page("magnify:compendium", {
                         context.species_view = TECH_VIEW
                     end
                 else
-                    minetest.chat_send_player(pname, "An entry for this species exists, but could not be found in the plant database.\nPlease contact an administrator and ask them to check your server's plant database files to ensure all plants were registered properly.")
+                    minetest.chat_send_player(pname, "An entry for this species exists, but could not be found in the species database.\nPlease contact an administrator and ask them to check your server's species database files to ensure all species were registered properly.")
                 end
 
                 -- refresh inventory formspec
@@ -381,3 +390,23 @@ sfinv.register_page("magnify:compendium", {
         return check_perm(player)
     end
 })
+
+-- Storage cleanup function: removes any registered species that do not have any nodes associated with them
+minetest.register_on_mods_loaded(function()
+    local ref_list = {}
+    local storage_data = magnify.species.ref:to_table()
+    -- collect all refs
+    for ref,_ in pairs(storage_data.fields) do
+        if tonumber(ref) ~= nil then
+            ref_list[tostring(ref)] = true
+        end
+    end
+    -- check that some node is still asociated with each ref
+    for _,ref in pairs(magnify.species.node) do
+        ref_list[tostring(ref)] = nil
+    end
+    -- remove all refs that are not associated with any nodes
+    for ref,_ in pairs(ref_list) do
+        magnify.clear_ref(ref)
+    end
+end)
