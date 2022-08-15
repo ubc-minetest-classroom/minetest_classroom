@@ -11,6 +11,8 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/universalPrivilege.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/teleporterNode.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/WorldGen.lua")
 
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm_extensions/realmExtensions.lua")
+
 ---@private
 ---Loads the persistent mod data for mc_worldManager.
 ---@return void

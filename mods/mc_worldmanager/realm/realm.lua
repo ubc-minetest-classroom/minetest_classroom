@@ -482,7 +482,7 @@ end
 ---@param spawnPos table SpawnPoint in localSpace.
 ---@return boolean Whether the operation succeeded.
 function Realm:UpdateSpawn(spawnPos)
-    local pos = self:LocalToWorldPosition(spawnPos)
+    local pos = self:LocalToWorldSpace(spawnPos)
     self.SpawnPoint = { x = pos.x, y = pos.y, z = pos.z }
     Realm.SaveDataToStorage()
     return true
@@ -493,7 +493,12 @@ function Realm:RunFunctionFromTable(table, player)
         for key, value in pairs(table) do
             if (value.tableName ~= nil and value.functionName ~= nil) then
                 local table = loadstring("return " .. value.tableName)
-                table()[value.functionName](self, player)
+                if (table ~= nil) then
+                    local tableFunc = table()[value.functionName]
+                    if (tableFunc ~= nil) then
+                        tableFunc(self, player)
+                    end
+                end
             end
         end
     end
