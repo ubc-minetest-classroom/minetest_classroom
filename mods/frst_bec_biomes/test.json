@@ -1,0 +1,20 @@
+{
+	"depth_filler" : 3.0,
+	"depth_riverbed" : 2.0,
+	"depth_top" : 1.0,
+	"depth_water_top" : 10.0,
+	"heat_point" : 50.0,
+	"humidity_point" : 50.0,
+	"name" : "frst_bec_biomes:forest",
+	"node_cave_liquid" : "default:dirt",
+	"node_dust" : "default:snow",
+	"node_filler" : "default:dirt",
+	"node_riverbed" : "default:dirt",
+	"node_stone" : "default:stone",
+	"node_top" : "default:dirt_with_snow",
+	"node_water" : "default:dirt",
+	"node_water_top" : "default:dirt",
+	"vertical_blend" : 8.0,
+	"y_max" : 31000.0,
+	"y_min" : -31000.0
+}
