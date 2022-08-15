@@ -355,45 +355,59 @@ function magnify.build_formspec_from_ref(ref, is_exit)
         -- entry good, return V3 formspec
         local model_spec_loc = (info.model_obj and info.origin) and get_obj_directory(info.origin, info.model_obj)
         local cons_status_desc, status_col = get_cons_status_info(info.cons_status)
-        local size = "size[17,12.6]"
+        local size = "size[19,13]"
         local formtable_v3 = {
             "formspec_version[6]", size,
-        
-            "box[0,0;17,0.6;#FFFFFF]",
-            "label[6.7,0.3;Plant Compendium]",
-            "button", is_exit and "_exit" or "", "[0.2,0.8;1.6,0.6;back;      Back]",
-            "image[0.2,0.8;0.6,0.6;texture.png]",
-            "button[3.9,0.8;4.1,0.6;view;      View in Compendium]",
-            "image[3.9,0.8;0.6,0.6;texture.png]",
-            "button[8.1,0.8;3.2,0.6;locate;      Locate in World]",
-            "image[8.1,0.8;0.6,0.6;texture.png]",
-            "button[11.4,0.8;3,0.6;tech_view;      Technical Info]",
-            "image[11.4,0.8;0.6,0.6;texture.png]",
-            "button[14.5,0.8;2.3,0.6;favourite;      Favourite]",
-            "image[14.5,0.8;0.6,0.6;texture.png]",
-            "box[0.2,1.4;16.6,4.8;#FFFFFF]",
-            "box[0.3,1.5;8.9,4.6;#000000]",
+
+            "no_prepend[]",
+            "bgcolor[#00000000;true;]",
+            "background[0,0;0,0;magnify_pixel.png^[multiply:#000000^[opacity:69;true]",
+            "image[0,0;19,0.6;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
+            "style_type[label;font=mono]",
+            "label[7.8,0.3;Plant Compendium]",
+            "style_type[label;font=normal]",
+            "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;texture.png;back;;false;false]",
+            "image_button[0.7,0;0.6,0.6;texture.png;nav_backward;;false;false]",
+            "image_button[1.4,0;0.6,0.6;texture.png;nav_forward;;false;false]",
+
+            "style_type[button;font=mono;textcolor=#000000;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
+            "button[6.6,0.8;4.6,0.6;view;   View in Compendium]",
+            "image[6.6,0.8;0.6,0.6;texture.png]",
+            "button[11.3,0.8;2.2,0.6;locate;   Locate]",
+            "image[11.3,0.8;0.6,0.6;texture.png]",
+            "button[13.6,0.8;3.8,0.6;tech_view;   Technical Info]",
+            "image[13.6,0.8;0.6,0.6;texture.png]",
+            "image_button[17.5,0.8;0.6,0.6;texture.png;favourite;;false;false]",
+            "image_button[18.2,0.8;0.6,0.6;texture.png;settings;;false;false]",
+
+            "image[0.2,1.4;18.6,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            "image[0.3,1.5;10.5,4.7;magnify_pixel.png^[multiply:#000000^[opacity:255]",
+            "tooltip[back;Back]",
+            "tooltip[nav_forward;Next]",
+            "tooltip[nav_backward;Previous]",
+            "tooltip[favourite;Save to Favourites]",
+            "tooltip[settings;Settings]",
 
             "style_type[textarea;font=mono]",
-            "textarea[0.45,1.7;8.6,0.8;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
+            "textarea[0.45,1.7;10.4,0.8;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
             "style_type[textarea;font_size=*1.25]",
-            "textarea[0.45,2.4;8.6,1;;;", minetest.formspec_escape(info.sci_name or "Scientific name unknown"), "]",
+            "textarea[0.45,2.4;10.4,1;;;", minetest.formspec_escape(info.sci_name or "Scientific name unknown"), "]",
             "style_type[textarea;font_size=*2.25;font=mono,bold]",
-            "textarea[0.45,2.9;8.6,2;;;", minetest.formspec_escape(info.com_name or "Common name unknown"), "]",
-            "style_type[textarea;font=normal;font_size=*1]",
-        
+            "textarea[0.45,2.9;10.4,1.8;;;", minetest.formspec_escape(info.com_name or "Common name unknown"), "]",
+
             -- TODO: add tag labels dynamically
-            "box[0.5,5.3;1.4,0.6;", status_col or "#9192A3", "]",
-            "label[0.7,5.6;Status]",
-            "box[2.1,5.3;1.2,0.6;#00FF00]",
-            "label[2.3,5.6;Type]",
-            "box[3.5,5.3;1.5,0.6;#00FF00]",
-            "label[3.7,5.6;Type 2]",
-            "box[5.2,5.3;1.5,0.6;#FFA500]",
-            "label[5.4,5.6;Type 3]",
+            "box[0.5,5.4;1.4,0.6;", status_col or "#9192A3", "]",
+            "label[0.7,5.7;Status]",
+            "box[2.1,5.4;1.2,0.6;#00FF00]",
+            "label[2.3,5.7;Type]",
+            "box[3.5,5.4;1.5,0.6;#00FF00]",
+            "label[3.7,5.7;Type 2]",
+            "box[5.2,5.4;1.5,0.6;#FFA500]",
+            "label[5.4,5.7;Type 3]",
         
-            "image[", "9.3,1.5;7.4,4.15;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
-            "textarea[", "0.2,6.45;9,5.55", ";;;", -- info area
+            "image[10.9,1.5;7.8,4.4;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
+            "style_type[textarea;font=mono;font_size=*1]",
+            "textarea[0.2,6.5;10.7,6;;;", -- info area
             --"- ", minetest.formspec_escape(cons_status_desc or "Conservation status unknown"), "\n",
             "- ", minetest.formspec_escape((info.region and "Found in "..info.region) or "Location range unknown"), "\n",
             "- ", minetest.formspec_escape(info.height or "Height unknown"), "\n",
@@ -402,33 +416,34 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             minetest.formspec_escape(info.bloom or "Bloom pattern unknown"),
             "]",
         
-            "image_button[9.3,6.3;1.8,1;", type(info.texture) == "table" and info.texture[2] or "test.png", ";;;false;false]",
-            "image_button[11.2,6.3;1.8,1;", type(info.texture) == "table" and info.texture[3] or "test.png", ";;;false;false]",
-            "image_button[13.1,6.3;1.8,1;", type(info.texture) == "table" and info.texture[4] or "test.png", ";;;false;false]",
-            "image_button[15,6.3;1.8,1;", type(info.texture) == "table" and info.texture[5] or "test.png", ";;;false;false]",
+            "image_button[10.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[2] or "test.png", ";;;false;false]",
+            "image_button[12.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[3] or "test.png", ";;;false;false]",
+            "image_button[14.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[4] or "test.png", ";;;false;false]",
+            "image_button[16.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[5] or "test.png", ";;;false;false]",
         }
         
         if model_spec_loc then
               -- add model + image 6
             local model_spec = read_obj_textures(model_spec_loc)
             table.insert(formtable_v3, table.concat({
-                "style[plant_model;bgcolor=#789cbf]",
-                "model[", "9.3,7.4;3.7,4.6", ";plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";", info.model_rot_x or "0", ",", info.model_rot_y or "180", ";false;true;;]",
-                "image[", "13.1,7.4;3.7,4.6", ";", (type(info.texture) == "table" and info.texture[6]) or "test.png", "]",
+                "style[plant_model;bgcolor=#466577]",
+                "model[10.9,7.7;3.9,4.7;plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";", info.model_rot_x or "0", ",", info.model_rot_y or "180", ";false;true;;]",
+                "image[14.9,7.7;3.9,4.7;", (type(info.texture) == "table" and info.texture[6]) or "test.png", "]",
             }))
         else
             -- add images 6 + 7
             table.insert(formtable_v3, table.concat({
-                "image[9.3,7.4;3.7,4.6;", (type(info.texture) == "table" and info.texture[6]) or "test.png", "]",
-                "image[13.1,7.4;3.7,4.6;", (type(info.texture) == "table" and info.texture[7]) or "test.png", "]",
+                "image[10.9,7.7;3.9,4.7;", (type(info.texture) == "table" and info.texture[6]) or "test.png", "]",
+                "image[14.9,7.7;3.9,4.7;", (type(info.texture) == "table" and info.texture[7]) or "test.png", "]",
             }))
         end
     
         table.insert(formtable_v3, table.concat({
-            "style_type[textarea;font=normal,italic;font_size=*0.85]",
-            "textarea[", "9.3,5.7;7.4,0.5", ";;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
-            "box[0,12.2;17,0.4;#FFFFFF]",
-            "label[0.1,12.4;Source:]", 
+            "style_type[textarea;font=mono;font_size=*0.7;textcolor=#000000]",
+            "textarea[10.85,5.95;7.9,0.39;;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
+            "image[0,12.6;19,0.4;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
+            "style_type[label;font=mono]",
+            "label[0.3,12.8;Source:]", 
         }))
 
         return table.concat(formtable_v3, ""), size
@@ -440,41 +455,42 @@ end
 
 --[[ V3 formtable clean copy, for editing
 formspec_version[6]
-size[17,12.6]
-box[0,0;17,0.6;#FFFFFF]
-label[6.7,0.3;Plant Compendium]
-button[0.2,0.8;1.6,0.6;back;      Back]
-image[0.2,0.8;0.6,0.6;texture.png]
-button[3.9,0.8;4.1,0.6;view;      View in Compendium]
-image[3.9,0.8;0.6,0.6;texture.png]
-button[8.1,0.8;3.2,0.6;locate;      Locate in World]
-image[8.1,0.8;0.6,0.6;texture.png]
-button[11.4,0.8;3,0.6;tech_view;      Technical Info]
-image[11.4,0.8;0.6,0.6;texture.png]
-button[14.5,0.8;2.3,0.6;favourite;      Favourite]
-image[14.5,0.8;0.6,0.6;texture.png]
-box[0.2,1.4;16.6,4.8;#FFFFFF]
-box[0.3,1.5;8.9,4.6;#000000]
-textarea[0.45,1.7;8.6,0.8;;;Family:]
-textarea[0.45,2.4;8.6,1;;;Scientific Name]
-textarea[0.45,2.9;8.6,1.8;;;COMMON NAME]
-box[0.5,5.3;1.4,0.6;#9192A3]
-label[0.7,5.6;Status]
-box[2.1,5.3;1.2,0.6;#00FF00]
-label[2.3,5.6;Type]
-box[3.5,5.3;1.5,0.6;#00FF00]
-label[3.7,5.6;Type 2]
-box[5.2,5.3;1.5,0.6;#FFA500]
-label[5.4,5.6;Type 3]
-image[9.3,1.5;7.4,4.15;texture.png]
-textarea[9.3,5.65;7.4,0.7;;;Image (c) author]
-textarea[0.2,6.3;9,5.7;;;Add information here!]
-image_button[9.3,6.3;1.8,1;texture.png;image_2;;false;false]
-image_button[11.2,6.3;1.8,1;texture.png;image_3;;false;false]
-image_button[13.1,6.3;1.8,1;texture.png;image_4;;false;false]
-image_button[15,6.3;1.8,1;texture.png;image_5;;false;false]
-image[9.3,7.4;3.7,4.6;texture.png]
-image[13.1,7.4;3.7,4.6;texture.png]
-box[0,12.2;17,0.4;#FFFFFF]
-label[0.1,12.4;Source:]
+size[19,13]
+box[0,0;19,0.6;#FFFFFF]
+label[7.8,0.3;Plant Compendium]
+image_button[0,0;0.6,0.6;texture.png;back;;false;false]
+image_button[0.7,0;0.6,0.6;texture.png;nav_forward;;false;false]
+image_button[1.4,0;0.6,0.6;texture.png;nav_backward;;false;false]
+button[5.5,0.8;4.7,0.6;view;   Compendium View]
+image[5.5,0.8;0.6,0.6;texture.png]
+button[10.3,0.8;3.2,0.6;locate;   Locate]
+image[10.3,0.8;0.6,0.6;texture.png]
+button[13.6,0.8;3.8,0.6;tech_view;   Technical Info]
+image[13.6,0.8;0.6,0.6;texture.png]
+image_button[17.5,0.8;0.6,0.6;texture.png;favourite;;false;false]
+image_button[18.2,0.8;0.6,0.6;texture.png;settings;;false;false]
+box[0.2,1.4;18.6,4.9;#FFFFFF]
+box[0.3,1.5;10.5,4.7;#000000]
+textarea[0.45,1.7;10.4,0.8;;;Family:]
+textarea[0.45,2.4;10.4,1;;;Scientific Name]
+textarea[0.45,2.9;10.4,1.8;;;COMMON NAME]
+box[0.5,5.4;1.4,0.6;#9192A3]
+label[0.7,5.7;Status]
+box[2.1,5.4;1.2,0.6;#00FF00]
+label[2.3,5.7;Type]
+box[3.5,5.4;1.5,0.6;#00FF00]
+label[3.7,5.7;Type 2]
+box[5.2,5.4;1.5,0.6;#FFA500]
+label[5.4,5.7;Type 3]
+image[10.9,1.5;7.8,4.4;texture.png]
+textarea[10.85,5.9;7.9,0.39;;;Image (c) author]
+textarea[0.2,6.5;10.7,6;;;Add information here!]
+image_button[10.9,6.4;1.9,1.1;texture.png;image_2;;false;false]
+image_button[12.9,6.4;1.9,1.1;texture.png;image_3;;false;false]
+image_button[14.9,6.4;1.9,1.1;texture.png;image_4;;false;false]
+image_button[16.9,6.4;1.9,1.1;texture.png;image_5;;false;false]
+image[10.9,7.6;3.9,4.8;texture.png]
+image[14.9,7.6;3.9,4.8;texture.png]
+box[0,12.6;19,0.4;#FFFFFF]
+label[0.3,12.8;Source:]
 ]]

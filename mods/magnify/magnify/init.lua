@@ -41,11 +41,11 @@ local function get_context(player)
                 selected = 1,
                 list = {}
             },
-      		filter = {
-        		form = {},
-        		leaf = {},
-        		status = {},
-      		}
+            filter = {
+                form = {},
+                leaf = {},
+                status = {},
+            }
         }
     end
     return magnify.context[pname]
@@ -105,7 +105,7 @@ minetest.register_tool(tool_name, {
 })
 
 if minetest.get_modpath("mc_toolhandler") then
-	mc_toolhandler.register_tool_manager(tool_name, {privs = priv_table})
+    mc_toolhandler.register_tool_manager(tool_name, {privs = priv_table})
 end
 
 -- Register tool aliases for convenience
@@ -294,26 +294,26 @@ button[0,6.2;6.2,0.6;locate;Locate nearest node]
 --- @return table
 local function species_search_filter(query, tree)
     local filtered_tree = {}
-	local count = 0
+    local count = 0
     local function match_query(str)
         return string.find(string.lower(str or ""), string.lower(query:trim()), 1, true)
     end
 
-  	for fam,g_list in pairs(tree) do
-  		for gen,s_list in pairs(g_list) do
-      		for spec,ref in pairs(s_list) do
-				local species = magnify.get_species_from_ref(ref)
-        		local match = match_query(species.com_name) or match_query(species.sci_name) or match_query(species.fam_name) or match_query(ref) or match_query(magnify.map.family[species.fam_name])
+    for fam,g_list in pairs(tree) do
+        for gen,s_list in pairs(g_list) do
+            for spec,ref in pairs(s_list) do
+                local species = magnify.get_species_from_ref(ref)
+                local match = match_query(species.com_name) or match_query(species.sci_name) or match_query(species.fam_name) or match_query(ref) or match_query(magnify.map.family[species.fam_name])
                 if match then
-					-- add match to filtered tree
-          			local f_g_list = filtered_tree[fam] or {}
-    				local f_s_list = f_g_list[gen] or {}
-    				f_s_list[spec] = ref
-    				f_g_list[gen] = f_s_list
-    				filtered_tree[fam] = f_g_list
-          			count = count + 1
-        		end
-        	end
+                    -- add match to filtered tree
+                    local f_g_list = filtered_tree[fam] or {}
+                    local f_s_list = f_g_list[gen] or {}
+                    f_s_list[spec] = ref
+                    f_g_list[gen] = f_s_list
+                    filtered_tree[fam] = f_g_list
+                    count = count + 1
+                end
+            end
         end
     end
     return filtered_tree, count
@@ -330,13 +330,13 @@ local function get_compendium_formspec(context)
     context.genus.list = {}
     context.species.list = {}
   
-  	local tree = context.tree
+    local tree = context.tree
     local count
-  	if context.search then
-    	tree,count = species_search_filter(context.search, tree)
+    if context.search then
+        tree,count = species_search_filter(context.search, tree)
     end
-  	if context.filter.active then
-    	-- todo
+    if context.filter.active then
+        -- todo
     end
 
     -- Auto-select when only 1 species matches filter criteria
@@ -345,7 +345,7 @@ local function get_compendium_formspec(context)
         context.genus.selected = 2
         context.species.selected = 2
     end
-    	
+        
     local genus_raw = {}
     for fam,gen_raw in pairs(tree) do
         table.insert(context.family.list, fam)
@@ -401,61 +401,73 @@ local function get_compendium_formspec(context)
     end
     context:save()
 
-    local size = "size[17,12.6]"
+    local size = "size[19,13]"
     local formtable = {
         "formspec_version[6]", size,
-        "box[0,0;17,0.6;#FFFFFF]",
-        "label[6.7,0.3;Plant Compendium]",
-        "button[0,0;1.7,0.6;back;      Back]",
-        "image[0,0;0.6,0.6;texture.png]",
-        "field[0.4,1.3;6.7,0.7;search;Search by common/scientific name;", context.search or "", "]",
-        "button[7.1,1.3;2.2,0.7;search_go;       Search]",
-        "image[7.1,1.3;0.7,0.7;texture.png]",
-        "button[9.2,1.3;1.9,0.7;search_x;       Clear]",
-        "image[9.2,1.3;0.7,0.7;texture.png]",
-    	
-        "box[0.4,2.4;3.5,0.7;#A0A0A0]",
-        "label[1.6,2.8;Family]",
-        "textlist[0.4,3.2;3.5,9;family_list;", table.concat(context.family.list, ","), ";", context.family.selected or 1, ";false]",
-        "box[4,2.4;3.5,0.7;#A0A0A0]",
-        "label[5.2,2.8;Genus]",
-        "textlist[4,3.2;3.5,9;genus_list;", table.concat(context.genus.list, ","), ";", context.genus.selected or 1, ";false]",
-        "box[7.6,2.4;3.5,0.7;#A0A0A0]",
-        "label[8.7,2.8;Species]",
-        "textlist[7.6,3.2;3.5,9;species_list;", table.concat(context.species.list, ","), ";", context.species.selected or 1, ";false]",
-    
+
+        "no_prepend[]",
+        "bgcolor[#00000000;true;]",
+        "background[0,0;0,0;magnify_pixel.png^[multiply:#000000^[opacity:69;true]",
+        "image[0,0;19,0.6;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
+        "style_type[label;font=mono]",
+        "label[7.8,0.3;Plant Compendium]",
+        "image_button[0,0;0.6,0.6;texture.png;back;;false;false]",
+        "image_button[0.7,0;0.6,0.6;texture.png;nav_backward;;false;false]",
+        "image_button[1.4,0;0.6,0.6;texture.png;nav_forward;;false;false]",
+
+        "style[search;font=mono]",
+        "field[0.4,1.3;8.2,0.7;search;Search by common/scientific name;", context.search or "", "]",
+        "field_close_on_enter[search;false]",
+        "style_type[button;font=mono;border=false;bgimg=magnify_pixel.png^[multiply:#000000]",
+        "button[8.6,1.3;2.4,0.7;search_go;   Search]",
+        "image[8.6,1.3;0.7,0.7;texture.png]",
+        "button[11,1.3;2.2,0.7;search_x;   Clear]",
+        "image[11,1.3;0.7,0.7;texture.png]",
+        "checkbox[0.4,2.3;toggle_common;Show common names;false]",
+
+        "image[0.4,2.8;4.2,0.7;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
+        "label[1.9,3.2;Family]",
+        "textlist[0.4,3.5;4.2,9.1;family_list;", table.concat(context.family.list, ","), ";", context.family.selected or 1, ";false]",
+        "image[4.7,2.8;4.2,0.7;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
+        "label[6.2,3.2;Genus]",
+        "textlist[4.7,3.5;4.2,9.1;genus_list;", table.concat(context.genus.list, ","), ";", context.genus.selected or 1, ";false]",
+        "image[9,2.8;4.2,0.7;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
+        "label[10.4,3.2;Species]",
+        "textlist[9,3.5;4.2,9.1;species_list;", table.concat(context.species.list, ","), ";", context.species.selected or 1, ";false]",
+
         -- TODO: dynamically grab all tags and add as filters
-        "container[0,1.1]",
-        "box[11.5,1.3;5.1,0.7;#A0A0A0]",
-		"label[13.7,1.7;Filter]",
-        "box[11.5,2.0;5.1,7.5;#121212]",
-        "label[11.8,2.5;Form:]",
-        "checkbox[11.8,3;form_tree;Tree;false]",
-        "checkbox[11.8,3.4;form_shrub;Shrub;false]",
-        "label[11.8,4.1;Leaves:]",
-        "checkbox[11.8,4.6;leaf_decid;Deciduous;false]",
-        "checkbox[11.8,5.0;leaf_ever;Evergreen;false]",
-        "label[11.8,5.7;Conservation Status:]",
-        "checkbox[11.8,6.2;cons_gx;GX (Presumed Extinct);false]",
-        "checkbox[11.8,6.6;cons_gh;GH (Possibly Extinct);false]",
-        "checkbox[11.8,7.0;cons_g1;G1 (Critcally Imperiled);false]",
-        "checkbox[11.8,7.4;cons_g2;G2 (Imperiled);false]",
-        "checkbox[11.8,7.8;cons_g3;G3 (Vulnerable);false]",
-        "checkbox[11.8,8.2;cons_g4;G4 (Apparently Secure);false]",
-        "checkbox[11.8,8.6;cons_g5;G5 (Secure);false]",
-        "checkbox[11.8,9.0;cons_na;GNR/GU/GNA (Unranked);false]",
+        "container[0,0]",
+        "image[13.6,2.8;5,0.7;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
+        "label[15.5,3.2;Filter]",
+        "image[13.6,3.5;5,8.2;magnify_pixel.png^[multiply:#1E1E1E]",
+        "label[13.8,3.9;Form:]",
+        "checkbox[13.8,4.4;form_tree;Tree;false]",
+        "checkbox[13.8,4.8;form_shrub;Shrub;false]",
+        "label[13.8,5.5;Leaves:]",
+        "checkbox[13.8,6;leaf_decid;Deciduous;false]",
+        "checkbox[13.8,6.4;leaf_ever;Evergreen;false]",
+        "label[13.8,7.1;Conservation Status:]",
+        "checkbox[13.8,7.6;cons_gx;GX (Presumed Extinct);false]",
+        "checkbox[13.8,8;cons_gh;GH (Possibly Extinct);false]",
+        "checkbox[13.8,8.4;cons_g1;G1 (Critcally Imperiled);false]",
+        "checkbox[13.8,8.8;cons_g2;G2 (Imperiled);false]",
+        "checkbox[13.8,9.2;cons_g3;G3 (Vulnerable);false]",
+        "checkbox[13.8,9.6;cons_g4;G4 (Apparently Secure);false]",
+        "checkbox[13.8,10;cons_g5;G5 (Secure);false]",
+        "checkbox[13.8,10.4;cons_na;GNR/GU/GNA (Unranked);false]",
+        "button[13.8,10.8;4.6,0.7;filter_apply;Apply Filters]",
         "container_end[]",
     }
-	if context.species.selected > 1 then
+    if context.species.selected > 1 then
         local ref = get_selected_species_ref(context)
         local info = magnify.get_species_from_ref(ref)
 
         if info then
-		    table.insert(formtable, table.concat({
-                "style_type[textarea;font=bold]",
-                "textarea[11.5,0.9;5.3,0.8;;;", info.com_name or info.sci_name or "Species unknown", "]",
-                "button[11.5,1.3;5.1,0.7;view;View Species", info.texture and "            " or "", "]",
-                info.texture and "image[15.4,1.3;1.2,0.7;"..(type(info.texture) == "table" and info.texture[1] or info.texture).."]" or "",
+            table.insert(formtable, table.concat({
+                "style_type[textarea;font=mono,bold]",
+                "textarea[13.6,0.9;5.2,0.8;;;", info.com_name or info.sci_name or "Species unknown", "]",
+                "button[13.6,1.3;5,0.7;view;View Species", info.texture and "     " or "", "]",
+                info.texture and "image[17.5,1.3;1.2,0.7;"..(type(info.texture) == "table" and info.texture[1] or info.texture).."]" or "",
                 "style_type[textarea;font=normal]",
             }))
         end
@@ -466,43 +478,46 @@ end
 
 --[[
 formspec_version[6]
-size[17,12.6]
-box[0,0;17,0.6;#FFFFFF]
-label[6.7,0.3;Plant Compendium]
-button[0,0;1.7,0.6;back;      Back]
-image[0,0;0.6,0.6;]
-field[0.4,1.3;6.7,0.7;search;Search by common/scientific name;]
-button[7.1,1.3;2.2,0.7;search_go;       Search]
-image[7.1,1.3;0.7,0.7;texture.png]
-button[9.2,1.3;1.9,0.7;search_x;       Clear]
-image[9.2,1.3;0.7,0.7;texture.png]
-box[0.4,2.4;3.5,0.7;#A0A0A0]
-label[1.7,2.8;Family]
-textlist[0.4,3.2;3.5,9;;;1;false]
-box[4,2.4;3.5,0.7;#A0A0A0]
-label[5.3,2.8;Genus]
-textlist[4,3.2;3.5,9;;;1;false]
-box[7.6,2.4;3.5,0.7;#A0A0A0]
-label[8.8,2.8;Species]
-textlist[7.6,3.2;3.5,9;;;1;false]
-box[11.5,1.3;5.1,0.7;#A0A0A0]
-label[13.7,1.7;Filter]
-box[11.5,2.0;5.1,7.9;#121212]
-label[11.8,2.5;Form:]
-checkbox[11.8,3;form_tree;Tree;false]
-checkbox[11.8,3.4;form_shrub;Shrub;false]
-label[11.8,4.1;Leaves:]
-checkbox[11.8,5.0;leaf_decid;Deciduous;false]
-checkbox[11.8,5.4;leaf_ever;Evergreen;false]
-label[11.8,6.1;Conservation Status:]
-checkbox[11.8,6.6;cons_gx;GX (Presumed Extinct);false]
-checkbox[11.8,7;cons_gh;GH (Possibly Extinct);false]
-checkbox[11.8,7.4;cons_g1;G1 (Critcally Imperiled);false]
-checkbox[11.8,7.8;cons_g2;G2 (Imperiled);false]
-checkbox[11.8,8.2;cons_g3;G3 (Vulnerable);false]
-checkbox[11.8,8.6;cons_g4;G4 (Apparently Secure);false]
-checkbox[11.8,9;cons_g5;G5 (Secure);false]
-checkbox[11.8,9.4;cons_na;GNR/GU/GNA (Unranked);false]
+size[19,13]
+box[0,0;19,0.6;#FFFFFF]
+label[7.8,0.3;Plant Compendium]
+image_button[0,0;0.6,0.6;texture.png;back;;false;false]
+image_button[0.7,0;0.6,0.6;texture.png;nav_forward;;false;false]
+image_button[1.4,0;0.6,0.6;texture.png;nav_backward;;false;false]
+field[0.4,1.3;7.2,0.7;search;Search by common or scientific name;]
+button[7.6,1.3;3.2,0.7;search_go;   Search]
+image[7.6,1.3;0.7,0.7;texture.png]
+button[10.8,1.3;2.3,0.7;search_x;   Clear]
+image[10.8,1.3;0.7,0.7;texture.png]
+checkbox[0.4,2.3;toggle_common;Show common names;false]
+box[0.4,2.8;4.2,0.7;#A0A0A0]
+label[1.9,3.2;Family]
+textlist[0.4,3.5;4.2,9.1;family_list;;1;false]
+box[4.7,2.8;4.2,0.7;#A0A0A0]
+label[6.2,3.2;Genus]
+textlist[4.7,3.5;4.2,9.1;genus_list;;1;false]
+box[9,2.8;4.2,0.7;#A0A0A0]
+label[10.4,3.2;Species]
+textlist[9,3.5;4.2,9.1;species_list;;1;false]
+box[13.6,2.8;5,0.7;#A0A0A0]
+label[15.5,3.2;Filter]
+box[13.6,3.5;5,8.2;#121212]
+label[13.8,3.9;Form:]
+checkbox[13.8,4.4;form_tree;Tree;false]
+checkbox[13.8,4.8;form_shrub;Shrub;false]
+label[13.8,5.5;Leaves:]
+checkbox[13.8,6;leaf_decid;Deciduous;false]
+checkbox[13.8,6.4;leaf_ever;Evergreen;false]
+label[13.8,7.1;Conservation Status:]
+checkbox[13.8,7.6;cons_gx;GX (Presumed Extinct);false]
+checkbox[13.8,8;cons_gh;GH (Possibly Extinct);false]
+checkbox[13.8,8.4;cons_g1;G1 (Critcally Imperiled);false]
+checkbox[13.8,8.8;cons_g2;G2 (Imperiled);false]
+checkbox[13.8,9.2;cons_g3;G3 (Vulnerable);false]
+checkbox[13.8,9.6;cons_g4;G4 (Apparently Secure);false]
+checkbox[13.8,10;cons_g5;G5 (Secure);false]
+checkbox[13.8,10.4;cons_na;GNR/GU/GNA (Unranked);false]
+button[13.8,10.8;4.6,0.7;filter_apply;Apply]
 ]]
 
 -- Registers the plant compendium as an inventory button on the main inventory page
@@ -603,43 +618,43 @@ if minetest.get_modpath("sfinv") ~= nil then
                 local event = minetest.explode_textlist_event(fields.species_list)
                 if event.type == "CHG" then
                     context.species.selected = tonumber(event.index)
-            		reload = true
+                    reload = true
                 elseif event.type == "DCL" then
                     -- open viewer
                     local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false)
                     if view_fs then
                         context.page = STANDARD_VIEW
-						minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
+                        minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
                         return player:set_inventory_formspec(view_fs)
                     end
                 end
             end
-        	if fields.view then
-          		-- open viewer
+            if fields.view then
+                -- open viewer
                 local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false)
                 if view_fs then
                     context.page = STANDARD_VIEW
-					minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
+                    minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
                     return player:set_inventory_formspec(view_fs)
                 end
-        	end
+            end
           
-          	if fields.search_go --[[or fields.key_enter_field == "search"]] then
-				-- initialize search + reset selection
-            	context.search = fields.search or ""
+            if fields.search_go or fields.key_enter_field == "search" then
+                -- initialize search + reset selection
+                context.search = fields.search or ""
                 context.family.selected = 1
                 context.genus.selected = 1
                 context.species.selected = 1
-            	reload = true
-        	end
+                reload = true
+            end
             if fields.search_x then
-				-- reset search + selection
-            	context.search = nil
-          		context.family.selected = 1
+                -- reset search + selection
+                context.search = nil
+                context.family.selected = 1
                 context.genus.selected = 1
                 context.species.selected = 1
-            	reload = true
-        	end
+                reload = true
+            end
 
             if reload == true then
                 return player:set_inventory_formspec(get_compendium_formspec(context))
