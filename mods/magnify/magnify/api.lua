@@ -369,8 +369,12 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;texture.png;back;;false;false]",
             "image_button[0.7,0;0.6,0.6;texture.png;nav_backward;;false;false]",
             "image_button[1.4,0;0.6,0.6;texture.png;nav_forward;;false;false]",
+            "tooltip[back;Back]",
+            "tooltip[nav_forward;Next]",
+            "tooltip[nav_backward;Previous]",
 
             "style_type[button;font=mono;textcolor=#000000;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
+            "style_type[image_button;font=mono;textcolor=#000000;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
             "button[6.6,0.8;4.6,0.6;view;   View in Compendium]",
             "image[6.6,0.8;0.6,0.6;texture.png]",
             "button[11.3,0.8;2.2,0.6;locate;   Locate]",
@@ -379,14 +383,13 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             "image[13.6,0.8;0.6,0.6;texture.png]",
             "image_button[17.5,0.8;0.6,0.6;texture.png;favourite;;false;false]",
             "image_button[18.2,0.8;0.6,0.6;texture.png;settings;;false;false]",
-
-            "image[0.2,1.4;18.6,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
-            "image[0.3,1.5;10.5,4.7;magnify_pixel.png^[multiply:#000000^[opacity:255]",
-            "tooltip[back;Back]",
-            "tooltip[nav_forward;Next]",
-            "tooltip[nav_backward;Previous]",
+            "image[10.8,1.4;8.0,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
             "tooltip[favourite;Save to Favourites]",
             "tooltip[settings;Settings]",
+
+            "image[0.2,1.4;18.6,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            "image[0.2,1.4;0.1,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            "image[0.2,6.2;18.6,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
 
             "style_type[textarea;font=mono]",
             "textarea[0.45,1.7;10.4,0.8;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
@@ -407,7 +410,7 @@ function magnify.build_formspec_from_ref(ref, is_exit)
         
             "image[10.9,1.5;7.8,4.4;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
             "style_type[textarea;font=mono;font_size=*1]",
-            "textarea[0.2,6.5;10.7,6;;;", -- info area
+            "textarea[0.2,6.6;10.7,5.9;;;", -- info area
             --"- ", minetest.formspec_escape(cons_status_desc or "Conservation status unknown"), "\n",
             "- ", minetest.formspec_escape((info.region and "Found in "..info.region) or "Location range unknown"), "\n",
             "- ", minetest.formspec_escape(info.height or "Height unknown"), "\n",
@@ -416,6 +419,7 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             minetest.formspec_escape(info.bloom or "Bloom pattern unknown"),
             "]",
         
+            "style_type[image_button;bgimg=blank.png]",
             "image_button[10.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[2] or "test.png", ";;;false;false]",
             "image_button[12.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[3] or "test.png", ";;;false;false]",
             "image_button[14.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[4] or "test.png", ";;;false;false]",
@@ -484,7 +488,7 @@ box[5.2,5.4;1.5,0.6;#FFA500]
 label[5.4,5.7;Type 3]
 image[10.9,1.5;7.8,4.4;texture.png]
 textarea[10.85,5.9;7.9,0.39;;;Image (c) author]
-textarea[0.2,6.5;10.7,6;;;Add information here!]
+textarea[0.2,6.6;10.7,5.9;;;Add information here!]
 image_button[10.9,6.4;1.9,1.1;texture.png;image_2;;false;false]
 image_button[12.9,6.4;1.9,1.1;texture.png;image_3;;false;false]
 image_button[14.9,6.4;1.9,1.1;texture.png;image_4;;false;false]

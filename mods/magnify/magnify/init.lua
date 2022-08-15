@@ -414,6 +414,9 @@ local function get_compendium_formspec(context)
         "image_button[0,0;0.6,0.6;texture.png;back;;false;false]",
         "image_button[0.7,0;0.6,0.6;texture.png;nav_backward;;false;false]",
         "image_button[1.4,0;0.6,0.6;texture.png;nav_forward;;false;false]",
+        "tooltip[back;Back]",
+        "tooltip[nav_forward;Next]",
+        "tooltip[nav_backward;Previous]",
 
         "style[search;font=mono]",
         "field[0.4,1.3;8.2,0.7;search;Search by common/scientific name;", context.search or "", "]",
@@ -425,6 +428,7 @@ local function get_compendium_formspec(context)
         "image[11,1.3;0.7,0.7;texture.png]",
         "checkbox[0.4,2.3;toggle_common;Show common names;false]",
 
+        "style_type[label;font=mono,bold]",
         "image[0.4,2.8;4.2,0.7;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
         "label[1.9,3.2;Family]",
         "textlist[0.4,3.5;4.2,9.1;family_list;", table.concat(context.family.list, ","), ";", context.family.selected or 1, ";false]",
