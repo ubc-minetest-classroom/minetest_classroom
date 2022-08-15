@@ -1,5 +1,7 @@
 frstBecBiomes = { storage = minetest.get_mod_storage(), path = minetest.get_modpath(minetest.get_current_modname()) }
 
+dofile(frstBecBiomes.path .. "\\sampleGen.lua")
+
 local conf = Settings(frstBecBiomes.path .. "/settings.conf")
 local removeOtherBiomes = conf:get_bool("remove_other_biomes", false)
 
@@ -12,50 +14,33 @@ if (removeOtherBiomes) then
     minetest.clear_registered_ores()
 end
 
-local testBiomeTable = {
-    name = "frst_bec_biomes:test_biome",
-    node_top = "default:dirt_with_grass",
-    depth_top = 1,
-    node_filler = "default:dirt",
-    depth_filler = 3,
-    node_stone = "default:stone",
-    node_water_top = "default:water_source",
-    depth_water_top = 10,
-    node_water = "default:water_source",
-    node_riverbed = "default:water_source",
-    depth_riverbed = 2,
-    node_cave_liquid = "default:water_source",
-    y_max = 31000,
-    y_min = -31000,
-    vertical_blend = 8,
-    heat_point = 50,
-    humidity_point = 50
-}
+local rootDataDirectory = frstBecBiomes.path .. "\\data\\"
 
-local dataPath = frstBecBiomes.path .. "\\data\\"
+local dataDirs = minetest.get_dir_list(rootDataDirectory, true)
 
-local jsonText = minetest.write_json(testBiomeTable, true)
+for k, dataDirectory in pairs(dataDirs) do
+    local dataDir = rootDataDirectory .. dataDirectory .. "\\"
 
-local f = io.open(dataPath .. "testBiome.json", "wb")
-local content = f:write(jsonText)
-f:close()
+    -- Load our data in each folder
+    local files = minetest.get_dir_list(dataDir, false)
+    for k, fileName in pairs(files) do
+        local ext = string.sub(fileName, -5)
+        if (ext == ".json") then
+            Debug.log("Loading data " .. fileName)
+            local f = io.open(dataDir .. fileName, "r")
+            local content = f:read("*all")
+            f:close()
 
-local files = minetest.get_dir_list(dataPath, false)
-for k, fileName in pairs(files) do
-    local ext = string.sub(fileName, -5)
-    if (ext == ".json") then
-        Debug.log("Loading Biome " .. fileName)
-        local f = io.open(dataPath .. fileName, "r")
-        local content = f:read("*all")
-        f:close()
+            local dataTable = minetest.parse_json(content, {})
 
-        local biomeTable = minetest.parse_json(content, {})
-        minetest.register_biome(biomeTable)
-
-
+            if (dataTable.type == "biome") then
+                Debug.log("Registering biome " .. dataTable.name)
+                minetest.register_biome(dataTable)
+            elseif (dataTable.type == "node") then
+                minetest.register_node(dataTable.name, dataTable)
+            else
+                Debug.log("Unknown data type " .. tostring(dataTable.type) " for " .. tostring(dataDir .. fileName))
+            end
+        end
     end
-
-
 end
-
-
