@@ -56,7 +56,7 @@ local pine = {
     model_obj = "magnify_default_pinus_contorta_var_latifolia.obj",
     more_info = "Large, straight trunked, column-like tree with a narrow, open crown",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Pinus%20contorta", 
-    img_copyright = "Walter Siegmund, licensed under CC BY-SA 3.0"
+    img_copyright = "stereogab, licensed under CC BY-SA 2.0"
 }
 magnify.register_species(pine, {"default:pine_tree", "default:pine_wood", "default:pine_needles", "default:pine_sapling"})
 
@@ -68,11 +68,11 @@ local AppleTree = {
     height = "2 to 12 meters tall",
     bloom = "Has bright, fragrant clusters of 5-12 white/pink flowers on its branch ends",
     region = "BC, Alaska, Washington, Oregon and California",
-    texture = "magnify_default_malus_fusca.jpg",
+    texture = {"magnify_default_malus_fusca_01.jpg"},
     model_obj = "magnify_default_malus_fusca.obj",
     more_info = "Bears very crisp, medium-sized, semi-sweet fruit with a thin, red-striped skin that is very aromatic. Also known as the Oregon crabapple",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Malus%20fusca",
-    img_copyright = "Ross Mounce, licensed under CC BY 4.0"
+    img_copyright = "Jean Pawek, licensed under CC BY 3.0"
 }
 magnify.register_species(AppleTree, {"default:tree", "default:apple", "default:apple_mark", "default:leaves", "default:sapling", "default:wood"})
 
@@ -125,7 +125,7 @@ local Kelp = {
     model_obj = "magnify_default_desmarestia_ligulata.obj",
     more_info = "",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Desmarestia%20ligulata"--,
-    --img_copyright or img_credit = ""
+    img_copyright = "Ken-ichi Ueda, licensed under CC BY 4.0"
 }
 magnify.register_species(Kelp, {"default:sand_with_kelp"})
 
@@ -140,7 +140,7 @@ local blueberry = {
     model_obj = "magnify_default_vaccinium_ovatum.obj",
     more_info = "Can tolerate a wide range of light conditions and is very attractive to birds. Foliage is glossy and green with new red growth",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Vaccinium%20ovatum",
-    img_credit = "Franz Xaver, licensed under CC BY-SA 3.0"
+    img_copyright = "Franz Xaver, licensed under CC BY-SA 3.0"
 }
 magnify.register_species(blueberry, {"default:blueberry_bush_leaves", "default:blueberry_bush_leaves_with_berries", "default:blueberries"})
 
@@ -252,7 +252,7 @@ local mannagrass = {
     model_obj = "magnify_default_glyceria_striata.obj",
     more_info = "A perennial with upright, hollow tufts of grass stemming from rhizomes. Typically found in bogs, lakeshores, and moist to wet meadows in lowland and subalpine zones.",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Glyceria%20striata",
-    img_copyright = "Jason Hollinger, licensed under CC BY 2.0" 
+    img_copyright = "mjpapay, licensed under CC BY 4.0" 
 }
 magnify.register_species(mannagrass, {"default:junglegrass"})
 
@@ -284,7 +284,7 @@ local Savanna_Grass = {
     model_obj = "magnify_default_pseudoroegneria_spicata.obj",
     more_info = "Can be used for native hay production and will make nutritious feed, but is bettersuited to grazing use",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Pseudoroegneria%20spicata",
-    img_credit = "Andrey Zharkikh, licensed under CC BY 2.0"       
+    img_credit = "T9500, via Wikimedia Commons"
 }
 magnify.register_species(Savanna_Grass, {"default:dirt_with_dry_grass", "default:dry_dirt","default:dry_dirt_with_dry_grass", "default:dry_grass_1", "default:dry_grass_2", "default:dry_grass_3", "default:dry_grass_4", "default:dry_grass_5"})
 
@@ -316,6 +316,6 @@ local Grass = {
     model_obj = "magnify_default_calamagrostis_rubescens.obj",
     more_info = "Perennial, tufted grass that rarely flowers in shaded areas",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Calamagrostis%20rubescens",
-    img_copyright = "Thayne Tuason, licensed under CC BY-SA 4.0"
+    img_copyright = "Matt Lavin, licensed under CC BY-SA 2.0"
 }
 magnify.register_species(Grass, {"default:grass_1", "default:grass_2", "default:grass_3", "default:grass_4", "default:grass_5", "default:dirt_with_grass", "default:dirt_with_grass_footsteps"})
