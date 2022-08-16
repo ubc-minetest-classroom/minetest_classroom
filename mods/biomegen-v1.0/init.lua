@@ -32,8 +32,11 @@ local c_water
 local c_rwater
 
 local biomes, decos
+local forcedBiome
 
-local function initialize(chulens, seaLevel, seed)
+local function initialize(chulens, seaLevel, seed, _forcedBiome)
+
+
     print("[biomegen] Initializing")
 
     local noiseparams = minetest.get_mapgen_setting_noiseparams
@@ -52,8 +55,6 @@ local function initialize(chulens, seaLevel, seed)
     nobj_heat = minetest.get_perlin_map(np_heat, chulens2d)
     nobj_heat_blend = minetest.get_perlin_map(noiseparams('mg_biome_np_heat_blend'), chulens2d)
 
-
-
     nobj_humid = minetest.get_perlin_map(np_humidity, chulens2d)
     nobj_humid_blend = minetest.get_perlin_map(noiseparams('mg_biome_np_humidity_blend'), chulens2d)
 
@@ -65,6 +66,15 @@ local function initialize(chulens, seaLevel, seed)
 
     biomes = make_biomelist()
     decos = make_decolist()
+
+    if (biomes[_forcedBiome] ~= nil) then
+        forcedBiome = _forcedBiome
+    elseif (_forcedBiome ~= nil) then
+        forcedBiome = nil
+        Debug.log("[biomegen] Forced biome not found: " .. _forcedBiome)
+    else
+        forcedBiome = nil
+    end
 end
 
 local biomemap = {}
@@ -133,17 +143,30 @@ local function calc_biome_from_noise(heat, humid, pos, seaLevel)
 end
 
 local function get_biome_at_index(i, pos, seaLevel)
-    local heat = heatmap[i] - math.max(pos.y, seaLevel) * elevation_chill
-    local humid = humidmap[i]
+
+    if (forcedBiome ~= nil and pos.y > seaLevel) then
+        return biomes[forcedBiome]
+    end
+
+    local heat = heatmap[i] - (math.max(pos.y, seaLevel) * elevation_chill)
+    local humid = humidmap[i] + (seaLevel - pos.y) * elevation_chill -- -30
+    if (pos.y >= seaLevel + 30) then
+        humid = humid + (pos.y - seaLevel - 15) * elevation_chill * 0.5
+    end
+
+
+    --(math.max(pos.y - seaLevel, seaLevel + 20 - pos.y) * elevation_chill * 0.5)
+
     return calc_biome_from_noise(heat, humid, pos, seaLevel)
 end
 
-local function generate_biomes(data, a, minp, maxp, seed, seaLevel)
+local function generate_biomes(data, a, minp, maxp, seed, seaLevel, forcedBiomeName)
+
     local chulens = { x = maxp.x - minp.x + 1, y = maxp.y - minp.y + 1, z = maxp.z - minp.z + 1 }
 
     local index = 1
 
-    initialize(chulens, seaLevel, seed)
+    initialize(chulens, seaLevel, seed, forcedBiomeName)
 
     calculate_noises(minp)
 
@@ -158,7 +181,7 @@ local function generate_biomes(data, a, minp, maxp, seed, seaLevel)
             local depth_water_top = 0
             local depth_riverbed = 0
 
-            local biome_y_min = -31000
+            local biome_y_min = minp.y
             local y_start = maxp.y
             local vi = a:index(x, maxp.y, z)
             local ystride = a.ystride
@@ -185,7 +208,10 @@ local function generate_biomes(data, a, minp, maxp, seed, seaLevel)
                         (air_above or not biome or y < biome_y_min)
 
                 if is_stone_surface or is_water_surface then
+
+
                     biome = get_biome_at_index(index, { x = x, y = y, z = z }, seaLevel)
+
                     biome_stone = biome.node_stone
 
                     if not biomemap[index] and is_stone_surface then
@@ -315,7 +341,7 @@ local function can_place_deco(deco, data, vi, pattern)
     return false
 end
 
-local function place_deco(deco, data, a, vm, minp, maxp, blockseed, seaLevel)
+local function place_deco(deco, data, a, vm, minp, maxp, blockseed, realmOriginY, placementTable)
     local ps = PcgRandom(blockseed + 53)
     local carea_size = maxp.x - minp.x + 1
 
@@ -442,7 +468,7 @@ local function place_deco(deco, data, a, vm, minp, maxp, blockseed, seaLevel)
                         end
                     end
 
-                    if y >= (deco.y_min + seaLevel) and y <= (deco.y_max + seaLevel) and y >= minp.y and y <= maxp.y then
+                    if y >= (deco.y_min + realmOriginY) and y <= (deco.y_max + realmOriginY) and y >= minp.y and y <= maxp.y then
                         local biome_ok = true
                         if deco.use_biomes and #biomemap > 0 then
                             local biome_here = biomemap[mapindex]
@@ -451,10 +477,12 @@ local function place_deco(deco, data, a, vm, minp, maxp, blockseed, seaLevel)
                             end
                         end
 
-                        if biome_ok then
-                            local pos = { x = x, y = y, z = z }
+                        local pos = { x = x, y = y, z = z }
+                        if biome_ok and (ptable.get(placementTable, pos) == nil) then
+
                             if can_place_deco(deco, data, a:index(x, y, z), pattern) then
                                 deco:generate(vm, ps, pos, false)
+                                ptable.store(placementTable, pos, true)
                             end
                         end
                     end
@@ -470,14 +498,16 @@ local function get_blockseed(p, seed)
     return seed + p.z * 38134234 + p.y * 42123 + p.x * 23
 end
 
-local function place_all_decos(data, a, vm, minp, maxp, seed, seaLevel)
+local function place_all_decos(data, a, vm, minp, maxp, seed, realmOriginY)
     local emin = vm:get_emerged_area()
     local blockseed = get_blockseed(emin, seed)
+
+    local placementTable = {}
 
     local nplaced = 0
 
     for i, deco in pairs(decos) do
-        nplaced = nplaced + place_deco(deco, data, a, vm, minp, maxp, blockseed, seaLevel)
+        nplaced = nplaced + place_deco(deco, data, a, vm, minp, maxp, blockseed, realmOriginY, placementTable)
     end
 
     return nplaced
@@ -562,11 +592,17 @@ biomegen = {
     dust_top_nodes = dust_top_nodes,
 }
 
-function biomegen.generate_all(data, a, vm, minp, maxp, seed, seaLevel)
-    generate_biomes(data, a, minp, maxp, seed, seaLevel)
+
+function biomegen.generate_all(data, a, vm, minp, maxp, seed, seaLevel, forcedBiomeName)
+    generate_biomes(data, a, minp, maxp, seed, seaLevel, forcedBiomeName)
+
     vm:set_data(data)
-    place_all_decos(data, a, vm, minp, maxp, seed, seaLevel)
+    place_all_decos(data, a, vm, minp, maxp, seed, minp.y)
     minetest.generate_ores(vm, minp, maxp)
     vm:get_data(data)
     dust_top_nodes(data, a, vm, minp, maxp, seaLevel)
+end
+
+function biomegen.get_biomes()
+    return make_biomelist()
 end
