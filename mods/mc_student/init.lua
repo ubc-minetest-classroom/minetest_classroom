@@ -66,7 +66,7 @@ local function show_classrooms(player)
 		local textlist = "textlist[0.6,0.9;5.4,4.3;realms;;1]"
 		local is_first = true
 
-		for i,realm in ipairs(Realm.realmDict) do
+		for i,realm in pairs(Realm.realmDict) do
 			if realm:getCategory().joinable(realm,player) then
 				classroomRealms[i] = realm
 

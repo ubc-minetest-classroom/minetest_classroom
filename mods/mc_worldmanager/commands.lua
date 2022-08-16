@@ -1,832 +1,739 @@
--- All the functionality from these commands will added to a realm book.
--- These commands are currently just for testing
 
-
-local commands = {}
-
-minetest.register_chatcommand("localPos", {
-    privs = {
-        teacher = true,
-    },
-    func = function(name, param)
-        local player = minetest.get_player_by_name(name)
-        local requestedRealm = Realm.GetRealmFromPlayer(player)
-
-        if (requestedRealm == nil) then
-            return false, "Player is not listed in a realm OR current realm has been deleted; Try teleporting to a different realm and then back..."
-        end
-
-        local position = requestedRealm:WorldToLocalPosition(player:get_pos())
-        return true, "Your position in the local space of realm " .. param .. " is x: " .. position.x .. " y: " .. position.y .. " z: " .. position.z
-    end,
-    help = "Get your local position in the current realm",
-})
-
-commands["new"] = {
-    func = function(name, params)
-        local realmName = tostring(params[1])
-        if (realmName == "" or realmName == "nil") then
-            realmName = "Unnamed Realm"
-        end
-        local sizeX = tonumber(params[2])
-        if (sizeX == nil or sizeX == 0) then
-            sizeX = 40
-        end
-        local sizeY = tonumber(params[3])
-        if (sizeY == nil or sizeY == 0) then
-            sizeY = 40
-        end
-        local sizeZ = tonumber(params[4]) or 40
-        if (SizeZ == nil or SizeZ == 0) then
-            SizeZ = 40
-        end
-        local newRealm = Realm:New(realmName, { x = sizeX, y = sizeY, z = sizeZ })
-        newRealm:CreateGround()
-        newRealm:CreateBarriersFast()
-        newRealm:set_data("owner", name)
-
-        return true, "created new realm with ID: " .. newRealm.ID
-    end,
-    help = "realm new [name] ([<sizeX>] [<sizeY>] [<sizeZ>]) - Create a new realm", }
-
-commands["delete"] = {
-    func = function(name, params)
-        local realmID = params[1]
-
-        if (realmID == nil) then
-            return false, "No realm ID specified"
-        end
-
-        if (realmID == mc_worldManager.spawnRealmID) then
-            return false, "Cannot delete the spawn realm."
-        end
-
-        local requestedRealm = Realm.GetRealm(tonumber(realmID))
-        if (requestedRealm == nil) then
-            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
-        end
-        requestedRealm:Delete()
-    end,
-    help = "realm delete <realmID> - Delete a realm", }
-
-commands["list"] = {
-    func = function(name, params)
-        minetest.chat_send_player(name, "Realm Name : Realm ID")
-        for i, t in pairs(Realm.realmDict) do
-            minetest.chat_send_player(name, t.Name .. " : " .. t.ID)
-        end
-
-        return true
-    end,
-    help = "realm list - List all realms", }
-
-commands["info"] = {
-    func = function(name, params)
-        local realmID = params[1]
-        local requestedRealm = Realm.GetRealm(tonumber(realmID))
-        if (requestedRealm == nil) then
-            return false, "Requested realm does not exist."
-        end
-
-        local spawn = requestedRealm.SpawnPoint
-        local startPos = requestedRealm.StartPos
-        local endPos = requestedRealm.EndPos
-
-        return true, "Realm " .. realmID .. " has a spawn point of "
-                .. "x:" .. tostring(spawn.x) .. " y:" .. tostring(spawn.y) .. " z:" .. tostring(spawn.z)
-                .. "; startPos of "
-                .. "x:" .. tostring(startPos.x) .. " y:" .. tostring(startPos.y) .. " z:" .. tostring(startPos.z)
-                .. "; endPos of "
-                .. "x:" .. tostring(endPos.x) .. " y:" .. tostring(endPos.y) .. " z:" .. tostring(endPos.z)
-    end,
-    help = "realm info <realmID> - Get info about a realm", }
-
-commands["tp"] = {
-    privs = { teleport = true },
-    func = function(name, params)
-        local realmID = params[1]
-        local requestedRealm = Realm.GetRealm(tonumber(realmID))
-
-        if (not minetest.player_exists(name)) then
-            return false, "Player: " .. tostring(name) .. " could not be found"
-        end
-
-        if (requestedRealm == nil) then
-            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
-        end
-
-        local player = minetest.get_player_by_name(name)
-        local success, reason = requestedRealm:TeleportPlayer(player)
-
-        return success, reason
-    end,
-    help = "realm tp <realmID> - Teleport to a realm.", }
-
-commands["walls"] = {
-    func = function(name, params)
-        local realmID = params[1]
-        local requestedRealm = Realm.GetRealm(tonumber(realmID))
-        if (requestedRealm == nil) then
-            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
-        end
-
-        if (params[2] ~= nil and params[2] == "fast") then
-            requestedRealm:CreateBarriersFast()
-        else
-            requestedRealm:CreateBarriers()
-        end
-
-        return true, "created walls in realm: " .. tostring(realmID)
-    end,
-    help = "realm walls <realmID> [<fast>] - Create walls in a realm", }
-
-commands["gen"] = {
-    func = function(name, params)
-
-        if (not mc_helpers.isNumber(params[1])) then
-            if (params[1] ~= nil and params[1] == "list") then
-
-
-                minetest.chat_send_player(name, "Generator Key")
-
-                local heightmapGen = Realm.WorldGen.GetHeightmapGenerators()
-                for k, v in pairs(heightmapGen) do
-                    minetest.chat_send_player(name, v)
-                end
-
-                minetest.chat_send_player(name, "==============================")
-
-                minetest.chat_send_player(name, "Decorator Key")
-
-                local terrainDecorator = Realm.WorldGen.GetTerrainDecorator()
-                for k, v in pairs(terrainDecorator) do
-                    minetest.chat_send_player(name, v)
-                end
-
-                return true, "Listed an terrain generators and decorators."
-            end
-        end
-
-        local realmID = params[1]
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
-        if (requestedRealm == nil) then
-            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
-        end
-
-        local seaLevel = math.floor((requestedRealm.EndPos.y - requestedRealm.StartPos.y) * 0.4) + requestedRealm.StartPos.y
-        Debug.log("Sea level:" .. seaLevel)
-
-        local heightGen = params[2]
-        local decGen = params[3]
-
-        local seed = tonumber(params[5])
-        if (seed == nil) then
-            seed = math.random(1, 999999999)
-        end
-
-        local seaLevel = requestedRealm.StartPos.y
-        if (params[4] == "" or params[4] == nil) then
-            seaLevel = seaLevel + 30
-        else
-            seaLevel = seaLevel + tonumber(params[4])
-        end
-
-        if (heightGen == "" or heightGen == nil) then
-            heightGen = "default"
-        end
-
-        if (requestedRealm:GenerateTerrain(seed, seaLevel, heightGen, decGen) == false) then
-            return false, "Failed to generate terrain"
-        end
-
-        Debug.log("Creating barrier...")
-        requestedRealm:CreateBarriersFast()
-
-
-
-        return true, "Generated terrain in realm: " .. tostring(realmID) .. " using seed " .. tostring(seed)
-    end,
-    help = "realm gen <list> | (<realmID> <heightGenKey> [<terrainDecKey>] ([<seaLevel>] [<seed>]) - Generate a realm", }
-
-commands["regen"] = {
-    func = function(name, params)
-        local realmID = params[1]
-        local requestedRealm = Realm.realmDict[tonumber(realmID)]
-        if (requestedRealm == nil) then
-            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
-        end
-
-        local seaLevel = math.floor((requestedRealm.EndPos.y - requestedRealm.StartPos.y) * 0.4) + requestedRealm.StartPos.y
-        Debug.log("Sea level:" .. seaLevel)
-
-        local seed = requestedRealm:get_data("worldSeed")
-        local seaLevel = requestedRealm:get_data("worldSeaLevel")
-        local heightGen = requestedRealm:get_data("worldMapGenerator")
-        local decGen = requestedRealm:get_data("worldDecoratorName")
-
-        if (seed == nil or seed == "nil") then
-            return false, "Realm does not have any saved seed information."
-        end
-
-        if (heightGen == nil or heightGen == "") then
-            return false, "Realm does not have any saved height generator information. Please try to manually regenerate world with gen command and seed " .. tostring(seed)
-        end
-
-        if (decGen == nil or decGen == "") then
-            return false, "Realm does not have any saved decorator information. Please try to manually regenerate world with gen command, seed " .. tostring(seed) .. " and height generator name " .. tostring(heightGen)
-        end
-
-        requestedRealm:GenerateTerrain(seed, seaLevel, heightGen, decGen)
-
-        Debug.log("Creating barrier...")
-        requestedRealm:CreateBarriersFast()
-
-        return true
-    end,
-    help = "realm regen <realmID> - Regenerates the terrain of a realm.", }
-
-commands["seed"] = { func = function(name, params)
-    local realmID = params[1]
-    local requestedRealm = Realm.GetRealm(tonumber(realmID))
-    if (requestedRealm == nil) then
-        return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
-    end
-
-    local seed = requestedRealm:get_data("worldSeed")
-
-    return true, "World Seed for Realm: " .. tostring(seed)
-end,
-                     help = "realm seed <realmID> - Get the seed of a realm.", }
-
-commands["schematic"] = {
-    func = function(name, params)
-        if (params[1] == "list") then
-            table.remove(params, 1)
-
-            minetest.chat_send_player(name, "Key : Filepath")
-            for i, t in pairs(schematicManager.schematics) do
-                minetest.chat_send_player(name, i .. " : " .. t)
-            end
-            return true
-        elseif (params[1] == "save") then
-            table.remove(params, 1)
-            local realmID = params[1]
-            local requestedRealm = Realm.GetRealm(tonumber(realmID))
-
-            if (requestedRealm == nil) then
-                return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
-            end
-
-            local schemName = tostring(params[2])
-            Debug.log(schemName)
-
-            local subparam = tostring(params[3])
-
-            if (subparam == "" or subparam == "nil") then
-                subparam = "old"
-            end
-
-            local path = requestedRealm:Save_Schematic(schemName, name, subparam)
-            return true, "Saved realm with ID " .. realmID .. " at path: " .. path
-        elseif (params[1] == "load") then
-            table.remove(params, 1)
-            local realmName = params[1]
-            if (realmName == "" or realmName == nil) then
-                realmName = "Unnamed Realm"
-            end
-
-            local key = params[1]
-            if (key == nil) then
-                key = ""
-            end
-
-            local schematic, config = schematicManager.getSchematic(key)
-
-            if (config == nil) then
-                return false, "schematic key: " .. tostring(key) .. " config file has not been registered with the system."
-            end
-
-            local newRealm = Realm:NewFromSchematic(realmName, key)
-            return true, "creat[ing][ed] new realm with name: " .. newRealm.Name .. "and ID: " .. newRealm.ID .. " from schematic with key " .. key
-        else
-            return false, "unknown subcommand. Try realm schematic list | realm schematic save | realm schematic load"
-        end
-    end }
-
-commands["setspawn"] = {
-    func = function(name, params)
-        local player = minetest.get_player_by_name(name)
-
-        local requestedRealm = Realm.GetRealmFromPlayer(player)
-
-        local position = requestedRealm:WorldToLocalPosition(player:get_pos())
-
-        requestedRealm:UpdateSpawn(position)
-
-        return true, "Updated spawnpoint for realm with ID: " .. requestedRealm.ID
-    end,
-    help = "realm setspawn <realmID> - Set the spawnpoint of a realm.", }
-
-commands["setspawnrealm"] = {
-    func = function(name, params)
-        local realmID = params[1]
-        local requestedRealm = Realm.GetRealm(tonumber(realmID))
-        if (requestedRealm == nil) then
-            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
-        end
-
-        local success = mc_worldManager.SetSpawnRealm(requestedRealm)
-
-        if (success) then
-            return true, "Updated the spawn realm to realm with ID: " .. realmID
-        else
-            return false, "something went wrong... could not update the spawn realm."
-        end
-    end,
-    help = "realm setspawnrealm <realmID> - Sets the spawn realm to the realm with the given ID." }
-
-commands["category"] = {
-    func = function(name, params)
-        local subcommand = tostring(params[1])
-
-        if (string.lower(subcommand) == "set") then
-            local realmID = tonumber(params[2])
-            local requestedRealm = Realm.GetRealm(tonumber(realmID))
-            if (requestedRealm == nil) then
-                return false, "Requested realm of ID:" .. tostring(realmID) .. " does not exist."
-            end
-
-            local category = tostring(params[3])
-
-            requestedRealm:setCategoryKey(category)
-            return true, "Updated category for realm with ID: " .. realmID .. " to " .. category
-        elseif (string.lower(subcommand) == "list") then
-
-            minetest.chat_send_player(name, "=======================")
-            minetest.chat_send_player(name, "Valid Realm Categories")
-            minetest.chat_send_player(name, "=======================")
-            local categories = Realm.getRegisteredCategories()
-            for key, value in pairs(categories) do
-                minetest.chat_send_player(name, value)
-            end
-            minetest.chat_send_player(name, "=======================")
-            return true, "Listed all valid realm categories."
-        else
-            return false, "unknown subcommand. Try realm category set <category>"
-        end
-
-
-    end,
-    help = "realm category (set <realmID> <category>) | (list) - Set the category of a realm or list all valid categories.",
-}
-
-commands["consolidate"] = {
-    func = function(name, params)
-        Realm.consolidateEmptySpace()
-        Realm.SaveDataToStorage()
-        return true, "consolidated realms"
-    end,
-    help = "consolidate realm placement information." }
-
-commands["help"] = {
-    func = function(name, params)
-
-        local subcommand = params[1]
-
-        if (subcommand ~= nil and subcommand ~= "") then
-
-            local helpString
-            if (commands[subcommand].help == "" or commands[subcommand].help == nil) then
-                helpString = "No help available for this command."
-            else
-                helpString = commands[subcommand].help
-            end
-            return true, helpString
-        end
-
-        local helpString = ""
-        for k, v in pairs(commands) do
-            helpString = helpString .. k .. " | "
-        end
-        return true, helpString
-    end,
-    help = "help [command] - displays help for a command. If no command is specified, displays a list of commands."
-}
-
-commands["define"] = {
-    func = function(name, params)
-        -- this is really hacky, we should come up with a better way to do this...
-
-        local name = tostring(params[1])
-        local pos1X = tonumber(params[2])
-        local pos1Y = tonumber(params[3])
-        local pos1Z = tonumber(params[4])
-        local pos2X = tonumber(params[5])
-        local pos2Y = tonumber(params[6])
-        local pos2Z = tonumber(params[7])
-
-        if (name == nil or pos1X == nil or pos1Y == nil or pos1Z == nil or pos2X == nil or pos2Y == nil or pos2Z == nil) then
-            return false, "missing command parameters"
-        end
-
-        local pos1 = { x = pos1X, y = pos1Y, z = pos1Z }
-        local pos2 = { x = pos2X, y = pos2Y, z = pos2Z }
-        local spawnPos = { x = (pos1.x + pos2.x) / 2, y = pos2.y - 5, z = (pos1.z + pos2.z) / 2 }
-
-        local newRealm = {
-            Name = name,
-            ID = Realm.realmCount + 1,
-            StartPos = pos1,
-            EndPos = pos2,
-            SpawnPoint = spawnPos,
-            PlayerJoinTable = nil,
-            PlayerLeaveTable = nil,
-            RealmDeleteTable = nil,
-            MetaStorage = { }
-        }
-
-        Realm.realmCount = newRealm.ID
-        Realm:Restore(newRealm)
-    end }
-
-commands["privs"] = {
-    func = function(name, params)
-        local operation = tostring(params[1])
-        local realmID = tonumber(params[2])
-        local privilege = tostring(params[3])
-
-        if (operation == "nil" or operation == "") then
-            return false, "Incorrect parameter... Missing realm privilege operation. Execute 'realm help privs' for help."
-        end
-
-        if (operation == "help") then
-            return true, "execute 'realm help privs' for help."
-        end
-
-        if (realmID == nil or realmID == "") then
-            return false, "Incorrect parameter... Missing realm ID. Execute 'realm help privs' for help."
-        end
-
-        local requestedRealm = Realm.realmDict[realmID]
-        if (requestedRealm == nil) then
-            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
-        end
-
-        if (operation == "list") then
-
-            if (requestedRealm.Permissions ~= nil) then
-                for i, t in pairs(requestedRealm.Permissions) do
-                    minetest.chat_send_player(name, "- " .. i)
-                end
-            else
-                minetest.chat_send_player(name, "No realm privileges have been set.")
-            end
-
-            return true, "command executed succesfully"
-        end
-
-        if (privilege == "nil" or privilege == "") then
-            return false, "Incorrect parameter... Missing realm privilege to add or revoke. Execute 'realm help privs' for help."
-        end
-
-        if (operation == "grant") then
-
-            if (minetest.check_player_privs(name, privilege) == false) then
-                return false, "Unable to add privilege: " .. privilege .. " to realm" .. tostring(realmID) .. " as you do not hold this privilege."
-            end
-            local privsTable = {}
-            privsTable[privilege] = true
-
-            local success, invalidPrivs = requestedRealm:UpdateRealmPrivilege(privsTable)
-
-            if (not success) then
-                return false, "Unable to add privilege: " .. privilege .. " to realm" .. tostring(realmID) .. " as it has not been whitelisted."
-            end
-
-            return true, "Added permission: " .. privilege .. " to realm " .. tostring(realmID)
-        elseif (operation == "revoke") then
-
-            local privsTable = {}
-            privsTable[privilege] = false
-
-            requestedRealm:UpdateRealmPrivilege(privsTable)
-            return true, "Removed permission: " .. privilege .. " from realm " .. tostring(realmID)
-        end
-    end,
-    help = "realm privs (grant | list | revoke) <realmID> <privilege>"
-}
-
-commands["players"] = {
-    func = function(name, params)
-
-
-        if (params[1] == "list") then
-            local realmID = params[2]
-            local requestedRealm = Realm.GetRealm(tonumber(realmID))
-            if (requestedRealm == nil) then
-                return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
-            end
-
-            local realmPlayerList = requestedRealm:get_tmpData("Inhabitants")
-
-            if (realmPlayerList == nil) then
-                return false, "no players found in realm player list."
-            end
-
-            Debug.log(minetest.serialize(realmPlayerList))
-
-            for k, v in pairs(realmPlayerList) do
-                minetest.chat_send_player(name, k)
-            end
-
-            return true, "listed all players in realm."
-        elseif (params[1] == "scan") then
-            Realm.ScanForPlayerRealms()
-            return true, "re-associated players with realms."
-
-        end
-
-        return false, "unknown sub-command."
-    end,
-    help = "players <list | scan> - lists all players in a realm. 'players scan' will re-associate players with realms."
-}
-
-commands["blocks"] = {
-    func = function(name, params)
-        if (params[1] == "teleporter") then
-            local instanced = false
-            local temp = false
-            local realmID = 0
-
-            local realmName = nil
-            local schematic = nil
-
-            local count = params[2]
-
-            if (mc_helpers.isNumber(tostring(params[3]))) then
-                realmID = tonumber(params[3])
-            elseif (string.lower(tostring(params[3])) == "true") then
-                instanced = true
-            end
-
-            if (string.lower(tostring(params[4])) == "true") then
-                temp = true
-            end
-
-            realmName = tostring(params[5])
-            schematic = tostring(params[6])
-
-            if (schematic == "" or schematic == "nil") then
-                schematic = nil
-            elseif (schematicManager.getSchematic(schematic) == nil) then
-                return false, "schematic " .. tostring(schematic) .. " does not exist."
-            end
-
-            local is = mc_worldManager.GetTeleporterItemStack(count, instanced, temp, realmID, realmName, schematic)
-
-            local player = minetest.get_player_by_name(name)
-
-            player:get_inventory():add_item("main", is)
-            return true, "added teleporter to inventory."
-        end
-
-        return false, "For help, execute /realm help blocks."
-    end,
-    help = "realm blocks <block> <count> (<instanced: true | false> | <realmID>) <temporary: true | false> <realmName> <schematic>"
-
-}
-
-commands["coordinates"] = {
-    func = function(name, params)
-        local operation = tostring(params[1])
-        local format = tostring(params[2])
-
-        local playerRealm = Realm.GetRealmFromPlayer(minetest.get_player_by_name(name))
-
-        if (operation == "set") then
-            if (format == "UTM") then
-                if (utmInfo == nil) then
-                    utmInfo = { easting = tonumber(params[3]), northing = tonumber(params[4]), zone = tonumber(params[5]), utm_is_north = tostring(params[6]) }
-                end
-                playerRealm:set_data("UTMInfo", utmInfo)
-                return true
-            end
-            return false, "invalid format."
-
-        elseif (operation == "get") then
-            local rawPos = minetest.get_player_by_name(name):getpos()
-            local pos
-
-            if (format == "world") then
-                pos = rawPos
-            elseif (format == "local" or format == "nil") then
-                pos = playerRealm.WorldToLocalPosition(rawPos)
-            elseif (format == "grid") then
-                pos = Realm.worldToGridSpace(rawPos)
-            elseif (format == "utm") then
-                pos = playerRealm:WorldToUTM(rawPos)
-            elseif (format == "latlong") then
-                pos = playerRealm:WorldToLatLong(rawPos)
-            else
-                return false, "unknown format: " .. tostring(format)
-            end
-
-            minetest.chat_send_player(name, "Format: X: " .. tostring(pos.x) .. " Y: " .. tostring(pos.y) .. " Z: " .. tostring(pos.z))
-            return true, "command executed succesfully"
-
-        elseif (operation == "hud") then
-            if (mc_worldManager.positionTextFunctions[format] ~= nil) then
-                pmeta:set_string("positionHudMode", format)
-                return true, "enabled position hud element for format " .. format .. "."
-            elseif (format == "nil" or format == "none") then
-                pmeta:set_string("positionHudMode", "")
-                mc_worldManager.RemovePositionHud(minetest.get_player_by_name(name))
-                return true, "disabled position hud element."
-            end
-            return false, "invalid format."
-        end
-
-        return false, "unknown command parameters."
-    end,
-    help = "realm coordinates <set | get | hud> <format (world, grid, local, utm, latlong)>"
-}
-
-commands["data"] = {
-    func = function(name, params)
-        local operation = tostring(params[2])
-        local realmID = tonumber(params[1])
-        local realm = Realm.GetRealm(realmID)
-        if (realm == nil) then
-            return false, "realm " .. tostring(realmID) .. " does not exist."
-        end
-        if (operation == "get") then
-            local data = realm:get_data(tostring(params[3]))
-            if (data == nil) then
-                return false, "data " .. tostring(params[3]) .. " does not exist."
-            end
-            minetest.chat_send_player(name, "Data: " .. tostring(data))
-            return true, "command executed succesfully"
-        elseif (operation == "set") then
-            realm:set_data(tostring(params[3]), tostring(params[4]))
-            return true, "command executed succesfully"
-        elseif (operation == "dump") then
-            local data = realm.MetaStorage
-            minetest.chat_send_player(name, "Data: " .. tostring(minetest.serialize(data)))
-            return true, "command executed succesfully"
-        end
-        return false, "unknown sub-command."
-    end,
-    help = "realm data <get | set> <realmID> <dataName> <dataValue>"
-}
-
-minetest.register_chatcommand("realm", {
-    params = "Subcommand Realm ID Option",
-    func = function(name, param)
-        local params = mc_helpers.split(param, " ")
-        local subcommand = params[1]
-        table.remove(params, 1)
-
-        if (commands[subcommand] ~= nil) then
-            if (commands[subcommand].privs == nil) then
-                commands[subcommand].privs = { teacher = true }
-            end
-            local has, missing = minetest.check_player_privs(name, commands[subcommand].privs)
-            if not has then
-                local missingPermsString = ""
-                for k, v in pairs(missing) do
-                    missingPermsString = missingPermsString .. v .. ", "
-                end
-
-                return false, "You do not have permission to use this command. Missing command(s): " .. missingPermsString
-            end
-
-            return commands[subcommand].func(name, params)
-        else
-            return false, "Unknown subcommand. Use 'realm help' for a list of sub-commands."
-        end
-    end,
-})
-
--- Gets called when a command is called, before it is handled by the engine / lua runtime.
-minetest.register_on_chatcommand(function(name, command, params)
-
-
-    if (command == "grantme") then
-        local privTable = mc_helpers.split(params, ", ")
-        mc_worldManager.grantUniversalPriv(minetest.get_player_by_name(name), privTable)
-        return false -- we must return false so that the regular grant command proceeds.
-    elseif (command == "revokeme") then
-        local privTable = mc_helpers.split(params, ", ")
-        mc_worldManager.revokeUniversalPriv(minetest.get_player_by_name(name), privTable)
-        return false -- we must return false so that the regular grant command proceeds.
-    end
-
-
-    -- Gets called when grant / revoke is called. We're using this to add permissions that are granted onto the universalPrivs table.
-
-    if (command == "grant" or command == "revoke") then
-        local privsTable = mc_helpers.split(params, ", ")
-        local tmpTable = mc_helpers.split(table.remove(privsTable, 1), " ")
-
-        local name = tmpTable[1]
-        table.insert(privsTable, tmpTable[2])
-        tmpTable = nil
-
-        if (not minetest.player_exists(name)) then
-            return false -- we must return false so that the regular grant command proceeds. Error text is handled there.
-        end
-
-        if (name == nil or name == "" or privsTable == nil) then
-            return false -- we must return false so that the regular grant command proceeds. Error text is handled there.
-        end
-
-        if (command == "grant") then
-            mc_worldManager.grantUniversalPriv(minetest.get_player_by_name(name), privsTable)
-        else
-            mc_worldManager.revokeUniversalPriv(minetest.get_player_by_name(name), privsTable)
-        end
-    end
-
-    return false
+-- Global variables
+minetest_classroom.reports = minetest.get_mod_storage()
+minetest_classroom.mc_students = {teachers = {}}
+mc_student = {path = minetest.get_modpath("mc_student")}
+
+-- Local variables
+local tool_name = "mc_student:notebook"
+local priv_table = {interact = true}
+
+minetest.register_on_joinplayer(function(player)
+	if minetest.check_player_privs(player, { teacher = true }) then
+		minetest_classroom.mc_students.teachers[player:get_player_name()] = true
+	end
 end)
 
+minetest.register_on_leaveplayer(function(player)
+	minetest_classroom.mc_students.teachers[player:get_player_name()] = nil
+end)
 
--- We could have also done minetest.override_chatcommand; but I want complete control
-minetest.unregister_chatcommand("teleport")
+------------------------------------
+--- FORMSPEC DEFINITIONS/HELPERS ---
+------------------------------------
 
-minetest.register_chatcommand("teleport", {
-    privs = {
-        teleport = true,
-    },
-    description = "Teleport yourself or a specified player to a realm or another player.",
-    params = "<realm ID> | <target player> | (<player name> <realm ID>) | (<player name> <target player name>) | (<realm ID> <local x pos> <local y pos> <local z pos>)",
-    func = function(name, param)
+-------------------------
+--- MAIN STUDENT MENU ---
+local mc_student_menu = {
+	"formspec_version[5]",
+	"size[10,9]",
+	"label[3.1,0.7;What do you want to do?]",
+	"button[1,1.6;3.8,1.3;spawn;Go Home]",
+	"button[5.2,1.6;3.8,1.3;classrooms;Join Classroom]",
+	"button[1,3.3;3.8,1.3;coordinates;My Coordinates]",
+	"button[5.2,3.3;3.8,1.3;marker;Place a Marker]",
+	"button[1,5;3.8,1.3;taskstudent;View Tasks]",
+	"button[5.2,5;3.8,1.3;report;Report]",
+	"button_exit[3.1,6.7;3.8,1.3;exit;Exit]"
+}
 
-        local function teleport(name, othername)
+local function show_student_menu(player)
+	if mc_helpers.checkPrivs(player,priv_table) then
+		minetest.show_formspec(player:get_player_name(), "mc_student:menu", table.concat(mc_student_menu,""))
+	end
+end
+-----------------------------
 
-            if (not minetest.player_exists(name)) then
-                return false, "Player " .. tostring(name) .. " could not be found..."
-            end
 
-            if (not minetest.player_exists(othername)) then
-                return false, "Player " .. tostring(othername) .. " could not be found..."
-            end
+------------------
+--- CLASSROOMS ---
+local mc_student_classrooms = {
+	"formspec_version[6]",
+	"size[6.5,7.5]",
+	"label[2.5,0.5;Classrooms]",
+	"pwdfield[0.6,5.8;3,0.5;accesscode;Enter Access Code]",
+	"button[5.3,6.7;1,0.6;join;Join]",
+	"button[0.2,6.7;1,0.6;back;Back]",
+	"button[4,5.7;2,0.6;register;Register]",
+	"textlist[0.6,0.9;5.4,4.3;realms;;1]"
+}
 
-            local player = minetest.get_player_by_name(name)
-            local otherPlayer = minetest.get_player_by_name(othername)
-            local pmeta = otherPlayer:get_meta()
-            local realmID = pmeta:get_int("realm")
+local classroomRealms = {}
+local selectedClassroom = 1
 
-            local requestedRealm = Realm.realmDict[realmID]
+local function show_classrooms(player)
+	if mc_helpers.checkPrivs(player,priv_table) then
+		local textlist = "textlist[0.6,0.9;5.4,4.3;realms;;1]"
+		local is_first = true
 
-            if (requestedRealm == nil) then
-                return false, "Player " .. tostring(othername) .. " is not listed in a realm OR current realm has been deleted; Try teleporting to a different realm and then back..."
-            end
+		for i,realm in pairs(Realm.realmDict) do
+			if realm:getCategory().joinable(realm,player) then
+				classroomRealms[i] = realm
 
-            requestedRealm:TeleportPlayer(player)
-            local pos = otherPlayer:get_pos()
-            player:set_pos(pos)
-            return true, "Teleported to " .. tostring(othername) .. " in realm " .. tostring(realmID)
-        end
+				if not is_first then
+					textlist = textlist:sub(1, -4) .. "," .. realm.Name .. ";1]"
+				else
+					textlist = textlist:sub(1, -4) .. realm.Name .. ";1]"
+					is_first = false
+				end	
+			end
+		end
 
-        local paramTable = mc_helpers.split(param, " ")
-        if (paramTable == nil) then
-            paramTable = { param }
-        end
+		mc_student_classrooms[#mc_student_classrooms] = textlist
+		minetest.show_formspec(player:get_player_name(), "mc_student:classrooms", table.concat(mc_student_classrooms,""))
+	end
+end
 
-        if (mc_helpers.isNumber(paramTable[1]) and mc_helpers.isNumber(paramTable[2]) and mc_helpers.isNumber(paramTable[3]) and mc_helpers.isNumber(paramTable[4])) then
-            local realmID = paramTable[1]
-            local requestedRealm = Realm.realmDict[tonumber(realmID)]
+function check_access_code(submitted, codes)
+	local found = false
+	local loc = 1
+	for _,v in pairs(codes) do
+	    if v == submitted then
+		    local found = true
+		    return loc
+	    end
+	    loc = loc + 1
+	end
+    return found
+end
+----------------------
 
-            if (not minetest.player_exists(name)) then
-                return false, "Player: " .. tostring(name) .. " could not be found"
-            end
 
-            if (requestedRealm == nil) then
-                return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
-            end
+----------------------
+--- REPORT ---
+local mc_student_report = {
+	"formspec_version[5]",
+	"size[7,7]",
+	"label[1.8,0.8;What are you reporting?]",
+	"button[0.7,5.2;2,0.8;back;Back]",
+	"button_exit[2.9,5.2;2,0.8;submit;Submit]",
+	"textarea[0.7,1.5;5.6,3.1;report;; ]"
+}
 
-            local player = minetest.get_player_by_name(name)
+local function show_report(player)
+	local pname = player:get_player_name()
+	minetest.show_formspec(pname, "mc_student:report", table.concat(mc_student_report,""))
+	return true
+end
+-----------------------
 
-            local position = { x = paramTable[2], y = paramTable[3], z = paramTable[4] }
-            local worldPosition = requestedRealm:LocalToWorldPosition(position)
 
-            if (not requestedRealm:ContainsCoordinate(worldPosition)) then
-                return false, "requested position does not exist in realm " .. tostring(realmID)
-            end
+-----------------------
+--- MARKER ---
+local mc_student_marker = {
+	"formspec_version[5]",
+	"size[7,6.5]",
+	"position[0.3,0.5]",
+	"label[1.8,0.8;Add text to your marker]",
+	"button[0.7,5.2;2,0.8;back;Back]",
+	"button_exit[2.9,5.2;2,0.8;submit;Submit]",
+	"textarea[0.7,1.5;5.6,3.1;message;; ]"
+}
 
-            requestedRealm:TeleportPlayer(player)
-            player:set_pos(worldPosition)
-        elseif (mc_helpers.isNumber(paramTable[1]) and paramTable[2] == nil) then
-            return commands["tp"].func(name, paramTable)
-        elseif (paramTable[1] ~= nil and paramTable[2] == nil) then
-            return teleport(name, paramTable[1])
-        elseif (paramTable[1] ~= nil and mc_helpers.isNumber(paramTable[2])) then
-            return commands["tp"].func(paramTable[1], { paramTable[2] })
-        elseif (paramTable[1] ~= nil and paramTable[2] ~= nil) then
-            return teleport(paramTable[1], paramTable[2])
-        end
+	local function show_marker(player)
+	if mc_helpers.checkPrivs(player,priv_table) then
+		local pname = player:get_player_name()
+		minetest.show_formspec(pname, "mc_student:marker", table.concat(mc_student_marker,""))
+		return true
+	end
+end
+----------------------
 
-        return false, "unable to parse parameters: " .. tostring(param)
-    end,
+
+-------------------
+--- COORDINATES ---
+local selectedCoord = 0
+
+mc_student_coordinates = {
+	"formspec_version[6]",
+	"size[13,9.3]",
+	"label[5.4,0.4;Coordinates Stored]",
+	"button[9.3,7.6;3.3,0.6;record;Record]",
+	"button[9.3,8.5;1.6,0.6;delete;Delete]",
+	"button[11.2,8.5;1.4,0.6;go;Go]",
+	"button[7.2,8.5;1.7,0.6;clear;Clear All]",
+	"button[0.4,8.5;1.2,0.6;back;Back]",
+	"textarea[0.4,7.6;8.5,0.6;note;Add a note describing your current location;]",
+	"textlist[0.4,0.7;12.2,6.4;coordlist;;1;false]" 
+}
+
+local function show_coordinates(player)
+	selectedCoord = 0
+
+	-- Get the stored coordinates for the player
+	local coordsList = {}
+	local pmeta = player:get_meta()
+	pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+
+	if pdata == nil then
+		table.insert(coordsList, "No Coordinates Stored")
+	else
+		local prealms = pdata.realms
+		local pcoords = pdata.coords
+		local pnotes = pdata.notes
+
+		if pcoords then
+			for i in pairs(pcoords) do
+				local realm = Realm.GetRealm(prealms[i])
+
+				if realm then
+					local pos = pcoords[i]
+					local utm = realm:WorldToUTMSpace(pos)
+					local latlong = realm:WorldToLatLongSpace(pos) 
+					local entry = realm.Name .. " "
+
+					if utm then
+						entry = entry .. math.floor(utm.x) .. "E " .. math.floor(utm.z) .. "N Elev: " .. math.floor(utm.y) .. "m"
+					else
+						entry = entry .. "x=" .. math.floor(pos.x) .. " y=" .. math.floor(pos.y) .. " z=" .. math.floor(pos.z)
+					end
+
+					if latlong then
+						entry = entry .. "\\, " .. math.abs(math.floor(latlong.x * 10000)/10000)
+						if latlong.x < 0 then
+							entry = entry .. "°S " 
+						else 
+							entry = entry .. "°N "
+						end
+						
+						entry = entry .. math.abs(math.floor(latlong.z * 10000)/10000)
+						if latlong.z < 0 then
+							entry = entry .. "°W"
+						else 
+							entry = entry .. "°E"
+						end
+					end
+
+					if pnotes[i] ~= "" then
+						entry = entry .. "\\, " .. pnotes[i]
+					end
+
+					if i ~= #pcoords then
+						entry = entry .. ","
+					end
+
+					table.insert(coordsList, entry)
+				end
+			end
+		end
+	end
+
+	mc_student_coordinates[#mc_student_coordinates] = "textlist[0.4,0.7;12.2,6.4;coordlist;" .. table.concat(coordsList, "") .. "]"
+	minetest.show_formspec(player:get_player_name(), "mc_student:coordinates", table.concat(mc_student_coordinates,""))
+end
+
+local function record_coordinates(player,message)
+	if mc_helpers.checkPrivs(player,priv_table) then
+		local pmeta = player:get_meta()
+		local pos = player:get_pos()
+		local realmID = pmeta:get_int("realm")
+		temp = minetest.deserialize(pmeta:get_string("coordinates"))
+
+		if temp == nil then
+			datanew = {
+				realms = { realmID, },
+				coords = { pos, }, 
+				notes = { message, },
+			}
+		else
+			table.insert(temp.realms, realmID)
+			table.insert(temp.coords, pos)
+			table.insert(temp.notes, message)
+			datanew = {realms = temp.realms, coords = temp.coords, notes = temp.notes, }
+		end
+
+		pmeta:set_string("coordinates", minetest.serialize(datanew))
+		temp = nil
+		minetest.chat_send_player(player:get_player_name(), player:get_player_name() ..": Your position was recorded in your notebook.")
+		show_coordinates(player)
+	end
+end
+------------------------
+
+
+------------------------------------
+--- FORMSPEC AND TOOL MANAGEMENT ---
+------------------------------------
+
+minetest.register_on_player_receive_fields(function(player, formname, fields)
+	local pmeta = player:get_meta()
+
+	if string.sub(formname, 1, 10) ~= "mc_student" then
+		return false
+	end
+
+	local wait = os.clock()
+	while os.clock() - wait < 0.05 do end --popups don't work without this
+
+	if fields.back then
+		show_student_menu(player)
+	end
+
+	if formname == "mc_student:menu" then
+		if fields.spawn then
+			local spawnRealm = mc_worldManager.GetSpawnRealm()
+			spawnRealm:TeleportPlayer(player)
+        elseif fields.report then
+			show_report(player)
+		elseif fields.coordinates then
+			show_coordinates(player)
+		elseif fields.classrooms then
+			-- show_accesscode(player)
+			show_classrooms(player)
+		elseif fields.marker then
+			show_marker(player)
+		elseif fields.taskstudent then
+			local pname = player:get_player_name()
+			if minetest_classroom.currenttask ~= nil then
+				minetest.show_formspec(pname, "task:instructions", minetest_classroom.currenttask)
+			else
+				minetest.chat_send_player(pname,pname..": No task was found. Message your instructor if you were expecting a task.")
+			end
+		end
+	end
+
+	if formname == "mc_student:classrooms" then
+		local event = minetest.explode_textlist_event(fields.realms)
+
+		if fields.realms then
+			if event.type == "CHG" then
+				selectedClassroom = event.index
+			end
+		elseif fields.join then
+			local realm = classroomRealms[selectedClassroom]
+			realm:TeleportPlayer(player)
+		end
+	end
+
+	if formname == "mc_student:report" then
+		-- Checking for nil (caused by player pressing escape instead of Back) ensures the game does not crash
+		if fields.report ~= " " and fields.report ~= nil then
+			local pname = player:get_player_name()
+
+			-- Count the number of words, by counting for replaced spaces
+			-- Number of spaces = Number of words - 1
+			local _, count = string.gsub(fields.report, " ", "")
+			if count == 0 then
+				return false, "If you're reporting a player, you should" ..
+					" also include a reason why."
+			end
+
+			local msg = pname .. " reported: " .. fields.report
+
+			-- Append list of teachers in-game
+			local teachers = ""
+			for teacher in pairs(minetest_classroom.mc_students.teachers) do
+				teachers = teachers .. teacher .. ", "
+			end
+
+			if #minetest_classroom.mc_students.teachers then
+				local msg = '[REPORT] ' .. msg .. " (teachers online: " .. teachers:sub(1, -3) .. ")"
+				-- Send report to any teacher currently connected
+				for teacher in pairs(minetest_classroom.mc_students.teachers) do
+					minetest.chat_send_player(teacher, minetest.colorize("#FF00FF", msg))
+					minetest.sound_play("report_alert", {to_player = teacher, gain = 1.0, pitch = 1.0,}, true)
+
+				end
+			end
+
+			-- Archive the report in mod storage
+			local key = pname.." "..tostring(os.date("%d-%m-%Y %H:%M:%S"))
+			minetest_classroom.reports:set_string(key,
+			minetest.write_json(fields.report))
+
+			-- Archive the report in the chatlog
+			chatlog.write_log(pname,'[REPORT] '..fields.report)
+		elseif fields.report == nil then
+			return true
+		else
+			minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF0000","Error: Please add a message to your report."))
+		end
+	end
+
+	if formname == "mc_student:marker" then
+		if fields.message then
+			place_marker(player,fields.message)
+		elseif fields.message == nil then
+			return true
+		end
+	end
+
+	if formname == "mc_student:coordinates" then
+		local event = minetest.explode_textlist_event(fields.coordlist)
+
+		if fields.record then
+			record_coordinates(player,fields.note)
+		elseif fields.coordlist then
+			if event.type == "CHG" then
+				selectedCoord = event.index
+			end
+		elseif fields.go then
+			if selectedCoord ~= 0 then
+				local data = minetest.deserialize(pmeta:get_string("coordinates"))
+				local realm = Realm.GetRealm(data.realms[selectedCoord])
+
+				if realm then
+					if realm:getCategory().joinable(realm,player) then
+						realm:TeleportPlayer(player)
+						player:set_pos(data.coords[selectedCoord])
+					else
+						minetest.chat_send_player(player:get_player_name(), minetest.colorize("#ff0000","You no longer have access to this classroom"))
+					end
+				else
+					minetest.chat_send_player(player:get_player_name(), minetest.colorize("#ff0000","This classroom no longer exists"))
+				end
+			end
+		elseif fields.delete then
+			local data = minetest.deserialize(pmeta:get_string("coordinates"))
+
+			if data then
+				local newData, newCoords, newNotes, newRealms = {}, {}, {}, {}	
+
+				if #(data.coords) > 1 then
+					for i,coord in ipairs(data.coords) do
+						if i ~= selectedCoord then
+							table.insert(newCoords, coord)
+							table.insert(newNotes, data.notes[i])
+							table.insert(newRealms, data.realms[i])
+						end
+					end
+
+					newData = {coords = newCoords, notes = newNotes, realms = newRealms}
+				else
+					newData = nil
+				end
+
+				pmeta:set_string("coordinates", minetest.serialize(newData))
+				show_coordinates(player)
+			end
+		elseif fields.clear then
+			pmeta:set_string("coordinates", nil)
+			show_coordinates(player)
+		end
+	end
+
+	if formname == "mc_student:accesscode" or formname == "mc_student:accesscode_fail" then
+		if fields.exit then
+			return
+		end
+
+		local pname = player:get_player_name()
+
+		-- Get the classrooms from modstorage
+		local temp = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
+
+		if temp ~= nil then
+			-- Get the classroom accesscodes
+			local loc = check_access_code(fields.accesscode,temp.access_code)
+			if loc then
+				-- Check if the student is currently registered for this course
+				local pmeta = player:get_meta()
+				local pdata = minetest.deserialize(pmeta:get_string("classrooms"))
+				-- Validate against modstorage
+				local mdata = minetest.deserialize(minetest_classroom.classrooms:get_string("classrooms"))
+				if pdata == nil then
+					-- This is the first time the student registers for any course
+					local classroomdata = {
+						course_code = { mdata.course_code[loc] },
+						section_number = { mdata.section_number[loc] },
+						start_year = { mdata.start_year[loc] },
+						start_month = { mdata.start_month[loc] },
+						start_day = { mdata.start_day[loc] },
+						end_year = { mdata.end_year[loc] },
+						end_month = { mdata.end_month[loc] },
+						end_day = { mdata.end_day[loc] },
+						realm_id = { mdata.realm_id[loc] },
+					}
+					pmeta:set_string("classrooms", minetest.serialize(classroomdata))
+				else
+					-- Student has already registered for another classroom
+					table.insert(pdata.course_code, mdata.course_code[loc])
+					table.insert(pdata.section_number, mdata.section_number[loc])
+					table.insert(pdata.start_year, mdata.start_year[loc])
+					table.insert(pdata.start_month, mdata.start_month[loc])
+					table.insert(pdata.start_day, mdata.start_day[loc])
+					table.insert(pdata.end_year, mdata.end_year[loc])
+					table.insert(pdata.end_month, mdata.end_month[loc])
+					table.insert(pdata.end_day, mdata.end_day[loc])
+					local classroomdata = {
+						course_code = pdata.course_code,
+						section_number = pdata.section_number,
+						start_year = pdata.start_year,
+						start_month = pdata.start_month,
+						start_day = pdata.start_day,
+						end_year = pdata.end_year,
+						end_month = pdata.end_month,
+						end_day = pdata.end_day,
+						realm_id = pdata.realm_id,
+					}
+				end
+
+				-- Check if the access code is expired
+				if tonumber(mdata.end_year[loc]) < tonumber(os.date("%Y")) and months[mdata.end_month[loc]] < tonumber(os.date("%m")) and tonumber(mdata.end_day[loc]) < tonumber(os.date("%d")) then
+					minetest.chat_send_player(pname,pname..": The access code you entered has expired. Please contact your instructor.")
+				else
+
+                    local realm = Realm.GetRealm(mdata.realm_id[loc])
+
+                    if (realm ~= nil) then
+
+                        local students = realm:get_data("students")
+                        if students == nil then
+                            students = {}
+                        end
+                        students[player:get_player_name()] = true
+                        realm:set_data("students", students)
+
+                        realm:TeleportPlayer(player)
+                        minetest.chat_send_player(pname, pname .. ": You have been teleported to the classroom.")
+                    end
+				end
+			else
+				show_accesscode_fail(player)
+			end
+		else
+			return
+		end
+	end
+end)
+
+-- The student notebook for accessing the student actions
+minetest.register_tool(tool_name , {
+	description = "Notebook for students",
+	inventory_image = "notebook.png",
+	_mc_tool_privs = priv_table,
+	
+	on_use = function (itemstack, player, pointed_thing)
+        local pname = player:get_player_name()
+		if mc_helpers.checkPrivs(player,priv_table) then
+			show_student_menu(player)
+		end
+	end,
+	
+	on_drop = function(itemstack, dropper, pos)
+	end,
 })
+-------------------------------
+
+
+----------------------
+--- MARKER HELPERS ---
+----------------------
+
+-- Functions and variables for placing markers
+hud = mhud.init()
+markers = {}
+local MARKER_LIFETIME = 30
+local MARKER_RANGE = 150
+
+function add_marker(pname, message, pos, owner)
+	if not hud:get(pname, "marker_" .. owner) then
+		hud:add(pname, "marker_" .. owner, {
+			hud_elem_type = "waypoint",
+			world_pos = pos,
+			precision = 1,
+			color = 0xFF0000, -- red
+			text = message
+		})
+	else
+		hud:change(pname, "marker_" .. owner, {
+			world_pos = pos,
+			text = message
+		})
+	end
+end
+
+function markers.add(pname, msg, pos)
+
+	if markers[pname] then
+		markers[pname].timer:cancel()
+	end
+
+	markers[pname] = {
+		msg = msg, pos = pos,
+		timer = minetest.after(MARKER_LIFETIME, markers.remove, pname),
+	}
+
+	for _, player in pairs(minetest.get_connected_players()) do
+		add_marker(player, msg, pos, pname)
+	end
+end
+
+function markers.remove(pname)
+	if markers[pname] then
+		markers[pname].timer:cancel()
+
+		for _, player in pairs(minetest.get_connected_players()) do
+			hud:remove(player, "marker_" .. pname)
+		end
+
+		markers[pname] = nil
+	end
+end
+
+-- Legacy code, keep for convenience
+minetest.register_chatcommand("m", {
+	description = "Place a marker in your look direction",
+	privs = {interact = true, shout = true},
+	func = function(name, param)
+
+		local player = minetest.get_player_by_name(name)
+		local pos1 = vector.offset(player:get_pos(), 0, player:get_properties().eye_height, 0)
+
+		if param == "" then
+			param = "Look here!"
+		end
+
+		local ray = minetest.raycast(
+			pos1, vector.add(pos1, vector.multiply(player:get_look_dir(), MARKER_RANGE),
+			true, false
+		))
+		local pointed = ray:next()
+
+		if pointed and pointed.type == "object" and pointed.ref == player then
+			pointed = ray:next()
+		end
+
+		if not pointed then
+			return false, "Can't find anything to mark, too far away!"
+		end
+
+		local message = string.format("m [%s]: %s", name, param)
+		local pos
+
+		if pointed.type == "object" then
+			local concat
+			local obj = pointed.ref
+			local entity = obj:get_luaentity()
+
+			-- If object is a player, append player name to display text
+			-- Else if obj is item entity, append item description and count to str.
+			if obj:is_player() then
+				concat = obj:get_player_name()
+			elseif entity then
+				if entity.name == "__builtin:item" then
+					local stack = ItemStack(entity.itemstring)
+					local itemdef = minetest.registered_items[stack:get_name()]
+
+					-- Fallback to itemstring if description doesn't exist
+					concat = itemdef.description or entity.itemstring
+					concat = concat .. " " .. stack:get_count()
+				end
+			end
+
+			pos = obj:get_pos()
+			if concat then
+				message = message .. " <" .. concat .. ">"
+			end
+		else
+			pos = pointed.under
+		end
+
+		markers.add(name, message, pos)
+
+		return true, "Marker is placed!"
+	end
+})
+
+function place_marker(player,message)
+	if mc_helpers.checkPrivs(player,priv_table) then
+		local pname = player:get_player_name()
+		local pos1 = vector.offset(player:get_pos(), 0, player:get_properties().eye_height, 0)
+
+		local ray = minetest.raycast(
+			pos1, vector.add(pos1, vector.multiply(player:get_look_dir(), MARKER_RANGE),
+			true, false
+		))
+		local pointed = ray:next()
+
+		if message == "" then
+			message = "Look here!"
+		end
+
+		if pointed and pointed.type == "object" and pointed.ref == player then
+			pointed = ray:next()
+		end
+
+		if not pointed then
+			return false, minetest.chat_send_player(pname,pname..": Nothing found or too far away.")
+		end
+
+		local message = string.format("m [%s]: %s", pname, message)
+		local pos
+
+		if pointed.type == "object" then
+			local concat
+			local obj = pointed.ref
+			local entity = obj:get_luaentity()
+
+			-- If object is a player, append player name to display text
+			-- Else if obj is item entity, append item description and count to str.
+			if obj:is_player() then
+				concat = obj:get_player_name()
+			elseif entity then
+				if entity.name == "__builtin:item" then
+					local stack = ItemStack(entity.itemstring)
+					local itemdef = minetest.registered_items[stack:get_name()]
+
+					-- Fallback to itemstring if description doesn't exist
+					concat = itemdef.description or entity.itemstring
+					concat = concat .. " " .. stack:get_count()
+				end
+			end
+
+			pos = obj:get_pos()
+			if concat then
+				message = message .. " <" .. concat .. ">"
+			end
+		else
+			pos = pointed.under
+		end
+
+		markers.add(pname, message, pos)
+		minetest.chat_send_player(pname,pname..": You placed a marker.")
+		return true
+	else
+		minetest.chat_send_player(pname,pname..": You are not allowed to place markers. Please submit a report from your notebook to request this privilege.")
+	end
+end
+
+
+
+
+
+-- -- Define the Access Code formspec
+-- local mc_student_accesscode = {
+-- 	"formspec_version[5]",
+-- 	"size[5,3]",
+-- 	"label[0.6,0.5;Enter an Access Code]",
+-- 	"pwdfield[0.5,0.9;3.9,0.8;accesscode;]",
+-- 	"button_exit[0.9,2;3,0.8;submit;Submit]",
+-- 	"button_exit[4.4,0;0.6,0.5;exit;X]"
+-- }
+
+-- local function show_accesscode(player)
+-- 	if mc_helpers.checkPrivs(player,priv_table) then
+-- 		local pname = player:get_player_name()
+-- 		minetest.show_formspec(pname, "mc_student:accesscode", table.concat(mc_student_accesscode,""))
+-- 		return true
+-- 	end
+-- end
+
+-- local mc_student_accesscode_fail = {
+-- 	"formspec_version[5]",
+-- 	"size[5,4.2]",
+-- 	"label[0.6,0.5;Enter Your Access Code]",
+-- 	"pwdfield[0.5,0.9;3.9,0.8;accesscode;]",
+-- 	"button_exit[0.9,2;3,0.8;submit;Submit]",
+-- 	"label[0.9,3.2;Invalid access code.]",
+-- 	"label[1.2,3.7;Please try again.]",
+-- 	"button_exit[4.4,0;0.6,0.5;exit;X]"
+-- }
+
+-- local function show_accesscode_fail(player)
+-- 	if mc_helpers.checkPrivs(player,priv_table) then
+-- 		local pname = player:get_player_name()
+-- 		minetest.show_formspec(pname, "mc_student:accesscode_fail", table.concat(mc_student_accesscode_fail,""))
+-- 		return true
+-- 	end
+-- end
