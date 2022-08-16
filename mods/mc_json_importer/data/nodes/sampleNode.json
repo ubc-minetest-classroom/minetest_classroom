@@ -1,4 +1,5 @@
 {
+	"_jsonType" : "node",
 	"description" : "Test Node",
 	"drawtype" : "normal",
 	"drop" : "default:dirt",
@@ -7,10 +8,9 @@
 		"crumbly" : 3.0
 	},
 	"is_ground_content" : true,
-	"name" : "test_node",
+	"name" : "mc_json_importer:sample_node",
 	"tiles" : 
 	[
 		"default_dirt.png"
-	],
-	"type" : "node"
+	]
 }

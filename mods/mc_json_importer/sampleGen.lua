@@ -1,6 +1,7 @@
-local testBiomeTable = {
-    type = "biome",
-    name = "frst_bec_biomes:test_biome",
+local sampleTables = {}
+sampleTables["sampleBiome"] = {
+    _jsonType = "biome",
+    name = "mc_json_importer:sample_biome",
     node_top = "default:dirt_with_grass",
     depth_top = 1,
     node_filler = "default:dirt",
@@ -19,28 +20,66 @@ local testBiomeTable = {
     humidity_point = 50
 }
 
-local testNodeTable = {
-    type = "node",
-    name = "frst_bec_biomes:test_node",
+sampleTables["sampleNode"] = {
+    _jsonType = "node",
+    name = "mc_json_importer:sample_node",
     description = "Test Node",
     drawtype = "normal",
-    tiles = {"default_dirt.png"},
+    tiles = { "default_dirt.png" },
     is_ground_content = true,
-    groups = {crumbly = 3},
+    groups = { crumbly = 3 },
     drop = "default:dirt"
 }
 
-local biomeDataPath = json_importer.path .. "\\data\\biomes\\"
-local nodeDataPath = json_importer.path .. "\\data\\nodes\\"
+sampleTables["craftItem"] = {
+    _jsonType = "craft_item",
+    description = "Sample Item",
+    short_description = "Sample Axe",
+    groups = {},
+    inventory_image = "default_tool_steelaxe.png",
+    inventory_overlay = "overlay.png",
+    wield_image = "",
+    wield_overlay = "",
+    wield_scale = { x = 1, y = 1, z = 1 },
+    stack_max = 99,
+    range = 4.0,
+    liquids_pointable = false,
+    light_source = 0,
+}
 
--- Write our sample json files to the mod's folder
-local jsonText = minetest.write_json(testBiomeTable, true)
-local f = io.open(biomeDataPath .. "testBiome.json", "wb")
-local content = f:write(jsonText)
-f:close()
+sampleTables["tool"] = {
+    _jsonType = "tool",
+    description = "Sample Axe",
+    short_description = "Steel Axe",
+    groups = {},
+    inventory_image = "default_tool_steelaxe.png",
+    inventory_overlay = "overlay.png",
+    wield_image = "",
+    wield_overlay = "",
+    wield_scale = { x = 1, y = 1, z = 1 },
+    stack_max = 99,
+    range = 4.0,
+    liquids_pointable = false,
+    light_source = 0,
+}
 
+sampleTables["recipe"] = {
+    _jsonType = "craft_recipe",
+    output = "default:pick_stone",
+    recipe = {
+        {"default:cobble", "default:cobble", "default:cobble"},
+        {"", "default:stick", ""},
+        {"", "default:stick", ""},  -- Also groups; e.g. "group:crumbly"
+    },
+}
 
-local jsonText = minetest.write_json(testNodeTable, true)
-local f = io.open(nodeDataPath .. "testNode.json", "wb")
-local content = f:write(jsonText)
-f:close()
+for k, sampleTable in pairs(sampleTables) do
+    local dataPath = json_importer.path .. "\\data\\" .. sampleTable._jsonType .. "s\\"
+    minetest.mkdir(dataPath)
+
+    -- Write our sample json files to the mod's folder
+    local jsonText = minetest.write_json(sampleTable, true)
+    local f = io.open(dataPath .. k .. ".json", "wb")
+    local content = f:write(jsonText)
+    f:close()
+end

@@ -1,0 +1,22 @@
+{
+	"_jsonType" : "craft_recipe",
+	"output" : "default:pick_stone",
+	"recipe" : 
+	[
+		[
+			"default:cobble",
+			"default:cobble",
+			"default:cobble"
+		],
+		[
+			"",
+			"default:stick",
+			""
+		],
+		[
+			"",
+			"default:stick",
+			""
+		]
+	]
+}
