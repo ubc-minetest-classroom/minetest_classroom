@@ -390,22 +390,40 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             "image[0.2,1.4;18.6,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
             "image[0.2,1.4;0.1,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
             "image[0.2,6.2;18.6,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
-
-            "style_type[textarea;font=mono]",
-            "textarea[0.45,1.7;10.4,0.8;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
-            "style_type[textarea;font_size=*1.25]",
+      
+            "style_type[textarea;font=mono,bold;textcolor=#000000;font_size=*0.85]",
+            "image[0.5,1.7;1.3,0.5;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            "textarea[0.6,1.8;1.3,0.8;;;FAMILY]",
+        }
+        -- "textarea[0.45,1.7;10.4,0.8;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
+    
+        if false and info.fam_name then
+            -- gamified family area
+            table.insert(formtable_v3, table.concat({
+                
+            }))
+        else
+            -- default family area
+            table.insert(formtable_v3, table.concat({
+            	"style_type[textarea;font=mono;textcolor=white;font_size=*1]",
+                "textarea[2,1.75;8.95,0.8;;;", minetest.formspec_escape((info.fam_name and info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Unknown"), "]",
+            }))
+        end
+        
+        table.insert(formtable_v3, table.concat({
+            "style_type[textarea;font=mono;font_size=*1.25]",
             "textarea[0.45,2.4;10.4,1;;;", minetest.formspec_escape(info.sci_name or "Scientific name unknown"), "]",
             "style_type[textarea;font_size=*2.25;font=mono,bold]",
             "textarea[0.45,2.9;10.4,1.8;;;", minetest.formspec_escape(info.com_name or "Common name unknown"), "]",
 
             -- TODO: add tag labels dynamically
-            "box[0.5,5.4;1.4,0.6;", status_col or "#9192A3", "]",
+          	"image[0.5,5.4;1.4,0.6;magnify_pixel.png^[multiply:", status_col or "#9192A3", "^[opacity:127]", --"image[0.5,5.4;1.4,0.6;magnify_round_rect_9.png^[multiply:", status_col or "#9192A3", "^[opacity:31;100]",
             "label[0.7,5.7;Status]",
-            "box[2.1,5.4;1.2,0.6;#00FF00]",
+            "image[2.1,5.4;1.2,0.6;magnify_pixel.png^[multiply:#00FF00^[opacity:127]", --"image[2.1,5.4;1.2,0.6;magnify_round_rect_9.png^[multiply:#00FF00^[opacity:31;100]",
             "label[2.3,5.7;Type]",
-            "box[3.5,5.4;1.5,0.6;#00FF00]",
+            "image[3.5,5.4;1.5,0.6;magnify_pixel.png^[multiply:#00FF00^[opacity:127]", --"image[3.5,5.4;1.5,0.6;magnify_round_rect_9.png^[multiply:#00FF00^[opacity:31;100]",
             "label[3.7,5.7;Type 2]",
-            "box[5.2,5.4;1.5,0.6;#FFA500]",
+            "image[5.2,5.4;1.5,0.6;magnify_pixel.png^[multiply:#FFA500^[opacity:127]", --"image[5.2,5.4;1.5,0.6;magnify_round_rect_9.png^[multiply:#FFA500^[opacity:31;100]",
             "label[5.4,5.7;Type 3]",
         
             "image[10.9,1.5;7.8,4.4;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
@@ -424,7 +442,7 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             "image_button[12.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[3] or "test.png", ";;;false;false]",
             "image_button[14.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[4] or "test.png", ";;;false;false]",
             "image_button[16.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[5] or "test.png", ";;;false;false]",
-        }
+        }))
         
         if model_spec_loc then
               -- add model + image 6
