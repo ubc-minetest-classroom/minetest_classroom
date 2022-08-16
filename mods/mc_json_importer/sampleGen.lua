@@ -30,8 +30,8 @@ local testNodeTable = {
     drop = "default:dirt"
 }
 
-local biomeDataPath = frstBecBiomes.path .. "\\data\\biomes\\"
-local nodeDataPath = frstBecBiomes.path .. "\\data\\nodes\\"
+local biomeDataPath = json_importer.path .. "\\data\\biomes\\"
+local nodeDataPath = json_importer.path .. "\\data\\nodes\\"
 
 -- Write our sample json files to the mod's folder
 local jsonText = minetest.write_json(testBiomeTable, true)
