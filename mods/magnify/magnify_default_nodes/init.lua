@@ -124,7 +124,7 @@ local Kelp = {
     texture = "magnify_default_desmarestia_ligulata.jpg",
     model_obj = "magnify_default_desmarestia_ligulata.obj",
     more_info = "",
-    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Desmarestia%20ligulata"--,
+    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Desmarestia%20ligulata",
     img_copyright = "Ken-ichi Ueda, licensed under CC BY 4.0"
 }
 magnify.register_species(Kelp, {"default:sand_with_kelp"})
