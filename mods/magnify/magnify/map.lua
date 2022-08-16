@@ -51,4 +51,5 @@ magnify.map.family = {
     --["Boletaceae"] = "A fungus family",
     ["Nymphaeaceae"] = "Water-lily",
     --["Amanitaceae"] = "A fungus family",
+    ["Sapindaceae"] = "Horse-chestnut family",
 }

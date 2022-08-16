@@ -76,7 +76,7 @@ local AppleTree = {
 }
 magnify.register_species(AppleTree, {"default:tree", "default:apple", "default:apple_mark", "default:leaves", "default:sapling", "default:wood"})
 
-local JungleTree = {
+--[[local JungleTree = {
     sci_name = "Alnus rubra",
     com_name = "Red alder",
     fam_name = "Betulaceae", 
@@ -89,8 +89,29 @@ local JungleTree = {
     more_info = "Trees growing in the forest develop a slightly tapered trunk extending up to a narrow, rounded crown.",
     external_link = "https://www.for.gov.bc.ca/hfd/library/documents/treebook/redalder.htm"--,
     --img_copyright or img_credit = ""
+}]]
+
+local bigleaf = {
+    sci_name = "Acer macrophyllum",
+    com_name = "Bigleaf Maple",
+    fam_name = "Sapindaceae",
+    cons_status = {
+        ns_global = "",
+        ns_bc = "S5",
+        bc_list = "Yellow"
+    },
+    region = "Southwest BC, west of the Coast-Cascade mountains to California ",
+    height = "Grows up to 30 meters tall",
+    more_info = "Large deciduous tree with greenish bark that turns greyish-brown as it ages, with sharp-pointed dark green leaves that turn yellow in the fall. Often covered with lichens and mosses",       -- Extended description of species
+    bloom = "Blooms with an inflorescense of numerous greenish-white male and female flowers, as well as winged, paired, yellowish-brown V-shaped seed pods",
+    texture = {"magnify_default_acer_macrophyllum_01.jpg", "magnify_default_acer_macrophyllum_02.jpg", "magnify_default_acer_macrophyllum_03.jpg", "magnify_default_acer_macrophyllum_04.jpg"},
+    model_obj = "magnify_default_acer_macrophyllum.obj",
+    model_rot_x = 0,
+    model_rot_y = 0,
+    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Acer%20macrophyllum",
+    img_copyright = "Blake Willson, taken from treelib.ca with permission"
 }
-magnify.register_species(JungleTree, {"default:jungletree","default:junglewood","default:jungleleaves","default:junglesapling","default:emergent_jungle_sapling"})
+magnify.register_species(bigleaf, {"default:jungletree", "default:junglewood", "default:jungleleaves", "default:junglesapling", "default:emergent_jungle_sapling"})
 
 local Kelp = {
     sci_name = "Desmarestia ligulata",
@@ -150,8 +171,8 @@ local Acacia = {
     texture = {"magnify_default_quercus_garryana_01.jpg", "magnify_default_quercus_garryana_02.jpg"}, 
     model_obj = "magnify_default_quercus_garryana.obj",
     more_info = "Deciduous tree with heavy, craggy branches, up to 25 m tall but often small, shrubby and as short as 1 m in dry, rocky habitats",
-    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Quercus%20garryana"
-    --img_copyright or img_credit = ""
+    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Quercus%20garryana",
+    img_copyright = "Blake Willson, taken from treelib.ca with permission"
 }
 magnify.register_species(Acacia, {"default:acacia_tree", "default:acacia_wood", "default:acacia_leaves", "default:acacia_sapling", "default:dry_shrub"})
 
@@ -215,7 +236,7 @@ local arbutus = {
     model_obj = "magnify_default_arbutus_menziesii.obj",
     more_info = "A broadleaf, shrublike tree with peeling brownish-red bark. Typically found in dry open forests and shallow-soiled rocky slopes",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Arbutus%20menziesii",
-    --img_copyright = ""
+    img_copyright = "Blake Willson, taken from treelib.ca with permission"
 }
 magnify.register_species(arbutus, {"default:acacia_bush_stem", "default:acacia_bush_leaves", "default:acacia_bush_sapling"})
 
@@ -279,7 +300,7 @@ local PineBushNeedles_Stem = {
     model_obj = "magnify_default_taxus_brevifolia.obj",
     more_info = "A small tree, usually found as an understory tree in moist old growth forests growing beneath other larger trees",
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Taxus%20brevifolia",
-    img_credit = ""
+    img_copyright = "Blake Willson, taken from treelib.ca with permission"
 }
 magnify.register_species(PineBushNeedles_Stem, {"default:pine_bush_stem", "default:pine_bush_needles", "default:pine_bush_sapling"})
 
