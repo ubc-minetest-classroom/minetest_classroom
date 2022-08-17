@@ -36,7 +36,7 @@ minetest.register_on_placenode(function(pos, newnode, player, oldnode, itemstack
         elseif mc_tutorial.active[pname] then
             func = mc_tutorial.check_tutorial_progress
         end
-        func(player, mc_tutorial.ACTION.PLACE, {tool = player:get_wielded_item():get_name(), node = newnode.name})
+        func(player, mc_tutorial.ACTION.PLACE, {node = newnode.name})
     end
 end)
 

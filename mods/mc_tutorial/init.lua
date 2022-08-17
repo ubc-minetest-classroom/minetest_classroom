@@ -184,7 +184,7 @@ local event_action_map = {
         return nil, "dig node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " with "..event.tool or "")
     end,
     [mc_tutorial.ACTION.PLACE] = function(event)
-        return nil, "place node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " while wielding "..event.tool or "")
+        return nil, "place node "..(event.node or "[?]")
     end,
     [mc_tutorial.ACTION.WIELD] = function(event)
         return nil, "wield "..(event.tool and (event.tool == "" and "nothing" or event.tool) or "[?]")

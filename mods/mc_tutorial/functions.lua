@@ -296,10 +296,10 @@ function mc_tutorial.check_tutorial_progress(player, action, data)
             -- match the action first since this callback might not even be relevant
             for index,_ in pairs(action_checks) do
                 if action == pdata.active.sequence[index].action then
-                    -- match the node next
-                    if data.node == pdata.active.sequence[index].node then
-                        -- finally match the tool
-                        if data.tool == pdata.active.sequence[index].tool then
+                    -- match the node next, if applicable
+                    if not data.node or data.node == pdata.active.sequence[index].node then
+                        -- finally match the tool, if applicable
+                        if not data.tool or data.tool == pdata.active.sequence[index].tool then
                             mc_tutorial.completed_action(player, index)
                         end
                     end
