@@ -15,15 +15,19 @@ function mc_tutorial.get_temp_shell()
     return {
         dependencies = {}, -- table of tutorial IDs that must be compeleted before the player can attempt this tutorial
         dependents = {}, -- table of tutorial IDs that completing this tutorial unlocks
+        depend_update = {
+            dep_cy = {},
+            dep_nt = {},
+        },
         sequence = {},
         length = 0,
         next_group = 1,
         on_completion = {
             message = "",
             items = {},
-            privs = {}
+            privs = {},
         },
-        format = 4
+        format = 5
     }
 end
 

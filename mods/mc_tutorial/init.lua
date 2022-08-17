@@ -154,6 +154,25 @@ local function get_selected_reward_info(context, list_id)
     return reward and (reward.col_override or reward.col), type_id and mc_helpers.trim(type_id), item and mc_helpers.trim(item)
 end
 
+--- @return string
+local function extract_id(id_str)
+    return type(id_str) == "string" and string.match(id_str, "ID%s(%d+):")
+end
+
+--- @return boolean
+local function id_compare(a, b)
+    local match_a = extract_id(a)
+    local match_b = extract_id(b)
+    if not match_a and not match_b then
+        return a < band
+    elseif not match_a or not match_b then
+        return match_a
+    else
+        return tonumber(match_a) < tonumber(match_b)
+    end
+end
+
+--- @return boolean
 local function col_field_compare(a, b)
     local type_a = type(a) == "table"
     local type_b = type(b) == "table"
@@ -221,13 +240,14 @@ function mc_tutorial.show_record_fs(player)
 	if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
         -- Tutorial formspec for recording a tutorial
         local context = get_context(pname)
-        local temp = mc_tutorial.record.temp[pname] or {}
+        mc_tutorial.record.temp[pname] = mc_tutorial.record.temp[pname] or mc_tutorial.get_temp_shell()
+        local temp = mc_tutorial.record.temp[pname]
 
         -- Get all recorded events
         if not context.events then
             local events = {}
 
-            for i,event in ipairs(mc_tutorial.record.temp[pname].sequence) do
+            for i,event in ipairs(temp.sequence) do
                 if event.action then
                     local col, event_string = event_action_map[event.action](event)
                     table.insert(events, (col or "")..minetest.formspec_escape(event_string or ""))
@@ -243,7 +263,7 @@ function mc_tutorial.show_record_fs(player)
             local rewards = {}
             local selected_rewards = {}
             for priv,_ in pairs(minetest.registered_privileges) do
-                if mc_helpers.tableHas(mc_tutorial.record.temp[pname].on_completion.privs, priv) then
+                if mc_helpers.tableHas(temp.on_completion.privs, priv) then
                     table.insert(selected_rewards, {col = "#FFCCFF", s = minetest.formspec_escape("[P] ")..priv})
                 else
                     table.insert(rewards, {col = "#FFCCFF", s = minetest.formspec_escape("[P] ")..priv})
@@ -258,7 +278,7 @@ function mc_tutorial.show_record_fs(player)
                 local item_trim = mc_helpers.trim(item)
                 if item_trim ~= "" then
                     local raw_col_field = item_map[def.type] or {col = "#FFFFCC", s_pre = minetest.formspec_escape("[I] ")}
-                    if mc_helpers.tableHas(mc_tutorial.record.temp[pname].on_completion.items, item) then
+                    if mc_helpers.tableHas(temp.on_completion.items, item) then
                         table.insert(selected_rewards, {col = raw_col_field.col, s = raw_col_field.s_pre..item_trim})
                     else
                         table.insert(rewards, {col = raw_col_field.col, s = raw_col_field.s_pre..item_trim})
@@ -278,6 +298,36 @@ function mc_tutorial.show_record_fs(player)
                 if tonumber(id) then
                     tutorials_exist = true
                     break
+                end
+            end
+        end
+
+        if tutorials_exist and not context.tutorials then
+            context.tutorials = {
+                i_to_t = {},
+                main = {
+                    selected = 1,
+                    list = {}
+                },
+                dep_cy = {
+                    selected = 1,
+                    list = {}
+                },
+                dep_nt = {
+                    selected = 1,
+                    list = {}
+                },
+            }
+            for id,serial_tut in pairs(tutorials.fields) do
+                if tonumber(id) and id ~= mc_tutorial.record.edit[pname] then
+                    local tut = minetest.deserialize(serial_tut)
+                    if mc_helpers.tableHas(temp.dependencies, id) then
+                        table.insert(context.tutorials.dep_cy.list, "ID "..id..": "..tut.title)
+                    elseif mc_helpers.tableHas(temp.dependents, id) then
+                        table.insert(context.tutorials.dep_nt.list, "ID "..id..": "..tut.title)
+                    else
+                        table.insert(context.tutorials.main.list, "ID "..id..": "..tut.title)
+                    end
                 end
             end
         end
@@ -336,36 +386,44 @@ function mc_tutorial.show_record_fs(player)
                     "textlist[7.5,0.8;6.3,6;reward_selection;", concat_col_field_list(context.selected_rewards, ","), ";", context.reward_selected and context.reward_selected[2] or 1, ";false]",
                     "image_button[6.7,0.8;0.8,3;mc_tutorial_reward_add.png;reward_add;;false;true]",
                     "image_button[6.7,3.8;0.8,3;mc_tutorial_reward_delete.png;reward_delete;;false;true]",
-                    "field[7,7.4;4.9,0.8;reward_quantity;Quantity;1]",
-                    "button[11.9,7.4;1.9,0.8;reward_quantity_update;Update]",
-                    "field[7,8.8;6.8,0.8;reward_search;Search for items/privileges/nodes;]",
-                    "image_button[12.2,8.8;0.8,0.8;mc_tutorial_search.png;reward_search_go;;false;false]",
-                    "image_button[13,8.8;0.8,0.8;mc_tutorial_cancel.png;reward_search_x;;false;false]",
+                    "field[7,7.4;4.9,0.8;reward_quantity;Quantity (WIP);1]",
+                    "field_close_on_enter[reward_quantity;false]",
+                    --"button[11.9,7.4;1.9,0.8;reward_quantity_update;Update]",
+                    "field[7,8.8;6.8,0.8;reward_search;Search for items/privileges/nodes (WIP);]",
+                    "field_close_on_enter[depend_search;false]",
+                    --"image_button[12.2,8.8;0.8,0.8;mc_tutorial_search.png;reward_search_go;;false;false]",
+                    --"image_button[13,8.8;0.8,0.8;mc_tutorial_cancel.png;reward_search_x;;false;false]",
                     "label[0.4,7.2;Selected reward]",
                     type_id and type_id ~= "P" and "item_" or "", "image[0.4,7.5;2.1,2.1;", type_id and (type_id ~= "P" and item or "mc_tutorial_tutorialbook.png") or "mc_tutorial_cancel.png", "]",
                     "textarea[2.6,7.4;4.2,2.2;;;", get_reward_desc(type_id, item), "]",
                     "tooltip[reward_add;Add reward]",
                     "tooltip[reward_delete;Remove reward]",
-                    "tooltip[reward_search_go;Search]",
-                    "tooltip[reward_search_x;Clear search]",
+                    --"tooltip[reward_search_go;Search]",
+                    --"tooltip[reward_search_x;Clear search]",
                 }
             end,
             ["4"] = function()
+                table.sort(context.tutorials.main.list, id_compare)
+                table.sort(context.tutorials.dep_cy.list, id_compare)
+                table.sort(context.tutorials.dep_nt.list, id_compare)
+
                 return { -- DEPENDENCIES
                     "label[0.4,0.6;Available tutorials]",
                     "label[7.3,0.6;Dependencies]",
                     "label[7.3,5.3;Dependents]",
-                    "textlist[0.4,0.8;6.5,6.5;depend_tutorials;", table.concat({}, ","), ";1;false]",
-                    "textlist[7.3,0.8;6.5,3.3;dependencies;", table.concat({}, ","), ";1;false]",
-                    "textlist[7.3,5.5;6.5,3.3;dependents;", table.concat({}, ","), ";1;false]",
+                    "textlist[0.4,0.8;6.5,6.5;depend_tutorials;", table.concat(context.tutorials.main.list, ","), ";", context.tutorials.main.selected or 1, ";false]",
+                    "textlist[7.3,0.8;6.5,3.3;dependencies;", table.concat(context.tutorials.dep_cy.list, ","), ";", context.tutorials.dep_cy.selected or 1, ";false]",
+                    "textlist[7.3,5.5;6.5,3.3;dependents;", table.concat(context.tutorials.dep_nt.list, ","), ";", context.tutorials.dep_nt.selected or 1, ";false]",
                     "button[0.4,7.4;3.2,0.8;dependencies_add;Add dependency]",
                     "button[7.3,4.1;6.5,0.8;dependencies_delete;Delete dependency]",
                     "button[3.7,7.4;3.2,0.8;dependents_add;Add dependent]",
                     "button[7.3,8.8;6.5,0.8;dependents_delete;Delete dependent]",
-                    "field[0.4,8.8;6.5,0.8;depend_search;Search for tutorials;]",
-                    "image_button[5.3,8.8;0.8,0.8;mc_tutorial_search.png;depend_search_go;;false;false]",
-                    "image_button[6.1,8.8;0.8,0.8;mc_tutorial_cancel.png;depend_search_x;;false;false]",
-                    "tooltip[depend_search_go;Search]",
+                    "field[0.4,8.8;6.5,0.8;depend_search;Search for tutorials (WIP);]",
+                    "field_close_on_enter[depend_search;false]",
+                    --"image_button[5.3,8.8;0.8,0.8;mc_tutorial_search.png;depend_search_go;;false;false]",
+                    --"image_button[6.1,8.8;0.8,0.8;mc_tutorial_cancel.png;depend_search_x;;false;false]",
+                    --"tooltip[depend_search_go;Search]",
+                    --"tooltip[depend_search_x;Clear]",
                     "tooltip[dependencies;List of tutorials that must be completed before this tutorial can be started]",
                     "tooltip[dependents;List of tutorials which can only be started after this tutorial has been completed]",
                 }
@@ -473,6 +531,8 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                     return {
                         "field[0.4,2.3;7,0.8;node;Punch (node);", context.epop.fields.node or "", "]",
                         "field[0.4,3.6;7,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
+                        "field_close_on_enter[node;false]",
+                        "field_close_on_enter[tool;false]",
                     }
                 end,
                 expanded_elem = function()
@@ -490,6 +550,8 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                     return {
                         "field[0.4,2.3;7,0.8;node;Dig (node);", context.epop.fields.node or "", "]",
                         "field[0.4,3.6;7,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
+                        "field_close_on_enter[node;false]",
+                        "field_close_on_enter[tool;false]",
                     }
                 end,
                 expanded_elem = function()
@@ -506,6 +568,7 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 fs_elem = function()
                     return {
                         "field[0.4,2.3;7,0.8;node;Place (node);", context.epop.fields.node or "", "]",
+                        "field_close_on_enter[node;false]",
                     }
                 end,
                 expanded_elem = function()
@@ -520,6 +583,7 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 fs_elem = function()
                     return {
                         "field[0.4,2.3;7,0.8;tool;Wield (item);", context.epop.fields.tool or "", "]",
+                        "field_close_on_enter[tool;false]",
                     }
                 end,
                 expanded_elem = function()
@@ -554,7 +618,8 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 fs_elem = function()
                     return {
                         "field[0.4,2.3;7,0.8;yaw;Yaw (horizontal degrees);", context.epop.fields.yaw or "", "]",
-                    } -- stub
+                        "field_close_on_enter[yaw;false]",
+                    }
                 end,
             },
             [mc_tutorial.ACTION.LOOK_PITCH] = {
@@ -562,7 +627,8 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 fs_elem = function()
                     return {
                         "field[0.4,2.3;7,0.8;pitch;Pitch (vertical degrees);", context.epop.fields.pitch or "", "]",
-                    } -- stub
+                        "field_close_on_enter[pitch;false]",
+                    }
                 end,
             },
             [mc_tutorial.ACTION.LOOK_DIR] = {
@@ -572,6 +638,8 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                         "label[3.8,2.7;+]",
                         "field[0.4,2.3;3.3,0.8;yaw;Yaw (horiz. degrees);", context.epop.fields.yaw or "", "]",
                         "field[4.1,2.3;3.3,0.8;pitch;Pitch (verti. degrees);", context.epop.fields.pitch or "", "]",
+                        "field_close_on_enter[yaw;false]",
+                        "field_close_on_enter[pitch;false]",
                         "label[3.3,3.5;-- OR --]",
                         "label[0.4,4;Direction vector]",
                         "label[0.4,4.6;X =]",
@@ -580,7 +648,10 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                         "field[1,4.2;1.6,0.8;dir_x;;", context.epop.fields.dir and context.epop.fields.dir.x or "", "]",
                         "field[3.4,4.2;1.6,0.8;dir_y;;", context.epop.fields.dir and context.epop.fields.dir.y or "", "]",
                         "field[5.8,4.2;1.6,0.8;dir_z;;", context.epop.fields.dir and context.epop.fields.dir.z or "", "]",
-                    } -- stub
+                        "field_close_on_enter[dir_x;false]",
+                        "field_close_on_enter[dir_y;false]",
+                        "field_close_on_enter[dir_z;false]",
+                    }
                 end,
             },
             [mc_tutorial.ACTION.POS_ABS] = {
@@ -594,6 +665,9 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                         "field[1,2.3;1.6,0.8;pos_x;;", context.epop.fields.pos and context.epop.fields.pos.x or "", "]",
                         "field[3.4,2.3;1.6,0.8;pos_y;;", context.epop.fields.pos and context.epop.fields.pos.y or "", "]",
                         "field[5.8,2.3;1.6,0.8;pos_z;;", context.epop.fields.pos and context.epop.fields.pos.z or "", "]",
+                        "field_close_on_enter[pos_x;false]",
+                        "field_close_on_enter[pos_y;false]",
+                        "field_close_on_enter[pos_z;false]",
                     }
                 end,
             },
@@ -877,9 +951,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         elseif fields.edit then
             if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
                 mc_tutorial.record.temp[pname] = minetest.deserialize(tutorials.fields[context.tutorial_i_to_id[context.tutorial_selected]])
-                mc_tutorial.record.temp[pname].has_actions = mc_tutorial.record.temp[pname].length and mc_tutorial.record.temp[pname].length > 0
-                mc_tutorial.record.edit[pname] = true
+                mc_tutorial.record.edit[pname] = context.tutorial_i_to_id[context.tutorial_selected]
                 if mc_tutorial.record.temp[pname] then
+                    mc_tutorial.record.temp[pname].has_actions = mc_tutorial.record.temp[pname].length and mc_tutorial.record.temp[pname].length > 0
+                    mc_tutorial.record.temp[pname].depend_update = {dep_cy = {}, dep_nt = {}}
                     mc_tutorial.show_record_fs(player)
                 end
             else
@@ -1006,7 +1081,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             local event = minetest.explode_textlist_event(fields.eventlist)
             if event.type == "CHG" then
                 context.selected_event = event.index
-                reload = true
             end
         end
         if fields.reward_list then
@@ -1025,6 +1099,24 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 context.reward_selected[RW_SELECT] = event.index
                 context.reward_selected["active"] = RW_SELECT
                 reload = true
+            end
+        end
+        if fields.depend_tutorials then
+            local event = minetest.explode_textlist_event(fields.depend_tutorials)
+            if event.type == "CHG" then
+                context.tutorials.main.selected = tonumber(event.index)
+            end
+        end
+        if fields.dependencies then
+            local event = minetest.explode_textlist_event(fields.dependencies)
+            if event.type == "CHG" then
+                context.tutorials.dep_cy.selected = tonumber(event.index)
+            end
+        end
+        if fields.dependents then
+            local event = minetest.explode_textlist_event(fields.dependents)
+            if event.type == "CHG" then
+                context.tutorials.dep_nt.selected = tonumber(event.index)
             end
         end
 
@@ -1204,6 +1296,48 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         end
 
+        -- DEPENDENCIES TAB INTERACTIONS
+        if fields.dependencies_add and context.tutorials.main.list[context.tutorials.main.selected] then
+            local id_string = table.remove(context.tutorials.main.list, context.tutorials.main.selected)
+            local id = extract_id(id_string)
+            table.insert(context.tutorials.dep_cy.list, id_string)
+            mc_tutorial.record.temp[pname].dependencies[id] = true
+            mc_tutorial.record.temp[pname].depend_update.dep_cy[id] = true
+
+            context.tutorials.main.selected = math.max(1, math.min(context.tutorials.main.selected, #context.tutorials.main.list))
+            reload = true
+        end
+        if fields.dependencies_delete then
+            local id_string = table.remove(context.tutorials.dep_cy.list, context.tutorials.dep_cy.selected)
+            local id = extract_id(id_string)
+            table.insert(context.tutorials.main.list, id_string)
+            mc_tutorial.record.temp[pname].dependencies[id] = nil
+            mc_tutorial.record.temp[pname].depend_update.dep_cy[id] = false
+
+            context.tutorials.dep_cy.selected = math.max(1, math.min(context.tutorials.dep_cy.selected, #context.tutorials.dep_cy.list))
+            reload = true
+        end
+        if fields.dependents_add then
+            local id_string = table.remove(context.tutorials.main.list, context.tutorials.main.selected)
+            local id = extract_id(id_string)
+            table.insert(context.tutorials.dep_nt.list, id_string)
+            mc_tutorial.record.temp[pname].dependents[id] = true
+            mc_tutorial.record.temp[pname].depend_update.dep_nt[id] = true
+
+            context.tutorials.main.selected = math.max(1, math.min(context.tutorials.main.selected, #context.tutorials.main.list))
+            reload = true
+        end
+        if fields.dependents_delete then
+            local id_string = table.remove(context.tutorials.dep_nt.list, context.tutorials.dep_nt.selected)
+            local id = extract_id(id_string)
+            table.insert(context.tutorials.main.list, id_string)
+            mc_tutorial.record.temp[pname].dependents[id] = nil
+            mc_tutorial.record.temp[pname].depend_update.dep_nt[id] = false
+
+            context.tutorials.dep_nt.selected = math.max(1, math.min(context.tutorials.dep_nt.selected, #context.tutorials.dep_nt.list))
+            reload = true
+        end
+
         -- MISC
         if fields.finish then
             if mc_tutorial.record.temp[pname].has_actions then
@@ -1233,16 +1367,39 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     mc_tutorial.tutorials:set_int("next_id", 2)
                     mc_tutorial.tutorials:set_string("1", minetest.serialize(recorded_tutorial))
                 else
-                    if mc_tutorial.record.edit[pname] then
-                        -- We are editing an existing tutorial
-                        mc_tutorial.tutorials:set_string(context.tutorial_i_to_id[context.tutorial_selected], minetest.serialize(recorded_tutorial))
-                    else
-                        -- We are appending a new tutorial
-                        local next_id = mc_tutorial.tutorials:get("next_id") or 1
-                        mc_tutorial.tutorials:set_string(tostring(next_id), minetest.serialize(recorded_tutorial))
+                    local id = mc_tutorial.record.edit[pname] or mc_tutorial.tutorials:get("next_id") or 1
+                    
+                    -- Update dependencies/dependents in other tutorials
+                    for k,v in pairs(mc_tutorial.record.temp[pname].depend_update.dep_cy) do
+                        local serial_tut = mc_tutorial.tutorials:get(k)
+                        if serial_tut then
+                            local tut = minetest.deserialize(serial_tut)
+                            tut.dependents[id] = v or nil
+                            mc_tutorial.tutorials:set_string(k, minetest.serialize(tut))
+                        else
+                            -- invalid dependency, remove
+                            recorded_tutorial.dependencies[k] = nil
+                        end
+                    end
+                    for k,v in pairs(mc_tutorial.record.temp[pname].depend_update.dep_nt) do
+                        local serial_tut = mc_tutorial.tutorials:get(k)
+                        if serial_tut then
+                            local tut = minetest.deserialize(serial_tut)
+                            tut.dependencies[id] = v or nil
+                            mc_tutorial.tutorials:set_string(k, minetest.serialize(tut))
+                        else
+                            -- invalid dependency, remove
+                            recorded_tutorial.dependencies[k] = nil
+                        end
+                    end
+
+                    -- Save recorded tutorial
+                    mc_tutorial.tutorials:set_string(tostring(id), minetest.serialize(recorded_tutorial))
+                    if not mc_tutorial.record.edit[pname] then
                         mc_tutorial.tutorials:set_int("next_id", next_id + 1)
                     end
                 end
+
                 minetest.chat_send_player(pname, "[Tutorial] Your tutorial was successfully saved!")
             else
                 minetest.chat_send_player(pname, "[Tutorial] No tutorial was saved.")
