@@ -475,6 +475,14 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                         "field[0.4,3.6;7,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
                     }
                 end,
+                expanded_elem = function()
+                    return {
+                        "image_button[6.6,2.3;0.8,0.8;blank.png;node_import;<;false;false]",
+                        "image_button[6.6,3.6;0.8,0.8;blank.png;tool_import;<;false;false]",
+                        "tooltip[node_import;Paste selected]",
+                        "tooltip[tool_import;Paste selected]"
+                    }
+                end,
             },
             [mc_tutorial.ACTION.DIG] = {
                 name = "Dig node (DIG)",
@@ -482,6 +490,14 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                     return {
                         "field[0.4,2.3;7,0.8;node;Dig (node);", context.epop.fields.node or "", "]",
                         "field[0.4,3.6;7,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
+                    }
+                end,
+                expanded_elem = function()
+                    return {
+                        "image_button[6.6,2.3;0.8,0.8;blank.png;node_import;<;false;false]",
+                        "image_button[6.6,3.6;0.8,0.8;blank.png;tool_import;<;false;false]",
+                        "tooltip[node_import;Paste selected]",
+                        "tooltip[tool_import;Paste selected]"
                     }
                 end,
             },
@@ -492,31 +508,44 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                         "field[0.4,2.3;7,0.8;node;Place (node);", context.epop.fields.node or "", "]",
                     }
                 end,
+                expanded_elem = function()
+                    return {
+                        "image_button[6.6,2.3;0.8,0.8;blank.png;node_import;<;false;false]",
+                        "tooltip[node_import;Paste selected]",
+                    }
+                end,
             },
             [mc_tutorial.ACTION.WIELD] = {
                 name = "Wield item (WIELD)",
                 fs_elem = function()
                     return {
                         "field[0.4,2.3;7,0.8;tool;Wield (item);", context.epop.fields.tool or "", "]",
-                    } -- stub
+                    }
+                end,
+                expanded_elem = function()
+                    return {
+                        "image_button[6.6,2.3;0.8,0.8;blank.png;tool_import;<;false;false]",
+                        "tooltip[tool_import;Paste selected]"
+                    }
                 end,
             },
             [mc_tutorial.ACTION.KEY] = {
                 name = "Press keys (KEY)",
                 fs_elem = function()
+                    local keys = context.epop.fields.key or {}
                     return {
-                        "textarea[0.4,2.3;7,1.1;;Press (keys);]",
+                        "textarea[0.4,2.3;7,1.1;;Press (keys);", next(keys) and table.concat(keys, " + ") or minetest.formspec_escape("[none]"), "]",
                     }
                 end,
                 collapsed_elem = function() 
                     return {
-                        "label[0.4,3.8;Open the sidebar to modify keys!]"
+                        "label[0.4,3.1;Open the sidebar to modify keys!]"
                     }
                 end,
                 expanded_elem = function()
                     return {
-                        "button[0.4,3.6;3.4,0.8;key_add;Add selected]",
-                        "button[4,3.6;3.4,0.8;key_delete;Remove selected]",
+                        "button[0.4,2.9;3.4,0.8;key_add;Add selected]",
+                        "button[4,2.9;3.4,0.8;key_delete;Remove selected]",
                     }
                 end,
             },
@@ -548,9 +577,9 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                         "label[0.4,4.6;X =]",
                         "label[2.8,4.6;Y =]",
                         "label[5.2,4.6;Z =]",
-                        "field[1,4.2;1.6,0.8;dynamic_x;;", context.epop.fields.dir and context.epop.fields.dir.x or "", "]",
-                        "field[3.4,4.2;1.6,0.8;dynamic_y;;", context.epop.fields.dir and context.epop.fields.dir.y or "", "]",
-                        "field[5.8,4.2;1.6,0.8;dynamic_z;;", context.epop.fields.dir and context.epop.fields.dir.z or "", "]",
+                        "field[1,4.2;1.6,0.8;dir_x;;", context.epop.fields.dir and context.epop.fields.dir.x or "", "]",
+                        "field[3.4,4.2;1.6,0.8;dir_y;;", context.epop.fields.dir and context.epop.fields.dir.y or "", "]",
+                        "field[5.8,4.2;1.6,0.8;dir_z;;", context.epop.fields.dir and context.epop.fields.dir.z or "", "]",
                     } -- stub
                 end,
             },
@@ -562,9 +591,9 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                         "label[0.4,2.7;X =]",
                         "label[2.8,2.7;Y =]",
                         "label[5.2,2.7;Z =]",
-                        "field[1,2.3;1.6,0.8;dynamic_x;;", context.epop.fields.pos and context.epop.fields.pos.x or "", "]",
-                        "field[3.4,2.3;1.6,0.8;dynamic_y;;", context.epop.fields.pos and context.epop.fields.pos.y or "", "]",
-                        "field[5.8,2.3;1.6,0.8;dynamic_z;;", context.epop.fields.pos and context.epop.fields.pos.z or "", "]",
+                        "field[1,2.3;1.6,0.8;pos_x;;", context.epop.fields.pos and context.epop.fields.pos.x or "", "]",
+                        "field[3.4,2.3;1.6,0.8;pos_y;;", context.epop.fields.pos and context.epop.fields.pos.y or "", "]",
+                        "field[5.8,2.3;1.6,0.8;pos_z;;", context.epop.fields.pos and context.epop.fields.pos.z or "", "]",
                     }
                 end,
             },
@@ -592,26 +621,24 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
 
             local temp = mc_tutorial.record.temp[pname]
             context.selected_event = context.selected_event or 1
-            if context.epop.is_edit and temp and temp[context.selected_event] then
+            if context.epop.is_edit and temp and temp.sequence[context.selected_event] then
                 -- select current event
-                local edit_action = temp[context.selected_event]["action"]
+                local edit_action = temp.sequence[context.selected_event]["action"]
                 for i,k in pairs(context.epop.i_to_action) do
-                    minetest.log(k .. " : " .. edit_action)
                     if k == edit_action then
-                        minetest.log(i)
                         context.epop.selected = i
                         break
                     end
                 end
                 -- populate fields
                 context.epop.fields = {
-                    tool = temp[context.selected_event]["tool"],
-                    node = temp[context.selected_event]["node"],
-                    pos = temp[context.selected_event]["pos"],
-                    dir = edit_action == mc_tutorial.ACTION.LOOK_DIR and temp[context.selected_event]["dir"] or nil,
-                    yaw = edit_action == mc_tutorial.ACTION.LOOK_PITCH and nil or edit_action == mc_tutorial.ACTION.LOOK_DIR and nil or temp[context.selected_event]["dir"],
-                    pitch = edit_action == mc_tutorial.ACTION.LOOK_YAW and nil or edit_action == mc_tutorial.ACTION.LOOK_DIR and nil or temp[context.selected_event]["dir"],
-                    key = temp[context.selected_event]["key"],
+                    tool = temp.sequence[context.selected_event]["tool"],
+                    node = temp.sequence[context.selected_event]["node"],
+                    pos = temp.sequence[context.selected_event]["pos"],
+                    dir = edit_action == mc_tutorial.ACTION.LOOK_DIR and temp.sequence[context.selected_event]["dir"] or nil,
+                    yaw = edit_action == mc_tutorial.ACTION.LOOK_PITCH and nil or edit_action == mc_tutorial.ACTION.LOOK_DIR and nil or temp.sequence[context.selected_event]["dir"],
+                    pitch = edit_action == mc_tutorial.ACTION.LOOK_YAW and nil or edit_action == mc_tutorial.ACTION.LOOK_DIR and nil or temp.sequence[context.selected_event]["dir"],
+                    key = temp.sequence[context.selected_event]["key"],
                 }
             end
         end
@@ -1245,10 +1272,17 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
     if formname == "mc_tutorial:record_epop" then
         local reload = false
+        local save_exception = {}
 
         if fields.action then
             context.epop.selected = tonumber(fields.action)
             reload = true
+        end
+        if fields.sidebar_list then
+            local event = minetest.explode_textlist_event(fields.sidebar_list)
+            if event.type == "CHG" then
+                context.epop.sidebar.selected = tonumber(event.index)
+            end
         end
 
         if fields.expand_list then
@@ -1261,71 +1295,118 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
         end
 
+        if fields.node_import and context.epop.sidebar.list and context.epop.sidebar.list[context.epop.sidebar.selected] then
+            context.epop.fields.node = context.epop.sidebar.list[context.epop.sidebar.selected]
+            reload = true
+            save_exception["nd"] = true
+        end
+        if fields.tool_import and context.epop.sidebar.list and context.epop.sidebar.list[context.epop.sidebar.selected] then
+            context.epop.fields.tool = context.epop.sidebar.list[context.epop.sidebar.selected]
+            reload = true
+            save_exception["tl"] = true
+        end
+
+        if fields.key_add and context.epop.sidebar.list and context.epop.sidebar.list[context.epop.sidebar.selected] then
+            context.epop.fields.key = context.epop.fields.key or {}
+            if not mc_helpers.tableHas(context.epop.fields.key, context.epop.sidebar.list[context.epop.sidebar.selected]) then
+                table.insert(context.epop.fields.key, context.epop.sidebar.list[context.epop.sidebar.selected])
+                table.sort(context.epop.fields.key)
+                reload = true
+            end
+        end
+        if fields.key_delete and context.epop.sidebar.list and context.epop.sidebar.list[context.epop.sidebar.selected] then
+            context.epop.fields.key = context.epop.fields.key or {}
+            for i,key in pairs(context.epop.fields.key) do
+                if key == context.epop.sidebar.list[context.epop.sidebar.selected] then
+                    table.remove(context.epop.fields.key, i)
+                    reload = true
+                end
+            end
+        end
+
         if fields.save then
             local action_map = {
                 [mc_tutorial.ACTION.PUNCH] = function()
-                    return {node = fields.node or "", tool = fields.tool or ""}
+                    return fields.node and fields.node ~= "" and {node = fields.node or "", tool = fields.tool or ""}
                 end,
                 [mc_tutorial.ACTION.DIG] = function()
-                    return {node = fields.node or "", tool = fields.tool or ""}
+                    return fields.node and fields.node ~= "" and {node = fields.node or "", tool = fields.tool or ""}
                 end,
                 [mc_tutorial.ACTION.PLACE] = function()
-                    return {node = fields.node or ""}
+                    return fields.node and fields.node ~= "" and {node = fields.node or ""}
                 end,
                 [mc_tutorial.ACTION.WIELD] = function()
-                    return {tool = fields.tool or ""}
+                    return fields.tool and {tool = fields.tool or ""}
                 end,
-                --[[[mc_tutorial.ACTION.KEY] = function()
-                    return {} -- TODO
-                end,]]
+                [mc_tutorial.ACTION.KEY] = function()
+                    return context.epop.fields.key and next(context.epop.fields.key) and {key = context.epop.fields.key or {}}
+                end,
                 [mc_tutorial.ACTION.LOOK_YAW] = function()
-                    return {dir = fields.yaw or ""}
+                    return fields.yaw and fields.yaw ~= "" and {dir = tonumber(fields.yaw or "0")}
                 end,
                 [mc_tutorial.ACTION.LOOK_PITCH] = function()
-                    return {dir = fields.pitch or ""}
+                    return fields.pitch and fields.pitch ~= "" and {dir = tonumber(fields.pitch or "0")}
                 end,
                 --[[[mc_tutorial.ACTION.LOOK_DIR] = function()
                     if fields.yaw ~= "" or fields.pitch ~= "" then
                         return {} -- TODO
                     else
-                        return {x = fields.pos_x or "0", y = fields.pos_y or "0", z = fields.pos_z or "0"}
+                        return {dir = {x = tonumber(fields.dir_x or "0"), y = tonumber(fields.dir_y or "0"), z = tonumber(fields.dir_z or "0")}}
                     end
                 end,]]
                 [mc_tutorial.ACTION.POS_ABS] = function()
-                    return {x = fields.pos_x or "0", y = fields.pos_y or "0", z = fields.pos_z or "0"}
+                    return {pos = {x = tonumber(fields.pos_x or "0"), y = tonumber(fields.pos_y or "0"), z = tonumber(fields.pos_z or "0")}}
                 end,
             }
 
             local action = context.epop.i_to_action[context.epop.selected]
             if action_map[action] then
                 local action_table = action_map[action]()
-                if context.epop.is_edit then
-                    -- Replace action
-                    mc_tutorial.update_tutorial_action(player, context.selected_event, action, action_map[action]())
-                    local col, event_string = event_action_map[action](action_table)
-                    context.events[context.selected_event] = (col or "")..minetest.formspec_escape(event_string or "")
+                if action_table then
+                    if context.epop.is_edit then
+                        -- Replace action
+                        mc_tutorial.update_tutorial_action(player, context.selected_event, action, action_map[action]())
+                        local col, event_string = event_action_map[action](action_table)
+                        context.events[context.selected_event] = (col or "")..minetest.formspec_escape(event_string or "")
+                        minetest.chat_send_player(pname, "[Tutorial] Event saved!")
+                    else
+                        -- Add new action to end of list
+                        mc_tutorial.register_tutorial_action(player, action, action_table)
+                        local col, event_string = event_action_map[action](action_table)
+                        table.insert(context.events, (col or "")..minetest.formspec_escape(event_string or ""))
+                        minetest.chat_send_player(pname, "[Tutorial] Event added!")
+                    end
                 else
-                    -- Add new action to end of list
-                    mc_tutorial.register_tutorial_action(player, action, action_table)
-                    local col, event_string = event_action_map[action](action_table)
-                    table.insert(context.events, (col or "")..minetest.formspec_escape(event_string or ""))
+                    minetest.chat_send_player(pname, "[Tutorial] Invalid event; event not "..(context.epop.is_edit and "saved" or "added")..".")
                 end
-                minetest.chat_send_player(pname, "[Tutorial] Event saved!")
             else
-                minetest.chat_send_player(pname, "[Tutorial] No event was saved.")
+                minetest.chat_send_player(pname, "[Tutorial] Invalid event; event not "..(context.epop.is_edit and "saved" or "added")..".")
             end
             context.epop = nil
             save_context(player, context)
             return mc_tutorial.show_record_fs(player)
         end
         if fields.cancel or fields.quit then
-            minetest.chat_send_player(pname, "[Tutorial] No event was added.")
+            minetest.chat_send_player(pname, "[Tutorial] "..(context.epop.is_edit and "Event not saved" or "No event added")..".")
             context.epop = nil
             save_context(player, context)
             return mc_tutorial.show_record_fs(player)
         end
 
         if reload then
+            -- save text fields
+            if fields.node and not save_exception["nd"] then context.epop.fields.node = fields.node end
+            if fields.tool and not save_exception["tl"] then context.epop.fields.tool = fields.tool end
+            if fields.pitch and not save_exception["pt"] then context.epop.fields.pitch = fields.pitch end
+            if fields.yaw and not save_exception["yw"] then context.epop.fields.yaw = fields.yaw end
+            if (fields.pos_x or fields.pos_y or fields.pos_z) and not save_exception["po"] then
+                context.epop.fields.pos = {x = tonumber(fields.pos_x or "0"), y = tonumber(fields.pos_y or "0"), z = tonumber(fields.pos_z or "0")}
+            end
+            if (fields.dir_x or fields.dir_y or fields.dir_z) and not save_exception["dr"] then
+                context.epop.fields.dir = {x = tonumber(fields.dir_x or "0"), y = tonumber(fields.dir_y or "0"), z = tonumber(fields.dir_z or "0")}
+            end
+
+            -- save context and reload
             save_context(player, context)
             mc_tutorial.show_event_popop_fs(player)
         end
