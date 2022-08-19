@@ -1404,7 +1404,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_player(pname, "[Tutorial] Invalid tutorial ID; dependency could not be added")
             end
         end
-        if fields.dependencies_delete then
+        if fields.dependencies_delete and context.tutorials.dep_cy.list[context.tutorials.dep_cy.selected] then
             local id_string = table.remove(context.tutorials.dep_cy.list, context.tutorials.dep_cy.selected)
             local id = extract_id(id_string)
             if id then
@@ -1418,7 +1418,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_player(pname, "[Tutorial] Invalid tutorial ID; dependency could not be removed")
             end
         end
-        if fields.dependents_add then
+        if fields.dependents_add and context.tutorials.main.list[context.tutorials.main.selected] then
             local id_string = table.remove(context.tutorials.main.list, context.tutorials.main.selected)
             local id = extract_id(id_string)
             if id then
@@ -1432,7 +1432,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_player(pname, "[Tutorial] Invalid tutorial ID; dependent could not be added")
             end
         end
-        if fields.dependents_delete then
+        if fields.dependents_delete and context.tutorials.dep_nt.list[context.tutorials.dep_nt.selected] then
             local id_string = table.remove(context.tutorials.dep_nt.list, context.tutorials.dep_nt.selected)
             local id = extract_id(id_string)
             if id then
