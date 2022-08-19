@@ -58,6 +58,15 @@ Registers a group of similar tools to be managed by `mc_toolhandler` as if they 
 - Returns:
   - *`boolean`*: `true` if the tool group was successfully registered, `false` otherwise
 
+### `mc_toolhandler.tool_is_being_managed(tool)  -->  boolean`
+
+Returns true if `mc_toolhandler` is currently managing the tool, false otherwise
+
+- Parameters:
+  - `tool` (*`string`*): Name of tool to check
+- Returns:
+  - *`boolean`*: `true` if `mc_toolhandler` is currently managing the tool, `false` otherwise
+
 ### `mc_toolhandler.create_tool_inventory(player)  -->  InvRef, string, string`
 
 Returns a detached inventory containing all tools `player` has the privileges to use, which `player` can freely take copies of as desired  

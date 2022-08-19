@@ -252,12 +252,11 @@ function mc_tutorial.completed_action(player, g_index)
             -- Give rewards for first-time completion
             local inv = player:get_inventory()
             for _,item in pairs(pdata.active.on_completion.items) do
-                if not mc_helpers.getInventoryItemLocation(inv, ItemStack(item)) then
+                if (not minetest.get_modpath("mc_toolhandler") or not mc_toolhandler.tool_is_being_managed(item)) and not mc_helpers.getInventoryItemLocation(inv, ItemStack(item)) then
                     inv:add_item("main", item)
                 end
             end
 
-            -- TODO
             local player_privs = minetest.get_player_privs(pname)
             -- add granted privs to universal priv table
             if minetest.get_modpath("mc_worldmanager") then
@@ -265,7 +264,7 @@ function mc_tutorial.completed_action(player, g_index)
             end
             -- grant privs
             for _,priv in pairs(pdata.active.on_completion.privs) do
-                player_privs.priv = true
+                player_privs[priv] = true
             end
             minetest.set_player_privs(pname, player_privs)
 
