@@ -67,6 +67,14 @@ function Realm:Save_Schematic(schematicName, author, mode)
     settings:set("schematic_size_y", self.EndPos.y - self.StartPos.y)
     settings:set("schematic_size_z", self.EndPos.z - self.StartPos.z)
 
+    local utmInfo = self:get_data("UTMInfo")
+
+    if (utmInfo ~= nil) then
+        settings:set("utm_zone", utmInfo.zone)
+        settings:set("utm_easting", utmInfo.easting)
+        settings:set("utm_northing", utmInfo.northing)
+    end
+
     local settingsWrote = settings:write()
 
     if (settingsWrote == false) then
@@ -84,11 +92,17 @@ end
 ---@return boolean whether the schematic fit entirely in the realm when loading.
 function Realm:Load_Schematic(schematic, config)
 
-    --TODO: Add code to check if the realm is large enough to support the schematic; If not, create a new realm that can;
-    local schematicEndPos = self:LocalToWorldPosition(config.schematicSize)
+    local schematicStartPos = self:LocalToWorldSpace(config.startOffset)
 
+    --TODO: Add code to check if the realm is large enough to support the schematic; If not, create a new realm that can;
+    local schematicEndPos = self:LocalToWorldSpace(config.schematicSize)
     if (schematicEndPos.x > self.EndPos.x or schematicEndPos.y > self.EndPos.y or schematicEndPos.z > self.EndPos.z) then
-        Debug.log("Schematic is too large for realm")
+
+        Debug.log("Schematic is too large for realm, creating a new realm with the same name but larger size")
+
+        local realm = Realm:New(self.Name, schematicEndPos, true)
+        self:Delete()
+        self = realm
     else
         if (schematicEndPos.x == nil or schematicEndPos == 0) then
             schematicEndPos.x = 80
@@ -108,12 +122,18 @@ function Realm:Load_Schematic(schematic, config)
         self.EndPos = schematicEndPos
     end
 
+    if (config.utmInfo ~= nil) then
+        self:set_data("UTMInfo", config.utmInfo)
+    end
+
+
 
 
 
     --exschem is having issues loading random chunks, need to debug
+    --Looks like it fails when there are unknown nodes...
     if (config.format == "exschem") then
-        exschem.load(self.StartPos, self.StartPos, 0, {}, schematic, 0,
+        exschem.load(schematicStartPos, schematicStartPos, 0, {}, schematic, 0,
                 function(id, time, errcode, err)
                     Debug.log("Loading " .. id .. time)
 
@@ -139,21 +159,29 @@ function Realm:Load_Schematic(schematic, config)
         end
 
         local decompressed = mc_helpers.decompress(data)
-        worldedit.deserialize(self.StartPos, decompressed)
+        worldedit.deserialize(schematicStartPos, decompressed)
     elseif (config.format == "procedural") then
         -- do nothing if we're a procedural map; it will be taking care of by the onSchematicPlaceFunction
     else
         -- Read data into LVM
         local vm = minetest.get_voxel_manip()
-        local emin, emax = vm:read_from_map(self.StartPos, self.EndPos)
+        local emin, emax = vm:read_from_map(schematicStartPos, self.EndPos)
         local a = VoxelArea:new {
             MinEdge = emin,
             MaxEdge = emax
         }
 
-        minetest.place_schematic_on_vmanip(vm, self.StartPos, schematic .. ".mts", 0, nil, true)
+        minetest.place_schematic_on_vmanip(vm, schematicStartPos, schematic .. ".mts", 0, nil, true)
         vm:write_to_map(true)
     end
+
+
+    for k, v in pairs(config.miscData) do
+        self:set_data(k, v)
+    end
+
+    self:set_data("seaLevel", self.StartPos.y + config.elevationOffset)
+
 
     if (config.tableName ~= nil) then
         if (config.onSchematicPlaceFunction ~= nil) then
@@ -172,6 +200,7 @@ function Realm:Load_Schematic(schematic, config)
         if (config.onRealmDeleteFunction ~= nil) then
             table.insert(self.RealmDeleteTable, { tableName = config.tableName, functionName = config.onRealmDeleteFunction })
         end
+
     end
 
     self:UpdateSpawn(config.spawnPoint)
@@ -192,9 +221,6 @@ function Realm:NewFromSchematic(name, key)
         -- Need to emerge chunks as we create barriers
         newRealm:CreateBarriersFast()
     end
-
-    -- Realm:CreateTeleporter()
-
 
     newRealm:CallOnCreateCallbacks()
 
