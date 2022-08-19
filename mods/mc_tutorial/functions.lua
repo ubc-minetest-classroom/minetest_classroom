@@ -27,7 +27,7 @@ function mc_tutorial.get_temp_shell()
             items = {},
             privs = {},
         },
-        format = 5
+        format = 6
     }
 end
 

@@ -281,7 +281,6 @@ function mc_tutorial.show_record_fs(player)
         -- Get all recorded events
         if not context.events then
             local events = {}
-
             for i,event in ipairs(temp.sequence) do
                 if event.action then
                     local col, event_string = event_action_map[event.action](event)
@@ -1039,6 +1038,21 @@ local function group_parity_is_odd(selection, sequence)
     return parity ~= 0
 end
 
+local function reindex_groups(temp)
+    local count = 1
+    local group_map = {}
+    for i,action in ipairs(temp.sequence) do
+        if action.action == mc_tutorial.ACTION.GROUP then
+            if not group_map[action.g_id] then
+                group_map[action.g_id] = count
+                count = count + 1
+            end
+            action.g_id = group_map[action.g_id]
+        end
+    end
+    temp.next_group = count
+end
+
 -- REWORK
 minetest.register_on_player_receive_fields(function(player, formname, fields)
     local pname = player:get_player_name()
@@ -1083,6 +1097,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         if mc_tutorial.record.temp[pname] then
                             mc_tutorial.record.temp[pname].has_actions = mc_tutorial.record.temp[pname].length and mc_tutorial.record.temp[pname].length > 0
                             mc_tutorial.record.temp[pname].depend_update = {dep_cy = {}, dep_nt = {}}
+                            if mc_tutorial.record.temp[pname].format < 6 then
+                                reindex_groups(mc_tutorial.record.temp[pname])
+                            end
                             mc_tutorial.show_record_fs(player)
                         end
                     else
@@ -1381,13 +1398,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     local removed = table.remove(mc_tutorial.record.temp[pname].sequence, context.selected_event)
                     table.remove(context.events, context.selected_event)
                     if removed.action == mc_tutorial.ACTION.GROUP then
+                        local removed_id = removed.g_id or math.maxinteger
                         for i,event in pairs(mc_tutorial.record.temp[pname].sequence) do
-                            if event.action == mc_tutorial.ACTION.GROUP and event.g_id == removed.g_id then
+                            minetest.log(minetest.serialize(event))
+                            if event.action == mc_tutorial.ACTION.GROUP and event.g_id == removed_id then
                                 table.remove(mc_tutorial.record.temp[pname].sequence, i)
                                 table.remove(context.events, i)
-                                break
                             end
                         end
+                        reindex_groups(mc_tutorial.record.temp[pname])
+                        context.events = nil -- force event list to be regenerated
                     end
                     if #mc_tutorial.record.temp[pname].sequence <= 0 then
                         mc_tutorial.record.temp[pname].has_actions = false
