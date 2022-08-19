@@ -27,11 +27,11 @@ local function open_recording_menu(itemstack, player, pointed_thing)
         minetest.chat_send_player(pname, "[Tutorial] You do not have privileges to use this tool.")
         return nil
     else
-        if not mc_tutorial.record.active[pname] then
+        if mc_tutorial.record.active[pname] == "record" then
+            mc_tutorial.show_record_options_fs(player)
+        else
             minetest.chat_send_player(pname, "[Tutorial] You need to start an active recording first by left-clicking with the tool.")
             return nil
-        else
-            mc_tutorial.show_record_options_fs(player)
         end
     end
 end
@@ -56,17 +56,18 @@ minetest.register_tool("mc_tutorial:recording_tool", {
         else
             if not mc_tutorial.record.active[pname] then
                 -- start the recording
-                mc_tutorial.record.active[pname] = true
+                mc_tutorial.record.active[pname] = "record"
                 minetest.chat_send_player(pname, "[Tutorial] Recording has started! Any actions will now be recorded. Right-click to see more recording options.")
             else
                 -- stop the recording and save to mod storage
-                mc_tutorial.record.active[pname] = nil
                 mc_tutorial.record.listener.wield[pname] = nil
                 mc_tutorial.record.listener.key[pname] = nil
                 if mc_tutorial.record.temp[pname] then
+                    mc_tutorial.record.active[pname] = "save"
                     mc_tutorial.show_record_fs(player)
                     minetest.chat_send_player(pname, "[Tutorial] Recording has ended!")
                 else
+                    mc_tutorial.record.active[pname] = nil
                     minetest.chat_send_player(pname, "[Tutorial] No actions were recorded.")
                 end
             end

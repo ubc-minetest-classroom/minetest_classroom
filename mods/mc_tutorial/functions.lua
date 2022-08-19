@@ -81,7 +81,6 @@ function mc_tutorial.tutorial_progress_listener(player)
             [mc_tutorial.ACTION.POS_ABS] = function(index)
                 minetest.chat_send_player(pname, "[Tutorial] Listening for position...")
 
-                pdata.player_seq.pos = player:get_pos()
                 local check_pos = pdata.active.sequence[index].pos
                 local tol = {x = mc_tutorial.check_pos_x_tolerance, y = mc_tutorial.check_pos_y_tolerance, z = mc_tutorial.check_pos_z_tolerance}
                 
@@ -94,32 +93,37 @@ function mc_tutorial.tutorial_progress_listener(player)
                 end
             end,
             [mc_tutorial.ACTION.LOOK_DIR] = function(index)
-                -- TODO
                 minetest.chat_send_player(pname, "[Tutorial] Listening for look direction...")
+
+                local p_dir = player:get_look_dir()
+                check_dir = pdata.active.sequence[index].dir
+                if math.abs(vector.angle(p_dir, check_dir)) <= tonumber(mc_tutorial.check_dir_tolerance) then
+                    mc_tutorial.completed_action(player, index)
+                end
             end,
             [mc_tutorial.ACTION.LOOK_PITCH] = function(index)
                 minetest.chat_send_player(pname, "[Tutorial] Listening for look pitch...")
 
-                pdata.player_seq.dir = player:get_look_vertical()
+                local p_dir = -player:get_look_vertical()
                 check_dir = pdata.active.sequence[index].dir
-                if (pdata.player_seq.dir >= check_dir - mc_tutorial.check_dir_tolerance) and (pdata.player_seq.dir <= check_dir + mc_tutorial.check_dir_tolerance) then
+                if (p_dir >= check_dir - mc_tutorial.check_dir_tolerance) and (p_dir <= check_dir + mc_tutorial.check_dir_tolerance) then
                     mc_tutorial.completed_action(player, index)
                 end
             end,
             [mc_tutorial.ACTION.LOOK_YAW] = function(index)
                 minetest.chat_send_player(pname, "[Tutorial] Listening for look yaw...")
 
-                pdata.player_seq.dir = player:get_look_horizontal()
+                local p_dir = player:get_look_horizontal()
                 check_dir = pdata.active.sequence[index].dir
-                if (pdata.player_seq.dir >= check_dir - mc_tutorial.check_dir_tolerance) and (pdata.player_seq.dir <= check_dir + mc_tutorial.check_dir_tolerance) then
+                if (p_dir >= check_dir - mc_tutorial.check_dir_tolerance) and (p_dir <= check_dir + mc_tutorial.check_dir_tolerance) then
                     mc_tutorial.completed_action(player, index)
                 end
             end,
             [mc_tutorial.ACTION.WIELD] = function(index)
                 minetest.chat_send_player(pname, "[Tutorial] Listening for wield...")
 
-                pdata.player_seq.wield = player:get_wielded_item():get_name()
-                if pdata.player_seq.wield == pdata.active.sequence[index].tool then
+                local p_wield = player:get_wielded_item():get_name()
+                if p_wield == pdata.active.sequence[index].tool then
                     mc_tutorial.completed_action(player, index)
                 end
             end,
@@ -138,16 +142,16 @@ function mc_tutorial.tutorial_progress_listener(player)
                 }
                 local key_bits = player:get_player_control_bits()
                 if bit.band(0x27F, key_bits) > 0 then
-                    pdata.player_seq.keys = {}
+                    local p_keys = {}
                     for b,v in pairs(bit_map) do
                         if bit.band(b, key_bits) > 0 then
-                            table.insert(pdata.player_seq.keys, v)
+                            table.insert(p_keys, v)
                         end
                     end
-                    table.sort(pdata.player_seq.keys)
+                    table.sort(p_keys)
                     table.sort(pdata.active.sequence[index].key)
 
-                    if table.concat(pdata.player_seq.keys, " ") == table.concat(pdata.active.sequence[index].key, " ") then
+                    if table.concat(p_keys, " ") == table.concat(pdata.active.sequence[index].key, " ") then
                         mc_tutorial.completed_action(player, index)
                     end
                 end

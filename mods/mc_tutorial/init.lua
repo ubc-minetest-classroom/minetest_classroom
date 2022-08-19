@@ -53,6 +53,10 @@ mc_tutorial = {
         NONE = 0,
         ITEM = 1,
         KEY = 2
+    },
+    DIR = {
+        VECTOR = 1,
+        YAW_PITCH = 2,
     }
 }
 -- local constants
@@ -60,13 +64,12 @@ local RW_LIST, RW_SELECT = 1, 2
 
 local function get_context(player)
     local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name()) or ""
-    return mc_tutorial.fs_context[pname] or {}
-end
-local function save_context(player, context)
-    local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name())
-    if pname then
-        mc_tutorial.fs_context[pname] = context
-    end
+    mc_tutorial.fs_context[pname] = mc_tutorial.fs_context[pname] or {
+        clear = function(self)
+            mc_tutorial.fs_context[pname] = nil
+        end
+    }
+    return mc_tutorial.fs_context[pname]
 end
 
 -- Store and load default settings in the tutorial_settings.conf file
@@ -195,6 +198,16 @@ local function concat_col_field_list(list, separator)
     return table.concat(col_list, separator)
 end
 
+local function vect_to_yp(vect)
+    local yaw_vect = vect and vector.new(vect.x, 0, vect.z)
+    local raw_yaw = math.deg(vector.angle(vector.new(0, 0, 1), yaw_vect or vector.new(0, 0, 1)))
+    return math.sign(yaw_vect.x) == 1 and (360 - raw_yaw) or raw_yaw, vect and math.sign(vect.y) * math.deg(vector.angle(vect, yaw_vect)) or 0
+end
+
+local function yp_to_vect(yaw, pitch)
+    return vector.rotate(vector.new(0, 0, 1), vector.new(math.rad(pitch or 0), math.rad(yaw or 0), 0))
+end
+
 local event_action_map = {
     [mc_tutorial.ACTION.PUNCH] = function(event)
         return nil, "punch node "..(event.node or "[?]")..(event.tool and event.tool ~= "" and " with "..event.tool or "")
@@ -218,10 +231,8 @@ local event_action_map = {
         return nil, "look at pitch (vertical) "..(event.dir and math.deg(event.dir).."°" or "[?]")
     end,
     [mc_tutorial.ACTION.LOOK_DIR] = function(event)
-        -- directional vector: simplify representation?
-        local yaw_vect = event.dir and vector.new(event.dir.x, 0, event.dir.z)
-        local yaw = math.deg(vector.angle(vector.new(0, 0, 1), yaw_vect or vector.new(0, 0, 1)))
-        return nil, "look in direction "..(event.dir and "(yaw = "..(math.sign(yaw_vect.x) == -1 and (360 - yaw) or yaw).."°, pitch = "..math.sign(event.dir.y)*math.deg(vector.angle(event.dir, yaw_vect)).."°)" or "[?]")
+        local yaw, pitch = vect_to_yp(event.dir)
+        return nil, "look in direction "..(event.dir and "(yaw = "..yaw.."°, pitch = "..pitch.."°)" or "[?]")
     end,
     [mc_tutorial.ACTION.POS_ABS] = function(event)
         return nil, "go to position "..(event.pos and "(x = "..event.pos.x..", y = "..event.pos.y..", z = "..event.pos.z..")" or "[?]")
@@ -430,8 +441,6 @@ function mc_tutorial.show_record_fs(player)
             end,
         }
         table.insert(record_formtable, table.concat(tab_map[context.tab or "1"](), ""))
-        save_context(player, context)
-
 		minetest.show_formspec(pname, "mc_tutorial:record_fs", table.concat(record_formtable, ""))
 		return true
 	end
@@ -634,23 +643,49 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
             [mc_tutorial.ACTION.LOOK_DIR] = {
                 name = "Look in direction (LOOK_DIR)",
                 fs_elem = function()
+                    local input_map = {
+                        [mc_tutorial.DIR.YAW_PITCH] = {
+                            name = "Yaw/pitch",
+                            get = function()
+                                local yaw, pitch
+                                if context.epop.fields.dir then
+                                    yaw, pitch = vect_to_yp(context.epop.fields.dir)
+                                end
+                                return table.concat({
+                                    "field[0.4,3.2;7,0.8;dir_yaw;Yaw (horizontal degrees);", yaw or "", "]",
+                                    "field[0.4,4.5;7,0.8;dir_pitch;Pitch (vertical degrees);", pitch or "", "]",
+                                    "field_close_on_enter[dir_yaw;false]",
+                                    "field_close_on_enter[dir_pitch;false]",
+                                })
+                            end,
+                        },
+                        [mc_tutorial.DIR.VECTOR] = {
+                            name = "Spatial vector",
+                            get = function()
+                                return table.concat({
+                                    "label[0.4,3.2;X =]",
+                                    "label[0.4,4.1;Y =]",
+                                    "label[0.4,5.0;Z =]",
+                                    "field[1,2.8;6.4,0.8;dir_x;;", context.epop.fields.dir and context.epop.fields.dir.x or "", "]",
+                                    "field[1,3.7;6.4,0.8;dir_y;;", context.epop.fields.dir and context.epop.fields.dir.y or "", "]",
+                                    "field[1,4.6;6.4,0.8;dir_z;;", context.epop.fields.dir and context.epop.fields.dir.z or "", "]",
+                                    "field_close_on_enter[dir_x;false]",
+                                    "field_close_on_enter[dir_y;false]",
+                                    "field_close_on_enter[dir_z;false]",
+                                })
+                            end,
+                        },
+                    }
+                    local input_types = {}
+                    for i,data in ipairs(input_map) do
+                        input_types[i] = data.name
+                    end
+
+                    context.epop.d_input_type = context.epop.d_input_type or 1
                     return {
-                        "label[3.8,2.7;+]",
-                        "field[0.4,2.3;3.3,0.8;yaw;Yaw (horiz. degrees);", context.epop.fields.yaw or "", "]",
-                        "field[4.1,2.3;3.3,0.8;pitch;Pitch (verti. degrees);", context.epop.fields.pitch or "", "]",
-                        "field_close_on_enter[yaw;false]",
-                        "field_close_on_enter[pitch;false]",
-                        "label[3.3,3.5;-- OR --]",
-                        "label[0.4,4;Direction vector]",
-                        "label[0.4,4.6;X =]",
-                        "label[2.8,4.6;Y =]",
-                        "label[5.2,4.6;Z =]",
-                        "field[1,4.2;1.6,0.8;dir_x;;", context.epop.fields.dir and context.epop.fields.dir.x or "", "]",
-                        "field[3.4,4.2;1.6,0.8;dir_y;;", context.epop.fields.dir and context.epop.fields.dir.y or "", "]",
-                        "field[5.8,4.2;1.6,0.8;dir_z;;", context.epop.fields.dir and context.epop.fields.dir.z or "", "]",
-                        "field_close_on_enter[dir_x;false]",
-                        "field_close_on_enter[dir_y;false]",
-                        "field_close_on_enter[dir_z;false]",
+                        "label[0.4,2.2;Input type]",
+                        "dropdown[2.1,1.9;5.3,0.6;dir_type;", table.concat(input_types, ",") , ";", context.epop.d_input_type, ";true]",
+                        input_map[context.epop.d_input_type] and input_map[context.epop.d_input_type].get() or "",
                     }
                 end,
             },
@@ -658,13 +693,12 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 name = "Go to position (POS_ABS)",
                 fs_elem = function()
                     return {
-                        "label[0.4,2.1;Go to (position)]",
-                        "label[0.4,2.7;X =]",
-                        "label[2.8,2.7;Y =]",
-                        "label[5.2,2.7;Z =]",
-                        "field[1,2.3;1.6,0.8;pos_x;;", context.epop.fields.pos and context.epop.fields.pos.x or "", "]",
-                        "field[3.4,2.3;1.6,0.8;pos_y;;", context.epop.fields.pos and context.epop.fields.pos.y or "", "]",
-                        "field[5.8,2.3;1.6,0.8;pos_z;;", context.epop.fields.pos and context.epop.fields.pos.z or "", "]",
+                        "label[0.4,2.3;X =]",
+                        "label[0.4,3.2;Y =]",
+                        "label[0.4,4.1;Z =]",
+                        "field[1,1.9;6.4,0.8;pos_x;;", context.epop.fields.pos and context.epop.fields.pos.x or "", "]",
+                        "field[1,2.8;6.4,0.8;pos_y;;", context.epop.fields.pos and context.epop.fields.pos.y or "", "]",
+                        "field[1,3.7;6.4,0.8;pos_z;;", context.epop.fields.pos and context.epop.fields.pos.z or "", "]",
                         "field_close_on_enter[pos_x;false]",
                         "field_close_on_enter[pos_y;false]",
                         "field_close_on_enter[pos_z;false]",
@@ -704,15 +738,16 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                         break
                     end
                 end
+
                 -- populate fields
                 context.epop.fields = {
                     tool = temp.sequence[context.selected_event]["tool"],
                     node = temp.sequence[context.selected_event]["node"],
                     pos = temp.sequence[context.selected_event]["pos"],
-                    dir = edit_action == mc_tutorial.ACTION.LOOK_DIR and temp.sequence[context.selected_event]["dir"] or nil,
-                    yaw = edit_action == mc_tutorial.ACTION.LOOK_PITCH and nil or edit_action == mc_tutorial.ACTION.LOOK_DIR and nil or temp.sequence[context.selected_event]["dir"],
-                    pitch = edit_action == mc_tutorial.ACTION.LOOK_YAW and nil or edit_action == mc_tutorial.ACTION.LOOK_DIR and nil or temp.sequence[context.selected_event]["dir"],
                     key = temp.sequence[context.selected_event]["key"],
+                    dir = edit_action == mc_tutorial.ACTION.LOOK_DIR and temp.sequence[context.selected_event]["dir"],
+                    yaw = edit_action == mc_tutorial.ACTION.LOOK_YAW and math.deg(temp.sequence[context.selected_event]["dir"] or 0),
+                    pitch = edit_action == mc_tutorial.ACTION.LOOK_PITCH and math.deg(temp.sequence[context.selected_event]["dir"] or 0),
                 }
             end
         end
@@ -769,8 +804,6 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 "tooltip[expand_list;Expand]",
             }))
         end
-
-        save_context(pname, context)
         minetest.show_formspec(pname, "mc_tutorial:record_epop", table.concat(epop_fs, ""))
     end
 end
@@ -850,7 +883,6 @@ function mc_tutorial.show_tutorials(player)
     end
 
     local pname = player:get_player_name()
-    save_context(player, context)
     minetest.show_formspec(pname, "mc_tutorial:tutorials", table.concat(fs_core, "")..table.concat(fs, ""))
     return true
 end
@@ -930,17 +962,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             local event = minetest.explode_textlist_event(fields.tutoriallist)
             if event.type == "CHG" then
                 context.tutorial_selected = tonumber(event.index)
-                save_context(player, context)
             end
             mc_tutorial.show_tutorials(player)
         elseif fields.delete then
             if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
                 if tutorials and next(tutorials.fields) then
                     mc_tutorial.tutorials:set_string(context.tutorial_i_to_id[context.tutorial_selected], "")
-
                     context.tutorial_selected = 1
-                    save_context(player, context)
-
                     mc_tutorial.show_tutorials(player)
                 else
                     return
@@ -1029,7 +1057,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
 
         if fields.lookvertical then
-            local pitch = player:get_look_vertical()
+            local pitch = -player:get_look_vertical()
             local reg_success = mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.LOOK_PITCH, {dir = pitch})
             if reg_success ~= false then
                 minetest.chat_send_player(pname, "[Tutorial] Your current look pitch was recorded. Continue to record new actions or left-click the tool to end the recording.")
@@ -1396,7 +1424,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     -- Save recorded tutorial
                     mc_tutorial.tutorials:set_string(tostring(id), minetest.serialize(recorded_tutorial))
                     if not mc_tutorial.record.edit[pname] then
-                        mc_tutorial.tutorials:set_int("next_id", next_id + 1)
+                        mc_tutorial.tutorials:set_int("next_id", id + 1)
                     end
                 end
 
@@ -1409,20 +1437,19 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             mc_tutorial.record.temp[pname] = nil
             mc_tutorial.record.edit[pname] = nil
             mc_tutorial.record.active[pname] = nil
-            save_context(player, nil)
+            context:clear()
             return -- formspec was closed, do not continue
         elseif fields.quit then -- forced quit
             minetest.chat_send_player(pname, "[Tutorial] No tutorial was saved.")
             mc_tutorial.record.temp[pname] = nil
             mc_tutorial.record.edit[pname] = nil
             mc_tutorial.record.active[pname] = nil
-            save_context(player, nil)
+            context:clear()
             return -- formspec was closed, do not continue
         end
 
         -- Save context and refresh formspec, if necessary
         if reload then
-            save_context(player, context)
             mc_tutorial.show_record_fs(player)
         end
     end
@@ -1481,6 +1508,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         end
 
+        if fields.dir_type then
+            context.epop.d_input_type = tonumber(fields.dir_type)
+            reload = true
+        end
+
         if fields.save then
             local action_map = {
                 [mc_tutorial.ACTION.PUNCH] = function()
@@ -1499,20 +1531,28 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     return context.epop.fields.key and next(context.epop.fields.key) and {key = context.epop.fields.key or {}}
                 end,
                 [mc_tutorial.ACTION.LOOK_YAW] = function()
-                    return fields.yaw and fields.yaw ~= "" and {dir = tonumber(fields.yaw or "0")}
+                    return fields.yaw and fields.yaw ~= "" and {dir = math.rad(tonumber(fields.yaw or "0"))}
                 end,
                 [mc_tutorial.ACTION.LOOK_PITCH] = function()
-                    return fields.pitch and fields.pitch ~= "" and {dir = tonumber(fields.pitch or "0")}
+                    return fields.pitch and fields.pitch ~= "" and {dir = math.rad(tonumber(fields.pitch or "0"))}
                 end,
-                --[[[mc_tutorial.ACTION.LOOK_DIR] = function()
-                    if fields.yaw ~= "" or fields.pitch ~= "" then
-                        return {} -- TODO
-                    else
-                        return {dir = {x = tonumber(fields.dir_x or "0"), y = tonumber(fields.dir_y or "0"), z = tonumber(fields.dir_z or "0")}}
-                    end
-                end,]]
+                [mc_tutorial.ACTION.LOOK_DIR] = function()
+                    if fields.dir_x or fields.dir_y or fields.dir_z then
+                        local dir_table = {x = tonumber(fields.dir_x ~= "" and fields.dir_x or "0"), y = tonumber(fields.dir_y ~= "" and fields.dir_y or "0"), z = tonumber(fields.dir_z ~= "" and fields.dir_z or "0")}
+                        if dir_table.x ~= 0 or dir_table.y ~= 0 or dir_table.z ~= 0 then
+                            return {dir = vector.normalize(vector.new(dir_table.x, dir_table.y, dir_table.z))}
+                        else
+                            return {dir = vector.normalize(vector.new(0, 0, 1))}
+                        end
+                    elseif fields.dir_yaw or fields.dir_pitch then
+                        local yaw = tonumber(fields.dir_yaw ~= "" and fields.dir_yaw or "0")
+                        local pitch = tonumber(fields.dir_pitch ~= "" and fields.dir_pitch or "0")
+                        return {dir = yp_to_vect(yaw, pitch)}
+                    else return nil end
+                end,
                 [mc_tutorial.ACTION.POS_ABS] = function()
-                    return {pos = {x = tonumber(fields.pos_x or "0"), y = tonumber(fields.pos_y or "0"), z = tonumber(fields.pos_z or "0")}}
+                    local pos_table = {x = fields.pos_x ~= "" and fields.pos_x or "0", y = fields.pos_y ~= "" and fields.pos_y or "0", z = fields.pos_z ~= "" and fields.pos_z or "0"}
+                    return {pos = {x = tonumber(pos_table.x), y = tonumber(pos_table.y), z = tonumber(pos_table.z)}}
                 end,
             }
 
@@ -1540,13 +1580,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_player(pname, "[Tutorial] Invalid event; event not "..(context.epop.is_edit and "saved" or "added")..".")
             end
             context.epop = nil
-            save_context(player, context)
             return mc_tutorial.show_record_fs(player)
         end
         if fields.cancel or fields.quit then
             minetest.chat_send_player(pname, "[Tutorial] "..(context.epop.is_edit and "Event not saved" or "No event added")..".")
             context.epop = nil
-            save_context(player, context)
             return mc_tutorial.show_record_fs(player)
         end
 
@@ -1557,14 +1595,17 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if fields.pitch and not save_exception["pt"] then context.epop.fields.pitch = fields.pitch end
             if fields.yaw and not save_exception["yw"] then context.epop.fields.yaw = fields.yaw end
             if (fields.pos_x or fields.pos_y or fields.pos_z) and not save_exception["po"] then
-                context.epop.fields.pos = {x = tonumber(fields.pos_x or "0"), y = tonumber(fields.pos_y or "0"), z = tonumber(fields.pos_z or "0")}
+                context.epop.fields.pos = {x = tonumber(fields.pos_x ~= "" and fields.pos_x or "0"), y = tonumber(fields.pos_y ~= "" and fields.pos_y or "0"), z = tonumber(fields.pos_z ~= "" and fields.pos_z or "0")}
             end
-            if (fields.dir_x or fields.dir_y or fields.dir_z) and not save_exception["dr"] then
-                context.epop.fields.dir = {x = tonumber(fields.dir_x or "0"), y = tonumber(fields.dir_y or "0"), z = tonumber(fields.dir_z or "0")}
+            if not save_exception["dr"] then
+                if (fields.dir_x and fields.dir_x ~= "") or (fields.dir_y and fields.dir_y ~= "") or (fields.dir_z and fields.dir_z ~= "") then
+                    context.epop.fields.dir = vector.new(tonumber(fields.dir_x ~= "" and fields.dir_x or "0"), tonumber(fields.dir_y ~= "" and fields.dir_y or "0"), tonumber(fields.dir_z ~= "" and fields.dir_z or "0"))
+                elseif (fields.dir_yaw or fields.dir_pitch) then
+                    context.epop.fields.dir = yp_to_vect(fields.dir_yaw ~= "" and fields.dir_yaw or 0, fields.dir_pitch ~= "" and fields.dir_pitch or 0)
+                end
             end
 
             -- save context and reload
-            save_context(player, context)
             mc_tutorial.show_event_popop_fs(player)
         end
     end

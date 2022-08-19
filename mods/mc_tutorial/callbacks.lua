@@ -3,9 +3,9 @@ local bit = dofile(minetest.get_modpath("mc_helpers") .. "/numberlua.lua")
 -- Register the punch, dig, and place callbacks
 minetest.register_on_punchnode(function(pos, node, player, pointed_thing)
     local pname = player:get_player_name()
-    if mc_tutorial.record.active[pname] or mc_tutorial.active[pname] then
+    if mc_tutorial.record.active[pname] == "record" or mc_tutorial.active[pname] then
         local func
-        if mc_tutorial.record.active[pname] then
+        if mc_tutorial.record.active[pname] == "record" then
             func = mc_tutorial.register_tutorial_action
         elseif mc_tutorial.active[pname] then
             func = mc_tutorial.check_tutorial_progress
@@ -16,9 +16,9 @@ end)
 
 minetest.register_on_dignode(function(pos, oldnode, player)
     local pname = player:get_player_name()
-    if mc_tutorial.record.active[pname] or mc_tutorial.active[pname] then
+    if mc_tutorial.record.active[pname] == "record"  or mc_tutorial.active[pname] then
         local func
-        if mc_tutorial.record.active[pname] then
+        if mc_tutorial.record.active[pname] == "record"  then
             func = mc_tutorial.register_tutorial_action
         elseif mc_tutorial.active[pname] then
             func = mc_tutorial.check_tutorial_progress
@@ -29,9 +29,9 @@ end)
 
 minetest.register_on_placenode(function(pos, newnode, player, oldnode, itemstack, pointed_thing)
     local pname = player:get_player_name()
-    if mc_tutorial.record.active[pname] or mc_tutorial.active[pname] then
+    if mc_tutorial.record.active[pname] == "record"  or mc_tutorial.active[pname] then
         local func
-        if mc_tutorial.record.active[pname] then
+        if mc_tutorial.record.active[pname] == "record"  then
             func = mc_tutorial.register_tutorial_action
         elseif mc_tutorial.active[pname] then
             func = mc_tutorial.check_tutorial_progress
