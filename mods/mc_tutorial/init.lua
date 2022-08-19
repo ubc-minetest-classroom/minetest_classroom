@@ -166,9 +166,13 @@ local function get_selected_reward_info(context, list_id)
     return reward and (reward.col_override or reward.col), type_id and mc_helpers.trim(type_id), item and mc_helpers.trim(item)
 end
 
---- @return string
+--- @return string or nil
 local function extract_id(id_str)
-    return type(id_str) == "string" and string.match(id_str, "ID%s(%d+):")
+    if type(id_str) == "string" then
+        return string.match(id_str, "ID%s(%d+):") or nil
+    else
+        return nil
+    end
 end
 
 --- @return boolean
@@ -1354,42 +1358,58 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.dependencies_add and context.tutorials.main.list[context.tutorials.main.selected] then
             local id_string = table.remove(context.tutorials.main.list, context.tutorials.main.selected)
             local id = extract_id(id_string)
-            table.insert(context.tutorials.dep_cy.list, id_string)
-            mc_tutorial.record.temp[pname].dependencies[id] = true
-            mc_tutorial.record.temp[pname].depend_update.dep_cy[id] = true
+            if id then
+                table.insert(context.tutorials.dep_cy.list, id_string)
+                mc_tutorial.record.temp[pname].dependencies[id] = true
+                mc_tutorial.record.temp[pname].depend_update.dep_cy[id] = true
 
-            context.tutorials.main.selected = math.max(1, math.min(context.tutorials.main.selected, #context.tutorials.main.list))
-            reload = true
+                context.tutorials.main.selected = math.max(1, math.min(context.tutorials.main.selected, #context.tutorials.main.list))
+                reload = true
+            else
+                minetest.chat_send_player(pname, "[Tutorial] Invalid tutorial ID; dependency could not be added")
+            end
         end
         if fields.dependencies_delete then
             local id_string = table.remove(context.tutorials.dep_cy.list, context.tutorials.dep_cy.selected)
             local id = extract_id(id_string)
-            table.insert(context.tutorials.main.list, id_string)
-            mc_tutorial.record.temp[pname].dependencies[id] = nil
-            mc_tutorial.record.temp[pname].depend_update.dep_cy[id] = false
+            if id then
+                table.insert(context.tutorials.main.list, id_string)
+                mc_tutorial.record.temp[pname].dependencies[id] = nil
+                mc_tutorial.record.temp[pname].depend_update.dep_cy[id] = false
 
-            context.tutorials.dep_cy.selected = math.max(1, math.min(context.tutorials.dep_cy.selected, #context.tutorials.dep_cy.list))
-            reload = true
+                context.tutorials.dep_cy.selected = math.max(1, math.min(context.tutorials.dep_cy.selected, #context.tutorials.dep_cy.list))
+                reload = true
+            else
+                minetest.chat_send_player(pname, "[Tutorial] Invalid tutorial ID; dependency could not be removed")
+            end
         end
         if fields.dependents_add then
             local id_string = table.remove(context.tutorials.main.list, context.tutorials.main.selected)
             local id = extract_id(id_string)
-            table.insert(context.tutorials.dep_nt.list, id_string)
-            mc_tutorial.record.temp[pname].dependents[id] = true
-            mc_tutorial.record.temp[pname].depend_update.dep_nt[id] = true
+            if id then
+                table.insert(context.tutorials.dep_nt.list, id_string)
+                mc_tutorial.record.temp[pname].dependents[id] = true
+                mc_tutorial.record.temp[pname].depend_update.dep_nt[id] = true
 
-            context.tutorials.main.selected = math.max(1, math.min(context.tutorials.main.selected, #context.tutorials.main.list))
-            reload = true
+                context.tutorials.main.selected = math.max(1, math.min(context.tutorials.main.selected, #context.tutorials.main.list))
+                reload = true
+            else
+                minetest.chat_send_player(pname, "[Tutorial] Invalid tutorial ID; dependent could not be added")
+            end
         end
         if fields.dependents_delete then
             local id_string = table.remove(context.tutorials.dep_nt.list, context.tutorials.dep_nt.selected)
             local id = extract_id(id_string)
-            table.insert(context.tutorials.main.list, id_string)
-            mc_tutorial.record.temp[pname].dependents[id] = nil
-            mc_tutorial.record.temp[pname].depend_update.dep_nt[id] = false
+            if id then
+                table.insert(context.tutorials.main.list, id_string)
+                mc_tutorial.record.temp[pname].dependents[id] = nil
+                mc_tutorial.record.temp[pname].depend_update.dep_nt[id] = false
 
-            context.tutorials.dep_nt.selected = math.max(1, math.min(context.tutorials.dep_nt.selected, #context.tutorials.dep_nt.list))
-            reload = true
+                context.tutorials.dep_nt.selected = math.max(1, math.min(context.tutorials.dep_nt.selected, #context.tutorials.dep_nt.list))
+                reload = true
+            else
+                minetest.chat_send_player(pname, "[Tutorial] Invalid tutorial ID; dependent could not be removed")
+            end
         end
 
         -- MISC
@@ -1425,22 +1445,22 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     
                     -- Update dependencies/dependents in other tutorials
                     for k,v in pairs(mc_tutorial.record.temp[pname].depend_update.dep_cy) do
-                        local serial_tut = mc_tutorial.tutorials:get(k)
+                        local serial_tut = mc_tutorial.tutorials:get(tostring(k))
                         if serial_tut then
                             local tut = minetest.deserialize(serial_tut)
                             tut.dependents[id] = v or nil
-                            mc_tutorial.tutorials:set_string(k, minetest.serialize(tut))
+                            mc_tutorial.tutorials:set_string(tostring(k), minetest.serialize(tut))
                         else
                             -- invalid dependency, remove
                             recorded_tutorial.dependencies[k] = nil
                         end
                     end
                     for k,v in pairs(mc_tutorial.record.temp[pname].depend_update.dep_nt) do
-                        local serial_tut = mc_tutorial.tutorials:get(k)
+                        local serial_tut = mc_tutorial.tutorials:get(tostring(k))
                         if serial_tut then
                             local tut = minetest.deserialize(serial_tut)
                             tut.dependencies[id] = v or nil
-                            mc_tutorial.tutorials:set_string(k, minetest.serialize(tut))
+                            mc_tutorial.tutorials:set_string(tostring(k), minetest.serialize(tut))
                         else
                             -- invalid dependency, remove
                             recorded_tutorial.dependencies[k] = nil
@@ -1704,5 +1724,18 @@ minetest.register_chatcommand("dumppdata", {
         local pmeta = player:get_meta()
         local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
         minetest.chat_send_player(name, tostring(_G.dump(pdata)))
+	end
+})
+
+minetest.register_chatcommand("clearCompleted", {
+	description = "Clears list of tutorials player has completed.",
+	privs = mc_tutorial.recorder_priv_table,
+	func = function(name, param)
+        local player = minetest.get_player_by_name(name)
+        local pmeta = player:get_meta()
+        local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
+        pdata.completed = {}
+        pmeta:set_string("mc_tutorial:tutorials", minetest.serialize(pdata))
+        minetest.chat_send_player(name, "Cleared list of completed tutorials!")
 	end
 })
