@@ -52,11 +52,12 @@ mc_tutorial = {
     SIDEBAR = {
         NONE = 0,
         ITEM = 1,
-        KEY = 2
+        KEY = 2,
+        DIR = 3,
     },
     DIR = {
-        VECTOR = 1,
-        YAW_PITCH = 2,
+        YAW_PITCH = 1,
+        VECTOR = 2,
     }
 }
 -- local constants
@@ -784,7 +785,15 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
         end
 
         if context.epop.expand then
-            local new_mode = context.epop.i_to_action[context.epop.selected] == mc_tutorial.ACTION.KEY and mc_tutorial.SIDEBAR.KEY or mc_tutorial.SIDEBAR.ITEM
+            local sidebar_map = {
+                [mc_tutorial.ACTION.KEY] = mc_tutorial.SIDEBAR.KEY,
+                [mc_tutorial.ACTION.PLACE] = mc_tutorial.SIDEBAR.ITEM,
+                [mc_tutorial.ACTION.DIG] = mc_tutorial.SIDEBAR.ITEM,
+                [mc_tutorial.ACTION.PUNCH] = mc_tutorial.SIDEBAR.ITEM,
+                [mc_tutorial.ACTION.WIELD] = mc_tutorial.SIDEBAR.ITEM,
+                [mc_tutorial.ACTION.LOOK_DIR] = mc_tutorial.SIDEBAR.DIR,
+            }
+            local new_mode = sidebar_map[context.epop.i_to_action[context.epop.selected]] or mc_tutorial.SIDEBAR.NONE
             if new_mode ~= context.epop.sidebar.mode then
                 context.epop.sidebar.mode = new_mode
                 context.epop.sidebar.list = {}
@@ -792,7 +801,7 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
 
                 if context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY then
                     context.epop.sidebar.list = {"up", "down", "left", "right", "aux1", "jump", "sneak", "zoom"}
-                else
+                elseif context.epop.sidebar.mode == mc_tutorial.SIDEBAR.ITEM then
                     for item,_ in pairs(minetest.registered_items) do
                         if mc_helpers.trim(item) ~= "" then
                             table.insert(context.epop.sidebar.list, mc_helpers.trim(item))
@@ -802,11 +811,37 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 table.sort(context.epop.sidebar.list)
             end
                     
+            local sidebar_fs_map = {
+                [mc_tutorial.SIDEBAR.ITEM] = function()
+                    return {
+                        "label[8,0.5;Registered items]",
+                        "textlist[8,0.7;5.4,5.5;sidebar_list;", table.concat(context.epop.sidebar.list, ","), ";", context.epop.sidebar.selected or 1, ";false]",
+                        "image[8,6.4;1.2,1.2;mc_tutorial_cancel.png]",
+                        "textarea[9.3,6.3;4.1,1.4;;;Item + desc]",
+                    }
+                end,
+                [mc_tutorial.SIDEBAR.KEY] = function()
+                    return {
+                        "label[8,0.5;Available keys]",
+                        "textlist[8,0.7;5.4,5.5;sidebar_list;", table.concat(context.epop.sidebar.list, ","), ";", context.epop.sidebar.selected or 1, ";false]",
+                        "textarea[7.9,6.3;5.5,1.4;;;Key desc]", 
+                    }
+                end,
+                [mc_tutorial.SIDEBAR.DIR] = function()
+                    return {
+                        "label[8,0.5;Input types]",
+                        "textarea[7.9,0.7;5.5,7;;;",
+                        "\nYaw/pitch\n", "Yaw (horizontal azimuth/heading) and pitch (vertical inclination) in degrees.\n(0 < yaw < 360, -90 < pitch < 90)\n",
+                        "\nSpatial vector\n", "Direction of a 3D vector with components (X, Y, Z).\n",
+                        "]",
+                    }
+                end,
+                [mc_tutorial.SIDEBAR.NONE] = function()
+                    return {"textarea[7.9,0.3;5.5,7.2;;;This event has no related sidebar information.]",}
+                end,
+            }
             table.insert(epop_fs, table.concat({
-                "label[8,0.5;", context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY and "Available keys" or "Registered items", "]",
-                "textlist[8,0.7;5.4,5.5;sidebar_list;", table.concat(context.epop.sidebar.list, ","), ";", context.epop.sidebar.selected or 1, ";false]",
-                context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY and "" or "image[8,6.4;1.2,1.2;mc_tutorial_cancel.png]",
-                "textarea[", context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY and "7.9,6.3;5.5,1.4" or "9.3,6.3;4.1,1.4", ";;;Item + desc]",
+                table.concat(sidebar_fs_map[context.epop.sidebar.mode] and sidebar_fs_map[context.epop.sidebar.mode]() or {}),
                 "box[7.675,0.2;0.05,7.6;#202020]",
                 "button[13.8,0;0.6,8;collapse_list;<]",
                 "tooltip[collapse_list;Collapse]",
