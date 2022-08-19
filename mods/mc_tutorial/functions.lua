@@ -69,12 +69,26 @@ end
 -- It listens for specific actions in the sequence that do not have callbacks (punch, dig, place).
 -- If the action is heard, then it checks against the expected value.
 -- if the action matches the expected value, then the listener registers the completed action.
--- Once active.continue = false (i.e., the tutorial is completed), the listener turns off.
+-- Once the tutorial is completed, the listener turns off.
 function mc_tutorial.tutorial_progress_listener(player)
+    local pname = player:get_player_name()
+    local player_online = false
+
+    -- check that player is still online
+    for i,obj in ipairs(minetest.get_connected_players()) do
+        if obj:is_player() and obj:get_player_name() == pname then
+            player_online = true
+            break
+        end
+    end
+    if not player_online then
+        mc_tutorial.listeners[pname] = nil
+        return
+    end
+
     local pmeta = player:get_meta()
     local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
-    local pname = player:get_player_name()
-
+    
     if pdata.active and not mc_tutorial.record.active[pname] then
         -- Figure out the type of action to call the correct listener
         local listener_map = {
@@ -97,7 +111,7 @@ function mc_tutorial.tutorial_progress_listener(player)
 
                 local p_dir = player:get_look_dir()
                 local check_dir = pdata.active.sequence[index].dir
-                if math.abs(vector.angle(p_dir, check_dir)) <= tonumber(mc_tutorial.check_dir_tolerance) then
+                if math.abs(vector.angle(p_dir, check_dir)) <= math.sqrt(3) * tonumber(mc_tutorial.check_dir_tolerance) then
                     mc_tutorial.completed_action(player, index)
                 end
             end,
@@ -178,7 +192,9 @@ function mc_tutorial.tutorial_progress_listener(player)
             end
         end
         -- Continue listener cycle
-        minetest.after(mc_tutorial.check_interval, mc_tutorial.tutorial_progress_listener, player)
+        mc_tutorial.listeners[pname] = minetest.after(mc_tutorial.check_interval, mc_tutorial.tutorial_progress_listener, player)
+    else
+        mc_tutorial.listeners[pname] = nil
     end
 end
 

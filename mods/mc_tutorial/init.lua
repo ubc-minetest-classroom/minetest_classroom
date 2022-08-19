@@ -24,6 +24,7 @@ mc_tutorial = {
     },
     fs_context = {},
     active = {},
+    listeners = {},
 
     ACTION = { -- action constants
         PUNCH = 1,
@@ -44,6 +45,7 @@ mc_tutorial = {
         INV_TAKE = 15,
         INV_MOVE = 16,
         CRAFT = 17,
+        LOOK_NODE = 18,
     },
     GROUP = { -- group type constants
         START = 1,
@@ -98,7 +100,7 @@ end
 mc_tutorial.player_priv_table = mc_tutorial.fetch_setting_key_table("player_priv_table") or {interact = true}
 mc_tutorial.recorder_priv_table = mc_tutorial.fetch_setting_key_table("recorder_priv_table") or {teacher = true, interact = true}
 mc_tutorial.check_interval = math.max(tonumber(mc_tutorial.fetch_setting("check_interval")), 0.1) or 1
-mc_tutorial.check_dir_tolerance = mc_tutorial.fetch_setting("check_dir_tolerance") or 0.01745
+mc_tutorial.check_dir_tolerance = math.rad(tonumber(mc_tutorial.fetch_setting("check_dir_tolerance") or 2))
 mc_tutorial.check_pos_x_tolerance = tonumber(mc_tutorial.fetch_setting("check_pos_x_tolerance") or 4) * mc_tutorial.check_interval
 mc_tutorial.check_pos_y_tolerance = tonumber(mc_tutorial.fetch_setting("check_pos_y_tolerance") or 4) * mc_tutorial.check_interval
 mc_tutorial.check_pos_z_tolerance = tonumber(mc_tutorial.fetch_setting("check_pos_z_tolerance") or 4) * mc_tutorial.check_interval
@@ -912,7 +914,9 @@ function mc_tutorial.show_tutorials(player)
             if tonumber(id) then
                 local col
                 local tutorial_info = minetest.deserialize(tutorial)
-                if not check_dependencies(pdata, tutorial_info.dependencies) then
+                if mc_tutorial.active[pname] == id then
+                    col = "#ACABFF"
+                elseif not check_dependencies(pdata, tutorial_info.dependencies) then
                     col = "#F5627D"
                 elseif mc_helpers.tableHas(pdata.completed, id) then
                     col = "#71EBA8"
@@ -924,17 +928,38 @@ function mc_tutorial.show_tutorials(player)
         local selected_info = minetest.deserialize(tutorials.fields[tostring(context.tutorial_i_to_id[context.tutorial_selected])] or minetest.serialize(nil))
         
         fs = {
-            "box[0.1,8.8;5.7,1;#00FF00]",
-            "button_exit[0.2,8.9;5.5,0.8;start;Start Tutorial]",
             "textlist[0.2,0.2;4.6,8.4;tutoriallist;", table.concat(titles, ","), ";", context.tutorial_selected, ";false]",
             "textarea[5,0.2;7.8,8.4;;;", selected_info and selected_info.description or "", "]",
         }
 
+        if mc_tutorial.active[pname] then
+            if context.tutorial_i_to_id[context.tutorial_selected] == mc_tutorial.active[pname] then
+                table.insert(fs, table.concat({
+                    "box[0.1,8.8;5.7,1;#FF0000]",
+                    "button[0.2,8.9;5.5,0.8;stop;Stop tutorial]",
+                }))
+            else
+                table.insert(fs, table.concat({
+                    "box[0.1,8.8;5.7,1;#FFBB00]",
+                    "button_exit[0.2,8.9;5.5,0.8;start;Start tutorial (stops active tutorial)]",
+                }))
+            end
+        else
+            table.insert(fs, table.concat({
+                "box[0.1,8.8;5.7,1;#00FF00]",
+                "button_exit[0.2,8.9;5.5,0.8;start;Start tutorial]",
+            }))
+        end
+
         -- Add edit/delete options for those privileged
         if mc_tutorial.check_privs(player,mc_tutorial.recorder_priv_table) then
-            table.insert(fs, "box[5.9,8.8;5.2,1;#FF0000]")
-            table.insert(fs, "button[6,8.9;2.3,0.8;delete;Delete]")
-            table.insert(fs, "button[8.6,8.9;2.4,0.8;edit;Edit]")
+            if not mc_tutorial.active[pname] or context.tutorial_i_to_id[context.tutorial_selected] ~= mc_tutorial.active[pname] then
+                table.insert(fs, table.concat({
+                    "box[5.9,8.8;5.2,1;#FF0000]",
+                    "button[6,8.9;2.3,0.8;delete;Delete]",
+                    "button[8.6,8.9;2.4,0.8;edit;Edit]",
+                }))
+            end
         end
     else
         fs = {"textlist[0.2,0.2;4.6,8.4;tutoriallist;No Tutorials Found;1;false]"}
@@ -1065,6 +1090,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 pdata.active = tutorial_to_start
                 mc_tutorial.active[pname] = tostring(context.tutorial_i_to_id[context.tutorial_selected])
                 mc_tutorial.initialize_action_group(pdata)
+                if mc_tutorial.listeners[pname] then
+                    mc_tutorial.listeners[pname]:cancel()
+                    mc_tutorial.listeners[pname] = nil
+                end
                 pmeta:set_string("mc_tutorial:tutorials", minetest.serialize(pdata))
                 minetest.chat_send_player(pname, "[Tutorial] Tutorial has started: "..pdata.active.title)
 
@@ -1086,11 +1115,25 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         listener_needed = action_map[event.action] or listener_needed
                     end
                     if listener_needed then
-                        minetest.after(0.1, mc_tutorial.tutorial_progress_listener, player)
+                        mc_tutorial.listeners[pname] = minetest.after(0.1, mc_tutorial.tutorial_progress_listener, player)
                     end
                 end
                 -- TODO: add HUD and/or formspec to display the instructions for the tutorial
             end
+        elseif fields.stop then
+            local pmeta = player:get_meta()
+            local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
+
+            mc_tutorial.active[pname] = nil
+            pdata.active = nil
+            if mc_tutorial.listeners[pname] then
+                mc_tutorial.listeners[pname]:cancel()
+                mc_tutorial.listeners[pname] = nil
+            end
+
+            pmeta:set_string("mc_tutorial:tutorials", minetest.serialize(pdata))
+            minetest.chat_send_player(pname, "[Tutorial] Tutorial has been stopped.")
+            mc_tutorial.show_tutorials(player)
         end
     end
     
