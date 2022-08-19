@@ -127,6 +127,15 @@ minetest.register_on_joinplayer(function(player)
     end
 end)
 
+local function check_dependencies(pdata, dep_list)
+    for dep,_ in pairs(dep_list) do
+        if mc_tutorial.tutorials:get(dep) and not mc_helpers.tableHas(pdata.completed, dep) then
+            return false
+        end
+    end
+    return true
+end
+
 local function save_temp_fields(player, fields)
     local pname = player:get_player_name()
     mc_tutorial.record.temp[pname].title = fields.title or mc_tutorial.record.temp[pname].title
@@ -834,8 +843,12 @@ button[13.8,0;0.6,8;collapse_list;<]
 ]]
 
 function mc_tutorial.show_tutorials(player)
+    local pname = player:get_player_name()
+    local pmeta = player:get_meta()
+    local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
     local context = get_context(player)
     local tutorials = mc_tutorial.tutorials:to_table()
+
     local fs_core = {
         "formspec_version[5]",
         "size[13,10]",
@@ -858,8 +871,14 @@ function mc_tutorial.show_tutorials(player)
         local titles = {}
         for id,tutorial in pairs(tutorials.fields) do
             if tonumber(id) then
+                local col
                 local tutorial_info = minetest.deserialize(tutorial)
-                table.insert(titles, tutorial_info.title)
+                if not check_dependencies(pdata, tutorial_info.dependencies) then
+                    col = "#F5627D"
+                elseif mc_helpers.tableHas(pdata.completed, id) then
+                    col = "#71EBA8"
+                end
+                table.insert(titles, (col or "")..tutorial_info.title)
             end
         end
         context.tutorial_selected = context.tutorial_selected or 1
@@ -882,7 +901,6 @@ function mc_tutorial.show_tutorials(player)
         fs = {"textlist[0.2,0.2;4.6,8.4;tutoriallist;No Tutorials Found;1;false]"}
     end
 
-    local pname = player:get_player_name()
     minetest.show_formspec(pname, "mc_tutorial:tutorials", table.concat(fs_core, "")..table.concat(fs, ""))
     return true
 end
@@ -996,15 +1014,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 
                 -- check format
                 if not tutorial_to_start.format or tutorial_to_start.format < 3 then
-                    minetest.chat_send_player(pname, "[Tutorial] This tutorial was saved in an outdated format and can no longer be accessed.")
+                    minetest.chat_send_player(pname, "[Tutorial] This tutorial was saved in an outdated format and can no longer be started.")
                     return
                 end
                 -- check if all dependencies have been met by player
-                for dep,_ in pairs(tutorial_to_start.dependencies) do
-                    if mc_tutorial.tutorials:get(dep) and not mc_helpers.tableHas(pdata.completed, dep) then
-                        minetest.chat_send_player(pname, "[Tutorial] You can't start this tutorial yet because you have not completed all of its prerequisite tutorials!")
-                        return
-                    end
+                if not check_dependencies(pdata, tutorial_to_start.dependencies) then
+                    minetest.chat_send_player(pname, "[Tutorial] You can't start this tutorial because you haven't completed all of its prerequisites!")
+                    return
                 end
 
                 pdata.active = tutorial_to_start
