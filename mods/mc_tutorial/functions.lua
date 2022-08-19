@@ -96,7 +96,7 @@ function mc_tutorial.tutorial_progress_listener(player)
                 minetest.chat_send_player(pname, "[Tutorial] Listening for look direction...")
 
                 local p_dir = player:get_look_dir()
-                check_dir = pdata.active.sequence[index].dir
+                local check_dir = pdata.active.sequence[index].dir
                 if math.abs(vector.angle(p_dir, check_dir)) <= tonumber(mc_tutorial.check_dir_tolerance) then
                     mc_tutorial.completed_action(player, index)
                 end
@@ -105,7 +105,7 @@ function mc_tutorial.tutorial_progress_listener(player)
                 minetest.chat_send_player(pname, "[Tutorial] Listening for look pitch...")
 
                 local p_dir = -player:get_look_vertical()
-                check_dir = pdata.active.sequence[index].dir
+                local check_dir = pdata.active.sequence[index].dir
                 if (p_dir >= check_dir - mc_tutorial.check_dir_tolerance) and (p_dir <= check_dir + mc_tutorial.check_dir_tolerance) then
                     mc_tutorial.completed_action(player, index)
                 end
@@ -114,7 +114,7 @@ function mc_tutorial.tutorial_progress_listener(player)
                 minetest.chat_send_player(pname, "[Tutorial] Listening for look yaw...")
 
                 local p_dir = player:get_look_horizontal()
-                check_dir = pdata.active.sequence[index].dir
+                local check_dir = pdata.active.sequence[index].dir
                 if (p_dir >= check_dir - mc_tutorial.check_dir_tolerance) and (p_dir <= check_dir + mc_tutorial.check_dir_tolerance) then
                     mc_tutorial.completed_action(player, index)
                 end

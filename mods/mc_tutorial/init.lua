@@ -990,12 +990,21 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         elseif fields.start then
             if tutorials and tutorials.fields[context.tutorial_i_to_id[context.tutorial_selected]] then
-                pmeta = player:get_meta()
-                pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
+                local pmeta = player:get_meta()
+                local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
                 local tutorial_to_start = minetest.deserialize(tutorials.fields[tostring(context.tutorial_i_to_id[context.tutorial_selected])])
+                
+                -- check format
                 if not tutorial_to_start.format or tutorial_to_start.format < 3 then
                     minetest.chat_send_player(pname, "[Tutorial] This tutorial was saved in an outdated format and can no longer be accessed.")
                     return
+                end
+                -- check if all dependencies have been met by player
+                for dep,_ in pairs(tutorial_to_start.dependencies) do
+                    if mc_tutorial.tutorials:get(dep) and not mc_helpers.tableHas(pdata.completed, dep) then
+                        minetest.chat_send_player(pname, "[Tutorial] You can't start this tutorial yet because you have not completed all of its prerequisite tutorials!")
+                        return
+                    end
                 end
 
                 pdata.active = tutorial_to_start
@@ -1158,6 +1167,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 table.insert(mc_tutorial.record.temp[pname].on_completion.items, item)
             end
 
+            local new_index
             context.rewards, context.selected_rewards, new_index = move_list_item(context.reward_selected[RW_LIST], context.rewards, context.selected_rewards, col_field_compare)
             context.reward_selected = {
                 [RW_LIST] = math.max(1, math.min(context.reward_selected[RW_LIST], #context.rewards)),
