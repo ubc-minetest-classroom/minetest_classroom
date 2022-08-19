@@ -1,13 +1,12 @@
 -- TODO:
 ----- add tutorial progress and completion to player meta
 ----- get/set pdata.active from player meta
------ make tutorials dependent on other tutorials (sequence of tutorials)
 ----- update png texture for tutorialbook - consider revising this to a new icon different from student notebook
 ----- add sequence of formspecs or HUD elements to guide teacher through recording different gameplay options
 ----- make tutorial_fs dynamic to show what a player will get on_completion: use add item_image[]
 ----- need a way for the player to access the pdata.active instructions and possibly accompanying item_images and models
 ----- update the record_fs menu so that on_completion items and tools are displayed in an inventory and the number of items given can be set by the player recording the tutorial
------ add option to display a message after completing a specific action, like "now do this next"\
+----- add option to display a message after completing a specific action, like "now do this next"
 
 mc_tutorial = {
     path = minetest.get_modpath("mc_tutorial"),
@@ -118,8 +117,7 @@ minetest.register_on_joinplayer(function(player)
         -- data not initialized, initialize and serialize a table to hold everything
         pdata = {
             active = {},
-            player_seq = {},
-            completed = {}, -- TODO: use this to change the tutorial_fs to indicate tutorials that are completed
+            completed = {},
             listener = {
                 wield = false,
                 key = false
@@ -129,6 +127,16 @@ minetest.register_on_joinplayer(function(player)
         pmeta:set_string("mc_tutorial:tutorials", minetest.serialize(pdata))
     end
 end)
+
+-- Returns true if the id is not in the given list, false if it is
+local function tutorial_id_safety_check(id, list)
+    for _,l_id in pairs(list) do
+        if tonumber(id) == tonumber(l_id) then
+            return false
+        end
+    end
+    return true
+end
 
 local function check_dependencies(pdata, dep_list)
     for dep,_ in pairs(dep_list) do
@@ -1048,24 +1056,40 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             mc_tutorial.show_tutorials(player)
         elseif fields.delete then
             if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
-                if tutorials and next(tutorials.fields) then
-                    mc_tutorial.tutorials:set_string(context.tutorial_i_to_id[context.tutorial_selected], "")
-                    context.tutorial_selected = 1
-                    mc_tutorial.show_tutorials(player)
+                if tutorial_id_safety_check(context.tutorial_i_to_id[context.tutorial_selected], mc_tutorial.active) then
+                    if tutorial_id_safety_check(context.tutorial_i_to_id[context.tutorial_selected], mc_tutorial.record.edit) then
+                        if tutorials and next(tutorials.fields) then
+                            mc_tutorial.tutorials:set_string(context.tutorial_i_to_id[context.tutorial_selected], "")
+                            context.tutorial_selected = 1
+                            mc_tutorial.show_tutorials(player)
+                        else
+                            return
+                        end
+                    else
+                        minetest.chat_send_player(pname, "[Tutorial] You can't delete a tutorial that is being edited by another player.")
+                    end
                 else
-                    return
+                    minetest.chat_send_player(pname, "[Tutorial] You can't delete a tutorial that a player is currently playing.")
                 end
             else
                 minetest.chat_send_player(pname, "[Tutorial] You do not have sufficient privileges to delete tutorials.")
             end
         elseif fields.edit then
             if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
-                mc_tutorial.record.temp[pname] = minetest.deserialize(tutorials.fields[context.tutorial_i_to_id[context.tutorial_selected]])
-                mc_tutorial.record.edit[pname] = context.tutorial_i_to_id[context.tutorial_selected]
-                if mc_tutorial.record.temp[pname] then
-                    mc_tutorial.record.temp[pname].has_actions = mc_tutorial.record.temp[pname].length and mc_tutorial.record.temp[pname].length > 0
-                    mc_tutorial.record.temp[pname].depend_update = {dep_cy = {}, dep_nt = {}}
-                    mc_tutorial.show_record_fs(player)
+                if tutorial_id_safety_check(context.tutorial_i_to_id[context.tutorial_selected], mc_tutorial.active) then
+                    if tutorial_id_safety_check(context.tutorial_i_to_id[context.tutorial_selected], mc_tutorial.record.edit) then
+                        mc_tutorial.record.temp[pname] = minetest.deserialize(tutorials.fields[context.tutorial_i_to_id[context.tutorial_selected]])
+                        mc_tutorial.record.edit[pname] = context.tutorial_i_to_id[context.tutorial_selected]
+                        if mc_tutorial.record.temp[pname] then
+                            mc_tutorial.record.temp[pname].has_actions = mc_tutorial.record.temp[pname].length and mc_tutorial.record.temp[pname].length > 0
+                            mc_tutorial.record.temp[pname].depend_update = {dep_cy = {}, dep_nt = {}}
+                            mc_tutorial.show_record_fs(player)
+                        end
+                    else
+                        minetest.chat_send_player(pname, "[Tutorial] You can't edit a tutorial that is being edited by another player.")
+                    end
+                else
+                    minetest.chat_send_player(pname, "[Tutorial] You can't edit a tutorial that a player is currently playing.")
                 end
             else
                 minetest.chat_send_player(pname, "[Tutorial] You do not have sufficient privileges to edit tutorials.")
