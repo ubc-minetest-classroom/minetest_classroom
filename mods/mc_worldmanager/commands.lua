@@ -429,6 +429,22 @@ commands["consolidate"] = {
     end,
     help = "consolidate realm placement information." }
 
+commands["entity"] = {
+    func = function(name, params)
+        local subcommand = tostring(params[1])
+        if (subcommand == "clear") then
+            local realmID = tonumber(params[2])
+            local requestedRealm = Realm.GetRealm(tonumber(realmID))
+            if (requestedRealm == nil) then
+                return false, "Requested realm of ID:" .. tostring(realmID) .. " does not exist."
+            end
+            requestedRealm:ClearEntities()
+            return true, "Cleared items for realm with ID: " .. realmID
+        end
+        return false, "unknown subcommand. Try realm entity clear <realmID>"
+    end
+}
+
 commands["help"] = {
     func = function(name, params)
 

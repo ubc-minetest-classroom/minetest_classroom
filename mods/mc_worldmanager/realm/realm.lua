@@ -25,6 +25,7 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPrivileges.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmIntegrationHelpers.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCategory.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmTerrainGeneration.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmEntityManipulation.lua")
 
 if (areas) then
     dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmAreasIntegration.lua")
@@ -452,6 +453,8 @@ function Realm:Delete()
         end
     end
 
+    -- We need to remove all entities from the realm
+    self:ClearEntities()
 
     -- We clear all nodes from the realm.
     self:ClearNodes()
