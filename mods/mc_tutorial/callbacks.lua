@@ -23,7 +23,12 @@ minetest.register_on_dignode(function(pos, oldnode, player)
         elseif mc_tutorial.active[pname] then
             func = mc_tutorial.check_tutorial_progress
         end
-        func(player, mc_tutorial.ACTION.DIG, {tool = player:get_wielded_item():get_name(), node = oldnode.name})
+        local tool_stack = player:get_wielded_item()
+        local node_stack_def = ItemStack(oldnode):get_definition()
+        func(player, mc_tutorial.ACTION.DIG, {
+            tool = (tool_stack:get_name() ~= node_stack_def.drop or tool_stack:get_count() >= 2) and tool_stack:get_name() or "",
+            node = oldnode.name
+        })
     end
 end)
 
