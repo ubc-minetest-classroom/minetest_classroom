@@ -259,7 +259,7 @@ local agaric = {
     fam_name = "Amanitaceae",
 
     cons_status = {ns_bc = "SNR", ns_global = "G5", bc_list = "Unlisted"},
-    tags = {"fungus", "poisonous"}
+    tags = {"fungus", "poisonous"},
     height = "7 to 20 centimeters tall",
     bloom = "Produces smooth, white, ellipsoid, inamyloid spores",
     region = "various areas in the Northern Hemisphere, including California",
