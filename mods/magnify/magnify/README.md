@@ -26,6 +26,7 @@ Registers a species in the `magnify` species database
             ns_bc = "",           -- NatureServe BC status
             bc_list = ""          -- BC List (Red Blue List) status
         },
+        tags = {""},          -- Tags representing various charactertistics of a species
         region = "",          -- Native region/range of species (displayed as "Found in [region]")
         height = "",          -- Species height
         more_info = "",       -- Extended description of species
@@ -38,7 +39,9 @@ Registers a species in the `magnify` species database
 
         external_link = "",   -- Link to page with more species information
         img_copyright = "",   -- Copyright owner of species image (displayed as "Image (c) [img_copyright]")
-        img_credit = ""       -- Author of species image (displayed as "Image courtesy of [img_credit]")
+        img_credit = "",      -- Author of species image (displayed as "Image courtesy of [img_credit]")
+        info_source = "",     -- Source that species information was taken from
+        last_updated = "",    -- Tamestamp when species was last updated
     }
     ```
 

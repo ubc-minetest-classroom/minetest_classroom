@@ -1,3 +1,4 @@
+-- Conservation statuses
 magnify.map.ns_bc = {
     ["S5"] = {col = "#666ae3", desc = "Secure"},
     ["S4"] = {col = "#4fbdf0", desc = "Apparently secure"},
@@ -28,6 +29,7 @@ magnify.map.ns_global = {
     ["GNA"] = {col = "#9192a3", desc = "Not applicable"},
 }
 
+-- Plant species families
 magnify.map.family = {
     ["Salicaceae"] = "Willow",
     ["Pinaceae"] = "Pine",
@@ -52,4 +54,19 @@ magnify.map.family = {
     ["Nymphaeaceae"] = "Water-lily",
     --["Amanitaceae"] = "A fungus family",
     ["Sapindaceae"] = "Horse-chestnut family",
+}
+
+-- Tag descriptors
+magnify.map.tag = {
+    ["bc_native"] = {col = "", desc = "Native to BC"},
+    ["tree"] = {col = "", desc = "Tree"},
+    ["shrub"] = {col = "", desc = "Shrub"},
+    ["perennial"] = {col = "", desc = "Perennial"},
+    ["annual"] = {col = "", desc = "Annual"},
+    ["fungus"] = {col = "", desc = "Fungus"},
+    ["evergreen"] = {col = "", desc = "Evergreen"},
+    ["deciduous"] = {col = "", desc = "Deciduous"},
+    ["aquatic"] = {col = "", desc = "Aquatic"},
+    ["edible"] = {col = "", desc = "Edible"},
+    ["poisonous"] = {col = "", desc = "Poisonous"},
 }

@@ -47,7 +47,7 @@ Once your mod has been configured, you'll need to create a plant definition tabl
 In the `init.lua` file (or another file) in your mod, create a table like this:
 
 ```lua
-local my_species = {
+local def_table = {
     sci_name = "",        -- Scientific name of species
     com_name = "",        -- Common name of species
     fam_name = "",        -- Family name of species
@@ -57,6 +57,7 @@ local my_species = {
         ns_bc = "",           -- NatureServe BC status
         bc_list = ""          -- BC List (Red Blue List) status
     },
+    tags = {""},          -- Tags representing various charactertistics of a species
     region = "",          -- Native region/range of species (displayed as "Found in [region]")
     height = "",          -- Species height
     more_info = "",       -- Extended description of species
@@ -69,15 +70,18 @@ local my_species = {
 
     external_link = "",   -- Link to page with more species information
     img_copyright = "",   -- Copyright owner of species image (displayed as "Image (c) [img_copyright]")
-    img_credit = ""       -- Author of species image (displayed as "Image courtesy of [img_credit]")
+    img_credit = "",      -- Author of species image (displayed as "Image courtesy of [img_credit]")
+    info_source = "",     -- Source that species information was taken from
+    last_updated = "",    -- Tamestamp when species was last updated
 }
 ```
 
-This table contains all the properties that can be registered in a plant definition. All properties are optional: if you don't want to use a property, you can remove it from the definition table and it won't show up. However, it is recommended to fill in at least these properties by adding text between the quotation marks `""` after each one:
+This table contains all the properties that can be registered in a plant definition. All properties (except `sci_name`) are optional: if you don't want to use a property, you can remove it from the definition table and it won't show up.  
+That being said, it is recommended to fill in at least these properties by adding text between the quotation marks `""` after each one:
 
-- `sci_name`: The scientific name of your plant species, if it has one
+- `sci_name` (**required**): The scientific name of your plant species, if it has one
 - `com_name`: The common name of your plant species
-- `more_info`: A description of your plant species - what it looks like, how it grows, or anything other notable things about your species.
+- `more_info`: A description of your plant species - what it looks like, how it grows, or anything other notable things about it
 
 Once that's done, you should have something like this (with all the properties you've filled in):
 
@@ -168,7 +172,8 @@ Tada! Your plant species should now be registered with the `magnify` API!
 
 Your definition table and `magnify.register_species` function call should **always** stay in your mod's files if you want your plant species to remain registered with the `magnify` API. If you remove either of these, your species will automatically be unregistered from the `magnify` API, and you will have to re-register it if you want to add it back into your game.
 
-If you want to make any changes to your plant species definition table, you can do that very easily! The definition table will automatically be updated the next time you restart your Minetest world.
+If you want to make any changes to your plant species definition table, go right ahead! The definition table will automatically be updated the next time you restart your Minetest world.  
+Do, however, be aware that `magnify` checks for species changes by comparing the scientific names (`sci_name`) of species
 
 If you want to unregister a plant species, simply remove the call to `magnify.register_species` for the species you want to unregister. The species will automatically be unregistered the next time you restart your Minetest world.
 

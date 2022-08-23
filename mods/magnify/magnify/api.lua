@@ -64,6 +64,8 @@ end
 function magnify.register_species(def_table, nodes)
     if type(nodes) ~= "table" or not next(nodes) then
         return nil -- no nodes given
+    elseif type(def_table) ~= "table" or not def_table.sci_name then
+        return nil -- invalid definition table
     end
 
     local ref, format = find_registration_ref(def_table)
