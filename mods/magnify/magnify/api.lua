@@ -329,14 +329,14 @@ end
 --- @private
 --- Gets the description for a conservation status and returns it as a string, and returns the colour associated with that status
 --- @param cons_status Plant definition cons_status field
---- @return string, string
+--- @return string, string, string
 local function get_cons_status_info(cons_status)
     if cons_status then
-        local status = (type(cons_status) == "table" and cons_status.ns_bc) or cons_status
-        local status_info = magnify.map.ns_bc[status]
+        local status = (type(cons_status) == "table" and (cons_status.ns_global or cons_status.ns_bc)) or cons_status
+        local status_info = magnify.map.ns_global[status] or magnify.map.ns_bc[status]
         if status_info then
             local desc = status_info["desc"]
-            return status..(desc and desc ~= "" and " - "..desc or ""), status_info["col"]
+            return status, status_info["col"], desc ~= "" and desc or ""
         else
             return status
         end
@@ -356,7 +356,7 @@ function magnify.build_formspec_from_ref(ref, is_exit)
     if info ~= nil then
         -- entry good, return V3 formspec
         local model_spec_loc = (info.model_obj and info.origin) and get_obj_directory(info.origin, info.model_obj)
-        local cons_status_desc, status_col = get_cons_status_info(info.cons_status)
+        local status, status_col, status_desc = get_cons_status_info(info.cons_status)
         local size = "size[19,13]"
         local formtable_v3 = {
             "formspec_version[6]", size,
@@ -365,7 +365,7 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             "bgcolor[#00000000;true;]",
             "background[0,0;0,0;magnify_pixel.png^[multiply:#000000^[opacity:69;true]",
             "image[0,0;19,0.6;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
-            "style_type[label;font=mono]",
+            "style_type[label;font=mono,bold]",
             "label[7.8,0.3;Plant Compendium]",
             "style_type[label;font=normal]",
             "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;texture.png;back;;false;false]",
@@ -375,8 +375,8 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             "tooltip[nav_forward;Next]",
             "tooltip[nav_backward;Previous]",
 
-            "style_type[button;font=mono;textcolor=#000000;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
-            "style_type[image_button;font=mono;textcolor=#000000;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
+            "style_type[button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
+            "style_type[image_button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
             "button[6.6,0.8;4.6,0.6;view;   View in Compendium]",
             "image[6.6,0.8;0.6,0.6;texture.png]",
             "button[11.3,0.8;2.2,0.6;locate;   Locate]",
@@ -393,11 +393,10 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             "image[0.2,1.4;0.1,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
             "image[0.2,6.2;18.6,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
       
-            "style_type[textarea;font=mono,bold;textcolor=#000000;font_size=*0.85]",
+            "style_type[textarea;font=mono,bold;textcolor=black;font_size=*0.85]",
             "image[0.5,1.7;1.3,0.5;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
             "textarea[0.6,1.8;1.3,0.8;;;FAMILY]",
         }
-        -- "textarea[0.45,1.7;10.4,0.8;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
     
         if false and info.fam_name then
             -- gamified family area
@@ -417,17 +416,42 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             "textarea[0.45,2.4;10.4,1;;;", minetest.formspec_escape(info.sci_name or "Scientific name unknown"), "]",
             "style_type[textarea;font_size=*2.25;font=mono,bold]",
             "textarea[0.45,2.9;10.4,1.8;;;", minetest.formspec_escape(info.com_name or "Common name unknown"), "]",
+        }))
 
-            -- TODO: add tag labels dynamically
-          	"image[0.5,5.4;1.4,0.6;magnify_pixel.png^[multiply:", status_col or "#9192A3", "^[opacity:127]", --"image[0.5,5.4;1.4,0.6;magnify_round_rect_9.png^[multiply:", status_col or "#9192A3", "^[opacity:31;100]",
-            "label[0.7,5.7;Status]",
-            "image[2.1,5.4;1.2,0.6;magnify_pixel.png^[multiply:#00FF00^[opacity:127]", --"image[2.1,5.4;1.2,0.6;magnify_round_rect_9.png^[multiply:#00FF00^[opacity:31;100]",
-            "label[2.3,5.7;Type]",
-            "image[3.5,5.4;1.5,0.6;magnify_pixel.png^[multiply:#00FF00^[opacity:127]", --"image[3.5,5.4;1.5,0.6;magnify_round_rect_9.png^[multiply:#00FF00^[opacity:31;100]",
-            "label[3.7,5.7;Type 2]",
-            "image[5.2,5.4;1.5,0.6;magnify_pixel.png^[multiply:#FFA500^[opacity:127]", --"image[5.2,5.4;1.5,0.6;magnify_round_rect_9.png^[multiply:#FFA500^[opacity:31;100]",
-            "label[5.4,5.7;Type 3]",
-        
+        -- add status + tags
+        if status or info.tags then
+            local tag_table = {}
+            local x_pos = 0
+
+            -- add tags to tag table
+            if status then
+                table.insert(tag_table, table.concat({
+                    "image[", x_pos, ",0.2;", 0.42 + 0.2*string.len(status), ",0.6;magnify_round_rect_9.png^[resize:24.08x24.08^[multiply:", status_col or "#9192A3", "^[opacity:127;12]",
+                    "label[", x_pos + 0.19, ",0.5;", status, "]",
+                }))
+                x_pos = x_pos + 0.42 + 0.2*string.len(status) + 0.2
+            end
+            for i,tag_key in pairs(info.tags or {}) do
+                local tag = magnify.map.tag[tag_key] or {col = "#9192A3", desc = tag_key}
+                table.insert(tag_table, table.concat({
+                    "image[", x_pos, ",0.2;", 0.42 + 0.2*string.len(tag.desc), ",0.6;magnify_round_rect_9.png^[resize:24.08x24.08^[multiply:", tag.col or "#9192A3", "^[opacity:127;12]",
+                    "label[", x_pos + 0.19, ",0.5;", tag.desc, "]",
+                }))
+                x_pos = x_pos + 0.42 + 0.2*string.len(tag.desc) + 0.2
+            end
+
+            table.insert(formtable_v3, table.concat({
+                "style_type[label;font=mono]",
+                x_pos > 10.3 and "scrollbaroptions[min=0;max="..math.max((x_pos - 10.3)/0.4, 0).."]" or "",
+                x_pos > 10.3 and "scrollbar[0.3,6;10.5,0.2;horizontal;tag_scroll;0]" or "",
+                "scroll_container[0.5,5.2;10.1,0.8;tag_scroll;horizontal;0.4]",
+                table.concat(tag_table),
+                "scroll_container_end[]",
+                "style_type[label;font=normal]",
+            }))
+        end
+
+        table.insert(formtable_v3, table.concat({
             "image[10.9,1.5;7.8,4.4;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
             "style_type[textarea;font=mono;font_size=*1]",
             "textarea[0.2,6.6;10.7,5.9;;;", -- info area
@@ -440,10 +464,10 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             "]",
         
             "style_type[image_button;bgimg=blank.png]",
-            "image_button[10.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[2] or "test.png", ";;;false;false]",
-            "image_button[12.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[3] or "test.png", ";;;false;false]",
-            "image_button[14.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[4] or "test.png", ";;;false;false]",
-            "image_button[16.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[5] or "test.png", ";;;false;false]",
+            "image_button[10.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[2] or "test.png", ";image_2;;false;false]",
+            "image_button[12.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[3] or "test.png", ";image_3;;false;false]",
+            "image_button[14.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[4] or "test.png", ";image_4;;false;false]",
+            "image_button[16.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[5] or "test.png", ";image_5;;false;false]",
         }))
         
         if model_spec_loc then
@@ -463,11 +487,11 @@ function magnify.build_formspec_from_ref(ref, is_exit)
         end
     
         table.insert(formtable_v3, table.concat({
-            "style_type[textarea;font=mono;font_size=*0.7;textcolor=#000000]",
+            "style_type[textarea;font=mono;font_size=*0.7;textcolor=black]",
             "textarea[10.85,5.95;7.9,0.39;;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
             "image[0,12.6;19,0.4;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
-            "style_type[label;font=mono]",
-            "label[0.3,12.8;Source:]", 
+            "style_type[textarea;font=mono;font_size=*0.9;textcolor=white]",
+            "textarea[0.2,12.62;18.6,0.5;;;", info.info_source and "Source: "..info.info_source or "Source unknown", info.last_updated and "  -  Last updated on "..info.last_updated or "", "]", 
         }))
 
         return table.concat(formtable_v3, ""), size

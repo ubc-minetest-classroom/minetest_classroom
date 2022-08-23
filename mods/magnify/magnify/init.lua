@@ -409,7 +409,7 @@ local function get_compendium_formspec(context)
         "bgcolor[#00000000;true;]",
         "background[0,0;0,0;magnify_pixel.png^[multiply:#000000^[opacity:69;true]",
         "image[0,0;19,0.6;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
-        "style_type[label;font=mono]",
+        "style_type[label;font=mono,bold]",
         "label[7.8,0.3;Plant Compendium]",
         "image_button[0,0;0.6,0.6;texture.png;back;;false;false]",
         "image_button[0.7,0;0.6,0.6;texture.png;nav_backward;;false;false]",
