@@ -58,15 +58,15 @@ magnify.map.family = {
 
 -- Tag descriptors
 magnify.map.tag = {
-    ["bc_native"] = {col = "", desc = "Native to BC"},
-    ["tree"] = {col = "", desc = "Tree"},
-    ["shrub"] = {col = "", desc = "Shrub"},
-    ["perennial"] = {col = "", desc = "Perennial"},
-    ["annual"] = {col = "", desc = "Annual"},
-    ["fungus"] = {col = "", desc = "Fungus"},
-    ["evergreen"] = {col = "", desc = "Evergreen"},
-    ["deciduous"] = {col = "", desc = "Deciduous"},
-    ["aquatic"] = {col = "", desc = "Aquatic"},
-    ["edible"] = {col = "", desc = "Edible"},
-    ["poisonous"] = {col = "", desc = "Poisonous"},
+    ["bc_native"] = {col = "#FFD712", desc = "Native to BC"},
+    ["tree"] = {col = "#60C460", desc = "Tree"},
+    ["shrub"] = {col = "#49F581", desc = "Shrub"},
+    ["perennial"] = {col = "#D431F5", desc = "Perennial"},
+    ["annual"] = {col = "#F55379", desc = "Annual"},
+    ["fungus"] = {col = "#805D49", desc = "Fungus"},
+    ["evergreen"] = {col = "#215721", desc = "Evergreen"},
+    ["deciduous"] = {col = "#F5942C", desc = "Deciduous"},
+    ["aquatic"] = {col = "#2EE3FF", desc = "Aquatic"},
+    ["edible"] = {col = "#6584EB", desc = "Edible"},
+    ["poisonous"] = {col = "#FF0000", desc = "Poisonous"},
 }
