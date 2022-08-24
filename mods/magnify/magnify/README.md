@@ -41,7 +41,7 @@ Registers a species in the `magnify` species database
         img_copyright = "",   -- Copyright owner of species image (displayed as "Image (c) [img_copyright]")
         img_credit = "",      -- Author of species image (displayed as "Image courtesy of [img_credit]")
         info_source = "",     -- Source that species information was taken from
-        last_updated = "",    -- Tamestamp when species was last updated
+        last_updated = "",    -- Timestamp when species was last updated
     }
     ```
 

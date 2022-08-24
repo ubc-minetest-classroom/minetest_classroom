@@ -241,12 +241,12 @@ function magnify.get_registered_species_tree()
             local split_table = info.sci_name and string.split(info.sci_name, " ", false, 1)
             if split_table then
                 local genus, species = unpack(split_table)
-                local genus_list = fam_list[info.fam_name] or {}
+                local genus_list = fam_list[info.fam_name or "Unknown"] or {}
                 local species_list = genus_list[genus] or {}
 
                 species_list[species] = k
                 genus_list[genus] = species_list
-                fam_list[info.fam_name] = genus_list
+                fam_list[info.fam_name or "Unknown"] = genus_list
             end
         end
     end
