@@ -20,6 +20,23 @@ local RELOAD = {
     GEN_UP = 2,
     SPC_UP = 3,
 }
+local CHECKBOXES = {
+    get_all = function(self)
+        local all = {}
+        for k,list in pairs(self) do
+            if k ~= "get_all" then
+                for i,v in ipairs(list) do
+                    table.insert(all, v)
+                end
+            end
+        end
+        return all
+    end,
+    FORM = {"form_tree", "form_shrub",},
+    LEAF = {"leaf_decid", "leaf_ever",},
+    CONS = {"cons_gx", "cons_gh", "cons_g1", "cons_g2", "cons_g3", "cons_g4", "cons_g5", "cons_na",},
+    MISC = {"misc_bc_native",}
+}
 
 -- Checks for adequate privileges
 local function check_perm(player)
@@ -30,8 +47,8 @@ local function get_context(player)
     local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name()) or ""
     if not magnify.context[pname] then
         magnify.context[pname] = {
-            save = function(self)
-                magnify.context[pname] = self
+            clear = function(self)
+                self = nil
             end,
             page = 0,
             family = {
@@ -46,11 +63,6 @@ local function get_context(player)
                 selected = 1,
                 list = {}
             },
-            filter = {
-                form = {},
-                leaf = {},
-                status = {},
-            }
         }
     end
     return magnify.context[pname]
@@ -337,6 +349,13 @@ local function species_search_filter(query, tree)
     return filtered_tree, count
 end
 
+local function create_compendium_checkbox(context, pos_x, pos_y, name, label)
+    return table.concat({
+        context.filter.active[name] and table.concat({"box[", pos_x - 0.05, ",", pos_y - 0.2, ";0.4,0.4;#8EE88E]"}) or "",
+        "checkbox[", pos_x, ",", pos_y, ";", name, ";", label, ";", context.filter.select[name] and "true" or "false", "]"
+    })
+end
+
 --- Return the plant compendium formspec, built from the given list of species
 --- @return formspec string, size
 local function get_compendium_formspec(context)
@@ -349,11 +368,15 @@ local function get_compendium_formspec(context)
         context.reload = 1
     end
     local reload = context.reload
+    if not context.filter then
+        context.filter = {select = {}, active = {}}
+    end
 
     local tree = context.tree
     local genus_raw = {}
     local count
-    if next(context.filter or {}) then
+
+    if next(context.filter.active) then
         -- tree,count = species_filter(context.filter, tree)
     end
     if context.search then
@@ -490,22 +513,22 @@ local function get_compendium_formspec(context)
         "label[15.5,3.2;Filter]",
         "image[13.6,3.5;5,9.1;magnify_pixel.png^[multiply:#1E1E1E]",
         "label[13.8,3.9;Form:]",
-        "checkbox[13.8,4.3;form_tree;Tree;false]",
-        "checkbox[13.8,4.7;form_shrub;Shrub;false]",
+        create_compendium_checkbox(context, 13.8, 4.3, "form_tree", "Tree"),
+        create_compendium_checkbox(context, 13.8, 4.7, "form_shrub", "Shrub"),
         "label[13.8,5.4;Leaves:]",
-        "checkbox[13.8,5.8;leaf_decid;Deciduous;false]",
-        "checkbox[13.8,6.2;leaf_ever;Evergreen;false]",
+        create_compendium_checkbox(context, 13.8, 5.8, "leaf_decid", "Deciduous"),
+        create_compendium_checkbox(context, 13.8, 6.2, "leaf_ever", "Evergreen"),
         "label[13.8,6.9;Conservation Status:]",
-        "checkbox[13.8,7.3;cons_gx;GX (Presumed Extinct);false]",
-        "checkbox[13.8,7.7;cons_gh;GH (Possibly Extinct);false]",
-        "checkbox[13.8,8.1;cons_g1;G1 (Critcally Imperiled);false]",
-        "checkbox[13.8,8.5;cons_g2;G2 (Imperiled);false]",
-        "checkbox[13.8,8.9;cons_g3;G3 (Vulnerable);false]",
-        "checkbox[13.8,9.3;cons_g4;G4 (Apparently Secure);false]",
-        "checkbox[13.8,9.7;cons_g5;G5 (Secure);false]",
-        "checkbox[13.8,10.1;cons_na;GNR/GU/GNA (Unranked);false]",
+        create_compendium_checkbox(context, 13.8, 7.3, "cons_gx", "GX (Presumed Extinct)"),
+        create_compendium_checkbox(context, 13.8, 7.7, "cons_gh", "GH (Possibly Extinct)"),
+        create_compendium_checkbox(context, 13.8, 8.1, "cons_g1", "G1 (Critcally Imperiled)"),
+        create_compendium_checkbox(context, 13.8, 8.5, "cons_g2", "G2 (Imperiled)"),
+        create_compendium_checkbox(context, 13.8, 8.9, "cons_g3", "G3 (Vulnerable)"),
+        create_compendium_checkbox(context, 13.8, 9.3, "cons_g4", "G4 (Apparently Secure)"),
+        create_compendium_checkbox(context, 13.8, 9.7, "cons_g5", "G5 (Secure)"),
+        create_compendium_checkbox(context, 13.8, 10.1, "cons_na", "GNR/GU/GNA (Unranked)"),
         "label[13.8,10.8;Miscellaneous:]",
-        "checkbox[13.8,11.2;misc_bc_native;Native to BC;false]",
+        create_compendium_checkbox(context, 13.8, 11.2, "misc_bc_native", "Native to BC"),
         "button[13.8,11.7;2.2,0.7;filter_apply;Apply]",
         "button[16.2,11.7;2.2,0.7;filter_clear;Clear all]",
         "container_end[]",
@@ -607,13 +630,13 @@ if minetest.get_modpath("sfinv") ~= nil then
                 if fields.quit then
                     sfinv.set_page(player, sfinv.get_homepage_name(player))
                     sfinv.set_player_inventory_formspec(player)
-                    return context.save(nil)
+                    return context:clear()
                 end
                 if fields.back then
                     if context.page == MENU then
                         sfinv.set_page(player, sfinv.get_homepage_name(player))
                         sfinv.set_player_inventory_formspec(player)
-                        return context.save(nil)
+                        return context:clear()
                     elseif context.page == STANDARD_VIEW then
                         context.page = MENU
                         return player:set_inventory_formspec(get_compendium_formspec(context))
@@ -712,9 +735,29 @@ if minetest.get_modpath("sfinv") ~= nil then
                 reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
 
-            -- checkboxes
             if fields.toggle_common then
                 context.show_common = (fields.toggle_common == "true" and true) or false
+                reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
+            end
+
+            -- checkboxes
+            context.filter = context.filter or {select = {}, active = {}}
+            for name,val in pairs(fields) do
+                local all_boxes = CHECKBOXES:get_all()
+                if magnify.table_has(all_boxes, name) then
+                    context.filter.select[name] = val == "true" and true or nil
+                end
+            end
+
+            if fields.filter_apply then
+                context.filter.active = {}
+                for k,v in pairs(context.filter.select) do
+                    context.filter.active[k] = v
+                end
+                reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
+            end
+            if fields.filter_clear then
+                context.filter = {select = {}, active = {}}
                 reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
 
@@ -738,7 +781,7 @@ if minetest.get_modpath("sfinv") ~= nil then
             end
 
             if (fields.back or fields.quit) and formname == "magnify:view" then
-                context.save(nil)
+                context:clear()
             end
         elseif form_action == "magnify:tech_view" then
             -- handle technical functions
