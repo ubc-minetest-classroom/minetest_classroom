@@ -55,6 +55,9 @@ magnify.map.family = {
     --["Amanitaceae"] = "A fungus family",
     ["Sapindaceae"] = "Horse-chestnut family",
 }
+magnify.map.genus = {
+    -- TODO
+}
 
 -- Tag descriptors
 magnify.map.tag = {

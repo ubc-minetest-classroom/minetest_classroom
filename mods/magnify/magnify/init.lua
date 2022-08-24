@@ -15,6 +15,11 @@ dofile(magnify.path.."/map.lua")
 local tool_name = "magnify:magnifying_tool"
 local priv_table = {interact = true}
 local MENU, STANDARD_VIEW, TECH_VIEW = 1, 2, 3
+local RELOAD = {
+    FULL = 1,
+    GEN_UP = 2,
+    SPC_UP = 3,
+}
 
 -- Checks for adequate privileges
 local function check_perm(player)
@@ -132,6 +137,18 @@ minetest.register_craft({
     }
 })
 
+-- Extracts the scientific name from a common name string
+local function extract_sci_text(str)
+    return string.match(str, "%((.-)%)$") or str
+end
+
+-- Sorts strings based on their results when fed into the extract_sci_text function
+local function extract_sort(a, b)
+    local extr_a = extract_sci_text(a)
+    local extr_b = extract_sci_text(b)
+    return extr_a < extr_b
+end
+
 --- Return the reference key of the species that is currently selected
 --- @param context Magnify player context table
 --- @return string
@@ -140,10 +157,11 @@ local function get_selected_species_ref(context)
         return context.ref
     end
 
+    local fam, gen, spc = context.family, context.genus, context.species
     local sel = {
-        f = context.family.list[context.family.selected] or "",
-        g = context.genus.list[context.genus.selected] or "",
-        s = context.species.list[context.species.selected] or "",
+        f = fam.list[fam.selected] and (context.show_common and extract_sci_text(fam.list[fam.selected]) or fam.list[fam.selected]) or "",
+        g = gen.list[gen.selected] and (context.show_common and extract_sci_text(gen.list[gen.selected]) or gen.list[gen.selected]) or "",
+        s = spc.list[spc.selected] and (context.show_common and extract_sci_text(spc.list[spc.selected]) or spc.list[spc.selected]) or "",
     }
     return context.tree and context.tree[sel.f] and context.tree[sel.f][sel.g] and context.tree[sel.f][sel.g][sel.s]
 end
@@ -326,17 +344,20 @@ local function get_compendium_formspec(context)
         -- build tree and family list
         context.tree = magnify.get_registered_species_tree()
     end
-    context.family.list = {}
-    context.genus.list = {}
-    context.species.list = {}
-  
+    if context.reload == nil then
+        -- initialize full reload if not set
+        context.reload = 1
+    end
+    local reload = context.reload
+
     local tree = context.tree
+    local genus_raw = {}
     local count
+    if next(context.filter or {}) then
+        -- tree,count = species_filter(context.filter, tree)
+    end
     if context.search then
         tree,count = species_search_filter(context.search, tree)
-    end
-    if context.filter.active then
-        -- todo
     end
 
     -- Auto-select when only 1 species matches filter criteria
@@ -345,27 +366,40 @@ local function get_compendium_formspec(context)
         context.genus.selected = 2
         context.species.selected = 2
     end
-        
-    local genus_raw = {}
-    for fam,gen_raw in pairs(tree) do
-        table.insert(context.family.list, fam)
-        table.insert(genus_raw, gen_raw)
+
+    if reload and reload <= 1 then
+        context.family.list = {minetest.formspec_escape("#CCFFCC[Select a family]")}
+        for fam,gen_raw in pairs(tree) do
+            if context.show_common then
+                table.insert(context.family.list, (magnify.map.family[fam] and magnify.map.family[fam].." " or "").."("..fam..")")
+            else
+                table.insert(context.family.list, fam)
+            end
+            table.insert(genus_raw, gen_raw)
+        end
+        table.sort(context.family.list, context.show_common and extract_sort or nil)
     end
-    table.insert(context.family.list, minetest.formspec_escape("#CCFFCC[Select a family]"))
-    table.sort(context.family.list)
   
     if context.family.selected > 1 then
         -- build specific genus list
-        local family = context.family.list[context.family.selected]
+        local family = context.show_common and extract_sci_text(context.family.list[context.family.selected]) or context.family.list[context.family.selected]
         local genus_list = tree[family]
-        for gen,_ in pairs(genus_list) do
-            table.insert(context.genus.list, gen)
+
+        if reload and reload <= 2 then
+            context.genus.list = {minetest.formspec_escape("#CCFFCC[Select a genus]")}
+            for gen,_ in pairs(genus_list) do
+                if context.show_common then
+                    table.insert(context.genus.list, (magnify.map.genus[gen] and magnify.map.genus[gen].." " or "").."("..gen..")")
+                else
+                    table.insert(context.genus.list, gen)
+                end
+            end
+            table.sort(context.genus.list, context.show_common and extract_sort or nil)
         end
-        table.insert(context.genus.list, minetest.formspec_escape("#CCFFCC[Select a genus]"))
-        table.sort(context.genus.list)
     
         if context.genus.shift then
-            for i,g in ipairs(context.genus.list) do
+            for i,g_raw in ipairs(context.genus.list) do
+                local g = context.show_common and extract_sci_text(g_raw) or g_raw
                 if g == context.genus.shift then
                     context.genus.shift = nil
                     context.genus.selected = i
@@ -378,28 +412,39 @@ local function get_compendium_formspec(context)
         end
         if context.genus.selected > 1 then
             -- build species list
-            local genus = context.genus.list[context.genus.selected]
+            local genus = context.show_common and extract_sci_text(context.genus.list[context.genus.selected]) or context.genus.list[context.genus.selected]
             local species_list = genus_list[genus]
-            for spec,_ in pairs(species_list) do
-                table.insert(context.species.list, spec)
+
+            if reload and reload <= 3 then
+                context.species.list = {minetest.formspec_escape("#CCFFCC[Select a species]")}
+                for spec,ref in pairs(species_list) do
+                    if context.show_common then
+                        local info = magnify.get_species_from_ref(ref)
+                        table.insert(context.species.list, (info.com_name and info.com_name.." " or "").."("..spec..")")
+                    else
+                        table.insert(context.species.list, spec)
+                    end
+                end
+                table.sort(context.species.list, context.show_common and extract_sort or nil)
             end
-            table.insert(context.species.list, minetest.formspec_escape("#CCFFCC[Select a species]"))
-            table.sort(context.species.list)
         else
-            table.insert(context.species.list, minetest.formspec_escape("#B0B0B0[Select a genus first]"))
+            context.species.list = {minetest.formspec_escape("#B0B0B0[Select a genus first]")}
         end
-    else
+    elseif reload and reload <= 2 then
         -- build general genus list
+        context.genus.list = {minetest.formspec_escape("#CCFFCC[Select a genus]")}
         for i,list in pairs(genus_raw) do
             for gen,_ in pairs(list) do
-                table.insert(context.genus.list, gen)
+                if context.show_common then
+                    table.insert(context.genus.list, (magnify.map.genus[gen] and magnify.map.genus[gen].." " or "").."("..gen..")")
+                else
+                    table.insert(context.genus.list, gen)
+                end
             end
         end
-        table.insert(context.genus.list, minetest.formspec_escape("#CCFFCC[Select a genus]"))
-        table.sort(context.genus.list)
-        table.insert(context.species.list, minetest.formspec_escape("#B0B0B0[Select a genus first]"))
+        table.sort(context.genus.list, context.show_common and extract_sort or nil)
+        context.species.list = {minetest.formspec_escape("#B0B0B0[Select a genus first]")}
     end
-    context:save()
 
     local size = "size[19,13]"
     local formtable = {
@@ -426,7 +471,7 @@ local function get_compendium_formspec(context)
         "image[8.6,1.3;0.7,0.7;texture.png]",
         "button[11,1.3;2.2,0.7;search_x;   Clear]",
         "image[11,1.3;0.7,0.7;texture.png]",
-        "checkbox[0.4,2.3;toggle_common;Show common names;false]",
+        "checkbox[0.4,2.3;toggle_common;Show common names;", context.show_common and "true" or "false", "]",
 
         "style_type[label;font=mono,bold]",
         "image[0.4,2.8;4.2,0.7;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
@@ -443,23 +488,26 @@ local function get_compendium_formspec(context)
         "container[0,0]",
         "image[13.6,2.8;5,0.7;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
         "label[15.5,3.2;Filter]",
-        "image[13.6,3.5;5,8.2;magnify_pixel.png^[multiply:#1E1E1E]",
+        "image[13.6,3.5;5,9.1;magnify_pixel.png^[multiply:#1E1E1E]",
         "label[13.8,3.9;Form:]",
-        "checkbox[13.8,4.4;form_tree;Tree;false]",
-        "checkbox[13.8,4.8;form_shrub;Shrub;false]",
-        "label[13.8,5.5;Leaves:]",
-        "checkbox[13.8,6;leaf_decid;Deciduous;false]",
-        "checkbox[13.8,6.4;leaf_ever;Evergreen;false]",
-        "label[13.8,7.1;Conservation Status:]",
-        "checkbox[13.8,7.6;cons_gx;GX (Presumed Extinct);false]",
-        "checkbox[13.8,8;cons_gh;GH (Possibly Extinct);false]",
-        "checkbox[13.8,8.4;cons_g1;G1 (Critcally Imperiled);false]",
-        "checkbox[13.8,8.8;cons_g2;G2 (Imperiled);false]",
-        "checkbox[13.8,9.2;cons_g3;G3 (Vulnerable);false]",
-        "checkbox[13.8,9.6;cons_g4;G4 (Apparently Secure);false]",
-        "checkbox[13.8,10;cons_g5;G5 (Secure);false]",
-        "checkbox[13.8,10.4;cons_na;GNR/GU/GNA (Unranked);false]",
-        "button[13.8,10.8;4.6,0.7;filter_apply;Apply Filters]",
+        "checkbox[13.8,4.3;form_tree;Tree;false]",
+        "checkbox[13.8,4.7;form_shrub;Shrub;false]",
+        "label[13.8,5.4;Leaves:]",
+        "checkbox[13.8,5.8;leaf_decid;Deciduous;false]",
+        "checkbox[13.8,6.2;leaf_ever;Evergreen;false]",
+        "label[13.8,6.9;Conservation Status:]",
+        "checkbox[13.8,7.3;cons_gx;GX (Presumed Extinct);false]",
+        "checkbox[13.8,7.7;cons_gh;GH (Possibly Extinct);false]",
+        "checkbox[13.8,8.1;cons_g1;G1 (Critcally Imperiled);false]",
+        "checkbox[13.8,8.5;cons_g2;G2 (Imperiled);false]",
+        "checkbox[13.8,8.9;cons_g3;G3 (Vulnerable);false]",
+        "checkbox[13.8,9.3;cons_g4;G4 (Apparently Secure);false]",
+        "checkbox[13.8,9.7;cons_g5;G5 (Secure);false]",
+        "checkbox[13.8,10.1;cons_na;GNR/GU/GNA (Unranked);false]",
+        "label[13.8,10.8;Miscellaneous:]",
+        "checkbox[13.8,11.2;misc_bc_native;Native to BC;false]",
+        "button[13.8,11.7;2.2,0.7;filter_apply;Apply]",
+        "button[16.2,11.7;2.2,0.7;filter_clear;Clear all]",
         "container_end[]",
     }
     if context.species.selected > 1 then
@@ -505,23 +553,26 @@ label[10.4,3.2;Species]
 textlist[9,3.5;4.2,9.1;species_list;;1;false]
 box[13.6,2.8;5,0.7;#A0A0A0]
 label[15.5,3.2;Filter]
-box[13.6,3.5;5,8.2;#121212]
+box[13.6,3.5;5,9.1;#1E1E1E]
 label[13.8,3.9;Form:]
-checkbox[13.8,4.4;form_tree;Tree;false]
-checkbox[13.8,4.8;form_shrub;Shrub;false]
-label[13.8,5.5;Leaves:]
-checkbox[13.8,6;leaf_decid;Deciduous;false]
-checkbox[13.8,6.4;leaf_ever;Evergreen;false]
-label[13.8,7.1;Conservation Status:]
-checkbox[13.8,7.6;cons_gx;GX (Presumed Extinct);false]
-checkbox[13.8,8;cons_gh;GH (Possibly Extinct);false]
-checkbox[13.8,8.4;cons_g1;G1 (Critcally Imperiled);false]
-checkbox[13.8,8.8;cons_g2;G2 (Imperiled);false]
-checkbox[13.8,9.2;cons_g3;G3 (Vulnerable);false]
-checkbox[13.8,9.6;cons_g4;G4 (Apparently Secure);false]
-checkbox[13.8,10;cons_g5;G5 (Secure);false]
-checkbox[13.8,10.4;cons_na;GNR/GU/GNA (Unranked);false]
-button[13.8,10.8;4.6,0.7;filter_apply;Apply]
+checkbox[13.8,4.3;form_tree;Tree;false]
+checkbox[13.8,4.7;form_shrub;Shrub;false]
+label[13.8,5.4;Leaves:]
+checkbox[13.8,5.8;leaf_decid;Deciduous;false]
+checkbox[13.8,6.2;leaf_ever;Evergreen;false]
+label[13.8,6.9;Conservation Status:]
+checkbox[13.8,7.3;cons_gx;GX (Presumed Extinct);false]
+checkbox[13.8,7.7;cons_gh;GH (Possibly Extinct);false]
+checkbox[13.8,8.1;cons_g1;G1 (Critcally Imperiled);false]
+checkbox[13.8,8.5;cons_g2;G2 (Imperiled);false]
+checkbox[13.8,8.9;cons_g3;G3 (Vulnerable);false]
+checkbox[13.8,9.3;cons_g4;G4 (Apparently Secure);false]
+checkbox[13.8,9.7;cons_g5;G5 (Secure);false]
+checkbox[13.8,10.1;cons_na;GNR/GU/GNA (Unranked);false]
+label[13.8,10.8;Miscellaneous:]
+checkbox[13.8,11.2;misc_bc_native;Native to BC;false]
+button[13.8,11.7;2.3,0.7;filter_apply;Apply]
+button[16.1,11.7;2.3,0.7;filter_clear;Clear all]
 ]]
 
 -- Registers the plant compendium as an inventory button on the main inventory page
@@ -586,7 +637,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                         context.species.selected = 1
                     end
                     context.family.selected = tonumber(event.index)
-                    reload = true
+                    reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
                 end
             end
             if fields.genus_list then
@@ -597,14 +648,15 @@ if minetest.get_modpath("sfinv") ~= nil then
                         context.species.selected = 1
                     end
                     context.genus.selected = tonumber(event.index)
-                    reload = true
+                    reload = reload and math.min(RELOAD.GEN_UP, reload) or RELOAD.GEN_UP
 
                     -- Find appropriate family if genus was selected first
                     if context.family.selected <= 1 then
-                        local genus = context.genus.list[context.genus.selected]
+                        local genus = context.show_common and extract_sci_text(context.genus.list[context.genus.selected]) or context.genus.list[context.genus.selected]
                         for fam,list in pairs(context.tree) do
                             if magnify.table_has(list, genus) then
-                                for i,f in ipairs(context.family.list) do
+                                for i,f_raw in ipairs(context.family.list) do
+                                    local f = context.show_common and extract_sci_text(f_raw) or f_raw
                                     if f == fam then
                                         context.family.selected = i
                                         break
@@ -622,7 +674,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                 local event = minetest.explode_textlist_event(fields.species_list)
                 if event.type == "CHG" then
                     context.species.selected = tonumber(event.index)
-                    reload = true
+                    reload = reload and math.min(RELOAD.SPC_UP, reload) or RELOAD.SPC_UP
                 elseif event.type == "DCL" then
                     -- open viewer
                     local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false)
@@ -649,7 +701,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                 context.family.selected = 1
                 context.genus.selected = 1
                 context.species.selected = 1
-                reload = true
+                reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
             if fields.search_x then
                 -- reset search + selection
@@ -657,10 +709,17 @@ if minetest.get_modpath("sfinv") ~= nil then
                 context.family.selected = 1
                 context.genus.selected = 1
                 context.species.selected = 1
-                reload = true
+                reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
 
-            if reload == true then
+            -- checkboxes
+            if fields.toggle_common then
+                context.show_common = (fields.toggle_common == "true" and true) or false
+                reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
+            end
+
+            context.reload = reload
+            if reload then
                 return player:set_inventory_formspec(get_compendium_formspec(context))
             end
         elseif form_action == "magnify:view" then
