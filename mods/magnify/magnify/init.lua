@@ -387,22 +387,37 @@ end
 --- @param tree Species tree
 --- @param filters Selected tags to filter by
 --- @return table
---[[local function species_tag_filter(tree, filter)
-    local filtered_tree = tree
-    local count = 0
+local function species_tag_filter(tree, filter)
+    local filters_active = false
+    local filtered_tree, count
+
+    -- check status filters (not tags)
     if next(filter.cons) then
-        tree, count = species_tree_filter_abstract(tree, function(species)
-            return magnify.table
+        filters_active = true
+        filtered_tree, count = species_tree_filter_abstract(filtered_tree or tree, function(species)
+            local statuses_to_check = {}
+            for k,_ in pairs(filter.cons) do
+                if magnify.map.stat_key[k] then
+                    table.insert_all(statuses_to_check, magnify.map.stat_key[k])
+                end
+            end
+            return magnify.table_has(statuses_to_check, species.cons_status.ns_global or "NA")
         end)
     end
 
-    local function tag_match(species)
+    --[[local function tag_match(species)
         return magnify.table_has(species.tags, tag)
     end
     return species_tree_filter_abstract(tree, function(species)
-        
-    end)
-end]]
+
+    end)]]
+
+    if filters_active then
+        return filtered_tree, count
+    else
+        return tree
+    end
+end
 
 --- Filters tree of all species down to species whose reference keys, common names, scientific names or family names contain the substring `query`
 --- @param tree Species tree
@@ -430,15 +445,16 @@ end
 --- Return the plant compendium formspec, built from the given list of species
 --- @return formspec string, size
 local function get_compendium_formspec(context)
-    if not context.tree then
-        -- build tree and family list
-        context.tree = magnify.get_registered_species_tree()
-    end
     if context.reload == nil then
         -- initialize full reload if not set
         context.reload = 1
     end
     local reload = context.reload
+
+    if not context.tree or (reload and reload <= 1) then
+        -- build tree and family list
+        context.tree = magnify.get_registered_species_tree()
+    end
     if not context.filter then
         context.filter = get_blank_filter_table()
     end
@@ -448,10 +464,10 @@ local function get_compendium_formspec(context)
     local count
 
     if next(context.filter.active) then
-        --tree,count = species_tag_filter(tree, context.filter.active)
+        tree, count = species_tag_filter(tree, context.filter.active)
     end
     if context.search then
-        tree,count = species_search_filter(tree, context.search)
+        tree, count = species_search_filter(tree, context.search)
     end
 
     -- Auto-select when only 1 species matches filter criteria
@@ -789,15 +805,15 @@ if minetest.get_modpath("sfinv") ~= nil then
                 end
             end
           
-            if fields.search_go or fields.key_enter_field == "search" then
+            if (fields.search_go or fields.key_enter_field == "search") and fields.search ~= "" then
                 -- initialize search + reset selection
-                context.search = fields.search or ""
+                context.search = fields.search
                 context.family.selected = 1
                 context.genus.selected = 1
                 context.species.selected = 1
                 reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
-            if fields.search_x then
+            if fields.search_x or ((fields.search_go or fields.key_enter_field == "search") and fields.search == "") then
                 -- reset search + selection
                 context.search = nil
                 context.family.selected = 1
@@ -820,18 +836,24 @@ if minetest.get_modpath("sfinv") ~= nil then
                     local cat, tag = name_split[2], name_split[3]
                     if cat and tag then
                         context.filter.select[cat] = context.filter.select[cat] or {}
-                        context.filter.select[cat][tag] = val == "true" and true or false
+                        context.filter.select[cat][tag] = val == "true" and true or nil
                     end
                 end
             end
 
             if fields.filter_apply then
                 context.filter.active = table.copy(context.filter.select)
+                context.family.selected = 1
+                context.genus.selected = 1
+                context.species.selected = 1
                 reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
             if fields.filter_clear then
                 context.filter = get_blank_filter_table()
                 context.filter_parity = context.filter_parity + 1
+                context.family.selected = 1
+                context.genus.selected = 1
+                context.species.selected = 1
                 reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
 

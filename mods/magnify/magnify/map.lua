@@ -73,3 +73,15 @@ magnify.map.tag = {
     ["edible"] = {col = "#6584EB", desc = "Edible"},
     ["poisonous"] = {col = "#FF0000", desc = "Poisonous"},
 }
+
+-- Conservation status tag conversion
+magnify.map.stat_key = {
+    ["gx"] = {"GX",},
+    ["gh"] = {"GH",},
+    ["g1"] = {"G1",},
+    ["g2"] = {"G2",},
+    ["g3"] = {"G3",},
+    ["g4"] = {"G4",},
+    ["g5"] = {"G5",},
+    ["na"] = {"NR", "GNR", "NA", "GNA", "GU", "",},
+}
