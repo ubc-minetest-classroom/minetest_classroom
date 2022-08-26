@@ -24,18 +24,18 @@ local CHECKBOXES = {
     get_all = function(self)
         local all = {}
         for k,list in pairs(self) do
-            if k ~= "get_all" then
+            if type(list) == "table" then
                 for i,v in ipairs(list) do
-                    table.insert(all, v)
+                    table.insert(all, k.."_"..v)
                 end
             end
         end
         return all
     end,
-    FORM = {"form_tree", "form_shrub",},
-    LEAF = {"leaf_decid", "leaf_ever",},
-    CONS = {"cons_gx", "cons_gh", "cons_g1", "cons_g2", "cons_g3", "cons_g4", "cons_g5", "cons_na",},
-    MISC = {"misc_bc_native",}
+    form = {"tree", "shrub",},
+    leaf = {"deciduous", "evergreen",},
+    cons = {"gx", "gh", "g1", "g2", "g3", "g4", "g5", "na",},
+    misc = {"bc_native",}
 }
 
 -- Checks for adequate privileges
@@ -63,9 +63,21 @@ local function get_context(player)
                 selected = 1,
                 list = {}
             },
+            filter_parity = 0,
         }
     end
     return magnify.context[pname]
+end
+
+local function get_blank_filter_table()
+    local table = {select = {}, active = {}}
+    for k,list in pairs(CHECKBOXES) do
+        if type(list) == "table" then
+            table.select[k] = {}
+            table.active[k] = {}
+        end
+    end
+    return table
 end
 
 -- Registers the magnifying glass tool
@@ -284,7 +296,7 @@ end
 --- Return the technical formspec for a species
 --- @param ref Reference key of species
 --- @return formspec string, size
-local function get_expanded_species_formspec(ref)
+local function get_technical_formspec(ref)
     local info,nodes = magnify.get_species_from_ref(ref)
     if info and nodes then
         local sorted_nodes = table.sort(nodes)
@@ -318,42 +330,101 @@ button[6.2,6.2;6.2,0.6;back;Back]
 button[0,6.2;6.2,0.6;locate;Locate nearest node]
 ]]
 
---- Filters lists of all species down to species whose reference keys, common names, scientific names or family names contain the substring `query`
---- @param query Substring to search for
+--- Filters tree of species down to species for which filter_func returns a true value
 --- @param tree Species tree
+--- @param filter_func Function to filter by
+--- @return table, number
+local function species_tree_filter_abstract(tree, filter_func)
+    local function tree_tr(res_tree, res_count, k, v, p, k_wl, v_wl, p_wl)
+        if not k or not v or not p then
+            return res_tree, res_count
+        else
+            if type(v) == "string" or type(v) == "number" then
+                if filter_func(magnify.get_species_from_ref(v)) then
+                    local fam, gen, spc = p[1], p[2], k
+                    local f_g_list = res_tree[fam] or {}
+                    local f_s_list = f_g_list[gen] or {}
+                    f_s_list[spc] = v
+                    f_g_list[gen] = f_s_list
+                    res_tree[fam] = f_g_list
+                    res_count = res_count + 1
+                end
+            elseif type(v) == "table" then
+                local n_p = table.copy(p)
+                table.insert(n_p, k)
+                for n_k, n_v in pairs(v) do
+                    table.insert(k_wl, n_k)
+                    table.insert(v_wl, n_v)
+                    table.insert(p_wl, n_p)
+                end
+            end
+
+            local next_k = table.remove(k_wl, 1)
+            local next_v = table.remove(v_wl, 1)
+            local next_p = table.remove(p_wl, 1)
+            return tree_tr(res_tree, res_count, next_k, next_v, next_p, k_wl, v_wl, p_wl)
+        end
+    end
+
+    -- initialization
+    local keys = {}
+    local vals = {}
+    local paths = {}
+    for k, v in pairs(tree) do
+        table.insert(keys, k)
+        table.insert(vals, v)
+        table.insert(paths, {})
+    end
+    local first_k = table.remove(keys, 1)
+    local first_v = table.remove(vals, 1)
+    local first_p = table.remove(paths, 1)
+
+    -- recursion
+    return tree_tr({}, 0, first_k, first_v, first_p, keys, vals, paths)
+end
+
+--- Filters tree of all species down to species which are tagges with the selected tags
+--- @param tree Species tree
+--- @param filters Selected tags to filter by
 --- @return table
-local function species_search_filter(query, tree)
-    local filtered_tree = {}
+--[[local function species_tag_filter(tree, filter)
+    local filtered_tree = tree
     local count = 0
+    if next(filter.cons) then
+        tree, count = species_tree_filter_abstract(tree, function(species)
+            return magnify.table
+        end)
+    end
+
+    local function tag_match(species)
+        return magnify.table_has(species.tags, tag)
+    end
+    return species_tree_filter_abstract(tree, function(species)
+        
+    end)
+end]]
+
+--- Filters tree of all species down to species whose reference keys, common names, scientific names or family names contain the substring `query`
+--- @param tree Species tree
+--- @param query Substring to search for
+--- @return table
+local function species_search_filter(tree, query)
     local function match_query(str)
         return string.find(string.lower(str or ""), string.lower(query:trim()), 1, true)
     end
-
-    for fam,g_list in pairs(tree) do
-        for gen,s_list in pairs(g_list) do
-            for spec,ref in pairs(s_list) do
-                local species = magnify.get_species_from_ref(ref)
-                local match = match_query(species.com_name) or match_query(species.sci_name) or match_query(species.fam_name) or match_query(ref) or match_query(magnify.map.family[species.fam_name])
-                if match then
-                    -- add match to filtered tree
-                    local f_g_list = filtered_tree[fam] or {}
-                    local f_s_list = f_g_list[gen] or {}
-                    f_s_list[spec] = ref
-                    f_g_list[gen] = f_s_list
-                    filtered_tree[fam] = f_g_list
-                    count = count + 1
-                end
-            end
-        end
-    end
-    return filtered_tree, count
+    return species_tree_filter_abstract(tree, function(species)
+        return match_query(species.com_name) or match_query(species.sci_name) or match_query(species.fam_name) or match_query(ref) or match_query(magnify.map.family[species.fam_name])
+    end)
 end
 
 local function create_compendium_checkbox(context, pos_x, pos_y, name, label)
-    return table.concat({
-        context.filter.active[name] and table.concat({"box[", pos_x - 0.05, ",", pos_y - 0.2, ";0.4,0.4;#8EE88E]"}) or "",
-        "checkbox[", pos_x, ",", pos_y, ";", name, ";", label, ";", context.filter.select[name] and "true" or "false", "]"
+    local name_split = string.split(name, "_", false, 2)
+    local cat, tag = name_split[2], name_split[3]
+    local fs_checkbox = table.concat({
+        context.filter.active[cat][tag] and table.concat({"box[", pos_x - 0.05, ",", pos_y - 0.2, ";0.4,0.4;#8EE88E]"}) or "",
+        "checkbox[", pos_x, ",", pos_y, ";", context.filter_parity % 2 == 0 and "x" or "f", name, ";", label, ";", (context.filter.select[cat][tag] and "true") or "false", "]"
     })
+    return fs_checkbox
 end
 
 --- Return the plant compendium formspec, built from the given list of species
@@ -369,7 +440,7 @@ local function get_compendium_formspec(context)
     end
     local reload = context.reload
     if not context.filter then
-        context.filter = {select = {}, active = {}}
+        context.filter = get_blank_filter_table()
     end
 
     local tree = context.tree
@@ -377,10 +448,10 @@ local function get_compendium_formspec(context)
     local count
 
     if next(context.filter.active) then
-        -- tree,count = species_filter(context.filter, tree)
+        --tree,count = species_tag_filter(tree, context.filter.active)
     end
     if context.search then
-        tree,count = species_search_filter(context.search, tree)
+        tree,count = species_search_filter(tree, context.search)
     end
 
     -- Auto-select when only 1 species matches filter criteria
@@ -513,22 +584,22 @@ local function get_compendium_formspec(context)
         "label[15.5,3.2;Filter]",
         "image[13.6,3.5;5,9.1;magnify_pixel.png^[multiply:#1E1E1E]",
         "label[13.8,3.9;Form:]",
-        create_compendium_checkbox(context, 13.8, 4.3, "form_tree", "Tree"),
-        create_compendium_checkbox(context, 13.8, 4.7, "form_shrub", "Shrub"),
+        create_compendium_checkbox(context, 13.8, 4.3, "f_form_tree", "Tree"),
+        create_compendium_checkbox(context, 13.8, 4.7, "f_form_shrub", "Shrub"),
         "label[13.8,5.4;Leaves:]",
-        create_compendium_checkbox(context, 13.8, 5.8, "leaf_decid", "Deciduous"),
-        create_compendium_checkbox(context, 13.8, 6.2, "leaf_ever", "Evergreen"),
+        create_compendium_checkbox(context, 13.8, 5.8, "f_leaf_deciduous", "Deciduous"),
+        create_compendium_checkbox(context, 13.8, 6.2, "f_leaf_evergreen", "Evergreen"),
         "label[13.8,6.9;Conservation Status:]",
-        create_compendium_checkbox(context, 13.8, 7.3, "cons_gx", "GX (Presumed Extinct)"),
-        create_compendium_checkbox(context, 13.8, 7.7, "cons_gh", "GH (Possibly Extinct)"),
-        create_compendium_checkbox(context, 13.8, 8.1, "cons_g1", "G1 (Critcally Imperiled)"),
-        create_compendium_checkbox(context, 13.8, 8.5, "cons_g2", "G2 (Imperiled)"),
-        create_compendium_checkbox(context, 13.8, 8.9, "cons_g3", "G3 (Vulnerable)"),
-        create_compendium_checkbox(context, 13.8, 9.3, "cons_g4", "G4 (Apparently Secure)"),
-        create_compendium_checkbox(context, 13.8, 9.7, "cons_g5", "G5 (Secure)"),
-        create_compendium_checkbox(context, 13.8, 10.1, "cons_na", "GNR/GU/GNA (Unranked)"),
+        create_compendium_checkbox(context, 13.8, 7.3, "f_cons_gx", "GX (Presumed Extinct)"),
+        create_compendium_checkbox(context, 13.8, 7.7, "f_cons_gh", "GH (Possibly Extinct)"),
+        create_compendium_checkbox(context, 13.8, 8.1, "f_cons_g1", "G1 (Critcally Imperiled)"),
+        create_compendium_checkbox(context, 13.8, 8.5, "f_cons_g2", "G2 (Imperiled)"),
+        create_compendium_checkbox(context, 13.8, 8.9, "f_cons_g3", "G3 (Vulnerable)"),
+        create_compendium_checkbox(context, 13.8, 9.3, "f_cons_g4", "G4 (Apparently Secure)"),
+        create_compendium_checkbox(context, 13.8, 9.7, "f_cons_g5", "G5 (Secure)"),
+        create_compendium_checkbox(context, 13.8, 10.1, "f_cons_na", "GNR/GU/GNA (Unranked)"),
         "label[13.8,10.8;Miscellaneous:]",
-        create_compendium_checkbox(context, 13.8, 11.2, "misc_bc_native", "Native to BC"),
+        create_compendium_checkbox(context, 13.8, 11.2, "f_misc_bc_native", "Native to BC"),
         "button[13.8,11.7;2.2,0.7;filter_apply;Apply]",
         "button[16.2,11.7;2.2,0.7;filter_clear;Clear all]",
         "container_end[]",
@@ -741,23 +812,26 @@ if minetest.get_modpath("sfinv") ~= nil then
             end
 
             -- checkboxes
-            context.filter = context.filter or {select = {}, active = {}}
+            context.filter = context.filter or get_blank_filter_table()
+            local all_boxes = CHECKBOXES:get_all()
             for name,val in pairs(fields) do
-                local all_boxes = CHECKBOXES:get_all()
-                if magnify.table_has(all_boxes, name) then
-                    context.filter.select[name] = val == "true" and true or nil
+                local name_split = string.split(name, "_", false, 2)
+                if magnify.table_has(all_boxes, (name_split[2] or "").."_"..(name_split[3] or "")) then
+                    local cat, tag = name_split[2], name_split[3]
+                    if cat and tag then
+                        context.filter.select[cat] = context.filter.select[cat] or {}
+                        context.filter.select[cat][tag] = val == "true" and true or false
+                    end
                 end
             end
 
             if fields.filter_apply then
-                context.filter.active = {}
-                for k,v in pairs(context.filter.select) do
-                    context.filter.active[k] = v
-                end
+                context.filter.active = table.copy(context.filter.select)
                 reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
             if fields.filter_clear then
-                context.filter = {select = {}, active = {}}
+                context.filter = get_blank_filter_table()
+                context.filter_parity = context.filter_parity + 1
                 reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
 
