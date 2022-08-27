@@ -199,18 +199,12 @@ end
 local function create_image_table(nodes, x, y, side_length)
     local node_count = #nodes
     local node_ctr = 0
+    local spacer = 0.2
     local row_cells = math.ceil(math.sqrt(node_count))
-    local cell_length = side_length / row_cells
+    local cell_length = (side_length - spacer*(row_cells - 1)) / row_cells
     local output = {}
     local x_0 = 0
     local y_0 = side_length - cell_length
-
-    -- adjustment factor based on scaling
-    cell_length = cell_length + 0.6 * (1/4)^(row_cells-1)
-    if row_cells == 1 then
-        y_0 = y_0 - 0.1
-        x_0 = x_0 + 0.2
-    end
 
     for k,v in pairs(nodes) do
         -- create formspec element
@@ -224,14 +218,14 @@ local function create_image_table(nodes, x, y, side_length)
         if x_0 >= row_cells then
             -- move up a row
             x_0 = 0
-            y_0 = y_0 - cell_length
+            y_0 = y_0 - cell_length - spacer
             if node_count - node_ctr < row_cells then
                 -- center remaining elements in new row
-                local increment = (row_cells - node_count + node_ctr) * cell_length / 2
+                local increment = (row_cells - node_count + node_ctr) * (cell_length + spacer) / 2
                 x_0 = x_0 + increment
             end
         else
-            x_0 = x_0 + cell_length
+            x_0 = x_0 + cell_length + spacer
         end
     end
 
@@ -295,22 +289,36 @@ end
 
 --- Return the technical formspec for a species
 --- @param ref Reference key of species
+--- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
 --- @return formspec string, size
-local function get_technical_formspec(ref)
+local function build_technical_formspec(ref, is_exit)
     local info,nodes = magnify.get_species_from_ref(ref)
     if info and nodes then
         local sorted_nodes = table.sort(nodes)
-        local size = "size[12.4,6.7]"
+        local size = "size[16,7.5]"
         local formtable = {
-            "formspec_version[5]", size,
-            "box[0,0;12.2,0.8;#9192a3]",
-            "label[4.8,0.2;Technical Information]",
-            "label[0,1;", minetest.formspec_escape(info.com_name) or minetest.formspec_escape(info.sci_name) or "Unknown", " @ ref. ", minetest.formspec_escape(ref), "]",
-            "textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
-            "label[0,1.6;Associated nodes:]",
-            "button[6.2,6.2;6.2,0.6;back;Back]",
-            "button[0,6.2;6.2,0.6;locate;Locate nearest node]",
-            create_image_table(sorted_nodes or nodes, 7.6, 1.2, 4.8)
+            "formspec_version[6]", size,
+
+            "no_prepend[]",
+            "bgcolor[#00000000;true;]",
+            "background[0,0;0,0;magnify_pixel.png^[multiply:#000000^[opacity:69;true]",
+            "image[0,0;16,0.6;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
+            "style_type[label;font=mono,bold]",
+            "label[6.3,0.3;Plant Compendium]",
+            "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]",
+            "image_button[0.7,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]",
+            "image_button[1.4,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]",
+            "tooltip[back;Back]",
+            "tooltip[nav_forward;Next]",
+            "tooltip[nav_backward;Previous]",
+
+            "style_type[textarea;font=mono]",
+            "textarea[0.4,0.9;14.2,1.1;;;", minetest.formspec_escape(info.com_name) or minetest.formspec_escape(info.sci_name) or "Unknown", " @ ref. ", minetest.formspec_escape(ref),
+            "\n", info.origin and "Registered by "..info.origin or "Registration origin unknown", "]",
+            "style_type[label;font=mono]",
+            "label[0.5,2.1;Associated nodes:]",
+            "textlist[0.4,2.3;9.2,4.8;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
+            create_image_table(sorted_nodes or nodes, 10, 1.5, 5.6)
         }
         return table.concat(formtable, ""), size
     else
@@ -319,15 +327,17 @@ local function get_technical_formspec(ref)
 end
 
 --[[
-formspec_version[5]
-size[12.4,6.7]
-box[0,0;12.2,0.8;#9192a3]
-label[4.8,0.2;Technical Information]
-label[0,1;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]
-textlist[0,2.1;7.4,3.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]
-label[0,1.6;Associated nodes:]
-button[6.2,6.2;6.2,0.6;back;Back]
-button[0,6.2;6.2,0.6;locate;Locate nearest node]
+formspec_version[6]
+size[16,8]
+box[0,0;16,0.6;#FFFFFF]
+label[6.3,0.3;Plant Compendium]
+image_button[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]
+image_button[0.7,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]
+image_button[1.4,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]
+textarea[0.4,0.9;14.2,1.1;;;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]
+label[0.5,2.1;Associated nodes:]
+textlist[0.4,2.2;9.2,4.8;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]
+box[10,1.4;5.6,5.6;#00FF00]
 ]]
 
 --- Filters tree of species down to species for which filter_func returns a true value
@@ -460,8 +470,10 @@ local function filters_active(filter_loc)
 end
 
 --- Return the plant compendium formspec, built from the given list of species
+--- @param context magnify context object
+--- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
 --- @return formspec string, size
-local function get_compendium_formspec(context)
+local function get_compendium_formspec(context, is_exit)
     if context.reload == nil then
         -- initialize full reload if not set
         context.reload = 1
@@ -583,7 +595,7 @@ local function get_compendium_formspec(context)
         "image[0,0;19,0.6;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
         "style_type[label;font=mono,bold]",
         "label[7.8,0.3;Plant Compendium]",
-        "image_button[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]",
+        "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]",
         "image_button[0.7,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]",
         "image_button[1.4,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]",
         "tooltip[back;Back]",
@@ -660,14 +672,14 @@ formspec_version[6]
 size[19,13]
 box[0,0;19,0.6;#FFFFFF]
 label[7.8,0.3;Plant Compendium]
-image_button[0,0;0.6,0.6;texture.png;back;;false;false]
-image_button[0.7,0;0.6,0.6;texture.png;nav_forward;;false;false]
-image_button[1.4,0;0.6,0.6;texture.png;nav_backward;;false;false]
+image_button[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]
+image_button[0.7,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]
+image_button[1.4,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]
 field[0.4,1.3;7.2,0.7;search;Search by common or scientific name;]
 button[7.6,1.3;3.2,0.7;search_go;   Search]
-image[7.6,1.3;0.7,0.7;texture.png]
+image[7.6,1.3;0.7,0.7;magnify_compendium_search.png]
 button[10.8,1.3;2.3,0.7;search_x;   Clear]
-image[10.8,1.3;0.7,0.7;texture.png]
+image[10.8,1.3;0.7,0.7;magnify_compendium_x.png]
 checkbox[0.4,2.3;toggle_common;Show common names;false]
 box[0.4,2.8;4.2,0.7;#A0A0A0]
 label[1.9,3.2;Family]
@@ -744,6 +756,9 @@ if minetest.get_modpath("sfinv") ~= nil then
                     elseif context.page == STANDARD_VIEW then
                         context.page = MENU
                         return player:set_inventory_formspec(get_compendium_formspec(context))
+                    elseif context.page == TECH_VIEW then
+                        context.page = STANDARD_VIEW
+                        return player:set_inventory_formspec(magnify.build_formspec_from_ref(get_selected_species_ref(context), false))
                     end
                 end
                 form_action = (context.page == MENU and "magnify:compendium") or (context.page == STANDARD_VIEW and "magnify:view") or (context.page == TECH_VIEW and "magnify:tech_view") or form_action
@@ -808,7 +823,11 @@ if minetest.get_modpath("sfinv") ~= nil then
                     if view_fs then
                         context.page = STANDARD_VIEW
                         minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
-                        return player:set_inventory_formspec(view_fs)
+                        if formname == "" then
+                            return player:set_inventory_formspec(view_fs)
+                        else
+                            return minetest.show_formspec(pname, "magnify:view", view_fs)
+                        end
                     end
                 end
             end
@@ -818,7 +837,11 @@ if minetest.get_modpath("sfinv") ~= nil then
                 if view_fs then
                     context.page = STANDARD_VIEW
                     minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
-                    return player:set_inventory_formspec(view_fs)
+                    if formname == "" then
+                        return player:set_inventory_formspec(view_fs)
+                    else
+                        return minetest.show_formspec(pname, "magnify:view", view_fs)
+                    end
                 end
             end
           
@@ -874,9 +897,17 @@ if minetest.get_modpath("sfinv") ~= nil then
                 reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
 
+            if (fields.back or fields.quit) then
+                context:clear()
+            end
+
             context.reload = reload
             if reload then
-                return player:set_inventory_formspec(get_compendium_formspec(context))
+                if formname == "" then
+                    return player:set_inventory_formspec(get_compendium_formspec(context))
+                else
+                    return minetest.show_formspec(pname, "magnify:compendium", get_compendium_formspec(context))
+                end
             end
         elseif form_action == "magnify:view" then
             -- handle viewer functions
@@ -892,12 +923,44 @@ if minetest.get_modpath("sfinv") ~= nil then
                     minetest.chat_send_player(player:get_player_name(), "There is already a node search in progress! Please wait for your current search to finish before starting another.")
                 end
             end
+            if fields.tech_view then
+                -- open technical viewer
+                local tech_fs = build_technical_formspec(get_selected_species_ref(context), false)
+                if tech_fs then
+                    context.page = TECH_VIEW
+                    minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
+                    if formname == "" then
+                        return player:set_inventory_formspec(tech_fs)
+                    else
+                        return minetest.show_formspec(pname, "magnify:tech_view", tech_fs)
+                    end
+                end
+            end
 
-            if (fields.back or fields.quit) and formname == "magnify:view" then
-                context:clear()
+            if formname == "magnify:view" then
+                if fields.quit or fields.back then
+                    context:clear()
+                end
             end
         elseif form_action == "magnify:tech_view" then
-            -- handle technical functions
+            if formname == "magnify:tech_view" then
+                if fields.quit then
+                    context:clear()
+                end
+                if fields.back then
+                    -- open viewer
+                    local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), true)
+                    if view_fs then
+                        context.page = STANDARD_VIEW
+                        minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
+                        if formname == "" then
+                            return player:set_inventory_formspec(view_fs)
+                        else
+                            return minetest.show_formspec(pname, "magnify:view", view_fs)
+                        end
+                    end
+                end
+            end
         end
     end)
 end
