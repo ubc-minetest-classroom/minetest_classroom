@@ -383,9 +383,9 @@ local function species_tree_filter_abstract(tree, filter_func)
     return tree_tr({}, 0, first_k, first_v, first_p, keys, vals, paths)
 end
 
---- Filters tree of all species down to species which are tagges with the selected tags
+--- Filters tree of all species down to species which are tagged with the given tags
 --- @param tree Species tree
---- @param filters Selected tags to filter by
+--- @param filters Tags to filter by
 --- @return table
 local function species_tag_filter(tree, filter)
     local filters_active = false
@@ -405,12 +405,22 @@ local function species_tag_filter(tree, filter)
         end)
     end
 
-    --[[local function tag_match(species)
-        return magnify.table_has(species.tags, tag)
+    -- check remaining filters
+    local function tag_match(spc_tags, filter_tags)
+        for tag,_ in pairs(filter_tags) do
+            if magnify.table_has(spc_tags, tag) then return true end
+        end
+        return false
     end
-    return species_tree_filter_abstract(tree, function(species)
-
-    end)]]
+    filtered_tree, count = species_tree_filter_abstract(filtered_tree or tree, function(species)
+        for name,list in pairs(filter) do
+            if name ~= "cons" and next(list) then
+                filters_active = true
+                if not tag_match(species.tags, list) then return false end
+            end
+        end
+        return true
+    end)
 
     if filters_active then
         return filtered_tree, count
@@ -442,6 +452,13 @@ local function create_compendium_checkbox(context, pos_x, pos_y, name, label)
     return fs_checkbox
 end
 
+local function filters_active(filter_loc)
+    for n,list in pairs(filter_loc) do
+        if next(list) then return true end
+    end
+    return false
+end
+
 --- Return the plant compendium formspec, built from the given list of species
 --- @return formspec string, size
 local function get_compendium_formspec(context)
@@ -463,7 +480,7 @@ local function get_compendium_formspec(context)
     local genus_raw = {}
     local count
 
-    if next(context.filter.active) then
+    if filters_active(context.filter.active) then
         tree, count = species_tag_filter(tree, context.filter.active)
     end
     if context.search then
