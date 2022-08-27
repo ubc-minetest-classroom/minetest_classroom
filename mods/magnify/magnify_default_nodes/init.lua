@@ -1,30 +1,32 @@
 --[[
 local def_table = {
-    sci_name = "",        -- Scientific name of species
-    com_name = "",        -- Common name of species
-    fam_name = "",        -- Family name of species
+    sci_name = "",          -- Scientific name of species
+    com_name = "",          -- Common name of species
+    fam_name = "",          -- Family name of species
 
-    cons_status = {       -- Conservation statuses of species
-        ns_global = "",       -- NatureServe global status
-        ns_bc = "",           -- NatureServe BC status
-        bc_list = ""          -- BC List (Red Blue List) status
+    cons_status = {         -- Conservation statuses of species
+        ns_global = "",         -- NatureServe global status
+        ns_bc = "",             -- NatureServe BC status
+        bc_list = ""            -- BC List (Red Blue List) status
     },
-    tags = {""},          -- Tags representing various charactertistics of a species
-    region = "",          -- Native region/range of species (displayed as "Found in [region]")
-    height = "",          -- Species height
-    bloom = "",           -- The way the species blooms
-    more_info = "",       -- Extended description of species
+    tags = {""},            -- Tags representing various charactertistics of a species
+    region = "",            -- Native region/range of species (displayed as "Found in [region]")
+    height = "",            -- Species height
+    bloom = "",             -- The way the species blooms
+    more_info = "",         -- Extended description of species
     
-    texture = {""},       -- Images of species (in `mod/textures`)
-    model_obj = "",       -- Model file (in `mod/models`)
-    model_rot_x = 0,      -- Initial rotation of model about x-axis (in degrees; defaults to 0)
-    model_rot_y = 0,      -- Initial rotation of model about y-axis (in degrees; defaults to 180)
+    texture = {""},         -- Images of species (in `mod/textures`)
+    model_obj = "",         -- Model file (in `mod/models`)
+    model_rot_horiz = 0,    -- Initial horizontal rotation of model, about y-axis (in degrees; defaults to 180)
+    model_rot_verti = 0,    -- Initial vertical rotation of model, about x-axis (in degrees; defaults to 0)
+    model_rot_y = 0,        -- Alias for model_rot_horiz
+    model_rot_x = 0,        -- Alias for model_rot_verti
 
-    external_link = "",   -- Link to page with more species information
-    img_copyright = "",   -- Copyright owner of species image (displayed as "Image (c) [img_copyright]")
-    img_credit = "",      -- Author of species image (displayed as "Image courtesy of [img_credit]")
-    info_source = "",     -- Source that species information was taken from
-    last_updated = "",    -- Timestamp when species was last updated
+    external_link = "",     -- Link to page with more species information
+    img_copyright = "",     -- Copyright owner of species image (displayed as "Image (c) [img_copyright]")
+    img_credit = "",        -- Author of species image (displayed as "Image courtesy of [img_credit]")
+    info_source = "",       -- Source that species information was taken from
+    last_updated = "",      -- Timestamp when species was last updated
 }
 -- Species registration call
 magnify.register_species(template, {"mod:node", "mod:another_node", "other_mod:other_node"})
@@ -300,11 +302,12 @@ local arbutus = {
     
     texture = {"magnify_default_arbutus_menziesii_01.jpg", "magnify_default_arbutus_menziesii_02.jpg", "magnify_default_arbutus_menziesii_03.jpg", "magnify_default_arbutus_menziesii_04.jpg"},
     model_obj = "magnify_default_arbutus_menziesii.obj",
+    model_rot_horiz = 90,
     
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Arbutus%20menziesii",
     img_copyright = "Blake Willson, taken from treelib.ca with permission",
     info_source = "E-Flora BC",
-    last_updated = "2022-08-23",
+    last_updated = "2022-08-27",
 }
 magnify.register_species(arbutus, {"default:acacia_bush_stem", "default:acacia_bush_leaves", "default:acacia_bush_sapling"})
 
@@ -388,11 +391,12 @@ local PineBushNeedles_Stem = {
 
     texture = {"magnify_default_taxus_brevifolia_01.jpg", "magnify_default_taxus_brevifolia_02.jpg", "magnify_default_taxus_brevifolia_03.jpg"},
     model_obj = "magnify_default_taxus_brevifolia.obj",
+    model_rot_horiz = 0,
     
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Taxus%20brevifolia",
     img_copyright = "Blake Willson, taken from treelib.ca with permission",
     info_source = "E-Flora BC",
-    last_updated = "2022-08-23",
+    last_updated = "2022-08-27",
 }
 magnify.register_species(PineBushNeedles_Stem, {"default:pine_bush_stem", "default:pine_bush_needles", "default:pine_bush_sapling"})
 

@@ -48,7 +48,7 @@ local function get_context(player)
     if not magnify.context[pname] then
         magnify.context[pname] = {
             clear = function(self)
-                self = nil
+                magnify.context[pname] = nil
             end,
             page = 0,
             family = {

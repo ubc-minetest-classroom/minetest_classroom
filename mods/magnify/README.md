@@ -48,31 +48,33 @@ In the `init.lua` file (or another file) in your mod, create a table like this:
 
 ```lua
 local def_table = {
-    sci_name = "",        -- Scientific name of species
-    com_name = "",        -- Common name of species
-    fam_name = "",        -- Family name of species
+    sci_name = "",          -- Scientific name of species
+    com_name = "",          -- Common name of species
+    fam_name = "",          -- Family name of species
 
-    cons_status = {       -- Conservation statuses of species
-        ns_global = "",       -- NatureServe global status
-        ns_bc = "",           -- NatureServe BC status
-        bc_list = ""          -- BC List (Red Blue List) status
+    cons_status = {         -- Conservation statuses of species
+        ns_global = "",         -- NatureServe global status
+        ns_bc = "",             -- NatureServe BC status
+        bc_list = ""            -- BC List (Red Blue List) status
     },
-    tags = {""},          -- Tags representing various charactertistics of a species
-    region = "",          -- Native region/range of species (displayed as "Found in [region]")
-    height = "",          -- Species height
-    more_info = "",       -- Extended description of species
-    bloom = "",           -- The way the species blooms
+    tags = {""},            -- Tags representing various charactertistics of a species
+    region = "",            -- Native region/range of species (displayed as "Found in [region]")
+    height = "",            -- Species height
+    bloom = "",             -- The way the species blooms
+    more_info = "",         -- Extended description of species
+    
+    texture = {""},         -- Images of species (in `mod/textures`)
+    model_obj = "",         -- Model file (in `mod/models`)
+    model_rot_horiz = 0,    -- Initial horizontal rotation of model, about y-axis (in degrees; defaults to 180)
+    model_rot_verti = 0,    -- Initial vertical rotation of model, about x-axis (in degrees; defaults to 0)
+    model_rot_y = 0,        -- Alias for model_rot_horiz
+    model_rot_x = 0,        -- Alias for model_rot_verti
 
-    texture = {""},       -- Images of species (in `mod/textures`) - can be a string if only one image
-    model_obj = "",       -- Model file (in `mod/models`)
-    model_rot_x = 0,      -- Initial rotation of model about x-axis (in degrees; defaults to 0)
-    model_rot_y = 0,      -- Initial rotation of model about y-axis (in degrees; defaults to 180)
-
-    external_link = "",   -- Link to page with more species information
-    img_copyright = "",   -- Copyright owner of species image (displayed as "Image (c) [img_copyright]")
-    img_credit = "",      -- Author of species image (displayed as "Image courtesy of [img_credit]")
-    info_source = "",     -- Source that species information was taken from
-    last_updated = "",    -- Tamestamp when species was last updated
+    external_link = "",     -- Link to page with more species information
+    img_copyright = "",     -- Copyright owner of species image (displayed as "Image (c) [img_copyright]")
+    img_credit = "",        -- Author of species image (displayed as "Image courtesy of [img_credit]")
+    info_source = "",       -- Source that species information was taken from
+    last_updated = "",      -- Timestamp when species was last updated
 }
 ```
 
@@ -134,7 +136,7 @@ Adding a model is a similar process as adding textures, except that models go in
 Due to the way Minetest reads model files, if you are using a model in the `.obj` format, model texture names must be placed on `g` lines instead of `usemtl` lines. Models which do not follow this convention will still render in-game, but will not be able to use multiple textures.
 
 Once your model has been added to the `models` folder, you'll need to add its file name to the `model_obj` property of the plant species definition table. The model name should be provided in quotation marks `""`.  
-Additionally, you can specify an initial `x` and `y` rotation for your model using the `model_rot_x` and `model_rot_y` properties, respectively.
+Additionally, you can specify an initial horizontal and vertical rotation for your model using the `model_rot_horiz` (or `model_rot_y`) and `model_rot_verti` (or `model_rot_x`) properties, respectively.
 
 Once your model has been added, your definition table should look something like this:
 
@@ -149,7 +151,7 @@ local my_species = {
 
     texture = {"trembling_aspen_1.png", "trembling_aspen_but_jpeg.jpg", "another_aspen_texture.bmp"},
     model_obj = "trembling_aspen_model.obj",
-    model_rot_x = 50,
+    model_rot_verti = 50,
 
     img_credit = "Paul Pickell, UBC Faculty of Forestry",
 }

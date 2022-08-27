@@ -475,7 +475,7 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             local model_spec = read_obj_textures(model_spec_loc)
             table.insert(formtable_v3, table.concat({
                 "style[plant_model;bgcolor=#466577]",
-                "model[10.9,7.7;3.9,4.7;plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";", info.model_rot_x or "0", ",", info.model_rot_y or "180", ";false;true;;]",
+                "model[10.9,7.7;3.9,4.7;plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";", info.model_rot_verti or info.model_rot_x or "0", ",", info.model_rot_horiz or info.model_rot_y or "180", ";false;true;;]",
                 "image[14.9,7.7;3.9,4.7;", (type(info.texture) == "table" and info.texture[6]) or "test.png", "]",
             }))
         else
