@@ -314,7 +314,7 @@ local function build_technical_formspec(ref, is_exit)
             "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]",
             "image_button[0.7,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]",
             "image_button[1.4,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]",
-            "tooltip[back;Back]",
+            "tooltip[back;", is_exit and "Close" or "Back", "]",
             "tooltip[nav_forward;Next]",
             "tooltip[nav_backward;Previous]",
 
@@ -475,11 +475,8 @@ local function filters_active(filter_loc)
     return false
 end
 
---- Return the plant compendium formspec, built from the given list of species
---- @param context magnify context object
---- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
---- @return formspec string, size
-local function get_compendium_formspec(context, is_exit)
+-- Initializes the context for the compendium formspec
+local function initialize_context(context)
     if context.reload == nil then
         -- initialize full reload if not set
         context.reload = 1
@@ -590,6 +587,14 @@ local function get_compendium_formspec(context, is_exit)
         table.sort(context.genus.list, context.show_common and extract_sort or nil)
         context.species.list = {minetest.formspec_escape("#B0B0B0[Select a genus first]")}
     end
+end
+
+--- Returns the plant compendium formspec
+--- @param context magnify context object
+--- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
+--- @return formspec string, size
+local function build_compendium_formspec(context, is_exit)
+    initialize_context(context)
 
     local size = "size[19,13]"
     local formtable = {
@@ -604,7 +609,7 @@ local function get_compendium_formspec(context, is_exit)
         "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]",
         "image_button[0.7,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]",
         "image_button[1.4,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]",
-        "tooltip[back;Back]",
+        "tooltip[back;", is_exit and "Close" or "Back", "]",
         "tooltip[nav_forward;Next]",
         "tooltip[nav_backward;Previous]",
 
@@ -720,6 +725,53 @@ button[13.8,11.7;2.3,0.7;filter_apply;Apply]
 button[16.1,11.7;2.3,0.7;filter_clear;Clear all]
 ]]
 
+--- Selects the species in the species tree with the given reference key
+--- @param context Magnify player context table
+--- @param ref Reference key of species ot select
+local function select_species_with_ref(context, ref)
+    if context.family.selected <= 1 or context.genus.selected <= 1 or context.species.selected <= 1 then
+        -- clear fallback ref so that selection is prioritized
+        context.ref = nil
+
+        local info = magnify.get_species_from_ref(ref)
+        if info then
+            local split_table = info.sci_name and string.split(info.sci_name, " ", false, 1)
+            local family, genus, species = info.fam_name or "Unknown", unpack(split_table)
+
+            -- reload family list
+            initialize_context(context)
+            for i,fam in ipairs(context.family.list) do
+                if fam == family then
+                    context.family.selected = i
+                    break
+                end
+            end
+            
+            if context.family.selected > 1 then
+                -- reload genus list
+                initialize_context(context)
+                for i,gen in ipairs(context.genus.list) do
+                    if gen == genus then
+                        context.genus.selected = i
+                        break
+                    end
+                end
+                
+                if context.genus.selected > 1 then
+                    -- reload species list
+                    initialize_context(context)
+                    for i,spc in ipairs(context.species.list) do
+                        if spc == species then
+                            context.species.selected = i
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 -- Registers the plant compendium as an inventory button on the main inventory page
 -- Partially based on the inventory button implementation in Minetest-WorldEdit
 if minetest.get_modpath("sfinv") ~= nil then
@@ -745,7 +797,7 @@ if minetest.get_modpath("sfinv") ~= nil then
         if formname == "" then
             if fields.magnify_plant_compendium then
                 context.page = MENU
-                return player:set_inventory_formspec(get_compendium_formspec(context))
+                return player:set_inventory_formspec(build_compendium_formspec(context))
             end
             
             if context.page and context.page >= 1 then -- magnify inventory view active
@@ -761,7 +813,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                         return context:clear()
                     elseif context.page == STANDARD_VIEW then
                         context.page = MENU
-                        return player:set_inventory_formspec(get_compendium_formspec(context))
+                        return player:set_inventory_formspec(build_compendium_formspec(context))
                     elseif context.page == TECH_VIEW then
                         local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false, player)
                         if view_fs then
@@ -913,9 +965,9 @@ if minetest.get_modpath("sfinv") ~= nil then
             context.reload = reload
             if reload then
                 if formname == "" then
-                    return player:set_inventory_formspec(get_compendium_formspec(context))
+                    return player:set_inventory_formspec(build_compendium_formspec(context))
                 else
-                    return minetest.show_formspec(pname, "magnify:compendium", get_compendium_formspec(context))
+                    return minetest.show_formspec(pname, "magnify:compendium", build_compendium_formspec(context))
                 end
             end
         elseif form_action == "magnify:view" then
@@ -934,19 +986,6 @@ if minetest.get_modpath("sfinv") ~= nil then
                     minetest.chat_send_player(player:get_player_name(), "There is already a node search in progress! Please wait for your current search to finish before starting another.")
                 end
             end
-            if fields.tech_view then
-                -- open technical viewer
-                local tech_fs = build_technical_formspec(get_selected_species_ref(context), false)
-                if tech_fs then
-                    context.page = TECH_VIEW
-                    minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
-                    if formname == "" then
-                        return player:set_inventory_formspec(tech_fs)
-                    else
-                        return minetest.show_formspec(pname, "magnify:tech_view", tech_fs)
-                    end
-                end
-            end
             if fields.favourite then
                 local mdata = magnify.get_mdata(player)
                 local ref = get_selected_species_ref(context)
@@ -960,15 +999,45 @@ if minetest.get_modpath("sfinv") ~= nil then
                     reload = true
                 end
             end
+            if fields.compendium_view then
+                -- get selected species
+                select_species_with_ref(context, get_selected_species_ref(context))
+
+                -- view species in compendium
+                context.page = MENU
+                minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
+                if formname == "" then
+                    return player:set_inventory_formspec(build_compendium_formspec(context))
+                else
+                    return minetest.show_formspec(pname, "magnify:compendium", build_compendium_formspec(context, true))
+                end
+            end
+            if fields.tech_view then
+                -- open technical viewer
+                local tech_fs = build_technical_formspec(get_selected_species_ref(context), false)
+                if tech_fs then
+                    context.page = TECH_VIEW
+                    minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
+                    if formname == "" then
+                        return player:set_inventory_formspec(tech_fs)
+                    else
+                        return minetest.show_formspec(pname, "magnify:tech_view", tech_fs)
+                    end
+                end
+            end
 
             if formname == "magnify:view" then
-                if fields.quit or fields.back then
+                if fields.quit or (fields.back and context.ref) then
                     context:clear()
+                elseif fields.back then
+                    -- view species in compendium
+                    minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
+                    return minetest.show_formspec(pname, "magnify:compendium", build_compendium_formspec(context, true))
                 end
             end
 
             if reload == true then
-                local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), formname ~= "", player)
+                local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), formname ~= "" and context.ref, player)
                 if view_fs then
                     if formname == "" then
                         return player:set_inventory_formspec(view_fs)
@@ -984,7 +1053,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                 end
                 if fields.back then
                     -- open viewer
-                    local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), true, player)
+                    local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), formname ~= "" and context.ref, player)
                     if view_fs then
                         context.page = STANDARD_VIEW
                         minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
