@@ -43,8 +43,8 @@ local MRHUD_BG_SCALE = {x = -14.5, y = -19}
 local SUB_BG_SCALE = {x = -6, y = -4.8}
 local MRHUD_SPACER = 0.1
 local MRHUD_ARROW_DEFAULTS = {
-    up = "forestry_tools_rf_arrow_up.png",
-    down = "forestry_tools_rf_arrow_up.png^[transformFY"
+    up = "forestry_tools_rf_arrow.png",
+    down = "forestry_tools_rf_arrow.png^[transformFY"
 }
 local TOOL_NAME = "forestry_tools:rangefinder"
 
@@ -244,11 +244,11 @@ local function undo_last_cast(player, itemstack)
 end
 
 -- Adds a cast market to the world
-local function add_cast_marker(player, pos, is_angle)
+local function add_cast_marker(player, pos, is_angle, marker_num)
     local marker_id = hud:add(player, nil, {
         hud_elem_type = "image_waypoint",
         world_pos = pos,
-        text = is_angle and "forestry_tools_rf_anglemarker.png" or "forestry_tools_rf_marker.png",
+        text = "forestry_tools_rf_marker"..marker_num..".png",
         scale = {x = 1.5, y = 1.5},
         z_index = is_angle and -301 or -300,
         alignment = {x = 0, y = 0}
@@ -331,7 +331,7 @@ local function track_raycast_hit(player, itemstack)
         -- display hit on screen + log info in rangefinder
         table.insert(cast_table, {dir = dir, dist = dist})
         meta:set_string("casts", minetest.serialize(cast_table))
-        table.insert(mark_table, add_cast_marker(player, first_hit.intersection_point, is_angle))
+        table.insert(mark_table, add_cast_marker(player, first_hit.intersection_point, is_angle, #cast_table))
         meta:set_string("marks", minetest.serialize(mark_table))
         table.insert(prec_table, is_precise or (is_angle and "angle"))
         meta:set_string("precs", minetest.serialize(prec_table))
@@ -404,18 +404,18 @@ local function create_mode_hud_arrows(player)
             [TOOL_NAME..":MRHUD:arrow_mu"] = {
                 hud_elem_type = "image",
                 position = {x = MRHUD_POS.x, y = MRHUD_POS.y},
-                alignment = {x = 0, y = -1},
+                alignment = {x = 0, y = 0},
                 offset = MRHUD_OFFSET,
-                scale = {x = -0.75, y = -0.75},
+                scale = {x = -0.75*9/16, y = -0.75},
                 text = MRHUD_ARROW_DEFAULTS.up,
                 z_index = -1
             },
             [TOOL_NAME..":MRHUD:arrow_md"] = {
                 hud_elem_type = "image",
                 position = {x = MRHUD_POS.x, y = MRHUD_POS.y},
-                alignment = {x = 0, y = 1},
+                alignment = {x = 0, y = 0},
                 offset = MRHUD_OFFSET,
-                scale = {x = -0.75, y = -0.75},
+                scale = {x = -0.75*9/16, y = -0.75},
                 text = MRHUD_ARROW_DEFAULTS.down,
                 z_index = -1
             },
@@ -425,7 +425,7 @@ local function create_mode_hud_arrows(player)
                 position = {x = MRHUD_POS.x, y = MRHUD_POS.y - math.abs(MRHUD_BG_SCALE.y / 200)},
                 alignment = {x = 0, y = 0},
                 offset = MRHUD_OFFSET,
-                scale = {x = -0.75, y = -0.75},
+                scale = {x = -1*9/16, y = -1},
                 text = MRHUD_ARROW_DEFAULTS.up,
                 z_index = -1
             },
@@ -434,7 +434,7 @@ local function create_mode_hud_arrows(player)
                 position = {x = MRHUD_POS.x, y = MRHUD_POS.y + math.abs(MRHUD_BG_SCALE.y / 200)},
                 alignment = {x = 0, y = 0},
                 offset = MRHUD_OFFSET,
-                scale = {x = -0.75, y = -0.75},
+                scale = {x = -1*9/16, y = -1},
                 text = MRHUD_ARROW_DEFAULTS.down,
                 z_index = -1
             }
@@ -452,7 +452,7 @@ local function update_help_hud(player)
     local keymap = {
         aux = clean_key(minetest.settings:get("keymap_aux1") or "KEY_KEY_E"),
         sneak = clean_key(minetest.settings:get("keymap_sneak") or "KEY_LSHIFT"),
-        zoom = clean_key(minetest.settings:get("keymap_zoom") or "KEY_KEY_Z")
+        --zoom = clean_key(minetest.settings:get("keymap_zoom") or "KEY_KEY_Z")
     }
     local status_map = {
         [true] = { -- aux
@@ -551,19 +551,19 @@ local function update_mode_hud_arrows(player, itemstack)
         if pos == "m" then
             if dir == "u" then
                 text = text..(keys.aux1 and "^[multiply:#f2fcf9" or "^[multiply:#a9a9a9")
-                def.scale = (keys.aux1 and {x = -0.85, y = -0.85}) or {x = -0.6, y = -0.6}
+                def.scale = (keys.aux1 and {x = -1*9/16, y = -1}) or {x = -0.75*9/16, y = -0.75}
             elseif dir == "d" then
                 text = text..(not keys.aux1 and "^[multiply:#f2fcf9" or "^[multiply:#a9a9a9")
-                def.scale = (not keys.aux1 and {x = -0.85, y = -0.85}) or {x = -0.6, y = -0.6}
+                def.scale = (not keys.aux1 and {x = -1*9/16, y = -1}) or {x = -0.75*9/16, y = -0.75}
             end
             def.text = text..((keys.sneak or #ROUTINES[routine]["modes"] == 1) and "^[opacity:0" or "")
         elseif pos == "r" then
             if dir == "u" then
                 def.text = text..(keys.aux1 and "^[multiply:#f2fcf9" or "^[multiply:#a9a9a9")..((keys.sneak or mode == 1) and "" or "^[opacity:0")
-                def.scale = (keys.aux1 and {x = -1.25, y = -1.25}) or {x = -0.75, y = -0.75}
+                def.scale = (keys.aux1 and {x = -1.35*9/16, y = -1.3}) or {x = -1*9/16, y = -1}
             elseif dir == "d" then
                 def.text = text..(not keys.aux1 and "^[multiply:#f2fcf9" or "^[multiply:#a9a9a9")..((keys.sneak or mode == #ROUTINES[routine]["modes"]) and "" or "^[opacity:0")
-                def.scale = (not keys.aux1 and {x = -1.25, y = -1.25}) or {x = -0.75, y = -0.75}
+                def.scale = (not keys.aux1 and {x = -1.35*9/16, y = -1.3}) or {x = -1*9/16, y = -1}
             end
         end
         hud:change(player, elem, def)
@@ -579,8 +579,8 @@ local function update_mode_hud_modes(player, itemstack)
     -- clear mode hud to prevent element overlap
     mrhud_mode_hud:remove(player)
     if mode_count ~= 1 then
-        local scale = {x = -5, y = (math.abs(MRHUD_BG_SCALE.y) - MRHUD_SPACER * (mode_count - 1)) / -mode_count}
-        local shift_x = (math.abs(MRHUD_BG_SCALE.x / 2) + math.abs(scale.x / 2) + MRHUD_SPACER) / 100
+        local scale = {x = -5, y = -(math.abs(MRHUD_BG_SCALE.y) - MRHUD_SPACER * (mode_count - 1))/mode_count}
+        local shift_x = (math.abs(MRHUD_BG_SCALE.x / 2) + math.abs(scale.x/2) + MRHUD_SPACER)/100
         local initial_y = (math.abs(scale.y) - math.abs(MRHUD_BG_SCALE.y))/200
 
         for i,mode_data in ipairs(ROUTINES[routine]["modes"]) do
@@ -596,8 +596,7 @@ local function update_mode_hud_modes(player, itemstack)
             })
             mode_hud_text_abstract(player, mrhud_mode_hud, "add", TOOL_NAME..":MRHUD:mode_"..i.."_text", mode_data["key"], {x = shift_x, y = offset_y}, (i == mode and 0xffffff) or 0xd0d0d0, (i == mode and 2) or 1, 5)
         end
-
-        move_mode_hud_arrows(player, {x = shift_x, y = initial_y + ((mode - 1)*(math.abs(scale.y) + MRHUD_SPACER)/100) + MRHUD_SPACER/200}, math.abs(scale.y / 200))
+        move_mode_hud_arrows(player, {x = shift_x, y = initial_y + ((mode - 1)*(math.abs(scale.y) + MRHUD_SPACER)/100) - MRHUD_SPACER/200}, (math.abs(scale.y/2) + MRHUD_SPACER)/100)
     end
     update_mode_hud_arrows(player, itemstack)
 end
@@ -633,8 +632,8 @@ local function show_zoom_hud(player)
         hud:add(player, TOOL_NAME..":crosshair", {
             hud_elem_type = "image",
             position = {x = 0.5, y = 0.5},
-            text = "forestry_tools_rf_crosshair.png",
-            scale = {x = -60, y = -60},
+            text = "forestry_tools_rf_crosshair.png^[opacity:127",
+            scale = {x = -56.25, y = -100},
             z_index = -100,
             alignment = {x = 0, y = 0}
         })
@@ -825,7 +824,7 @@ end
 
 minetest.register_tool(TOOL_NAME, {
  	description = "Rangefinder",
- 	inventory_image = "rangefinder.jpg",
+ 	inventory_image = "forestry_tools_rangefinder.png",
  	-- Left-click the tool activate function
  	on_use = function(itemstack, player, pointed_thing)
         local pname = player:get_player_name()
@@ -914,7 +913,7 @@ minetest.register_globalstep(function(dtime)
                 local mark_table = minetest.deserialize(meta:get("marks") or minetest.serialize({}))
                 for i,mark in ipairs(mark_table) do
                     if type(mark) == "table" then
-                        mark_table[i] = add_cast_marker(player, mark.pos, mark.is_angle)
+                        mark_table[i] = add_cast_marker(player, mark.pos, mark.is_angle, i)
                     end
                 end
                 meta:set_string("marks", minetest.serialize(mark_table))
