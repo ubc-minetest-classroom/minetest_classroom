@@ -45,7 +45,7 @@ local aspen = {
     region = "most of North America",
     more_info = "Smooth-barked, randomly-branching tree. Also known as the golden aspen, due to the golden colour its leaves turn in the fall.",
 
-    texture = "magnify_default_populus_tremuloides.jpg",
+    texture = {"magnify_default_populus_tremuloides.jpg"},
     model_obj = "magnify_default_populus_tremuloides.obj",
     
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Populus%20tremuloides",
@@ -67,7 +67,7 @@ local pine = {
     region = "BC, Western Alberta, Southern Yukon and Western USA",
     more_info = "Large, straight trunked, column-like tree with a narrow, open crown",
 
-    texture = "magnify_default_pinus_contorta_var_latifolia.jpg",
+    texture = {"magnify_default_pinus_contorta_var_latifolia.jpg"},
     model_obj = "magnify_default_pinus_contorta_var_latifolia.obj",
     
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Pinus%20contorta", 
@@ -147,7 +147,7 @@ local Kelp = {
     bloom = "Blooms are caused by excess silicate in a body of water, where a type of algae called “diatoms” thrive", 
     region = "the waters of the Northern Hemisphere", -- bodies of water across the globe
 
-    texture = "magnify_default_desmarestia_ligulata.jpg",
+    texture = {"magnify_default_desmarestia_ligulata.jpg"},
     model_obj = "magnify_default_desmarestia_ligulata.obj",
 
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Desmarestia%20ligulata",
@@ -190,7 +190,7 @@ local Bush = {
     region = "Southern BC and California",
     more_info = "A shrub which attracts native bees and butterflies, and gives great cover for birds and small mammals.",
 
-    texture = "magnify_default_physocarpus_capitatus.jpg",
+    texture = {"magnify_default_physocarpus_capitatus.jpg"},
     model_obj = "magnify_default_physocarpus_capitatus.obj",
 
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Physocarpus%20capitatus",
@@ -234,7 +234,7 @@ local Cactus = {
     region = "BC to Southwest Ontario and Northern to Midwestern USA",
     more_info = "Perennial herb from a fibrous root; mat-forming; stems prostrate, succulent, subglobose to rounded, fleshy,",
     
-    texture = "magnify_default_opuntia_fragilis.jpg",
+    texture = {"magnify_default_opuntia_fragilis.jpg"},
     model_obj = "magnify_default_opuntia_fragilis.obj",
 
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Opuntia%20fragilis",
@@ -256,7 +256,7 @@ local Papyrus = {
     region = "Coastal BC, rare east of the Coast-Cascade Mountains",
     more_info = "An evergreen perennial. It has vertical green stems with horizontal bands similar to bamboo",
 
-    texture = "magnify_default_equisetum_telmateia.jpg",
+    texture = {"magnify_default_equisetum_telmateia.jpg"},
     model_obj = "magnify_default_equisetum_telmatei.obj",
 
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Equisetum%20telmateia",
@@ -278,7 +278,7 @@ local Fern = {
     region = "Coastal BC, infrequent in Southeast BC",
     more_info = "This fern is particularly distinctive because of its two different types of fronds",
 
-    texture = "magnify_default_struthiopteris_spicant.jpg",
+    texture = {"magnify_default_struthiopteris_spicant.jpg"},
     model_obj = "magnify_default_struthiopteris_spicant.obj",
 
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Blechnum%20spicant",
@@ -323,7 +323,7 @@ local mannagrass = {
     region = "various parts of Canada and the USA, including BC",
     more_info = "A perennial with upright, hollow tufts of grass stemming from rhizomes. Typically found in bogs, lakeshores, and moist to wet meadows in lowland and subalpine zones.",
     
-    texture = "magnify_default_glyceria_striata.jpg",
+    texture = {"magnify_default_glyceria_striata.jpg"},
     model_obj = "magnify_default_glyceria_striata.obj",
     
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Glyceria%20striata",
@@ -345,7 +345,7 @@ local Marram_Grass = {
     region = "Western North America, east of the Cascades, from Southern BC to Northern Mexico",
     more_info = "This tough grass is known for its ability to reseed and establish itself on sites damaged by fire or overgrazing.",
     
-    texture = "magnify_default_achnatherum_hymenoides.jpg",
+    texture = {"magnify_default_achnatherum_hymenoides.jpg"},
     model_obj = "magnify_default_achnatherum_hymenoides.obj",
     
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Achnatherum%20hymenoides",
@@ -367,7 +367,7 @@ local Savanna_Grass = {
     region = "SC and Southeast BC, rare elsewhere in BC",
     more_info = "Can be used for native hay production and will make nutritious feed, but is bettersuited to grazing use",
     
-    texture = "magnify_default_pseudoroegneria_spicata.jpg",
+    texture = {"magnify_default_pseudoroegneria_spicata.jpg"},
     model_obj = "magnify_default_pseudoroegneria_spicata.obj",
 
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Pseudoroegneria%20spicata",
@@ -412,7 +412,7 @@ local Grass = {
     region = "Southern BC, east of the Coast-Cascade Mountains",
     more_info = "Perennial, tufted grass that rarely flowers in shaded areas",
 
-    texture = "magnify_default_calamagrostis_rubescens.jpg",
+    texture = {"magnify_default_calamagrostis_rubescens.jpg"},
     model_obj = "magnify_default_calamagrostis_rubescens.obj",
 
     external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Calamagrostis%20rubescens",

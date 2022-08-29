@@ -65,6 +65,7 @@ local function get_context(player)
                 list = {}
             },
             filter_parity = 0,
+            image = 1,
         }
     end
     return magnify.context[pname]
@@ -104,7 +105,7 @@ minetest.register_tool(tool_name, {
     
             if ref_key then
                 -- try to build formspec
-                local species_formspec = magnify.build_formspec_from_ref(ref_key, true, player)
+                local species_formspec = magnify.build_formspec_from_ref(ref_key, true, player, 1)
                 local mdata = magnify.get_mdata(player)
                 if species_formspec then
                     -- good: save to discovered list and open formspec
@@ -669,7 +670,7 @@ local function build_compendium_formspec(context, is_exit)
                 "style_type[textarea;font=mono,bold]",
                 "textarea[13.6,0.9;5.2,0.8;;;", info.com_name or info.sci_name or "Species unknown", "]",
                 "button[13.6,1.3;5,0.7;view;View Species", info.texture and "     " or "", "]",
-                info.texture and "image[17.5,1.3;1.2,0.7;"..(type(info.texture) == "table" and info.texture[1] or info.texture).."]" or "",
+                info.texture and "image[17.5,1.3;1.2,0.7;"..info.texture[1].."]" or "",
                 "style_type[textarea;font=normal]",
             }))
         end
@@ -880,7 +881,8 @@ if minetest.get_modpath("sfinv") ~= nil then
                     reload = reload and math.min(RELOAD.SPC_UP, reload) or RELOAD.SPC_UP
                 elseif event.type == "DCL" then
                     -- open viewer
-                    local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false, player)
+                    context.image = 1
+                    local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false, player, context.image)
                     if view_fs then
                         context.page = STANDARD_VIEW
                         minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
@@ -894,7 +896,8 @@ if minetest.get_modpath("sfinv") ~= nil then
             end
             if fields.view then
                 -- open viewer
-                local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false, player)
+                context.image = 1
+                local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false, player, context.image)
                 if view_fs then
                     context.page = STANDARD_VIEW
                     minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
@@ -958,7 +961,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                 reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
 
-            if (fields.back or fields.quit) then
+            if fields.back or fields.quit then
                 context:clear()
             end
 
@@ -1026,6 +1029,13 @@ if minetest.get_modpath("sfinv") ~= nil then
                 end
             end
 
+            for k,v in pairs(fields) do
+                if string.sub(k, 1, 6) == "image_" then
+                    context.image = tonumber(string.sub(k, 7, 7)) or context.image or 1
+                    reload = true
+                end
+            end
+
             if formname == "magnify:view" then
                 if fields.quit or (fields.back and context.ref) then
                     context:clear()
@@ -1037,7 +1047,7 @@ if minetest.get_modpath("sfinv") ~= nil then
             end
 
             if reload == true then
-                local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), formname ~= "" and context.ref, player)
+                local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), formname ~= "" and context.ref, player, context.image)
                 if view_fs then
                     if formname == "" then
                         return player:set_inventory_formspec(view_fs)
@@ -1053,7 +1063,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                 end
                 if fields.back then
                     -- open viewer
-                    local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), formname ~= "" and context.ref, player)
+                    local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), formname ~= "" and context.ref, player, context.image)
                     if view_fs then
                         context.page = STANDARD_VIEW
                         minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)

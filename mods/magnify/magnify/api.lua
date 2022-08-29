@@ -109,7 +109,6 @@ function magnify.register_species(def_table, nodes)
     end
 
     local ref, format = find_registration_ref(def_table)
-    def_table["origin"] = minetest.get_current_modname()
 
     -- migrate old format reference keys
     if format ~= "v2" then
@@ -119,6 +118,12 @@ function magnify.register_species(def_table, nodes)
         else
             return nil -- could not determine ref key
         end
+    end
+
+    -- clean and add additional properties to definition table
+    def_table.origin = minetest.get_current_modname()
+    if def_table.texture and type(def_table.texture) ~= "table" then
+        def_table.texture = {def_table.texture}
     end
 
     local serial_table = minetest.serialize(def_table)
@@ -385,14 +390,39 @@ local function get_cons_status_info(cons_status)
     end
 end
 
+--- @private
+--- Creates a row of species image buttons
+--- @return string
+local function create_species_image_row(textures, pos, box_size, img_size)
+    local factor, spacer, shift = 0.1, 0.1, 0.2
+    local image_row = {
+        (#textures*(img_size.x + spacer) - spacer) > box_size.x and table.concat({
+            "scrollbaroptions[min=0;max=", math.max((#textures*(img_size.x + spacer) - spacer - box_size.x)/factor, 0), ";thumbsize=2]",
+            "scrollbar[", pos.x, ",", pos.y - shift, ";", box_size.x, ",", shift, ";horiozntal;image_row_scroll;0]",
+        }) or "",
+        "scroll_container[", pos.x, ",", pos.y, ";", box_size.x, ",", box_size.y, ";image_row_scroll;horizontal;", factor, "]",
+        "style_type[image_button;bgimg=blank.png]",
+    }
+
+    for i,img in ipairs(textures) do
+        table.insert(image_row, table.concat({
+            "image_button[", (img_size.x + spacer)*(i - 1), ",0;", img_size.x, ",", img_size.y, ";", img, ";image_", i, ";;false;false]",
+        }))
+    end
+    table.insert(image_row, "scroll_container_end[]")
+
+    return table.concat(image_row)
+end
+
 --- @public
 --- Builds the general species information formspec for the species indexed at `ref` in the `magnify` species database 
 --- If player is unspecified, player-dependent features (ex. favourites) are blocked
 --- @param ref Reference key of the species
 --- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
 --- @param player Player to build the formspec for
+--- @param image_num Position in texture list of image to display
 --- @return (formspec string, formspec "size[]" string) or nil
-function magnify.build_formspec_from_ref(ref, is_exit, player)
+function magnify.build_formspec_from_ref(ref, is_exit, player, image_num)
     local info = ref and minetest.deserialize(magnify.species.ref:get(ref))
   
     if info ~= nil then
@@ -499,7 +529,7 @@ function magnify.build_formspec_from_ref(ref, is_exit, player)
 
             table.insert(formtable_v3, table.concat({
                 "style_type[label;font=mono]",
-                x_pos > 10.3 and "scrollbaroptions[min=0;max="..math.max((x_pos - 10.3)/0.4, 0).."]" or "",
+                x_pos > 10.3 and "scrollbaroptions[min=0;max="..math.max((x_pos - 10.3)/0.4, 0)..";thumbsize=2]" or "",
                 x_pos > 10.3 and "scrollbar[0.3,6;10.5,0.2;horizontal;tag_scroll;0]" or "",
                 "scroll_container[0.5,5.2;10.1,0.8;tag_scroll;horizontal;0.4]",
                 table.concat(tag_table),
@@ -509,7 +539,7 @@ function magnify.build_formspec_from_ref(ref, is_exit, player)
         end
 
         table.insert(formtable_v3, table.concat({
-            "image[10.9,1.5;7.8,4.4;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
+            "image[10.9,1.5;7.8,4.4;", info.texture and info.texture[image_num or 1] or "test.png", "]",
             "style_type[textarea;font=mono;font_size=*1]",
             "textarea[0.2,6.6;10.7,5.9;;;", -- info area
             --"- ", minetest.formspec_escape(cons_status_desc or "Conservation status unknown"), "\n",
@@ -517,14 +547,8 @@ function magnify.build_formspec_from_ref(ref, is_exit, player)
             "- ", minetest.formspec_escape(info.height or "Height unknown"), "\n",
             "\n",
             minetest.formspec_escape((info.more_info and info.more_info.."\n") or ""),
-            minetest.formspec_escape(info.bloom or "Bloom pattern unknown"),
+            minetest.formspec_escape(info.bloom or ""),
             "]",
-        
-            "style_type[image_button;bgimg=blank.png]",
-            "image_button[10.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[2] or "test.png", ";image_2;;false;false]",
-            "image_button[12.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[3] or "test.png", ";image_3;;false;false]",
-            "image_button[14.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[4] or "test.png", ";image_4;;false;false]",
-            "image_button[16.9,6.5;1.9,1.1;", type(info.texture) == "table" and info.texture[5] or "test.png", ";image_5;;false;false]",
         }))
         
         if model_spec_loc then
@@ -533,19 +557,21 @@ function magnify.build_formspec_from_ref(ref, is_exit, player)
             table.insert(formtable_v3, table.concat({
                 "style[plant_model;bgcolor=#466577]",
                 "model[10.9,7.7;3.9,4.7;plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";", info.model_rot_verti or info.model_rot_x or "0", ",", info.model_rot_horiz or info.model_rot_y or "180", ";false;true;;]",
-                "image[14.9,7.7;3.9,4.7;", (type(info.texture) == "table" and info.texture[6]) or "test.png", "]",
+                "image[14.9,7.7;3.9,4.7;", info.range_map or "test.png", "]",
             }))
         else
             -- add images 6 + 7
             table.insert(formtable_v3, table.concat({
-                "image[10.9,7.7;3.9,4.7;", (type(info.texture) == "table" and info.texture[6]) or "test.png", "]",
-                "image[14.9,7.7;3.9,4.7;", (type(info.texture) == "table" and info.texture[7]) or "test.png", "]",
+                "image[10.9,7.7;3.9,4.7;", "test.png", "]",
+                "image[14.9,7.7;3.9,4.7;", info.range_map or "test.png", "]",
             }))
         end
     
         table.insert(formtable_v3, table.concat({
             "style_type[textarea;font=mono;font_size=*0.7;textcolor=black]",
             "textarea[10.85,5.95;7.9,0.39;;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
+            create_species_image_row(info.texture, {x = 10.9, y = 6.5}, {x = 7.9, y = 1.1}, {x = 1.9, y = 1.1}),
+
             "image[0,12.6;19,0.4;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
             "style_type[textarea;font=mono;font_size=*0.9;textcolor=white]",
             "textarea[0.2,12.62;18.6,0.5;;;", info.info_source and "Source: "..info.info_source or "Source unknown", info.last_updated and "  -  Last updated on "..info.last_updated or "", "]", 
