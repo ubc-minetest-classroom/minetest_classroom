@@ -50,13 +50,13 @@ magnify.map.family = {
     ["Papaveraceae"] = "Fumitory",
     ["Caprifoliaceae"] = "Valerian",
     ["Asteraceae"] = "Aster",
-    --["Boletaceae"] = "A fungus family",
     ["Nymphaeaceae"] = "Water-lily",
-    --["Amanitaceae"] = "A fungus family",
     ["Sapindaceae"] = "Horse-chestnut family",
 }
 magnify.map.genus = {
     -- TODO
+    ["Pinus"] = "Pine",
+    ["Acer"] = "Maple",
 }
 
 -- Tag descriptors

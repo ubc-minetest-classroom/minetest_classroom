@@ -19,9 +19,49 @@ end
 ---     GENERAL     ---
 -----------------------
 
+--- Saves data to a player's magnify metadata
+--- @param player Player to save data for
+--- @param data Data to save
+--- @return boolean
+function magnify.save_mdata(player, data)
+    if not player:is_player() or type(data) ~= "table" then
+        return false -- invalid player/metadata
+    end
+
+    local meta = player:get_meta()
+    meta:set_string("magnify:pdata", minetest.serialize(data))
+    return true
+end
+
+--- Gets data from a player's `magnify` metadata
+--- @param player Player to get data for
+--- @return table or nil
+function magnify.get_mdata(player)
+    if not player:is_player() then
+        return nil -- invalid player
+    end
+
+    local meta = player:get_meta()
+    local data = minetest.deserialize(meta:get("magnify:pdata") or minetest.serialize(nil))
+    
+    if not data or type(data) ~= "table" then
+        data = {
+            discovered = {},
+            favourites = {},
+            format = 1,
+        }
+        magnify.save_mdata(player, data)
+    elseif not data.format or data.format < 1 then
+        -- temp b/c only format 1 exists
+        data.format = 1
+        magnify.save_mdata(player, data)
+    end
+    return data
+end
+
 --- @private
 --- Searches for a reference key with information matching the information in def_table, and returns it if found, along with a string indicating the format of the reference key
---- Otherwise, returns the next unused reference key
+--- Otherwise, returns the next unused reference key, and the latest format
 --- @param def_table Species definition table
 --- @return string, string
 local function find_registration_ref(def_table)
@@ -347,10 +387,12 @@ end
 
 --- @public
 --- Builds the general species information formspec for the species indexed at `ref` in the `magnify` species database 
+--- If player is unspecified, player-dependent features (ex. favourites) are blocked
 --- @param ref Reference key of the species
 --- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
+--- @param player Player to build the formspec for
 --- @return (formspec string, formspec "size[]" string) or nil
-function magnify.build_formspec_from_ref(ref, is_exit)
+function magnify.build_formspec_from_ref(ref, is_exit, player)
     local info = ref and minetest.deserialize(magnify.species.ref:get(ref))
   
     if info ~= nil then
@@ -383,10 +425,25 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             "image[11.3,0.8;0.6,0.6;magnify_compendium_locate.png]",
             "button[13.6,0.8;3.8,0.6;tech_view;   Technical Info]",
             "image[13.6,0.8;0.6,0.6;magnify_compendium_tech_info.png]",
-            "image_button[17.5,0.8;0.6,0.6;magnify_compendium_heart_hollow.png;favourite;;false;false]",
+        }
+
+        -- Add favourites 
+        if player and player:is_player() then
+            local mdata = magnify.get_mdata(player)
+            table.insert(formtable_v3, table.concat({
+                "image_button[17.5,0.8;0.6,0.6;magnify_compendium_heart_", mdata.favourites and mdata.favourites[ref] and "filled" or "hollow", ".png;favourite;;false;false]",
+                "tooltip[favourite;", mdata.favourites[ref] and "Remove from " or "Add to ", "Favourites]",
+            }))
+        else
+            table.insert(formtable_v3, table.concat({
+                "image_button[17.5,0.8;0.6,0.6;magnify_compendium_heart_hollow.png^[colorize:#909090:alpha;favourite_blocked;;false;false]",
+                "tooltip[favourite_blocked;Favourites inaccessible]",
+            }))
+        end
+        
+        table.insert(formtable_v3, table.concat({
             "image_button[18.2,0.8;0.6,0.6;magnify_compendium_settings.png^[multiply:#000000;settings;;false;false]",
             "image[10.8,1.4;8.0,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
-            "tooltip[favourite;Save to Favourites]",
             "tooltip[settings;Settings]",
 
             "image[0.2,1.4;18.6,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
@@ -396,7 +453,7 @@ function magnify.build_formspec_from_ref(ref, is_exit)
             "style_type[textarea;font=mono,bold;textcolor=black;font_size=*0.85]",
             "image[0.5,1.7;1.3,0.5;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
             "textarea[0.6,1.8;1.3,0.8;;;FAMILY]",
-        }
+        }))
     
         if false and info.fam_name then
             -- gamified family area

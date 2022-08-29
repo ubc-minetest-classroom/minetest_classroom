@@ -43,6 +43,7 @@ local function check_perm(player)
     return minetest.check_player_privs(player:get_player_name(), priv_table)
 end
 
+-- Gets the player's magnify formspec context
 local function get_context(player)
     local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name()) or ""
     if not magnify.context[pname] then
@@ -103,9 +104,14 @@ minetest.register_tool(tool_name, {
     
             if ref_key then
                 -- try to build formspec
-                local species_formspec = magnify.build_formspec_from_ref(ref_key, true, false)
+                local species_formspec = magnify.build_formspec_from_ref(ref_key, true, player)
+                local mdata = magnify.get_mdata(player)
                 if species_formspec then
-                    -- good: open formspec
+                    -- good: save to discovered list and open formspec
+                    if mdata and mdata.discovered and not mdata.discovered[ref_key] then
+                        mdata.discovered[ref_key] = true
+                        magnify.save_mdata(player, mdata)
+                    end
                     local context = get_context(pname)
                     context.ref = ref_key
                     minetest.show_formspec(pname, "magnify:view", species_formspec)
@@ -757,8 +763,11 @@ if minetest.get_modpath("sfinv") ~= nil then
                         context.page = MENU
                         return player:set_inventory_formspec(get_compendium_formspec(context))
                     elseif context.page == TECH_VIEW then
-                        context.page = STANDARD_VIEW
-                        return player:set_inventory_formspec(magnify.build_formspec_from_ref(get_selected_species_ref(context), false))
+                        local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false, player)
+                        if view_fs then
+                            context.page = STANDARD_VIEW
+                            return player:set_inventory_formspec(view_fs)
+                        end
                     end
                 end
                 form_action = (context.page == MENU and "magnify:compendium") or (context.page == STANDARD_VIEW and "magnify:view") or (context.page == TECH_VIEW and "magnify:tech_view") or form_action
@@ -819,7 +828,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                     reload = reload and math.min(RELOAD.SPC_UP, reload) or RELOAD.SPC_UP
                 elseif event.type == "DCL" then
                     -- open viewer
-                    local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false)
+                    local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false, player)
                     if view_fs then
                         context.page = STANDARD_VIEW
                         minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
@@ -833,7 +842,7 @@ if minetest.get_modpath("sfinv") ~= nil then
             end
             if fields.view then
                 -- open viewer
-                local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false)
+                local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false, player)
                 if view_fs then
                     context.page = STANDARD_VIEW
                     minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
@@ -911,6 +920,8 @@ if minetest.get_modpath("sfinv") ~= nil then
             end
         elseif form_action == "magnify:view" then
             -- handle viewer functions
+            local reload = false
+
             if fields.locate then
                 local ref = get_selected_species_ref(context)
                 local info,nodes = magnify.get_species_from_ref(ref)
@@ -936,10 +947,34 @@ if minetest.get_modpath("sfinv") ~= nil then
                     end
                 end
             end
+            if fields.favourite then
+                local mdata = magnify.get_mdata(player)
+                local ref = get_selected_species_ref(context)
+                if mdata.favourites then
+                    if mdata.favourites[ref] then
+                        mdata.favourites[ref] = nil
+                    else
+                        mdata.favourites[ref] = true
+                    end
+                    magnify.save_mdata(player, mdata)
+                    reload = true
+                end
+            end
 
             if formname == "magnify:view" then
                 if fields.quit or fields.back then
                     context:clear()
+                end
+            end
+
+            if reload == true then
+                local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), formname ~= "", player)
+                if view_fs then
+                    if formname == "" then
+                        return player:set_inventory_formspec(view_fs)
+                    else
+                        return minetest.show_formspec(pname, "magnify:view", view_fs)
+                    end
                 end
             end
         elseif form_action == "magnify:tech_view" then
@@ -949,7 +984,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                 end
                 if fields.back then
                     -- open viewer
-                    local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), true)
+                    local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), true, player)
                     if view_fs then
                         context.page = STANDARD_VIEW
                         minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
@@ -983,4 +1018,10 @@ minetest.register_on_mods_loaded(function()
     for ref,_ in pairs(ref_list) do
         magnify.clear_ref(ref)
     end
+end)
+
+-- Player metadata update caller
+minetest.register_on_joinplayer(function(player)
+    -- Calling this will ensure that magnify player metadata exists and is in the latest format
+    magnify.get_mdata(player)
 end)

@@ -126,19 +126,42 @@ Each species and its corresponding reference key will be at the same index in bo
   - *`table`*: Names of all registered species, formatted as "Common name (Scientific name)"
   - *`table`*: Reference keys for all registered species, in the same order as the list of names
 
-### `magnify.build_formspec_from_ref(ref, is_exit, is_inv)  -->  string, string`
+### `magnify.build_formspec_from_ref(ref, is_exit, player)  -->  string, string`
 
 Builds the general species information formspec for the species indexed at `ref` in the `magnify` species database  
+If player is unspecified, player-dependent features (ex. favourites) are blocked
 
 - Parameters:
   - `ref` (*`string`*): Reference key of the species
   - `is_exit` (*`boolean`*): `true` if clicking the "Back" button should exit the formspec, `false` otherwise
-  - `is_inv` (*`boolean`*): `true` if the formspec is being used in the player inventory, `false` otherwise
+  - `player` (*`ObjectRef`*): Player who the formspec is being shown to
 - Returns:
   - *`string`*: Full formspec
   - *`string`*: Formspec `size[]` element  
   *OR*
   - `nil` if `ref` is invalid
+
+### `magnify.get_mdata(player)  -->  table`
+
+Gets data from a player's `magnify` metadata
+
+- Parameters:
+  - `player` (*`ObjectRef`*): Player to get data for
+- Returns:
+  - *`table`*: `magnify` data table
+  *OR*
+  - `nil` if `player` is invalid
+
+### `magnify.save_mdata(player, data)  -->  boolean`
+
+Saves data to a player's `magnify` metadata
+Returns `true` if successful, `false` otherwise
+
+- Parameters:
+  - `player` (*`ObjectRef`*): Player to save data for
+  - `data` (*`table`*): Data to save
+- Returns:
+  - *`boolean`*: Whether the data table was successfully saved or not
 
 ## Helper functions
 
