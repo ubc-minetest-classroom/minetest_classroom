@@ -40,28 +40,36 @@ end
 
 local function buildFilePath(rootDirectory, extension)
     if (extension == nil) then
-        extension = ".json"
+        extension = "json"
     end
+
     local directories = {}
     table.insert(directories, rootDirectory)
 
     local files = {}
 
     while (#directories > 0) do
-        local currentDir = table.remove(directories, #directories)
+        local currentDir = table.remove(directories, 1)
+
+        -- Iterate over all the folders in the current directory and add them to the directories list.
         for _, directory in pairs(minetest.get_dir_list(currentDir, true)) do
             table.insert(directories, currentDir .. "\\" .. directory)
         end
 
+        -- Iterate over all the files in the current directory and add them to the files list.
         for _, fileName in pairs(minetest.get_dir_list(currentDir, false)) do
             local ext = string.sub(fileName, -#extension)
             if (ext == extension) then
                 table.insert(files, currentDir .. "\\" .. fileName)
             end
         end
-
-        return files
     end
+
+    for k, v in pairs(files) do
+        minetest.debug("Found file: " .. v)
+    end
+
+    return files
 end
 
 local function loadFile(filePath)
@@ -78,11 +86,12 @@ local function loadFile(filePath)
     end
 end
 
-local function loadDirectory(rootPath)
-    local files = buildFilePath(rootPath, ".json")
+function json_importer.loadDirectory(rootPath)
+    local files = buildFilePath(rootPath, "json")
     for k, file in ipairs(files) do
-        loadFile(file, ".json")
+        minetest.debug(tostring(file))
+        loadFile(file)
     end
 end
 
-json_importer.loadDirectory = loadDirectory
+--json_importer.loadDirectory(minetest.get_modpath(minetest.get_current_modname()) .. "\\data")
