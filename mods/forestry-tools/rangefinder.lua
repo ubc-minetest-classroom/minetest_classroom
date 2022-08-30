@@ -1,13 +1,10 @@
---[[ TODO
--- Add calculation/cast outputs to HUD instead of chat
+--[[
+ADDITIONAL CONSIDERATIONS
 -- Auto-reset?
--- Implement alternate left-click actions (?)
--- Implement AZ and ML-AZ modes
-  -- AZ = reading at current point (basically, compass)
-  -- ML-AZ = direction from cast 1 to cast 2 (angle between N and ray vector)
-]]
+-- Implement additional settings?
+  -- Degrees vs. percent slope for INC
 
---[[ CURRENT CONTROL SCHEME
+CURRENT CONTROL SCHEME
 -- L-CLICK               = take measurement/clear
 -- L-CLICK + AUX         = clear previous measurement
 -- L-CLICK + AUX + SNEAK = clear all measurements
@@ -40,8 +37,8 @@ local ROUTINES = {
         [5] = {key = "AZ", unit = "°"}
     }}
 }
-local MRHUD_POS = {x = 0.0725, y = 0.857}
-local MRHUD_OFFSET = {x = 5, y = -5} -- {x = 0, y = 0}
+local MRHUD_POS = {x = 0.0725, y = 0.5}
+local MRHUD_OFFSET = {x = 5, y = 0}
 local MRHUD_BG_SCALE = {x = -14.5, y = -19}
 local SUB_BG_SCALE = {x = -6, y = -4.8}
 local MRHUD_SPACER = 0.1
@@ -91,6 +88,11 @@ local function save_item_meta(player, itemstack)
             end
         end
     end
+end
+
+-- Removes KEY_ from the front of key names
+local function clean_key(key)
+    return string.match(tostring(key), "K?E?Y?_?KEY_(.-)$") or key
 end
 
 -- Constrains val to the open domain defined by [min, max]
@@ -441,6 +443,74 @@ local function create_mode_hud_arrows(player)
             hud:add(player, elem, def)
         end
         --minetest.log(minetest.serialize(hud:get(player, TOOL_NAME..":MRHUD:arrow_mu")))
+    end
+end
+
+-- Updates the help text on the right side of the rangefinder screen
+local function update_help_hud(player)
+    local keys = player:get_player_control()
+    local keymap = {
+        aux = clean_key(minetest.settings:get("keymap_aux1") or "KEY_KEY_E"),
+        sneak = clean_key(minetest.settings:get("keymap_sneak") or "KEY_LSHIFT"),
+        zoom = clean_key(minetest.settings:get("keymap_zoom") or "KEY_KEY_Z")
+    }
+    local status_map = {
+        [true] = { -- aux
+            [true] = { -- sneak
+                "While ", keymap.aux, " and ", keymap.sneak, " held:", "\n",
+                "LEFT CLICK = Clear all measurements", "\n",
+                "RIGHT CLICK = Cycle routine (up)", "\n",
+            },
+            [false] = { -- no sneak
+                "While ", keymap.aux, " held:", "\n",
+                "LEFT CLICK = Clear last measurement", "\n",
+                "RIGHT CLICK = Cycle mode (up)", "\n",
+            },
+        },
+        [false] = { -- no aux
+            [true] = { -- sneak
+                "While ", keymap.sneak, " held:", "\n",
+                "LEFT CLICK = Take measurement/clear", "\n",
+                "RIGHT CLICK = Cycle routine (down)", "\n",
+            },
+            [false] = { -- no sneak
+                "While unmodified:", "\n",
+                "LEFT CLICK = Take measurement/clear", "\n",
+                "RIGHT CLICK = Cycle mode (down)", "\n",
+            },
+        },
+    }
+
+    local text = status_map[keys.aux1 or false][keys.sneak or false]
+    table.insert(text, table.concat({
+        "\n", "Hold ", keymap.aux, " (aux1) and/or", "\n",
+        keymap.sneak, " (sneak) to modify actions",
+    }))
+    local help_def = {
+        hud_elem_type = "text",
+        position = {x = 0.902, y = MRHUD_POS.y},
+        alignment = {x = 0, y = 0},
+        offset = {x = -MRHUD_OFFSET.x, y = MRHUD_OFFSET.y},
+        color = 0xFFFFFF,
+        scale = {x = 100, y = 100},
+        text = table.concat(text, ""),
+        text_scale = 1,
+        z_index = 1
+    }
+
+    if hud:get(player, TOOL_NAME..":help_hud") then
+        hud:change(player, TOOL_NAME..":help_hud", help_def)
+    else
+        hud:add(player, TOOL_NAME..":help_hud", help_def)
+        hud:add(player, TOOL_NAME..":help_hud_bg", {
+            hud_elem_type = "image",
+            position = {x = 0.902, y = MRHUD_POS.y},
+            alignment = {x = 0, y = 0},
+            offset = {x = -MRHUD_OFFSET.x, y = MRHUD_OFFSET.y},
+            scale = {x = -19.6, y = -16},
+            text = "forestry_tools_pixel.png^[multiply:#000000^[opacity:127",
+            z_index = -2,
+        })
     end
 end
 
@@ -858,6 +928,7 @@ minetest.register_globalstep(function(dtime)
                 hide_zoom_hud(player)
             end
             update_mode_hud_arrows(player, wield)
+            update_help_hud(player)
         else
             hud:remove(player)
             mrhud_mode_hud:remove(player)
