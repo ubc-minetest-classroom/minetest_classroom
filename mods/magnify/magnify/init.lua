@@ -677,10 +677,10 @@ end
 --- @param ref Reference key of the species
 --- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
 --- @param player Player to build the formspec for
---- @param image_num Position in texture list of image to display
 --- @return formspec string, formspec "size[]" string
-function build_viewer_formspec(ref, is_exit, player, image_num)
+function build_viewer_formspec(ref, is_exit, player)
     local info = ref and minetest.deserialize(magnify.species.ref:get(ref))
+    local context = player and player:is_player() and get_context(player)
   
     if info ~= nil then
         -- entry good, return V3 formspec
@@ -796,7 +796,7 @@ function build_viewer_formspec(ref, is_exit, player, image_num)
         end
 
         table.insert(formtable_v3, table.concat({
-            "image[10.9,1.5;7.8,4.4;", info.texture and info.texture[image_num or 1] or "test.png", "]",
+            "image[10.9,1.5;7.8,4.4;", info.texture and info.texture[context and context.image or 1] or "test.png", "]",
             "style_type[textarea;font=mono;font_size=*1]",
             "textarea[0.2,6.6;10.7,5.9;;;", -- info area
             --"- ", minetest.formspec_escape(cons_status_desc or "Conservation status unknown"), "\n",
@@ -1149,23 +1149,30 @@ if minetest.get_modpath("sfinv") ~= nil then
                     context.species.selected = page_table.sel.s
                     context.ref = nil
                 elseif page_table.ref then
+                    context.family.selected = 1
+                    context.genus.selected = 1
+                    context.species.selected = 1
                     context.ref = page_table.ref
                 end
 
                 local page_table_map = {
                     [MENU] = function()
+                        context.show_common = page_table.com
+                        context.filter = page_table.filter
+                        context.filter_parity = page_table.filter_par
                         reload_fs(player, formname == "" and formname or "magnify:compendium",
-                            build_compendium_formspec(context, page_table.is_exit)
+                            build_compendium_formspec(context, page_table.exit)
                         )
                     end,
                     [STANDARD_VIEW] = function()
+                        context.image = page_table.img
                         reload_fs(player, formname == "" and formname or "magnify:view",
-                            build_viewer_formspec(get_selected_species_ref(context), page_table.is_exit, player, page_table.img)
+                            build_viewer_formspec(get_selected_species_ref(context), page_table.exit, player)
                         )
                     end,
                     [TECH_VIEW] = function()
                         reload_fs(player, formname == "" and formname or "magnify:tech_view",
-                            build_technical_formspec(get_selected_species_ref(context), page_table.is_exit)
+                            build_technical_formspec(get_selected_species_ref(context), page_table.exit)
                         )
                     end,
                 }
@@ -1232,7 +1239,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                 elseif event.type == "DCL" then
                     -- open viewer
                     context.image = 1
-                    local view_fs = build_viewer_formspec(get_selected_species_ref(context), false, player, context.image)
+                    local view_fs = build_viewer_formspec(get_selected_species_ref(context), false, player)
                     if view_fs then
                         context.page = STANDARD_VIEW
                         open_fs(player, formname == "" and formname or "magnify:view", view_fs{
@@ -1245,7 +1252,7 @@ if minetest.get_modpath("sfinv") ~= nil then
             if fields.view then
                 -- open viewer
                 context.image = 1
-                local view_fs = build_viewer_formspec(get_selected_species_ref(context), false, player, context.image)
+                local view_fs = build_viewer_formspec(get_selected_species_ref(context), false, player)
                 if view_fs then
                     context.page = STANDARD_VIEW
                     open_fs(player, formname == "" and formname or "magnify:view", view_fs{
@@ -1397,7 +1404,7 @@ if minetest.get_modpath("sfinv") ~= nil then
             end
 
             if reload == true then
-                local view_fs = build_viewer_formspec(get_selected_species_ref(context), formname ~= "" and context.ref, player, context.image)
+                local view_fs = build_viewer_formspec(get_selected_species_ref(context), formname ~= "" and context.ref, player)
                 if view_fs then
                     reload_fs(player, formname, view_fs)
                 end
@@ -1410,11 +1417,11 @@ if minetest.get_modpath("sfinv") ~= nil then
                 if fields.back then
                     -- open viewer
                     local is_exit = formname ~= "" and context.ref and true
-                    local view_fs = build_viewer_formspec(get_selected_species_ref(context), is_exit, player, context.image)
+                    local view_fs = build_viewer_formspec(get_selected_species_ref(context), is_exit, player)
                     if view_fs then
                         context.page = STANDARD_VIEW
                         open_fs(player, formname == "" and formname or "magnify:view", view_fs, {
-                            p = STANDARD_VIEW, exit = false, img = context.image,
+                            p = STANDARD_VIEW, exit = is_exit, img = context.image,
                             ref = context.ref,
                             sel = not context.ref and {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
                         })
@@ -1479,7 +1486,7 @@ minetest.register_tool(tool_name, {
     
             if ref_key then
                 -- try to build formspec
-                local species_formspec = build_viewer_formspec(ref_key, true, player, 1)
+                local species_formspec = build_viewer_formspec(ref_key, true, player)
                 local mdata = magnify.get_mdata(player)
                 if species_formspec then
                     -- good: save to discovered list and open formspec
@@ -1490,7 +1497,7 @@ minetest.register_tool(tool_name, {
                     local context = get_context(pname)
                     context.ref = ref_key
                     open_fs(player, "magnify:view", species_formspec, {
-                        p = STANDARD_VIEW, exit = false, img = context.image, ref = context.ref,
+                        p = STANDARD_VIEW, exit = true, img = context.image, ref = context.ref,
                     })
                 else
                     -- bad: display corrupted node message in chat
