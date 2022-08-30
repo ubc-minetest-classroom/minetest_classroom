@@ -96,7 +96,16 @@ local function nav_append(context, page_table)
         end
     end
     context.nav.index = index
-    minetest.log(minetest.serialize(context.nav.list))
+    --minetest.log(minetest.serialize(context.nav.list)) -- debug
+end
+
+-- Updates the keys in update_table for the current page's table in the navigation sequence
+local function nav_update_current(context, update_table)
+    local page_table = context.nav.list[context.nav.index]
+    for k,v in pairs(update_table) do
+        page_table[k] = v
+    end
+    --minetest.log(minetest.serialize(context.nav.list)) -- debug
 end
 
 -- Reloads the given formspec
@@ -1093,28 +1102,34 @@ if minetest.get_modpath("sfinv") ~= nil then
         if formname == "" then
             if fields.magnify_plant_compendium then
                 context.page = MENU
-                return player:set_inventory_formspec(build_compendium_formspec(context))
+                open_fs(player, formname, build_compendium_formspec(context), {
+                    p = MENU, exit = false, com = context.show_common, filter_par = context.filter_parity,
+                    filter = context.filter and table.copy(context.filter) or get_blank_filter_table(),
+                    sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
+                })
             end
             
             if context.page and context.page >= 1 then -- magnify inventory view active
-                if fields.quit then
+                if fields.quit or (fields.back and context.page == MENU) then
                     sfinv.set_page(player, sfinv.get_homepage_name(player))
                     sfinv.set_player_inventory_formspec(player)
                     return context:clear()
-                end
-                if fields.back then
-                    if context.page == MENU then
-                        sfinv.set_page(player, sfinv.get_homepage_name(player))
-                        sfinv.set_player_inventory_formspec(player)
-                        return context:clear()
-                    elseif context.page == STANDARD_VIEW then
+                elseif fields.back then
+                    if context.page == STANDARD_VIEW then
                         context.page = MENU
-                        return player:set_inventory_formspec(build_compendium_formspec(context))
+                        open_fs(player, formname, build_compendium_formspec(context), {
+                            p = MENU, exit = false, com = context.show_common, filter_par = context.filter_parity,
+                            filter = context.filter and table.copy(context.filter) or get_blank_filter_table(),
+                            sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
+                        })
                     elseif context.page == TECH_VIEW then
                         local view_fs = build_viewer_formspec(get_selected_species_ref(context), false, player)
                         if view_fs then
                             context.page = STANDARD_VIEW
-                            return player:set_inventory_formspec(view_fs)
+                            open_fs(player, formname, view_fs, {
+                                p = STANDARD_VIEW, exit = false, img = context.image,
+                                sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
+                            })
                         end
                     end
                 end
@@ -1220,9 +1235,10 @@ if minetest.get_modpath("sfinv") ~= nil then
                     local view_fs = build_viewer_formspec(get_selected_species_ref(context), false, player, context.image)
                     if view_fs then
                         context.page = STANDARD_VIEW
-                        open_fs(player, formname == "" and formname or "magnify:view", view_fs,
-                            {p = STANDARD_VIEW, exit = false, sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}}
-                        )
+                        open_fs(player, formname == "" and formname or "magnify:view", view_fs{
+                            p = STANDARD_VIEW, exit = false, img = context.image,
+                            sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
+                        })
                     end
                 end
             end
@@ -1232,9 +1248,10 @@ if minetest.get_modpath("sfinv") ~= nil then
                 local view_fs = build_viewer_formspec(get_selected_species_ref(context), false, player, context.image)
                 if view_fs then
                     context.page = STANDARD_VIEW
-                    open_fs(player, formname == "" and formname or "magnify:view", view_fs,
-                        {p = STANDARD_VIEW, exit = false, sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}}
-                    )
+                    open_fs(player, formname == "" and formname or "magnify:view", view_fs{
+                        p = STANDARD_VIEW, exit = false, img = context.image,
+                        sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
+                    })
                 end
             end
           
@@ -1244,6 +1261,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                 context.family.selected = 1
                 context.genus.selected = 1
                 context.species.selected = 1
+
                 reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
             if fields.search_x or ((fields.search_go or fields.key_enter_field == "search") and fields.search == "") then
@@ -1257,6 +1275,7 @@ if minetest.get_modpath("sfinv") ~= nil then
 
             if fields.toggle_common then
                 context.show_common = (fields.toggle_common == "true" and true) or false
+                nav_update_current(context, {com = context.show_common})
                 reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
 
@@ -1270,6 +1289,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                     if cat and tag then
                         context.filter.select[cat] = context.filter.select[cat] or {}
                         context.filter.select[cat][tag] = val == "true" and true or nil
+                        --nav_update_current(context, {filter = table.copy(context.filter)}) -- intentionally omitting
                     end
                 end
             end
@@ -1279,6 +1299,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                 context.family.selected = 1
                 context.genus.selected = 1
                 context.species.selected = 1
+                nav_update_current(context, {filter = table.copy(context.filter)})
                 reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
             if fields.filter_clear then
@@ -1287,6 +1308,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                 context.family.selected = 1
                 context.genus.selected = 1
                 context.species.selected = 1
+                nav_update_current(context, {filter = table.copy(context.filter), filter_par = context.filter_parity})
                 reload = reload and math.min(RELOAD.FULL, reload) or RELOAD.FULL
             end
 
@@ -1296,6 +1318,7 @@ if minetest.get_modpath("sfinv") ~= nil then
 
             context.reload = reload
             if reload then
+                nav_update_current(context, {sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}})
                 reload_fs(player, formname, build_compendium_formspec(context))
             end
         elseif form_action == "magnify:view" then
@@ -1333,25 +1356,29 @@ if minetest.get_modpath("sfinv") ~= nil then
 
                 -- view species in compendium
                 context.page = MENU
-                open_fs(player, formname == "" and formname or "magnify:compendium", build_compendium_formspec(context, formname ~= ""),
-                    {p = MENU, exit = formname ~= "", sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}}
-                )
+                open_fs(player, formname == "" and formname or "magnify:compendium", build_compendium_formspec(context, formname ~= ""), {
+                    p = MENU, exit = formname ~= "", com = context.show_common, filter_par = context.filter_parity,
+                    filter = context.filter and table.copy(context.filter) or get_blank_filter_table(),
+                    sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
+                })
             end
             if fields.tech_view then
                 -- open technical viewer
                 local tech_fs = build_technical_formspec(get_selected_species_ref(context), false)
                 if tech_fs then
                     context.page = TECH_VIEW
-                    open_fs(player, formname == "" and formname or "magnify:tech_view", tech_fs,
-                        context.ref and {p = TECH_VIEW, exit = false, ref = context.ref} or
-                        {p = TECH_VIEW, exit = false, sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}}
-                    )
+                    open_fs(player, formname == "" and formname or "magnify:tech_view", tech_fs, {
+                        p = TECH_VIEW, exit = false,
+                        ref = context.ref,
+                        sel = not context.ref and {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
+                    })
                 end
             end
 
             for k,v in pairs(fields) do
                 if string.sub(k, 1, 6) == "image_" then
                     context.image = tonumber(string.sub(k, 7, 7)) or context.image or 1
+                    nav_update_current(context, {img = context.image})
                     reload = true
                 end
             end
@@ -1361,9 +1388,11 @@ if minetest.get_modpath("sfinv") ~= nil then
                     context:clear()
                 elseif fields.back then
                     -- view species in compendium
-                    open_fs(player, "magnify:compendium", build_compendium_formspec(context, true),
-                        {p = MENU, exit = true, sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}}
-                    )
+                    open_fs(player, "magnify:compendium", build_compendium_formspec(context, true), {
+                        p = MENU, exit = true, com = context.show_common, filter_par = context.filter_parity,
+                        filter = context.filter and table.copy(context.filter) or get_blank_filter_table(),
+                        sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
+                    })
                 end
             end
 
@@ -1384,10 +1413,11 @@ if minetest.get_modpath("sfinv") ~= nil then
                     local view_fs = build_viewer_formspec(get_selected_species_ref(context), is_exit, player, context.image)
                     if view_fs then
                         context.page = STANDARD_VIEW
-                        open_fs(player, formname == "" and formname or "magnify:view", view_fs,
-                            context.ref and {p = STANDARD_VIEW, exit = is_exit, ref = context.ref} or
-                            {p = STANDARD_VIEW, exit = is_exit, sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}}
-                        )
+                        open_fs(player, formname == "" and formname or "magnify:view", view_fs, {
+                            p = STANDARD_VIEW, exit = false, img = context.image,
+                            ref = context.ref,
+                            sel = not context.ref and {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
+                        })
                     end
                 end
             end
@@ -1459,7 +1489,9 @@ minetest.register_tool(tool_name, {
                     end
                     local context = get_context(pname)
                     context.ref = ref_key
-                    open_fs(player, "magnify:view", species_formspec, {p = STANDARD_VIEW, exit = true, ref = ref_key})
+                    open_fs(player, "magnify:view", species_formspec, {
+                        p = STANDARD_VIEW, exit = false, img = context.image, ref = context.ref,
+                    })
                 else
                     -- bad: display corrupted node message in chat
                     minetest.chat_send_player(pname, "An entry for this item exists, but could not be found in the species database.\nPlease contact an administrator and ask them to check your server's species database files to ensure all species were registered properly.")
