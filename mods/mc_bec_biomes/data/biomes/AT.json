@@ -16,6 +16,6 @@
   "node_water": "default:ice",
   "node_water_top": "default:ice",
   "node_dust": "default:snow",
-  "name": "McBecBiome:AT",
+  "name": "mcbecbiome:AT",
   "_jsonType": "biome"
 }

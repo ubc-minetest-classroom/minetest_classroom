@@ -15,6 +15,6 @@
   "node_top": "default:dirt_with_dry_grass",
   "node_water": "default:water_source",
   "node_water_top": "default:water_source",
-  "name": "McBecBiome:IDFxk",
+  "name": "mcbecbiome:IDFxk",
   "_jsonType": "biome"
 }

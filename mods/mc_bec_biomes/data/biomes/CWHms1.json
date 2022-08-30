@@ -15,6 +15,6 @@
   "node_top": "default:dirt_with_grass",
   "node_water": "default:water_source",
   "node_water_top": "default:water_source",
-  "name": "McBecBiome:CWHms1",
+  "name": "mcbecbiome:CWHms1",
   "_jsonType": "biome"
 }

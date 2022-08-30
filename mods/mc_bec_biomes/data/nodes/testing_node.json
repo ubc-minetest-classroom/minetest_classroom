@@ -7,7 +7,7 @@
     "crumbly": 3.0
   },
   "is_ground_content": true,
-  "name": "McBecBiome:testing_node",
+  "name": "mcbecbiome:testing_node",
   "tiles": [
     "default_dirt.png"
   ]

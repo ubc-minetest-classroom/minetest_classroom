@@ -15,6 +15,6 @@
   "node_top": "default:dirt_with_coniferous_litter",
   "node_water": "default:water_source",
   "node_water_top": "default:water_source",
-  "name": "McBecBiome:BWBSmw",
+  "name": "mcbecbiome:BWBSmw",
   "_jsonType": "biome"
 }
