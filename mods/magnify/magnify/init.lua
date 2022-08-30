@@ -1,3 +1,7 @@
+-------------------------
+-- GLOBALS + CONSTANTS --
+-------------------------
+
 magnify = {
     path = minetest.get_modpath("magnify"),
     S = minetest.get_translator("magnify"),
@@ -38,9 +42,14 @@ local CHECKBOXES = {
     misc = {"bc_native",}
 }
 
+
+----------------------
+-- HELPER FUNCTIONS --
+----------------------
+
 -- Checks for adequate privileges
 local function check_perm(player)
-    return minetest.check_player_privs(player:get_player_name(), priv_table)
+    return minetest.check_player_privs(player, priv_table)
 end
 
 -- Gets the player's magnify formspec context
@@ -66,9 +75,44 @@ local function get_context(player)
             },
             filter_parity = 0,
             image = 1,
+            nav = {
+                index = 0,
+                list = {}
+            },
         }
     end
     return magnify.context[pname]
+end
+
+-- Inserts the given page table into (selected index + 1) in the navigation sequence, and clears all events after (selected index + 1)
+local function nav_append(context, page_table)
+    -- add to navigation queue
+    local index = context.nav.index + 1
+    context.nav.list[index] = page_table
+    -- remove all pages beyond inserted page
+    for i,_ in pairs(context.nav.list) do
+        if i > index then
+            context.nav.list[i] = nil
+        end
+    end
+    context.nav.index = index
+    minetest.log(minetest.serialize(context.nav.list))
+end
+
+-- Reloads the given formspec
+local function reload_fs(player, fs_name, fs)
+    if fs_name == "" then
+        return player:set_inventory_formspec(fs)
+    else
+        return minetest.show_formspec(player:get_player_name(), fs_name, fs)
+    end
+end
+
+-- Opens the given formspec in the appropriate location (inventory or external formspec), then appends it to the navigation list
+local function open_fs(player, fs_name, fs, page_table)
+    nav_append(get_context(player), page_table)
+    minetest.sound_play("page_turn", {to_player = player:get_player_name(), gain = 1.0, pitch = 1.0,}, true)
+    reload_fs(player, fs_name, fs)
 end
 
 local function get_blank_filter_table()
@@ -81,92 +125,6 @@ local function get_blank_filter_table()
     end
     return table
 end
-
--- Registers the magnifying glass tool
-minetest.register_tool(tool_name, {
-    description = "Magnifying Glass",
-    _doc_items_longdesc = "This tool can be used to quickly learn more about about one's closer environment. It identifies and analyzes plant-type blocks and it shows extensive information about the thing on which it is used.",
-    _doc_items_usagehelp = "Punch any block resembling a plant you wish to learn more about. This will open up the appropriate help entry.",
-    _doc_items_hidden = false,
-    tool_capabilities = {},
-    range = 10,
-    groups = { disable_repair = 1 }, 
-    wield_image = "magnify_magnifying_tool.png",
-    inventory_image = "magnify_magnifying_tool.png",
-    liquids_pointable = false,
-    on_use = function(itemstack, player, pointed_thing)
-        if not check_perm(player) or pointed_thing.type ~= "node" then
-            return nil
-        else
-            local pname = player:get_player_name()
-
-            local node = {under = minetest.get_node(pointed_thing.under).name, above = minetest.get_node(pointed_thing.above).name}
-            local ref_key = magnify.get_ref(node.under) or magnify.get_ref(node.above)
-    
-            if ref_key then
-                -- try to build formspec
-                local species_formspec = magnify.build_formspec_from_ref(ref_key, true, player, 1)
-                local mdata = magnify.get_mdata(player)
-                if species_formspec then
-                    -- good: save to discovered list and open formspec
-                    if mdata and mdata.discovered and not mdata.discovered[ref_key] then
-                        mdata.discovered[ref_key] = true
-                        magnify.save_mdata(player, mdata)
-                    end
-                    local context = get_context(pname)
-                    context.ref = ref_key
-                    minetest.show_formspec(pname, "magnify:view", species_formspec)
-                else
-                    -- bad: display corrupted node message in chat
-                    minetest.chat_send_player(pname, "An entry for this item exists, but could not be found in the species database.\nPlease contact an administrator and ask them to check your server's species database files to ensure all species were registered properly.")
-                end
-            else
-                -- bad: display failure message in chat
-                minetest.chat_send_player(pname, "No entry for this item could be found.")
-            end
-
-            -- Register a node punch
-            minetest.node_punch(pointed_thing.under, minetest.get_node(pointed_thing.under), player, pointed_thing)
-
-            return nil
-        end
-    end,
-    -- makes the tool undroppable in MineTest Classroom
-    on_drop = function(itemstack, dropper, pos)
-        -- should eventually be replaced with a more flexible check
-        if not minetest.get_modpath("mc_core") then
-            return minetest.item_drop(itemstack, dropper, pos)
-        end
-    end
-})
-
-if minetest.get_modpath("mc_toolhandler") then
-    mc_toolhandler.register_tool_manager(tool_name, {privs = priv_table})
-end
-
--- Register tool aliases for convenience
-minetest.register_alias("magnify:magnifying_glass", tool_name)
-minetest.register_alias("magnifying_tool", tool_name)
-minetest.register_alias("magnifying_glass", tool_name)
-minetest.register_alias("magnify_tool", tool_name)
-
--- Register crafting recipes for magnifying glass tool
-minetest.register_craft({
-    output = tool_name,
-    recipe = {
-        {"default:glass", "default:glass", ""},
-        {"default:glass", "default:glass", ""},
-        {"", "", "group:stick"}
-    }
-})
-minetest.register_craft({
-    output = tool_name,
-    recipe = {
-        {"", "default:glass", "default:glass"},
-        {"", "default:glass", "default:glass"},
-        {"group:stick", "", ""}
-    }
-})
 
 -- Extracts the scientific name from a common name string
 local function extract_sci_text(str)
@@ -293,59 +251,6 @@ local function search_for_nearby_node(player, context, nodes)
     end
     context.search_in_progress = false
 end
-
---- Return the technical formspec for a species
---- @param ref Reference key of species
---- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
---- @return formspec string, size
-local function build_technical_formspec(ref, is_exit)
-    local info,nodes = magnify.get_species_from_ref(ref)
-    if info and nodes then
-        local sorted_nodes = table.sort(nodes)
-        local size = "size[16,7.5]"
-        local formtable = {
-            "formspec_version[6]", size,
-
-            "no_prepend[]",
-            "bgcolor[#00000000;true;]",
-            "background[0,0;0,0;magnify_pixel.png^[multiply:#000000^[opacity:69;true]",
-            "image[0,0;16,0.6;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
-            "style_type[label;font=mono,bold]",
-            "label[6.3,0.3;Plant Compendium]",
-            "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]",
-            "image_button[0.7,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]",
-            "image_button[1.4,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]",
-            "tooltip[back;", is_exit and "Close" or "Back", "]",
-            "tooltip[nav_forward;Next]",
-            "tooltip[nav_backward;Previous]",
-
-            "style_type[textarea;font=mono]",
-            "textarea[0.4,0.9;14.2,1.1;;;", minetest.formspec_escape(info.com_name) or minetest.formspec_escape(info.sci_name) or "Unknown", " @ ref. ", minetest.formspec_escape(ref),
-            "\n", info.origin and "Registered by "..info.origin or "Registration origin unknown", "]",
-            "style_type[label;font=mono]",
-            "label[0.5,2.1;Associated nodes:]",
-            "textlist[0.4,2.3;9.2,4.8;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
-            create_image_table(sorted_nodes or nodes, 10, 1.5, 5.6)
-        }
-        return table.concat(formtable, ""), size
-    else
-        return nil
-    end
-end
-
---[[
-formspec_version[6]
-size[16,8]
-box[0,0;16,0.6;#FFFFFF]
-label[6.3,0.3;Plant Compendium]
-image_button[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]
-image_button[0.7,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]
-image_button[1.4,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]
-textarea[0.4,0.9;14.2,1.1;;;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]
-label[0.5,2.1;Associated nodes:]
-textlist[0.4,2.2;9.2,4.8;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]
-box[10,1.4;5.6,5.6;#00FF00]
-]]
 
 --- Filters tree of species down to species for which filter_func returns a true value
 --- @param tree Species tree
@@ -590,10 +495,389 @@ local function initialize_context(context)
     end
 end
 
+--- Selects the species in the species tree with the given reference key
+--- @param context Magnify player context table
+--- @param ref Reference key of species ot select
+local function select_species_with_ref(context, ref)
+    if context.family.selected <= 1 or context.genus.selected <= 1 or context.species.selected <= 1 then
+        -- clear fallback ref so that selection is prioritized
+        context.ref = nil
+
+        local info = magnify.get_species_from_ref(ref)
+        if info then
+            local split_table = info.sci_name and string.split(info.sci_name, " ", false, 1)
+            local family, genus, species = info.fam_name or "Unknown", unpack(split_table)
+
+            -- reload family list
+            initialize_context(context)
+            for i,fam in ipairs(context.family.list) do
+                if fam == family then
+                    context.family.selected = i
+                    break
+                end
+            end
+            
+            if context.family.selected > 1 then
+                -- reload genus list
+                initialize_context(context)
+                for i,gen in ipairs(context.genus.list) do
+                    if gen == genus then
+                        context.genus.selected = i
+                        break
+                    end
+                end
+                
+                if context.genus.selected > 1 then
+                    -- reload species list
+                    initialize_context(context)
+                    for i,spc in ipairs(context.species.list) do
+                        if spc == species then
+                            context.species.selected = i
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+--- @private
+--- Returns the path of obj in origin's mod directory, or nil if obj could not be found
+--- @param origin Name of mod whose directory should be searched
+--- @param obj File to search for
+--- @return string or nil
+local function get_obj_directory(origin, obj)
+    local root = minetest.get_modpath(origin)
+    if not root then
+        return nil
+    end
+
+    -- check if the "models" contains the object
+    if magnify.table_has(minetest.get_dir_list(root.."/models", false), obj) then
+        -- Return path to object in "models" directory
+        return root.."/models/"..obj
+    else
+        local dir = table.remove(string.split(root, "\\"))
+        local trimmed_root = string.sub(root, 1, #root - #dir - 1)
+
+        --- Recursively searches for obj: returns the path of obj in the root directory, or nil if obj could not be found
+        --- @param file File currently being compared with obj
+        --- @param path Path to file
+        --- @param file_wl List of remaining files to be compared with obj
+        --- @param path_wl Corresponding list of paths to files in file_wl
+        --- @return string or nil
+        local function get_file_directory_tr(file, path, file_wl, path_wl)
+            if not file then
+                return nil
+            elseif file == obj then
+                return path.."/"..file
+            else
+                -- add new files/folders to list
+                local new_files = minetest.get_dir_list(path.."/"..file)
+                local new_paths = {}
+                for k,v in ipairs(new_files) do
+                    table.insert(new_paths, path.."/"..file)
+                end
+                table.insert_all(file_wl, new_files)
+                table.insert_all(path_wl, new_paths)
+
+                -- get next file/folder to search
+                local next_file = table.remove(file_wl, 1)
+                local next_path = table.remove(path_wl, 1)
+
+                -- continue recursive search, if file exists
+                return get_file_directory_tr(next_file, next_path, file_wl, path_wl)
+            end
+        end
+
+        -- Begin tail-recursive search
+        return get_file_directory_tr(dir, trimmed_root, {}, {})
+    end
+end
+
+--- @private
+--- Reads the textures from a .obj file and returns them as a table of strings
+--- @param target_obj Object file to read
+--- @return table
+local function read_obj_textures(target_obj)
+    local textures = {}
+    local model_iter = io.lines(target_obj, "r")
+    local line = model_iter()
+    while line do 
+        local match = string.match(line, "^g (.*)")
+        if match then
+            table.insert(textures, match)
+        end
+        line = model_iter()
+        if not line then break end
+    end
+    return textures
+end
+
+--- @private
+--- Gets the description for a conservation status and returns it as a string, and returns the colour associated with that status
+--- @param cons_status Plant definition cons_status field
+--- @return string, string, string
+local function get_cons_status_info(cons_status)
+    if cons_status then
+        local status = (type(cons_status) == "table" and (cons_status.ns_global or cons_status.ns_bc)) or cons_status
+        local status_info = magnify.map.ns_global[status] or magnify.map.ns_bc[status]
+        if status_info then
+            local desc = status_info["desc"]
+            return status, status_info["col"], desc ~= "" and desc or ""
+        else
+            return status
+        end
+    else
+        return nil
+    end
+end
+
+--- @private
+--- Creates a row of species image buttons
+--- @return string
+local function create_species_image_row(textures, pos, box_size, img_size)
+    local factor, spacer, shift = 0.1, 0.1, 0.2
+    local image_row = {
+        (#textures*(img_size.x + spacer) - spacer) > box_size.x and table.concat({
+            "scrollbaroptions[min=0;max=", math.max((#textures*(img_size.x + spacer) - spacer - box_size.x)/factor, 0), ";thumbsize=2]",
+            "scrollbar[", pos.x, ",", pos.y - shift, ";", box_size.x, ",", shift, ";horiozntal;image_row_scroll;0]",
+        }) or "",
+        "scroll_container[", pos.x, ",", pos.y, ";", box_size.x, ",", box_size.y, ";image_row_scroll;horizontal;", factor, "]",
+        "style_type[image_button;bgimg=blank.png]",
+    }
+
+    for i,img in ipairs(textures) do
+        table.insert(image_row, table.concat({
+            "image_button[", (img_size.x + spacer)*(i - 1), ",0;", img_size.x, ",", img_size.y, ";", img, ";image_", i, ";;false;false]",
+        }))
+    end
+    table.insert(image_row, "scroll_container_end[]")
+
+    return table.concat(image_row)
+end
+
+
+-----------------------
+-- FORMSPEC BUILDERS --
+-----------------------
+
+--- Builds the general species information formspec for the species indexed at `ref` in the `magnify` species database 
+--- If player is unspecified, player-dependent features (ex. favourites, navigation) are disabled
+--- @param ref Reference key of the species
+--- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
+--- @param player Player to build the formspec for
+--- @param image_num Position in texture list of image to display
+--- @return formspec string, formspec "size[]" string
+function build_viewer_formspec(ref, is_exit, player, image_num)
+    local info = ref and minetest.deserialize(magnify.species.ref:get(ref))
+  
+    if info ~= nil then
+        -- entry good, return V3 formspec
+        local model_spec_loc = (info.model_obj and info.origin) and get_obj_directory(info.origin, info.model_obj)
+        local status, status_col, status_desc = get_cons_status_info(info.cons_status)
+        local size = "size[19,13]"
+        local formtable_v3 = {
+            "formspec_version[6]", size,
+
+            "no_prepend[]",
+            "bgcolor[#00000000;true;]",
+            "background[0,0;0,0;magnify_pixel.png^[multiply:#000000^[opacity:69;true]",
+            "image[0,0;19,0.6;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
+            "style_type[label;font=mono,bold]",
+            "label[7.8,0.3;Plant Compendium]",
+            "style_type[label;font=normal]",
+            "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]",
+            "image_button[0.7,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]",
+            "image_button[1.4,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]",
+            "tooltip[back;", is_exit and "Close" or "Back", "]",
+            "tooltip[nav_forward;Next]",
+            "tooltip[nav_backward;Previous]",
+
+            "style_type[button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
+            "style_type[image_button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
+            "button[6.6,0.8;4.6,0.6;compendium_view;   View in Compendium]",
+            "image[6.6,0.8;0.6,0.6;magnify_compendium_icon.png]",
+            "button[11.3,0.8;2.2,0.6;locate;   Locate]",
+            "image[11.3,0.8;0.6,0.6;magnify_compendium_locate.png]",
+            "button[13.6,0.8;3.8,0.6;tech_view;   Technical Info]",
+            "image[13.6,0.8;0.6,0.6;magnify_compendium_tech_info.png]",
+        }
+
+        -- Add favourites 
+        if player and player:is_player() then
+            local mdata = magnify.get_mdata(player)
+            table.insert(formtable_v3, table.concat({
+                "image_button[17.5,0.8;0.6,0.6;magnify_compendium_heart_", mdata.favourites and mdata.favourites[ref] and "filled" or "hollow", ".png;favourite;;false;false]",
+                "tooltip[favourite;", mdata.favourites[ref] and "Remove from " or "Add to ", "Favourites]",
+            }))
+        else
+            table.insert(formtable_v3, table.concat({
+                "image_button[17.5,0.8;0.6,0.6;magnify_compendium_heart_hollow.png^[colorize:#909090:alpha;favourite_blocked;;false;false]",
+                "tooltip[favourite_blocked;Favourites inaccessible]",
+            }))
+        end
+        
+        table.insert(formtable_v3, table.concat({
+            "image_button[18.2,0.8;0.6,0.6;magnify_compendium_settings.png^[multiply:#000000;settings;;false;false]",
+            "image[10.8,1.4;8.0,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            "tooltip[settings;Settings]",
+
+            "image[0.2,1.4;18.6,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            "image[0.2,1.4;0.1,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            "image[0.2,6.2;18.6,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+      
+            "style_type[textarea;font=mono,bold;textcolor=black;font_size=*0.85]",
+            "image[0.5,1.7;1.3,0.5;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            "textarea[0.6,1.8;1.3,0.8;;;FAMILY]",
+        }))
+    
+        if false and info.fam_name then
+            -- gamified family area
+            table.insert(formtable_v3, table.concat({
+                
+            }))
+        else
+            -- default family area
+            table.insert(formtable_v3, table.concat({
+            	"style_type[textarea;font=mono;textcolor=white;font_size=*1]",
+                "textarea[2,1.75;8.95,0.8;;;", minetest.formspec_escape((info.fam_name and info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Unknown"), "]",
+            }))
+        end
+        
+        table.insert(formtable_v3, table.concat({
+            "style_type[textarea;font=mono;font_size=*1.25]",
+            "textarea[0.45,2.4;10.4,1;;;", minetest.formspec_escape(info.sci_name or "Scientific name unknown"), "]",
+            "style_type[textarea;font_size=*2.25;font=mono,bold]",
+            "textarea[0.45,2.9;10.4,1.8;;;", minetest.formspec_escape(info.com_name or "Common name unknown"), "]",
+        }))
+
+        -- add status + tags
+        if status or info.tags then
+            local tag_table = {}
+            local x_pos = 0
+
+            -- add tags to tag table
+            if status then
+                table.insert(tag_table, table.concat({
+                    "image[", x_pos, ",0.2;", 0.42 + 0.2*string.len(status), ",0.6;magnify_round_rect_9.png^[resize:24.08x24.08^[multiply:", status_col or "#9192A3", "^[opacity:127;12]",
+                    "label[", x_pos + 0.19, ",0.5;", status, "]",
+                }))
+                x_pos = x_pos + 0.42 + 0.2*string.len(status) + 0.2
+            end
+            for i,tag_key in pairs(info.tags or {}) do
+                local tag = magnify.map.tag[tag_key] or {col = "#9192A3", desc = tag_key}
+                table.insert(tag_table, table.concat({
+                    "image[", x_pos, ",0.2;", 0.42 + 0.2*string.len(tag.desc), ",0.6;magnify_round_rect_9.png^[resize:24.08x24.08^[multiply:", tag.col or "#9192A3", "^[opacity:127;12]",
+                    "label[", x_pos + 0.19, ",0.5;", tag.desc, "]",
+                }))
+                x_pos = x_pos + 0.42 + 0.2*string.len(tag.desc) + 0.2
+            end
+
+            table.insert(formtable_v3, table.concat({
+                "style_type[label;font=mono]",
+                x_pos > 10.3 and "scrollbaroptions[min=0;max="..math.max((x_pos - 10.3)/0.4, 0)..";thumbsize=2]" or "",
+                x_pos > 10.3 and "scrollbar[0.3,6;10.5,0.2;horizontal;tag_scroll;0]" or "",
+                "scroll_container[0.5,5.2;10.1,0.8;tag_scroll;horizontal;0.4]",
+                table.concat(tag_table),
+                "scroll_container_end[]",
+                "style_type[label;font=normal]",
+            }))
+        end
+
+        table.insert(formtable_v3, table.concat({
+            "image[10.9,1.5;7.8,4.4;", info.texture and info.texture[image_num or 1] or "test.png", "]",
+            "style_type[textarea;font=mono;font_size=*1]",
+            "textarea[0.2,6.6;10.7,5.9;;;", -- info area
+            --"- ", minetest.formspec_escape(cons_status_desc or "Conservation status unknown"), "\n",
+            "- ", minetest.formspec_escape((info.region and "Found in "..info.region) or "Location range unknown"), "\n",
+            "- ", minetest.formspec_escape(info.height or "Height unknown"), "\n",
+            "\n",
+            minetest.formspec_escape((info.more_info and info.more_info.."\n") or ""),
+            minetest.formspec_escape(info.bloom or ""),
+            "]",
+        }))
+        
+        if model_spec_loc then
+              -- add model + image 6
+            local model_spec = read_obj_textures(model_spec_loc)
+            table.insert(formtable_v3, table.concat({
+                "style[plant_model;bgcolor=#466577]",
+                "model[10.9,7.7;3.9,4.7;plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";", info.model_rot_verti or info.model_rot_x or "0", ",", info.model_rot_horiz or info.model_rot_y or "180", ";false;true;;]",
+                "image[14.9,7.7;3.9,4.7;", info.range_map or "test.png", "]",
+            }))
+        else
+            -- add images 6 + 7
+            table.insert(formtable_v3, table.concat({
+                "image[10.9,7.7;3.9,4.7;", "test.png", "]",
+                "image[14.9,7.7;3.9,4.7;", info.range_map or "test.png", "]",
+            }))
+        end
+    
+        table.insert(formtable_v3, table.concat({
+            "style_type[textarea;font=mono;font_size=*0.7;textcolor=black]",
+            "textarea[10.85,5.95;7.9,0.39;;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
+            create_species_image_row(info.texture, {x = 10.9, y = 6.5}, {x = 7.9, y = 1.1}, {x = 1.9, y = 1.1}),
+
+            "image[0,12.6;19,0.4;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
+            "style_type[textarea;font=mono;font_size=*0.9;textcolor=white]",
+            "textarea[0.2,12.62;18.6,0.5;;;", info.info_source and "Source: "..info.info_source or "Source unknown", info.last_updated and "  -  Last updated on "..info.last_updated or "", "]", 
+        }))
+
+        return table.concat(formtable_v3, ""), size
+    else
+        -- entry bad, go to fallback
+        return nil
+    end
+end
+
+--[[ V3 formtable clean copy, for editing
+formspec_version[6]
+size[19,13]
+box[0,0;19,0.6;#FFFFFF]
+label[7.8,0.3;Plant Compendium]
+image_button[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]
+image_button[0.7,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]
+image_button[1.4,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]
+button[5.5,0.8;4.7,0.6;view;   Compendium View]
+image[5.5,0.8;0.6,0.6;magnify_compendium_icon.png]
+button[10.3,0.8;3.2,0.6;locate;   Locate]
+image[10.3,0.8;0.6,0.6;magnify_compendium_locate.png]
+button[13.6,0.8;3.8,0.6;tech_view;   Technical Info]
+image[13.6,0.8;0.6,0.6;magnify_compendium_tech_info.png]
+image_button[17.5,0.8;0.6,0.6;magnify_compendium_saved.png;favourite;;false;false]
+image_button[18.2,0.8;0.6,0.6;magnify_compendium_settings.png;settings;;false;false]
+box[0.2,1.4;18.6,4.9;#FFFFFF]
+box[0.3,1.5;10.5,4.7;#000000]
+textarea[0.45,1.7;10.4,0.8;;;Family:]
+textarea[0.45,2.4;10.4,1;;;Scientific Name]
+textarea[0.45,2.9;10.4,1.8;;;COMMON NAME]
+box[0.5,5.4;1.4,0.6;#9192A3]
+label[0.7,5.7;Status]
+box[2.1,5.4;1.2,0.6;#00FF00]
+label[2.3,5.7;Type]
+box[3.5,5.4;1.5,0.6;#00FF00]
+label[3.7,5.7;Type 2]
+box[5.2,5.4;1.5,0.6;#FFA500]
+label[5.4,5.7;Type 3]
+image[10.9,1.5;7.8,4.4;texture.png]
+textarea[10.85,5.9;7.9,0.39;;;Image (c) author]
+textarea[0.2,6.6;10.7,5.9;;;Add information here!]
+image_button[10.9,6.4;1.9,1.1;texture.png;image_2;;false;false]
+image_button[12.9,6.4;1.9,1.1;texture.png;image_3;;false;false]
+image_button[14.9,6.4;1.9,1.1;texture.png;image_4;;false;false]
+image_button[16.9,6.4;1.9,1.1;texture.png;image_5;;false;false]
+image[10.9,7.6;3.9,4.8;texture.png]
+image[14.9,7.6;3.9,4.8;texture.png]
+box[0,12.6;19,0.4;#FFFFFF]
+label[0.3,12.8;Source:]
+]]
+
 --- Returns the plant compendium formspec
 --- @param context magnify context object
 --- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
---- @return formspec string, size
+--- @return formspec string, formspec "size[]" string
 local function build_compendium_formspec(context, is_exit)
     initialize_context(context)
 
@@ -726,52 +1010,63 @@ button[13.8,11.7;2.3,0.7;filter_apply;Apply]
 button[16.1,11.7;2.3,0.7;filter_clear;Clear all]
 ]]
 
---- Selects the species in the species tree with the given reference key
---- @param context Magnify player context table
---- @param ref Reference key of species ot select
-local function select_species_with_ref(context, ref)
-    if context.family.selected <= 1 or context.genus.selected <= 1 or context.species.selected <= 1 then
-        -- clear fallback ref so that selection is prioritized
-        context.ref = nil
+--- Return the technical formspec for a species
+--- @param ref Reference key of species
+--- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
+--- @return formspec string, size
+local function build_technical_formspec(ref, is_exit)
+    local info,nodes = magnify.get_species_from_ref(ref)
+    if info and nodes then
+        local sorted_nodes = table.sort(nodes)
+        local size = "size[16,7.5]"
+        local formtable = {
+            "formspec_version[6]", size,
 
-        local info = magnify.get_species_from_ref(ref)
-        if info then
-            local split_table = info.sci_name and string.split(info.sci_name, " ", false, 1)
-            local family, genus, species = info.fam_name or "Unknown", unpack(split_table)
+            "no_prepend[]",
+            "bgcolor[#00000000;true;]",
+            "background[0,0;0,0;magnify_pixel.png^[multiply:#000000^[opacity:69;true]",
+            "image[0,0;16,0.6;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
+            "style_type[label;font=mono,bold]",
+            "label[6.3,0.3;Plant Compendium]",
+            "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]",
+            "image_button[0.7,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]",
+            "image_button[1.4,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]",
+            "tooltip[back;", is_exit and "Close" or "Back", "]",
+            "tooltip[nav_forward;Next]",
+            "tooltip[nav_backward;Previous]",
 
-            -- reload family list
-            initialize_context(context)
-            for i,fam in ipairs(context.family.list) do
-                if fam == family then
-                    context.family.selected = i
-                    break
-                end
-            end
-            
-            if context.family.selected > 1 then
-                -- reload genus list
-                initialize_context(context)
-                for i,gen in ipairs(context.genus.list) do
-                    if gen == genus then
-                        context.genus.selected = i
-                        break
-                    end
-                end
-                
-                if context.genus.selected > 1 then
-                    -- reload species list
-                    initialize_context(context)
-                    for i,spc in ipairs(context.species.list) do
-                        if spc == species then
-                            context.species.selected = i
-                            break
-                        end
-                    end
-                end
-            end
-        end
+            "style_type[textarea;font=mono]",
+            "textarea[0.4,0.9;14.2,1.1;;;", minetest.formspec_escape(info.com_name) or minetest.formspec_escape(info.sci_name) or "Unknown", " @ ref. ", minetest.formspec_escape(ref),
+            "\n", info.origin and "Registered by "..info.origin or "Registration origin unknown", "]",
+            "style_type[label;font=mono]",
+            "label[0.5,2.1;Associated nodes:]",
+            "textlist[0.4,2.3;9.2,4.8;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]",
+            create_image_table(sorted_nodes or nodes, 10, 1.5, 5.6)
+        }
+        return table.concat(formtable, ""), size
+    else
+        return nil
     end
 end
+
+--[[
+formspec_version[6]
+size[16,8]
+box[0,0;16,0.6;#FFFFFF]
+label[6.3,0.3;Plant Compendium]
+image_button[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]
+image_button[0.7,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]
+image_button[1.4,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]
+textarea[0.4,0.9;14.2,1.1;;;", info.com_name or info.sci_name or "Unknown", " @ ", ref, "]
+label[0.5,2.1;Associated nodes:]
+textlist[0.4,2.2;9.2,4.8;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]
+box[10,1.4;5.6,5.6;#00FF00]
+]]
+
+
+---------------------------
+-- CALLBACK REGISTRATION --
+---------------------------
 
 -- Registers the plant compendium as an inventory button on the main inventory page
 -- Partially based on the inventory button implementation in Minetest-WorldEdit
@@ -816,7 +1111,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                         context.page = MENU
                         return player:set_inventory_formspec(build_compendium_formspec(context))
                     elseif context.page == TECH_VIEW then
-                        local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false, player)
+                        local view_fs = build_viewer_formspec(get_selected_species_ref(context), false, player)
                         if view_fs then
                             context.page = STANDARD_VIEW
                             return player:set_inventory_formspec(view_fs)
@@ -827,6 +1122,46 @@ if minetest.get_modpath("sfinv") ~= nil then
             end
         end
     
+        -- (common) navigation action handler
+        if magnify.table_has({"magnify:compendium", "magnify:view", "magnify:tech_view"}, form_action) and (fields.nav_forward or fields.nav_backward) then
+            local index = context.nav.index + (fields.nav_forward and 1 or -1)
+            local page_table = context.nav.list[index]
+            if page_table then
+                -- restore selected species/ref on page
+                if page_table.sel then
+                    context.family.selected = page_table.sel.f
+                    context.genus.selected = page_table.sel.g
+                    context.species.selected = page_table.sel.s
+                    context.ref = nil
+                elseif page_table.ref then
+                    context.ref = page_table.ref
+                end
+
+                local page_table_map = {
+                    [MENU] = function()
+                        reload_fs(player, formname == "" and formname or "magnify:compendium",
+                            build_compendium_formspec(context, page_table.is_exit)
+                        )
+                    end,
+                    [STANDARD_VIEW] = function()
+                        reload_fs(player, formname == "" and formname or "magnify:view",
+                            build_viewer_formspec(get_selected_species_ref(context), page_table.is_exit, player, page_table.img)
+                        )
+                    end,
+                    [TECH_VIEW] = function()
+                        reload_fs(player, formname == "" and formname or "magnify:tech_view",
+                            build_technical_formspec(get_selected_species_ref(context), page_table.is_exit)
+                        )
+                    end,
+                }
+                if page_table_map[page_table.p] then
+                    -- restore appropriate page in list
+                    context.nav.index = index
+                    return page_table_map[page_table.p]()
+                end
+            end
+        end
+
         -- formspec action handler
         if form_action == "magnify:compendium" then
             local reload = false
@@ -882,30 +1217,24 @@ if minetest.get_modpath("sfinv") ~= nil then
                 elseif event.type == "DCL" then
                     -- open viewer
                     context.image = 1
-                    local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false, player, context.image)
+                    local view_fs = build_viewer_formspec(get_selected_species_ref(context), false, player, context.image)
                     if view_fs then
                         context.page = STANDARD_VIEW
-                        minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
-                        if formname == "" then
-                            return player:set_inventory_formspec(view_fs)
-                        else
-                            return minetest.show_formspec(pname, "magnify:view", view_fs)
-                        end
+                        open_fs(player, formname == "" and formname or "magnify:view", view_fs,
+                            {p = STANDARD_VIEW, exit = false, sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}}
+                        )
                     end
                 end
             end
             if fields.view then
                 -- open viewer
                 context.image = 1
-                local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), false, player, context.image)
+                local view_fs = build_viewer_formspec(get_selected_species_ref(context), false, player, context.image)
                 if view_fs then
                     context.page = STANDARD_VIEW
-                    minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
-                    if formname == "" then
-                        return player:set_inventory_formspec(view_fs)
-                    else
-                        return minetest.show_formspec(pname, "magnify:view", view_fs)
-                    end
+                    open_fs(player, formname == "" and formname or "magnify:view", view_fs,
+                        {p = STANDARD_VIEW, exit = false, sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}}
+                    )
                 end
             end
           
@@ -967,11 +1296,7 @@ if minetest.get_modpath("sfinv") ~= nil then
 
             context.reload = reload
             if reload then
-                if formname == "" then
-                    return player:set_inventory_formspec(build_compendium_formspec(context))
-                else
-                    return minetest.show_formspec(pname, "magnify:compendium", build_compendium_formspec(context))
-                end
+                reload_fs(player, formname, build_compendium_formspec(context))
             end
         elseif form_action == "magnify:view" then
             -- handle viewer functions
@@ -1008,24 +1333,19 @@ if minetest.get_modpath("sfinv") ~= nil then
 
                 -- view species in compendium
                 context.page = MENU
-                minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
-                if formname == "" then
-                    return player:set_inventory_formspec(build_compendium_formspec(context))
-                else
-                    return minetest.show_formspec(pname, "magnify:compendium", build_compendium_formspec(context, true))
-                end
+                open_fs(player, formname == "" and formname or "magnify:compendium", build_compendium_formspec(context, formname ~= ""),
+                    {p = MENU, exit = formname ~= "", sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}}
+                )
             end
             if fields.tech_view then
                 -- open technical viewer
                 local tech_fs = build_technical_formspec(get_selected_species_ref(context), false)
                 if tech_fs then
                     context.page = TECH_VIEW
-                    minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
-                    if formname == "" then
-                        return player:set_inventory_formspec(tech_fs)
-                    else
-                        return minetest.show_formspec(pname, "magnify:tech_view", tech_fs)
-                    end
+                    open_fs(player, formname == "" and formname or "magnify:tech_view", tech_fs,
+                        context.ref and {p = TECH_VIEW, exit = false, ref = context.ref} or
+                        {p = TECH_VIEW, exit = false, sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}}
+                    )
                 end
             end
 
@@ -1041,19 +1361,16 @@ if minetest.get_modpath("sfinv") ~= nil then
                     context:clear()
                 elseif fields.back then
                     -- view species in compendium
-                    minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
-                    return minetest.show_formspec(pname, "magnify:compendium", build_compendium_formspec(context, true))
+                    open_fs(player, "magnify:compendium", build_compendium_formspec(context, true),
+                        {p = MENU, exit = true, sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}}
+                    )
                 end
             end
 
             if reload == true then
-                local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), formname ~= "" and context.ref, player, context.image)
+                local view_fs = build_viewer_formspec(get_selected_species_ref(context), formname ~= "" and context.ref, player, context.image)
                 if view_fs then
-                    if formname == "" then
-                        return player:set_inventory_formspec(view_fs)
-                    else
-                        return minetest.show_formspec(pname, "magnify:view", view_fs)
-                    end
+                    reload_fs(player, formname, view_fs)
                 end
             end
         elseif form_action == "magnify:tech_view" then
@@ -1063,15 +1380,14 @@ if minetest.get_modpath("sfinv") ~= nil then
                 end
                 if fields.back then
                     -- open viewer
-                    local view_fs = magnify.build_formspec_from_ref(get_selected_species_ref(context), formname ~= "" and context.ref, player, context.image)
+                    local is_exit = formname ~= "" and context.ref and true
+                    local view_fs = build_viewer_formspec(get_selected_species_ref(context), is_exit, player, context.image)
                     if view_fs then
                         context.page = STANDARD_VIEW
-                        minetest.sound_play("page_turn", {to_player = pname, gain = 1.0, pitch = 1.0,}, true)
-                        if formname == "" then
-                            return player:set_inventory_formspec(view_fs)
-                        else
-                            return minetest.show_formspec(pname, "magnify:view", view_fs)
-                        end
+                        open_fs(player, formname == "" and formname or "magnify:view", view_fs,
+                            context.ref and {p = STANDARD_VIEW, exit = is_exit, ref = context.ref} or
+                            {p = STANDARD_VIEW, exit = is_exit, sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}}
+                        )
                     end
                 end
             end
@@ -1104,3 +1420,94 @@ minetest.register_on_joinplayer(function(player)
     -- Calling this will ensure that magnify player metadata exists and is in the latest format
     magnify.get_mdata(player)
 end)
+
+
+-----------------------
+-- TOOL REGISTRATION --
+-----------------------
+
+-- Registers the magnifying glass tool
+minetest.register_tool(tool_name, {
+    description = "Magnifying Glass",
+    _doc_items_longdesc = "This tool can be used to quickly learn more about about one's closer environment. It identifies and analyzes plant-type blocks and it shows extensive information about the thing on which it is used.",
+    _doc_items_usagehelp = "Punch any block resembling a plant you wish to learn more about. This will open up the appropriate help entry.",
+    _doc_items_hidden = false,
+    tool_capabilities = {},
+    range = 10,
+    groups = { disable_repair = 1 }, 
+    wield_image = "magnify_magnifying_tool.png",
+    inventory_image = "magnify_magnifying_tool.png",
+    liquids_pointable = false,
+    on_use = function(itemstack, player, pointed_thing)
+        if not check_perm(player) or pointed_thing.type ~= "node" then
+            return nil
+        else
+            local pname = player:get_player_name()
+
+            local node = {under = minetest.get_node(pointed_thing.under).name, above = minetest.get_node(pointed_thing.above).name}
+            local ref_key = magnify.get_ref(node.under) or magnify.get_ref(node.above)
+    
+            if ref_key then
+                -- try to build formspec
+                local species_formspec = build_viewer_formspec(ref_key, true, player, 1)
+                local mdata = magnify.get_mdata(player)
+                if species_formspec then
+                    -- good: save to discovered list and open formspec
+                    if mdata and mdata.discovered and not mdata.discovered[ref_key] then
+                        mdata.discovered[ref_key] = true
+                        magnify.save_mdata(player, mdata)
+                    end
+                    local context = get_context(pname)
+                    context.ref = ref_key
+                    open_fs(player, "magnify:view", species_formspec, {p = STANDARD_VIEW, exit = true, ref = ref_key})
+                else
+                    -- bad: display corrupted node message in chat
+                    minetest.chat_send_player(pname, "An entry for this item exists, but could not be found in the species database.\nPlease contact an administrator and ask them to check your server's species database files to ensure all species were registered properly.")
+                end
+            else
+                -- bad: display failure message in chat
+                minetest.chat_send_player(pname, "No entry for this item could be found.")
+            end
+
+            -- Register a node punch
+            minetest.node_punch(pointed_thing.under, minetest.get_node(pointed_thing.under), player, pointed_thing)
+
+            return nil
+        end
+    end,
+    -- makes the tool undroppable in MineTest Classroom
+    on_drop = function(itemstack, dropper, pos)
+        -- should eventually be replaced with a more flexible check
+        if not minetest.get_modpath("mc_core") then
+            return minetest.item_drop(itemstack, dropper, pos)
+        end
+    end
+})
+
+if minetest.get_modpath("mc_toolhandler") then
+    mc_toolhandler.register_tool_manager(tool_name, {privs = priv_table})
+end
+
+-- Register tool aliases for convenience
+minetest.register_alias("magnify:magnifying_glass", tool_name)
+minetest.register_alias("magnifying_tool", tool_name)
+minetest.register_alias("magnifying_glass", tool_name)
+minetest.register_alias("magnify_tool", tool_name)
+
+-- Register crafting recipes for magnifying glass tool
+minetest.register_craft({
+    output = tool_name,
+    recipe = {
+        {"default:glass", "default:glass", ""},
+        {"default:glass", "default:glass", ""},
+        {"", "", "group:stick"}
+    }
+})
+minetest.register_craft({
+    output = tool_name,
+    recipe = {
+        {"", "default:glass", "default:glass"},
+        {"", "default:glass", "default:glass"},
+        {"group:stick", "", ""}
+    }
+})
