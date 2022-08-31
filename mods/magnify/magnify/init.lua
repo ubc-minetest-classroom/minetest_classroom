@@ -711,7 +711,7 @@ function build_viewer_formspec(ref, is_exit, player)
             "image[6.6,0.8;0.6,0.6;magnify_compendium_icon.png]",
             "button[11.3,0.8;2.2,0.6;locate;   Locate]",
             "image[11.3,0.8;0.6,0.6;magnify_compendium_locate.png]",
-            "button[13.6,0.8;3.8,0.6;tech_view;   Technical Info]",
+            "button[13.6,0.8;3.8,0.6;tech_view;   Technical View]",
             "image[13.6,0.8;0.6,0.6;magnify_compendium_tech_info.png]",
         }
 
@@ -1055,9 +1055,37 @@ local function build_technical_formspec(ref, is_exit, player)
             "tooltip[nav_forward;Next]",
             "tooltip[nav_backward;Previous]",
 
-            "image[0.2,1.4;16.1,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            "style_type[button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
+            "style_type[image_button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
+            "button[4.8,0.8;4.6,0.6;compendium_view;   View in Compendium]",
+            "image[4.8,0.8;0.6,0.6;magnify_compendium_icon.png]",
+            "button[9.5,0.8;2.2,0.6;locate;   Locate]",
+            "image[9.5,0.8;0.6,0.6;magnify_compendium_locate.png]",
+            "button[11.8,0.8;3.2,0.6;species_view;   Species View]",
+            "image[11.8,0.8;0.6,0.6;magnify_compendium_tech_info.png]",
+        }
+
+        -- Add favourites 
+        if player and player:is_player() then
+            local mdata = magnify.get_mdata(player)
+            table.insert(formtable, table.concat({
+                "image_button[15.1,0.8;0.6,0.6;magnify_compendium_heart_", mdata.favourites and mdata.favourites[ref] and "filled" or "hollow", ".png;favourite;;false;false]",
+                "tooltip[favourite;", mdata.favourites[ref] and "Remove from " or "Add to ", "Favourites]",
+            }))
+        else
+            table.insert(formtable, table.concat({
+                "image_button[15.1,0.8;0.6,0.6;magnify_compendium_heart_hollow.png^[colorize:#909090:alpha;favourite_blocked;;false;false]",
+                "tooltip[favourite_blocked;Favourites inaccessible]",
+            }))
+        end
+        
+        table.insert(formtable, table.concat({
+            "image_button[15.8,0.8;0.6,0.6;magnify_compendium_settings.png^[multiply:#000000;settings;;false;false]",
+            "tooltip[settings;Settings]",
+
+            "image[0.2,1.4;16.2,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
             "image[0.2,1.4;0.1,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
-            "image[0.2,6.2;16.1,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            "image[0.2,6.2;16.2,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
             "image[16.3,1.4;0.1,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
 
             "style_type[textarea;font=mono,bold;textcolor=black;font_size=*0.85]",
@@ -1083,7 +1111,7 @@ local function build_technical_formspec(ref, is_exit, player)
             "image[0,12.6;19,0.4;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
             "style_type[textarea;font=mono;font_size=*0.9;textcolor=white]",
             "textarea[0.2,12.62;18.6,0.5;;;", info.last_updated and "Last updated on "..info.last_updated or "", "]", 
-        }
+        }))
         return table.concat(formtable, ""), size
     else
         -- invalid ref
@@ -1136,8 +1164,6 @@ if minetest.get_modpath("sfinv") ~= nil then
         local pname = player:get_player_name()
         local context = get_context(pname)
         local form_action = formname
-
-        minetest.log(minetest.serialize(context.page))
 
         -- inventory handler
         if formname == "" then
@@ -1368,7 +1394,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                 })
                 reload_fs(player, formname, build_compendium_formspec(context, formname ~= ""))
             end
-        elseif form_action == "magnify:view" then
+        elseif form_action == "magnify:view" or form_action == "magnify:tech_view" then
             -- handle viewer functions
             local reload = false
 
@@ -1410,56 +1436,72 @@ if minetest.get_modpath("sfinv") ~= nil then
                 })
                 open_fs(player, formname == "" and formname or "magnify:compendium", build_compendium_formspec(context, formname ~= ""))
             end
-            if fields.tech_view then
-                -- open technical viewer
-                context.page = TECH_VIEW
-                nav_append(context, {
-                    p = TECH_VIEW, exit = false, ref = context.ref,
-                    sel = not context.ref and {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
-                })
-                open_fs(player, formname == "" and formname or "magnify:tech_view", build_technical_formspec(get_selected_species_ref(context), false, player))
-            end
 
-            for k,v in pairs(fields) do
-                if string.sub(k, 1, 6) == "image_" then
-                    context.image = tonumber(string.sub(k, 7, 7)) or context.image or 1
-                    nav_update_current(context, {img = context.image})
-                    reload = true
+            if form_action == "magnify:view" then
+                if formname == "magnify:view" then
+                    if fields.quit or (fields.back and context.ref) then
+                        context:clear()
+                    elseif fields.back then
+                        -- view species in compendium
+                        context.page = MENU
+                        nav_append(context, {
+                            p = MENU, exit = true, com = context.show_common, filter_par = context.filter_parity,
+                            filter = context.filter and table.copy(context.filter) or get_blank_filter_table(),
+                            sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
+                        })
+                        open_fs(player, "magnify:compendium", build_compendium_formspec(context, true))
+                    end
                 end
-            end
 
-            if formname == "magnify:view" then
-                if fields.quit or (fields.back and context.ref) then
-                    context:clear()
-                elseif fields.back then
-                    -- view species in compendium
-                    context.page = MENU
+                for k,v in pairs(fields) do
+                    if string.sub(k, 1, 6) == "image_" then
+                        context.image = tonumber(string.sub(k, 7, 7)) or context.image or 1
+                        nav_update_current(context, {img = context.image})
+                        reload = true
+                    end
+                end
+                if fields.tech_view then
+                    -- open technical viewer
+                    context.page = TECH_VIEW
                     nav_append(context, {
-                        p = MENU, exit = true, com = context.show_common, filter_par = context.filter_parity,
-                        filter = context.filter and table.copy(context.filter) or get_blank_filter_table(),
-                        sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
-                    })
-                    open_fs(player, "magnify:compendium", build_compendium_formspec(context, true))
-                end
-            end
-
-            if reload == true then
-                reload_fs(player, formname, build_viewer_formspec(get_selected_species_ref(context), formname ~= "" and context.ref, player))
-            end
-        elseif form_action == "magnify:tech_view" then
-            if formname == "magnify:tech_view" then
-                if fields.quit then
-                    context:clear()
-                end
-                if fields.back then
-                    -- open viewer
-                    local is_exit = formname ~= "" and context.ref and true
-                    context.page = STANDARD_VIEW
-                    nav_append(context, {
-                        p = STANDARD_VIEW, exit = is_exit, img = context.image, ref = context.ref,
+                        p = TECH_VIEW, exit = false, ref = context.ref,
                         sel = not context.ref and {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
                     })
-                    open_fs(player, formname == "" and formname or "magnify:view", build_viewer_formspec(get_selected_species_ref(context), is_exit, player))
+                    open_fs(player, formname == "" and formname or "magnify:tech_view", build_technical_formspec(get_selected_species_ref(context), false, player))
+                end
+
+                if reload == true then
+                    reload_fs(player, formname, build_viewer_formspec(get_selected_species_ref(context), formname ~= "" and context.ref, player))
+                end
+            elseif form_action == "magnify:tech_view" then
+                if formname == "magnify:tech_view" then
+                    if fields.quit then
+                        context:clear()
+                    end
+                    if fields.back then
+                        -- open viewer
+                        local is_exit = formname ~= "" and context.ref and true
+                        context.page = STANDARD_VIEW
+                        nav_append(context, {
+                            p = STANDARD_VIEW, exit = is_exit, img = context.image, ref = context.ref,
+                            sel = not context.ref and {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
+                        })
+                        open_fs(player, formname == "" and formname or "magnify:view", build_viewer_formspec(get_selected_species_ref(context), is_exit, player))
+                    end
+                end
+
+                if fields.species_view then
+                    -- open viewer
+                    context.page = STANDARD_VIEW
+                    nav_append(context, {
+                        p = STANDARD_VIEW, exit = false, img = context.image, ref = context.ref,
+                        sel = not context.ref and {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
+                    })
+                    open_fs(player, formname == "" and formname or "magnify:view", build_viewer_formspec(get_selected_species_ref(context), formname ~= "" and context.ref, player))
+                end
+
+                if reload == true then
+                    reload_fs(player, formname, build_technical_formspec(get_selected_species_ref(context), false, player))
                 end
             end
         end
