@@ -701,9 +701,9 @@ function build_viewer_formspec(ref, is_exit, player)
             "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]",
             "image_button[0.7,0;0.6,0.6;magnify_compendium_nav_back.png", context and context.nav.list[context.nav.index - 1] and "" or "^[opacity:63", ";nav_backward;;false;false]",
             "image_button[1.4,0;0.6,0.6;magnify_compendium_nav_fwd.png", context and context.nav.list[context.nav.index + 1] and "" or "^[opacity:63", ";nav_forward;;false;false]",
-            "tooltip[back;", is_exit and "Close" or "Back", "]",
-            "tooltip[nav_forward;Next]",
-            "tooltip[nav_backward;Previous]",
+            "tooltip[back;", is_exit and "Close" or "Return", "]",
+            "tooltip[nav_forward;Forward]",
+            "tooltip[nav_backward;Back]",
 
             "style_type[button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
             "style_type[image_button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
@@ -904,9 +904,9 @@ local function build_compendium_formspec(context, is_exit)
         "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]",
         "image_button[0.7,0;0.6,0.6;magnify_compendium_nav_back.png", context.nav.list[context.nav.index - 1] and "" or "^[opacity:63", ";nav_backward;;false;false]",
         "image_button[1.4,0;0.6,0.6;magnify_compendium_nav_fwd.png", context.nav.list[context.nav.index + 1] and "" or "^[opacity:63", ";nav_forward;;false;false]",
-        "tooltip[back;", is_exit and "Close" or "Back", "]",
-        "tooltip[nav_forward;Next]",
-        "tooltip[nav_backward;Previous]",
+        "tooltip[back;", is_exit and "Close" or "Return", "]",
+        "tooltip[nav_forward;Forward]",
+        "tooltip[nav_backward;Back]",
 
         "style[search;font=mono]",
         "field[0.4,1.3;8.2,0.7;search;Search by common/scientific name;", context.search or "", "]",
@@ -1051,9 +1051,9 @@ local function build_technical_formspec(ref, is_exit, player)
             "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]",
             "image_button[0.7,0;0.6,0.6;magnify_compendium_nav_back.png", context and context.nav.list[context.nav.index - 1] and "" or "^[opacity:63", ";nav_backward;;false;false]",
             "image_button[1.4,0;0.6,0.6;magnify_compendium_nav_fwd.png", context and context.nav.list[context.nav.index + 1] and "" or "^[opacity:63", ";nav_forward;;false;false]",
-            "tooltip[back;", is_exit and "Close" or "Back", "]",
-            "tooltip[nav_forward;Next]",
-            "tooltip[nav_backward;Previous]",
+            "tooltip[back;", is_exit and "Close" or "Return", "]",
+            "tooltip[nav_forward;Forward]",
+            "tooltip[nav_backward;Back]",
 
             "style_type[button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
             "style_type[image_button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
@@ -1178,11 +1178,12 @@ if minetest.get_modpath("sfinv") ~= nil then
             end
             
             if context.page and context.page >= 1 then -- magnify inventory view active
-                if fields.quit or (fields.back and context.page == MENU) then
+                if fields.quit or fields.back then
                     sfinv.set_page(player, sfinv.get_homepage_name(player))
                     sfinv.set_player_inventory_formspec(player)
                     return context:clear()
-                elseif fields.back then
+                end
+                --[[elseif fields.back then
                     if context.page == STANDARD_VIEW then
                         context.page = MENU
                         nav_append(context, {
@@ -1199,7 +1200,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                         })
                         open_fs(player, formname, build_viewer_formspec(get_selected_species_ref(context), false, player))
                     end
-                end
+                end]]
                 form_action = (context.page == MENU and "magnify:compendium") or (context.page == STANDARD_VIEW and "magnify:view") or (context.page == TECH_VIEW and "magnify:tech_view") or form_action
             end
         end
@@ -1309,10 +1310,10 @@ if minetest.get_modpath("sfinv") ~= nil then
                     context.image = 1
                     context.page = STANDARD_VIEW
                     nav_append(context, {
-                        p = STANDARD_VIEW, exit = false, img = context.image,
+                        p = STANDARD_VIEW, exit = formname ~= "", img = context.image,
                         sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
                     })
-                    open_fs(player, formname == "" and formname or "magnify:view", build_viewer_formspec(get_selected_species_ref(context), false, player))
+                    open_fs(player, formname == "" and formname or "magnify:view", build_viewer_formspec(get_selected_species_ref(context), formname ~= "", player))
                 end
             end
             if fields.view then
@@ -1320,10 +1321,10 @@ if minetest.get_modpath("sfinv") ~= nil then
                 context.image = 1
                 context.page = STANDARD_VIEW
                 nav_append(context, {
-                    p = STANDARD_VIEW, exit = false, img = context.image,
+                    p = STANDARD_VIEW, exit = formname ~= "", img = context.image,
                     sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
                 })
-                open_fs(player, formname == "" and formname or "magnify:view", build_viewer_formspec(get_selected_species_ref(context), false, player))
+                open_fs(player, formname == "" and formname or "magnify:view", build_viewer_formspec(get_selected_species_ref(context), formname ~= "", player))
             end
           
             if (fields.search_go or fields.key_enter_field == "search") and fields.search ~= "" then
@@ -1437,22 +1438,24 @@ if minetest.get_modpath("sfinv") ~= nil then
                 open_fs(player, formname == "" and formname or "magnify:compendium", build_compendium_formspec(context, formname ~= ""))
             end
 
-            if form_action == "magnify:view" then
-                if formname == "magnify:view" then
-                    if fields.quit or (fields.back and context.ref) then
-                        context:clear()
-                    elseif fields.back then
-                        -- view species in compendium
-                        context.page = MENU
-                        nav_append(context, {
-                            p = MENU, exit = true, com = context.show_common, filter_par = context.filter_parity,
-                            filter = context.filter and table.copy(context.filter) or get_blank_filter_table(),
-                            sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
-                        })
-                        open_fs(player, "magnify:compendium", build_compendium_formspec(context, true))
-                    end
+            if formname == "magnify:view" or formname == "magnify:tach_view" then
+                if fields.quit or fields.back then
+                    context:clear()
                 end
+                --[[elseif fields.back then
+                    -- view species in compendium
+                    context.page = MENU
+                    nav_append(context, {
+                        p = MENU, exit = true, com = context.show_common, filter_par = context.filter_parity,
+                        filter = context.filter and table.copy(context.filter) or get_blank_filter_table(),
+                        sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
+                    })
+                    open_fs(player, "magnify:compendium", build_compendium_formspec(context, true))
+                end]]
+            end
 
+            -- independent actions
+            if form_action == "magnify:view" then
                 for k,v in pairs(fields) do
                     if string.sub(k, 1, 6) == "image_" then
                         context.image = tonumber(string.sub(k, 7, 7)) or context.image or 1
@@ -1464,44 +1467,28 @@ if minetest.get_modpath("sfinv") ~= nil then
                     -- open technical viewer
                     context.page = TECH_VIEW
                     nav_append(context, {
-                        p = TECH_VIEW, exit = false, ref = context.ref,
+                        p = TECH_VIEW, exit = formname ~= "", ref = context.ref,
                         sel = not context.ref and {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
                     })
-                    open_fs(player, formname == "" and formname or "magnify:tech_view", build_technical_formspec(get_selected_species_ref(context), false, player))
+                    open_fs(player, formname == "" and formname or "magnify:tech_view", build_technical_formspec(get_selected_species_ref(context), formname ~= "", player))
                 end
 
                 if reload == true then
-                    reload_fs(player, formname, build_viewer_formspec(get_selected_species_ref(context), formname ~= "" and context.ref, player))
+                    reload_fs(player, formname, build_viewer_formspec(get_selected_species_ref(context), formname ~= "", player))
                 end
             elseif form_action == "magnify:tech_view" then
-                if formname == "magnify:tech_view" then
-                    if fields.quit then
-                        context:clear()
-                    end
-                    if fields.back then
-                        -- open viewer
-                        local is_exit = formname ~= "" and context.ref and true
-                        context.page = STANDARD_VIEW
-                        nav_append(context, {
-                            p = STANDARD_VIEW, exit = is_exit, img = context.image, ref = context.ref,
-                            sel = not context.ref and {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
-                        })
-                        open_fs(player, formname == "" and formname or "magnify:view", build_viewer_formspec(get_selected_species_ref(context), is_exit, player))
-                    end
-                end
-
                 if fields.species_view then
                     -- open viewer
                     context.page = STANDARD_VIEW
                     nav_append(context, {
-                        p = STANDARD_VIEW, exit = false, img = context.image, ref = context.ref,
+                        p = STANDARD_VIEW, exit = formname ~= "", img = context.image, ref = context.ref,
                         sel = not context.ref and {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
                     })
-                    open_fs(player, formname == "" and formname or "magnify:view", build_viewer_formspec(get_selected_species_ref(context), formname ~= "" and context.ref, player))
+                    open_fs(player, formname == "" and formname or "magnify:view", build_viewer_formspec(get_selected_species_ref(context), formname ~= "", player))
                 end
 
                 if reload == true then
-                    reload_fs(player, formname, build_technical_formspec(get_selected_species_ref(context), false, player))
+                    reload_fs(player, formname, build_technical_formspec(get_selected_species_ref(context), formname ~= "", player))
                 end
             end
         end
