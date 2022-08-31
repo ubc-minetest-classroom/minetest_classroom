@@ -96,7 +96,6 @@ local function nav_append(context, page_table)
         end
     end
     context.nav.index = index
-    --minetest.log(minetest.serialize(context.nav.list)) -- debug
 end
 
 -- Updates the keys in update_table for the current page's table in the navigation sequence
@@ -105,7 +104,6 @@ local function nav_update_current(context, update_table)
     for k,v in pairs(update_table) do
         page_table[k] = v
     end
-    --minetest.log(minetest.serialize(context.nav.list)) -- debug
 end
 
 -- Reloads the given formspec
@@ -125,6 +123,7 @@ local function open_fs(player, fs_name, fs)
     reload_fs(player, fs_name, fs)
 end
 
+-- Creates a blank context filter table
 local function get_blank_filter_table()
     local table = {select = {}, active = {}}
     for k,list in pairs(CHECKBOXES) do
@@ -165,45 +164,31 @@ local function get_selected_species_ref(context)
     return context.tree and context.tree[sel.f] and context.tree[sel.f][sel.g] and context.tree[sel.f][sel.g][sel.s]
 end
 
---- Dynamically creates a square table of node images
+--- Creates a column of species node images
 --- @param nodes The nodes to include images for in the table
---- @param x X position of the table in the formspec
---- @param y Y position of the table in the formspec
---- @param side_length Width and height of the table in the formspec
+--- @param x X position of the table
+--- @param y Y position of the table
+--- @param width Width of the table
+--- @param height Height of the table
 --- @return formspec element string
-local function create_image_table(nodes, x, y, side_length)
-    local node_count = #nodes
-    local node_ctr = 0
-    local spacer = 0.2
-    local row_cells = math.ceil(math.sqrt(node_count))
-    local cell_length = (side_length - spacer*(row_cells - 1)) / row_cells
-    local output = {}
-    local x_0 = 0
-    local y_0 = side_length - cell_length
+local function create_image_column(nodes, pos, size)
+    local spacer, factor = 0.15, 0.1
+    local full_height = #nodes*(size.x + spacer) - spacer
+    local output = {
+        full_height > size.y and table.concat({
+            "scrollbaroptions[min=0;max=", (full_height - size.y)/factor, ";thumbsize=", 2/factor, "]",
+            "scrollbar[", pos.x + size.x, ",", pos.y, ";", 0.2, ",", size.y, ";vertical;node_image_scroll;0]",
+        }) or "",
+        "scroll_container[", pos.x, ",", pos.y, ";", size.x, ",", size.y, ";node_image_scroll;vertical;", factor, "]",
+    }
 
-    for k,v in pairs(nodes) do
+    for i,node in ipairs(nodes) do
         -- create formspec element
-        local string_table = {
-            "item_image[", x + x_0, ",", y + y_0, ";", cell_length, ",", cell_length, ";", v, "]"
-        }
-        table.insert(output, table.concat(string_table, ""))
-        node_ctr = node_ctr + 1
-
-        -- adjust sizing: move across a column
-        if x_0 >= row_cells then
-            -- move up a row
-            x_0 = 0
-            y_0 = y_0 - cell_length - spacer
-            if node_count - node_ctr < row_cells then
-                -- center remaining elements in new row
-                local increment = (row_cells - node_count + node_ctr) * (cell_length + spacer) / 2
-                x_0 = x_0 + increment
-            end
-        else
-            x_0 = x_0 + cell_length + spacer
-        end
+        table.insert(output, table.concat({
+            "item_image[0,", (size.x + spacer)*(i - 1), ";", size.x, ",", size.x, ";", node, "]",
+        }))
     end
-
+    table.insert(output, "scroll_container_end[]")
     return table.concat(output, "")
 end
 
@@ -1105,8 +1090,7 @@ local function build_technical_formspec(ref, is_exit, player)
             "label[0.3,6.7;Associated nodes:]",
             "style[associated_nodes;font=mono]",
             "textlist[0.2,6.9;16.2,5.5;associated_nodes;", table.concat(nodes, ","), ";1;false]",
-            --create_image_table(sorted_nodes or nodes, 10, 1.5, 5.6)
-            "box[16.6,0.8;2.2,11.6;#00FF00]", -- will eventually be replaced by image table
+            create_image_column(nodes, {x = 16.6, y = 0.8}, {x = 2.2, y = 11.6}),
 
             "image[0,12.6;19,0.4;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
             "style_type[textarea;font=mono;font_size=*0.9;textcolor=white]",
