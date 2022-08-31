@@ -1057,12 +1057,12 @@ local function build_technical_formspec(ref, is_exit, player)
 
             "style_type[button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
             "style_type[image_button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
-            "button[4.8,0.8;4.6,0.6;compendium_view;   View in Compendium]",
-            "image[4.8,0.8;0.6,0.6;magnify_compendium_icon.png]",
-            "button[9.5,0.8;2.2,0.6;locate;   Locate]",
-            "image[9.5,0.8;0.6,0.6;magnify_compendium_locate.png]",
-            "button[11.8,0.8;3.2,0.6;species_view;   Species View]",
-            "image[11.8,0.8;0.6,0.6;magnify_compendium_tech_info.png]",
+            "button[4.6,0.8;4.6,0.6;compendium_view;   View in Compendium]",
+            "image[4.6,0.8;0.6,0.6;magnify_compendium_icon.png]",
+            "button[9.3,0.8;2.2,0.6;locate;   Locate]",
+            "image[9.3,0.8;0.6,0.6;magnify_compendium_locate.png]",
+            "button[11.6,0.8;3.4,0.6;species_view;   Species View]",
+            "image[11.6,0.8;0.6,0.6;magnify_compendium_tech_info.png]",
         }
 
         -- Add favourites 
@@ -1183,24 +1183,6 @@ if minetest.get_modpath("sfinv") ~= nil then
                     sfinv.set_player_inventory_formspec(player)
                     return context:clear()
                 end
-                --[[elseif fields.back then
-                    if context.page == STANDARD_VIEW then
-                        context.page = MENU
-                        nav_append(context, {
-                            p = MENU, exit = false, com = context.show_common, filter_par = context.filter_parity,
-                            filter = context.filter and table.copy(context.filter) or get_blank_filter_table(),
-                            sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
-                        })
-                        open_fs(player, formname, build_compendium_formspec(context))
-                    elseif context.page == TECH_VIEW then
-                        context.page = STANDARD_VIEW
-                        nav_append(context, {
-                            p = STANDARD_VIEW, exit = false, img = context.image,
-                            sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
-                        })
-                        open_fs(player, formname, build_viewer_formspec(get_selected_species_ref(context), false, player))
-                    end
-                end]]
                 form_action = (context.page == MENU and "magnify:compendium") or (context.page == STANDARD_VIEW and "magnify:view") or (context.page == TECH_VIEW and "magnify:tech_view") or form_action
             end
         end
@@ -1442,16 +1424,6 @@ if minetest.get_modpath("sfinv") ~= nil then
                 if fields.quit or fields.back then
                     context:clear()
                 end
-                --[[elseif fields.back then
-                    -- view species in compendium
-                    context.page = MENU
-                    nav_append(context, {
-                        p = MENU, exit = true, com = context.show_common, filter_par = context.filter_parity,
-                        filter = context.filter and table.copy(context.filter) or get_blank_filter_table(),
-                        sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
-                    })
-                    open_fs(player, "magnify:compendium", build_compendium_formspec(context, true))
-                end]]
             end
 
             -- independent actions
