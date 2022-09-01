@@ -15,7 +15,7 @@ magnify = {
 dofile(magnify.path.."/api.lua")
 dofile(magnify.path.."/map.lua")
 
--- constants
+-- magnify mod constants
 local tool_name = "magnify:magnifying_tool"
 local priv_table = {interact = true}
 local MENU, STANDARD_VIEW, TECH_VIEW = 1, 2, 3
@@ -47,12 +47,16 @@ local CHECKBOXES = {
 -- HELPER FUNCTIONS --
 ----------------------
 
--- Checks for adequate privileges
+--- Checks if the player has adequate privileges to use the magnify mod's features
+--- @param player Player object or name
+--- @return boolean
 local function check_perm(player)
     return minetest.check_player_privs(player, priv_table)
 end
 
--- Gets the player's magnify formspec context
+--- Gets the player's magnify formspec context
+--- @param player Player object or name
+--- @return table
 local function get_context(player)
     local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name()) or ""
     if not magnify.context[pname] then
@@ -84,7 +88,9 @@ local function get_context(player)
     return magnify.context[pname]
 end
 
--- Inserts the given page table into (selected index + 1) in the navigation sequence, and clears all events after (selected index + 1)
+--- Inserts the given page table into (selected index + 1) in the navigation sequence, and clears all events after (selected index + 1)
+--- @param context magnify context table
+--- @param page_table Table of contextual information about the navigation page
 local function nav_append(context, page_table)
     -- add to navigation queue
     local index = context.nav.index + 1
@@ -98,7 +104,9 @@ local function nav_append(context, page_table)
     context.nav.index = index
 end
 
--- Updates the keys in update_table for the current page's table in the navigation sequence
+--- Updates the keys in update_table for the current page's table in the navigation sequence
+--- @param context magnify context table
+--- @param update_table Table of contextual information to be updated
 local function nav_update_current(context, update_table)
     local page_table = context.nav.list[context.nav.index]
     for k,v in pairs(update_table) do
@@ -106,7 +114,10 @@ local function nav_update_current(context, update_table)
     end
 end
 
--- Reloads the given formspec
+--- Reloads the given formspec
+--- @param player Player object
+--- @param fs_name Name of formspec
+--- @param fs Formspec string
 local function reload_fs(player, fs_name, fs)
     if not fs then return end
     if fs_name == "" then
@@ -116,14 +127,18 @@ local function reload_fs(player, fs_name, fs)
     end
 end
 
--- Opens the given formspec in the appropriate location (inventory or external formspec), then appends it to the navigation list
+--- Opens the given formspec in the appropriate location (inventory or external formspec), then appends it to the navigation list
+--- @param player Player object
+--- @param fs_name Name of formspec
+--- @param fs Formspec string
 local function open_fs(player, fs_name, fs)
     if not fs then return end
     minetest.sound_play("page_turn", {to_player = player:get_player_name(), gain = 1.0, pitch = 1.0,}, true)
     reload_fs(player, fs_name, fs)
 end
 
--- Creates a blank context filter table
+--- Creates a blank context filter table
+--- @return table
 local function get_blank_filter_table()
     local table = {select = {}, active = {}}
     for k,list in pairs(CHECKBOXES) do
@@ -135,12 +150,17 @@ local function get_blank_filter_table()
     return table
 end
 
--- Extracts the scientific name from a common name string
+--- Extracts the scientific name from a common name string
+--- @param str String to extract info from
+--- @return string
 local function extract_sci_text(str)
     return string.match(str, "%((.-)%)$") or str
 end
 
--- Sorts strings based on their results when fed into the extract_sci_text function
+--- Sorts strings based on their results when fed into the extract_sci_text function
+--- @param a First string to be compared
+--- @param b Second string to be compared
+--- @return boolean
 local function extract_sort(a, b)
     local extr_a = extract_sci_text(a)
     local extr_b = extract_sci_text(b)
@@ -165,11 +185,9 @@ local function get_selected_species_ref(context)
 end
 
 --- Creates a column of species node images
---- @param nodes The nodes to include images for in the table
---- @param x X position of the table
---- @param y Y position of the table
---- @param width Width of the table
---- @param height Height of the table
+--- @param nodes The nodes to include images for in the column
+--- @param pos Table defining the position of the column
+--- @param size Table defining the size of the column
 --- @return formspec element string
 local function create_image_column(nodes, pos, size)
     local spacer, factor = 0.15, 0.1
@@ -233,6 +251,10 @@ local function create_locator_particles(player, start_pos, end_pos)
     })
 end
 
+--- Searches for the nearest node to a player within a 120 block radius that matches one of the nodes in nodes
+--- @param player Player object
+--- @param context magnify context table
+--- @param nodes List of nodes to search for
 local function search_for_nearby_node(player, context, nodes)
     local player_pos = player:get_pos()
     local node_pos = minetest.find_node_near(player_pos, 120, nodes, true)
@@ -359,6 +381,13 @@ local function species_search_filter(tree, query)
     end)
 end
 
+--- Creates a checkbox element for the filter tab of the plant compendium
+--- @param context magnify context table
+--- @param pos_x X position of checkbox
+--- @param pos_y Y position of checkbox
+--- @param name Name of checkbox
+--- @param label Text to display beside checkbox
+--- @return formspec element string
 local function create_compendium_checkbox(context, pos_x, pos_y, name, label)
     local name_split = string.split(name, "_", false, 2)
     local cat, tag = name_split[2], name_split[3]
@@ -369,6 +398,9 @@ local function create_compendium_checkbox(context, pos_x, pos_y, name, label)
     return fs_checkbox
 end
 
+--- Checks if any filters are active in filter_loc
+--- @param filter_loc Filter table to check
+--- @return boolean
 local function filters_active(filter_loc)
     for n,list in pairs(filter_loc) do
         if next(list) then return true end
@@ -376,7 +408,8 @@ local function filters_active(filter_loc)
     return false
 end
 
--- Initializes the context for the compendium formspec
+--- Initializes the context for the compendium formspec, adding or refreshing missing values if necessary
+--- @param context magnify context table
 local function initialize_context(context)
     if context.reload == nil then
         -- initialize full reload if not set
@@ -537,7 +570,6 @@ local function select_species_with_ref(context, ref)
     end
 end
 
---- @private
 --- Returns the path of obj in origin's mod directory, or nil if obj could not be found
 --- @param origin Name of mod whose directory should be searched
 --- @param obj File to search for
@@ -591,7 +623,6 @@ local function get_obj_directory(origin, obj)
     end
 end
 
---- @private
 --- Reads the textures from a .obj file and returns them as a table of strings
 --- @param target_obj Object file to read
 --- @return table
@@ -610,9 +641,8 @@ local function read_obj_textures(target_obj)
     return textures
 end
 
---- @private
 --- Gets the description for a conservation status and returns it as a string, and returns the colour associated with that status
---- @param cons_status Plant definition cons_status field
+--- @param cons_status cons_status field in species definition table
 --- @return string, string, string
 local function get_cons_status_info(cons_status)
     if cons_status then
@@ -629,9 +659,12 @@ local function get_cons_status_info(cons_status)
     end
 end
 
---- @private
 --- Creates a row of species image buttons
---- @return string
+--- @param textures List of images to display in row
+--- @param pos Position of image row in formspec
+--- @param box_size Size of full image row
+--- @param img_size Size of each image in the image row
+--- @return formspec element string
 local function create_species_image_row(textures, pos, box_size, img_size)
     local factor, spacer, shift = 0.1, 0.1, 0.2
     local image_row = {
@@ -1010,7 +1043,7 @@ button[16.1,11.7;2.3,0.7;filter_clear;Clear all]
 --- @param ref Reference key of species
 --- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
 --- @param player Player to build the formspec for
---- @return formspec string, size
+--- @return formspec string, formspec "size[]" string
 local function build_technical_formspec(ref, is_exit, player)
     local info, nodes = magnify.get_species_from_ref(ref)
     local context = player and player:is_player() and get_context(player)
@@ -1128,9 +1161,10 @@ textarea[0.2,12.62;18.6,0.5;;;Last updated:]
 -- CALLBACK REGISTRATION --
 ---------------------------
 
--- Registers the plant compendium as an inventory button on the main inventory page
--- Partially based on the inventory button implementation in Minetest-WorldEdit
+--- Registers the plant compendium as an inventory button on the main inventory page
+--- Partially based on the inventory button implementation in Minetest-WorldEdit (https://github.com/Uberi/Minetest-WorldEdit)
 if minetest.get_modpath("sfinv") ~= nil then
+    -- Adds the compendium button to the "Crafting" screen of the inventory
     local default_get = sfinv.pages[sfinv.get_homepage_name()].get
     sfinv.override_page(sfinv.get_homepage_name(), {
         get = function(self, player, context)
@@ -1144,6 +1178,7 @@ if minetest.get_modpath("sfinv") ~= nil then
         end
     })
 
+    -- Registers formspec actions
     minetest.register_on_player_receive_fields(function(player, formname, fields)
         local pname = player:get_player_name()
         local context = get_context(pname)
@@ -1451,7 +1486,7 @@ if minetest.get_modpath("sfinv") ~= nil then
     end)
 end
 
--- Storage cleanup function: removes any registered species that do not have any nodes associated with them
+--- Removes registered species that do not have any nodes associated with them
 minetest.register_on_mods_loaded(function()
     local ref_list = {}
     local storage_data = magnify.species.ref:to_table()
@@ -1471,9 +1506,8 @@ minetest.register_on_mods_loaded(function()
     end
 end)
 
--- Player metadata update caller
+--- Updates each player's magnify metadata table on join to ensure it is up-to-date
 minetest.register_on_joinplayer(function(player)
-    -- Calling this will ensure that magnify player metadata exists and is in the latest format
     magnify.get_mdata(player)
 end)
 
@@ -1482,7 +1516,7 @@ end)
 -- TOOL REGISTRATION --
 -----------------------
 
--- Registers the magnifying glass tool
+--- Registers the magnifying glass tool
 minetest.register_tool(tool_name, {
     description = "Magnifying Glass",
     _doc_items_longdesc = "This tool can be used to quickly learn more about about one's closer environment. It identifies and analyzes plant-type blocks and it shows extensive information about the thing on which it is used.",
@@ -1543,17 +1577,19 @@ minetest.register_tool(tool_name, {
     end
 })
 
+--- Registers the magnifying glass tool with mc_toolhandler, if present
 if minetest.get_modpath("mc_toolhandler") then
     mc_toolhandler.register_tool_manager(tool_name, {privs = priv_table})
 end
 
--- Register tool aliases for convenience
+--- Registers magnifying glass tool aliases for convenience
 minetest.register_alias("magnify:magnifying_glass", tool_name)
 minetest.register_alias("magnifying_tool", tool_name)
 minetest.register_alias("magnifying_glass", tool_name)
 minetest.register_alias("magnify_tool", tool_name)
+minetest.register_alias("magnify_glass", tool_name)
 
--- Register crafting recipes for magnifying glass tool
+--- Registers crafting recipes for the magnifying glass tool
 minetest.register_craft({
     output = tool_name,
     recipe = {

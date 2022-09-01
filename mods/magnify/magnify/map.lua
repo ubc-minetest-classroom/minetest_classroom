@@ -1,4 +1,5 @@
--- Conservation statuses
+--- Conservation status maps
+--- status identifier --> {colour, description}
 magnify.map.ns_bc = {
     ["S5"] = {col = "#666ae3", desc = "Secure"},
     ["S4"] = {col = "#4fbdf0", desc = "Apparently secure"},
@@ -29,7 +30,8 @@ magnify.map.ns_global = {
     ["GNA"] = {col = "#9192a3", desc = "Not applicable"},
 }
 
--- Plant species families
+--- Plant scientific name maps
+--- scientific name --> common name
 magnify.map.family = {
     ["Salicaceae"] = "Willow",
     ["Pinaceae"] = "Pine",
@@ -59,7 +61,8 @@ magnify.map.genus = {
     ["Acer"] = "Maple",
 }
 
--- Tag descriptors
+--- Tag description map
+--- tag --> {colour, description}
 magnify.map.tag = {
     ["bc_native"] = {col = "#FFD712", desc = "Native to BC"},
     ["tree"] = {col = "#60C460", desc = "Tree"},
@@ -74,7 +77,8 @@ magnify.map.tag = {
     ["poisonous"] = {col = "#FF0000", desc = "Poisonous"},
 }
 
--- Conservation status tag conversion
+--- Conservation status tag conversion map
+--- status tag --> list of status identifiers
 magnify.map.stat_key = {
     ["gx"] = {"GX",},
     ["gh"] = {"GH",},
