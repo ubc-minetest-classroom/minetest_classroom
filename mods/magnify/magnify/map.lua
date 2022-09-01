@@ -59,6 +59,11 @@ magnify.map.genus = {
     -- TODO
     ["Pinus"] = "Pine",
     ["Acer"] = "Maple",
+    ["Arbutus"] = "Arbutus",
+    ["Quercus"] = "Oak",
+    ["Malus"] = "Apple",
+    ["Populus"] = "Poplar",
+    ["Taxus"] = "Yew",
 }
 
 --- Tag description map
