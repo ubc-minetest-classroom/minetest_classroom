@@ -37,6 +37,7 @@ end
 --- @param player Player to get data for
 --- @return table or nil
 function magnify.get_mdata(player)
+    local current_format = 2;
     if not player:is_player() then
         return nil -- invalid player
     end
@@ -48,12 +49,18 @@ function magnify.get_mdata(player)
         data = {
             discovered = {},
             favourites = {},
-            format = 1,
+            fam_idenfified = {},
+            study_mode = false,
+            format = current_format,
         }
         magnify.save_mdata(player, data)
-    elseif not data.format or data.format < 1 then
-        -- temp b/c only format 1 exists
-        data.format = 1
+    elseif not data.format or data.format < current_format then
+        -- iterate through format changes until updated
+        if not data.format or data.format == 1 then
+            data.fam_idenfified = {}
+            data.study_mode = false
+            data.format = math.min((data.format or 1) + 1, current_format)
+        end
         magnify.save_mdata(player, data)
     end
     return data

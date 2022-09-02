@@ -54,6 +54,8 @@ magnify.map.family = {
     ["Asteraceae"] = "Aster",
     ["Nymphaeaceae"] = "Water-lily",
     ["Sapindaceae"] = "Horse-chestnut family",
+    ["Boletaceae"] = false, -- common name undefined
+    ["Amanitaceae"] = false, -- common name undefined
 }
 magnify.map.genus = {
     -- TODO

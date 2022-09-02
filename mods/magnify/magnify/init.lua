@@ -686,6 +686,34 @@ local function create_species_image_row(textures, pos, box_size, img_size)
     return table.concat(image_row)
 end
 
+--- Creates the magnify formspec settings menu
+--- @param mdata magnify metadata table
+--- @param pos Position of settings overlay in formspec
+--- @return formspec element string
+local function create_settings_overlay(mdata, pos)
+    local scale_fact = 3
+    return table.concat({
+        "container[", pos.x, ",", pos.y, "]",
+        "image[0,0;4.9,2.2;magnify_pixel.png^[multiply:#F5F5F5]",
+        "style_type[textarea;font=mono,bold;textcolor=#909090;font_size=*0.8]",
+        "image[0.2,0.2;0.3,0.3;magnify_compendium_settings.png^[multiply:#909090]",
+        "textarea[0.55,0.2;2,0.8;;;SETTINGS]",
+
+        "style_type[textarea;font=mono;textcolor=black;font_size=*1]",
+        "style_type[button;font=mono,bold;textcolor=black;border=false;bgimg_middle=", scale_fact, "]",
+        "textarea[0.16,0.8;3,0.7;;;Study Mode]",
+
+        "style[settings_study_on;bgimg=magnify_border_button_9.png^[resize:", 3*scale_fact, "x", 3*scale_fact, mdata.study_mode and "^[multiply:#8DE0A6" or "", "]",
+        "button[2.6,0.7;1,0.6;settings_study_on;ON]",
+        "style[settings_study_off;bgimg=magnify_border_button_9.png^[resize:", 3*scale_fact, "x", 3*scale_fact, mdata.study_mode and "" or "^[multiply:#F28FA1", "]",
+        "button[3.7,0.7;1,0.6;settings_study_off;OFF]",
+        "style[settings_study_reset;bgimg=magnify_border_button_9.png^[resize:", 3*scale_fact, "x", 3*scale_fact, "]",
+        "button[0.2,1.4;4.5,0.6;settings_study_reset;Reset Study Mode]",
+
+        "container_end[]",
+    })
+end
+
 
 -----------------------
 -- FORMSPEC BUILDERS --
@@ -699,7 +727,11 @@ end
 --- @return formspec string, formspec "size[]" string
 function build_viewer_formspec(ref, is_exit, player)
     local info = ref and minetest.deserialize(magnify.species.ref:get(ref))
-    local context = player and player:is_player() and get_context(player)
+    local context, mdata
+    if player and player:is_player() then
+        context = get_context(player)
+        mdata = magnify.get_mdata(player)
+    end
   
     if info ~= nil then
         -- entry good, return V3 formspec
@@ -733,24 +765,24 @@ function build_viewer_formspec(ref, is_exit, player)
             "image[13.6,0.8;0.6,0.6;magnify_compendium_tech_info.png]",
         }
 
-        -- Add favourites 
-        if player and player:is_player() then
-            local mdata = magnify.get_mdata(player)
+        -- Add favourites and settings
+        if context and mdata then
             table.insert(formtable_v3, table.concat({
                 "image_button[17.5,0.8;0.6,0.6;magnify_compendium_heart_", mdata.favourites and mdata.favourites[ref] and "filled" or "hollow", ".png;favourite;;false;false]",
+                "image_button[18.2,0.8;0.6,0.6;magnify_compendium_settings.png^[multiply:#000000;settings;;false;false]",
                 "tooltip[favourite;", mdata.favourites[ref] and "Remove from " or "Add to ", "Favourites]",
+                "tooltip[settings;", context.settings and "Close " or "Open ", "Settings]",
             }))
         else
             table.insert(formtable_v3, table.concat({
-                "image_button[17.5,0.8;0.6,0.6;magnify_compendium_heart_hollow.png^[colorize:#909090:alpha;favourite_blocked;;false;false]",
+                "image_button[17.5,0.8;0.6,0.6;magnify_compendium_heart_hollow.png^[opacity:95;favourite_blocked;;false;false]",
+                "image_button[18.2,0.8;0.6,0.6;magnify_compendium_settings.png^[multiply:#000000^[opacity:95;settings_blocked;;false;false]",
                 "tooltip[favourite_blocked;Favourites inaccessible]",
+                "tooltip[settings_blocked;Settings inaccessible]",
             }))
         end
         
         table.insert(formtable_v3, table.concat({
-            "image_button[18.2,0.8;0.6,0.6;magnify_compendium_settings.png^[multiply:#000000;settings;;false;false]",
-            "tooltip[settings;Settings]",
-
             "image[10.8,1.4;8.0,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
             "image[0.2,1.4;18.6,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
             "image[0.2,1.4;0.1,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
@@ -789,16 +821,16 @@ function build_viewer_formspec(ref, is_exit, player)
             -- add tags to tag table
             if status then
                 table.insert(tag_table, table.concat({
-                    "image[", x_pos, ",0.2;", 0.42 + 0.2*string.len(status), ",0.6;magnify_round_rect_9.png^[resize:24.08x24.08^[multiply:", status_col or "#9192A3", "^[opacity:127;12]",
-                    "label[", x_pos + 0.19, ",0.5;", status, "]",
+                    "image[", x_pos, ",0;", 0.42 + 0.2*string.len(status), ",0.6;magnify_round_rect_9.png^[resize:24.08x24.08^[multiply:", status_col or "#9192A3", "^[opacity:127;12]",
+                    "label[", x_pos + 0.19, ",0.3;", status, "]",
                 }))
                 x_pos = x_pos + 0.42 + 0.2*string.len(status) + 0.2
             end
             for i,tag_key in pairs(info.tags or {}) do
                 local tag = magnify.map.tag[tag_key] or {col = "#9192A3", desc = tag_key}
                 table.insert(tag_table, table.concat({
-                    "image[", x_pos, ",0.2;", 0.42 + 0.2*string.len(tag.desc), ",0.6;magnify_round_rect_9.png^[resize:24.08x24.08^[multiply:", tag.col or "#9192A3", "^[opacity:127;12]",
-                    "label[", x_pos + 0.19, ",0.5;", tag.desc, "]",
+                    "image[", x_pos, ",0;", 0.42 + 0.2*string.len(tag.desc), ",0.6;magnify_round_rect_9.png^[resize:24.08x24.08^[multiply:", tag.col or "#9192A3", "^[opacity:127;12]",
+                    "label[", x_pos + 0.19, ",0.3;", tag.desc, "]",
                 }))
                 x_pos = x_pos + 0.42 + 0.2*string.len(tag.desc) + 0.2
             end
@@ -807,7 +839,7 @@ function build_viewer_formspec(ref, is_exit, player)
                 "style_type[label;font=mono]",
                 x_pos > 10.3 and "scrollbaroptions[min=0;max="..math.max((x_pos - 10.3)/0.4, 0)..";thumbsize=2]" or "",
                 x_pos > 10.3 and "scrollbar[0.3,6;10.5,0.2;horizontal;tag_scroll;0]" or "",
-                "scroll_container[0.5,5.2;10.1,0.8;tag_scroll;horizontal;0.4]",
+                "scroll_container[0.5,5.4;10.1,0.6;tag_scroll;horizontal;0.4]",
                 table.concat(tag_table),
                 "scroll_container_end[]",
                 "style_type[label;font=normal]",
@@ -853,6 +885,10 @@ function build_viewer_formspec(ref, is_exit, player)
             "textarea[0.2,12.62;18.6,0.5;;;", info.info_source and "Source: "..info.info_source or "Source unknown", info.last_updated and "  -  Last updated on "..info.last_updated or "", "]", 
         }))
 
+        if context and mdata and context.settings then
+            table.insert(formtable_v3, create_settings_overlay(mdata, {x = 13.9, y = 1.4}))
+        end
+
         return table.concat(formtable_v3, ""), size
     else
         -- entry bad, go to fallback
@@ -868,38 +904,186 @@ label[7.8,0.3;Plant Compendium]
 image_button[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]
 image_button[0.7,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]
 image_button[1.4,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]
-button[5.5,0.8;4.7,0.6;view;   Compendium View]
-image[5.5,0.8;0.6,0.6;magnify_compendium_icon.png]
-button[10.3,0.8;3.2,0.6;locate;   Locate]
-image[10.3,0.8;0.6,0.6;magnify_compendium_locate.png]
-button[13.6,0.8;3.8,0.6;tech_view;   Technical Info]
+button[6.6,0.8;4.6,0.6;compendium_view;   View in Compendium]
+image[6.6,0.8;0.6,0.6;magnify_compendium_icon.png]
+button[11.3,0.8;2.2,0.6;locate;   Locate]
+image[11.3,0.8;0.6,0.6;magnify_compendium_locate.png]
+button[13.6,0.8;3.8,0.6;tech_view;   Technical View]
 image[13.6,0.8;0.6,0.6;magnify_compendium_tech_info.png]
-image_button[17.5,0.8;0.6,0.6;magnify_compendium_saved.png;favourite;;false;false]
-image_button[18.2,0.8;0.6,0.6;magnify_compendium_settings.png;settings;;false;false]
+image_button[17.5,0.8;0.6,0.6;magnify_compendium_heart_hollow.png;favourite;;false;false]
+image_button[18.2,0.8;0.6,0.6;magnify_compendium_settings.png^[multiply:#000000;settings;;false;false]
 box[0.2,1.4;18.6,4.9;#FFFFFF]
 box[0.3,1.5;10.5,4.7;#000000]
-textarea[0.45,1.7;10.4,0.8;;;Family:]
+box[0.5,1.7;1.3,0.5;#FFFFFF]
+textarea[0.6,1.8;1.3,0.8;;;FAMILY]
+textarea[2,1.75;8.95,0.8;;;Family Name]
 textarea[0.45,2.4;10.4,1;;;Scientific Name]
-textarea[0.45,2.9;10.4,1.8;;;COMMON NAME]
-box[0.5,5.4;1.4,0.6;#9192A3]
-label[0.7,5.7;Status]
-box[2.1,5.4;1.2,0.6;#00FF00]
-label[2.3,5.7;Type]
-box[3.5,5.4;1.5,0.6;#00FF00]
-label[3.7,5.7;Type 2]
-box[5.2,5.4;1.5,0.6;#FFA500]
-label[5.4,5.7;Type 3]
+textarea[0.45,2.9;10.4,1.8;;;Common Name]
+box[0.5,5.4;10.1,0.6;#00FF00]
+label[0.7,5.7;Tag row placeholder]
 image[10.9,1.5;7.8,4.4;texture.png]
 textarea[10.85,5.9;7.9,0.39;;;Image (c) author]
 textarea[0.2,6.6;10.7,5.9;;;Add information here!]
-image_button[10.9,6.4;1.9,1.1;texture.png;image_2;;false;false]
-image_button[12.9,6.4;1.9,1.1;texture.png;image_3;;false;false]
-image_button[14.9,6.4;1.9,1.1;texture.png;image_4;;false;false]
-image_button[16.9,6.4;1.9,1.1;texture.png;image_5;;false;false]
-image[10.9,7.6;3.9,4.8;texture.png]
+box[10.9,6.4;7.9,1.1;#FF00FF]
+image_button[10.9,6.4;1.9,1.1;texture.png;image_1;Image row;false;false]
+box[10.9,7.6;3.9,4.8;#00FFFF]
 image[14.9,7.6;3.9,4.8;texture.png]
 box[0,12.6;19,0.4;#FFFFFF]
 label[0.3,12.8;Source:]
+]]
+
+--[[ Settings overlay
+formspec_version[6]
+size[10,10]
+
+box[0,0;5,2.3;#FFFFFF]
+image[0.2,0.2;0.4,0.4;magnify_compendium_settings.png]
+textarea[0.65,0.15;2,0.8;;;SETTINGS]
+textarea[0.15,0.85;3,0.7;;;Study Mode]
+image_button[2.7,0.8;1,0.6;settings_study_on;ON]
+image_button[3.8,0.8;1,0.6;settings_study_off;OFF]
+image_button[0.2,1.5;4.6,0.6;settings_study_reset;Reset Study Mode]
+]]
+
+--- Return the technical formspec for a species
+--- If player is unspecified, player-dependent features (ex. navigation) are disabled
+--- @param ref Reference key of species
+--- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
+--- @param player Player to build the formspec for
+--- @return formspec string, formspec "size[]" string
+local function build_technical_formspec(ref, is_exit, player)
+    local info, nodes = magnify.get_species_from_ref(ref)
+    local context, mdata
+    if player and player:is_player() then
+        context = get_context(player)
+        mdata = magnify.get_mdata(player)
+    end
+    
+    if info and nodes then
+        local props = {}
+        for k,_ in pairs(info) do
+            table.insert(props, k)
+        end
+        table.sort(props)
+        table.sort(nodes)
+        
+        local size = "size[19,13]"
+        local formtable = {
+            "formspec_version[6]", size,
+            
+            "no_prepend[]",
+            "bgcolor[#00000000;true;]",
+            "background[0,0;0,0;magnify_pixel.png^[multiply:#000000^[opacity:69;true]",
+            "image[0,0;19,0.6;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
+            "style_type[label;font=mono,bold]",
+            "label[7.8,0.3;Plant Compendium]",
+            "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]",
+            "image_button[0.7,0;0.6,0.6;magnify_compendium_nav_back.png", context and context.nav.list[context.nav.index - 1] and "" or "^[opacity:63", ";nav_backward;;false;false]",
+            "image_button[1.4,0;0.6,0.6;magnify_compendium_nav_fwd.png", context and context.nav.list[context.nav.index + 1] and "" or "^[opacity:63", ";nav_forward;;false;false]",
+            "tooltip[back;", is_exit and "Close" or "Return", "]",
+            "tooltip[nav_forward;Forward]",
+            "tooltip[nav_backward;Back]",
+            
+            "style_type[button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
+            "style_type[image_button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
+            "button[4.6,0.8;4.6,0.6;compendium_view;   View in Compendium]",
+            "image[4.6,0.8;0.6,0.6;magnify_compendium_icon.png]",
+            "button[9.3,0.8;2.2,0.6;locate;   Locate]",
+            "image[9.3,0.8;0.6,0.6;magnify_compendium_locate.png]",
+            "button[11.6,0.8;3.4,0.6;species_view;   Species View]",
+            "image[11.6,0.8;0.6,0.6;magnify_compendium_tech_info.png]",
+        }
+        
+        -- Add favourites and settings
+        if context and mdata then
+            table.insert(formtable, table.concat({
+                "image_button[15.1,0.8;0.6,0.6;magnify_compendium_heart_", mdata.favourites and mdata.favourites[ref] and "filled" or "hollow", ".png;favourite;;false;false]",
+                "image_button[15.8,0.8;0.6,0.6;magnify_compendium_settings.png^[multiply:#000000;settings;;false;false]",
+                "tooltip[favourite;", mdata.favourites[ref] and "Remove from " or "Add to ", "Favourites]",
+                "tooltip[settings;", context.settings and "Close " or "Open ", "Settings]",
+            }))
+        else
+            table.insert(formtable, table.concat({
+                "image_button[15.1,0.8;0.6,0.6;magnify_compendium_heart_hollow.png^[opacity:95;favourite_blocked;;false;false]",
+                "image_button[15.8,0.8;0.6,0.6;magnify_compendium_settings.png^[multiply:#000000^[opacity:95;settings_blocked;;false;false]",
+                "tooltip[favourite_blocked;Favourites inaccessible]",
+                "tooltip[settings_blocked;Settings inaccessible]",
+            }))
+        end
+        
+        table.insert(formtable, table.concat({
+            "image_button[15.8,0.8;0.6,0.6;magnify_compendium_settings.png^[multiply:#000000;settings;;false;false]",
+            "tooltip[settings;Settings]",
+            
+            "image[0.2,1.4;16.2,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            "image[0.2,1.4;0.1,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            "image[0.2,6.2;16.2,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            "image[16.3,1.4;0.1,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            
+            "style_type[textarea;font=mono,bold;textcolor=black;font_size=*0.85]",
+            "image[0.5,1.7;2.5,0.5;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
+            "textarea[0.6,1.8;3.0,0.8;;;REFERENCE KEY]",
+            "style_type[textarea;font=mono;textcolor=white;font_size=*1]",
+            "textarea[3.2,1.75;8.95,0.8;;;", minetest.formspec_escape(ref) or "Unknown", "]",
+            
+            "style_type[textarea;font=mono,bold;font_size=*2.25]",
+            "textarea[0.45,2.35;15.7,1.2;;;", minetest.formspec_escape(info.com_name) or minetest.formspec_escape(info.sci_name) or "Unknown", "]",
+            "style_type[textarea;font=mono;font_size=*1]",
+            "textarea[0.45,3.2;15.7,2.85;;;", info.origin and "Registered by "..info.origin or "Registration origin unknown",
+            "\n\n", "Defined properties: ", table.concat(props, ", "),
+            "]",
+            
+            "style_type[label;font=mono,bold]",
+            "label[0.3,6.7;Associated nodes:]",
+            "style[associated_nodes;font=mono]",
+            "textlist[0.2,6.9;16.2,5.5;associated_nodes;", table.concat(nodes, ","), ";1;false]",
+            create_image_column(nodes, {x = 16.6, y = 0.8}, {x = 2.2, y = 11.6}),
+            
+            "image[0,12.6;19,0.4;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
+            "style_type[textarea;font=mono;font_size=*0.9;textcolor=white]",
+            "textarea[0.2,12.62;18.6,0.5;;;", info.last_updated and "Last updated on "..info.last_updated or "", "]", 
+        }))
+
+        -- Add settings overlay (if applicable)
+        if context and mdata and context.settings then
+            table.insert(formtable, create_settings_overlay(mdata, {x = 11.5, y = 1.4}))
+        end
+
+        return table.concat(formtable, ""), size
+    else
+        -- invalid ref
+        return nil
+    end
+end
+
+--[[ V2 formtable clean copy, for editing
+formspec_version[6]
+size[19,13]
+box[0,0;19,0.6;#FFFFFF]
+label[7.8,0.3;Plant Compendium]
+image_button[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]
+image_button[0.7,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]
+image_button[1.4,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]
+button[4.6,0.8;4.6,0.6;compendium_view;   View in Compendium]
+image[4.6,0.8;0.6,0.6;magnify_compendium_icon.png]
+button[9.3,0.8;2.2,0.6;locate;   Locate]
+image[9.3,0.8;0.6,0.6;magnify_compendium_locate.png]
+button[11.6,0.8;3.4,0.6;species_view;   Species View]
+image[11.6,0.8;0.6,0.6;magnify_compendium_tech_info.png]
+image_button[15.1,0.8;0.6,0.6;magnify_compendium_heart_hollow.png;favourite;;false;false]
+image_button[15.8,0.8;0.6,0.6;magnify_compendium_settings.png^[multiply:#000000;settings;;false;false]
+box[0.2,1.4;16.2,4.9;#FFFFFF]
+box[0.3,1.5;16,4.7;#000000]
+box[0.5,1.7;2.5,0.5;#FFFFFF]
+textarea[0.6,1.8;3,0.8;;;REFERENCE KEY]
+textarea[3.2,1.75;8.95,0.8;;;", minetest.formspec_escape(ref) or "Unknown", "]
+textarea[0.45,2.35;15.7,1.2;;;", minetest.formspec_escape(info.com_name) or minetest.formspec_escape(info.sci_name) or "Unknown", "]
+textarea[0.45,3.2;15.7,2.85;;;", info.origin and "Registered by "..info.origin or "Registration origin unknown", "]
+label[0.3,6.7;Associated nodes:]
+textlist[0.2,6.9;16.2,5.5;associated_nodes;", table.concat(nodes, ","), ";1;false]
+box[16.6,0.8;2.2,11.6;#00FF00]
+box[0,12.6;19,0.4;#FFFFFF]
+textarea[0.2,12.62;18.6,0.5;;;Last updated:]
 ]]
 
 --- Returns the plant compendium formspec
@@ -991,7 +1175,7 @@ local function build_compendium_formspec(context, is_exit)
     return table.concat(formtable, ""), size
 end
 
---[[
+--[[ V3 formtable clean copy, for editing
 formspec_version[6]
 size[19,13]
 box[0,0;19,0.6;#FFFFFF]
@@ -1038,124 +1222,6 @@ button[13.8,11.7;2.3,0.7;filter_apply;Apply]
 button[16.1,11.7;2.3,0.7;filter_clear;Clear all]
 ]]
 
---- Return the technical formspec for a species
---- If player is unspecified, player-dependent features (ex. navigation) are disabled
---- @param ref Reference key of species
---- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
---- @param player Player to build the formspec for
---- @return formspec string, formspec "size[]" string
-local function build_technical_formspec(ref, is_exit, player)
-    local info, nodes = magnify.get_species_from_ref(ref)
-    local context = player and player:is_player() and get_context(player)
-
-    if info and nodes then
-        local props = {}
-        for k,_ in pairs(info) do
-            table.insert(props, k)
-        end
-        table.sort(props)
-        table.sort(nodes)
-
-        local size = "size[19,13]"
-        local formtable = {
-            "formspec_version[6]", size,
-
-            "no_prepend[]",
-            "bgcolor[#00000000;true;]",
-            "background[0,0;0,0;magnify_pixel.png^[multiply:#000000^[opacity:69;true]",
-            "image[0,0;19,0.6;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
-            "style_type[label;font=mono,bold]",
-            "label[7.8,0.3;Plant Compendium]",
-            "image_button", is_exit and "_exit" or "", "[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]",
-            "image_button[0.7,0;0.6,0.6;magnify_compendium_nav_back.png", context and context.nav.list[context.nav.index - 1] and "" or "^[opacity:63", ";nav_backward;;false;false]",
-            "image_button[1.4,0;0.6,0.6;magnify_compendium_nav_fwd.png", context and context.nav.list[context.nav.index + 1] and "" or "^[opacity:63", ";nav_forward;;false;false]",
-            "tooltip[back;", is_exit and "Close" or "Return", "]",
-            "tooltip[nav_forward;Forward]",
-            "tooltip[nav_backward;Back]",
-
-            "style_type[button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
-            "style_type[image_button;font=mono;textcolor=black;border=false;bgimg=magnify_pixel.png^[multiply:#F5F5F5]",
-            "button[4.6,0.8;4.6,0.6;compendium_view;   View in Compendium]",
-            "image[4.6,0.8;0.6,0.6;magnify_compendium_icon.png]",
-            "button[9.3,0.8;2.2,0.6;locate;   Locate]",
-            "image[9.3,0.8;0.6,0.6;magnify_compendium_locate.png]",
-            "button[11.6,0.8;3.4,0.6;species_view;   Species View]",
-            "image[11.6,0.8;0.6,0.6;magnify_compendium_tech_info.png]",
-        }
-
-        -- Add favourites 
-        if player and player:is_player() then
-            local mdata = magnify.get_mdata(player)
-            table.insert(formtable, table.concat({
-                "image_button[15.1,0.8;0.6,0.6;magnify_compendium_heart_", mdata.favourites and mdata.favourites[ref] and "filled" or "hollow", ".png;favourite;;false;false]",
-                "tooltip[favourite;", mdata.favourites[ref] and "Remove from " or "Add to ", "Favourites]",
-            }))
-        else
-            table.insert(formtable, table.concat({
-                "image_button[15.1,0.8;0.6,0.6;magnify_compendium_heart_hollow.png^[colorize:#909090:alpha;favourite_blocked;;false;false]",
-                "tooltip[favourite_blocked;Favourites inaccessible]",
-            }))
-        end
-        
-        table.insert(formtable, table.concat({
-            "image_button[15.8,0.8;0.6,0.6;magnify_compendium_settings.png^[multiply:#000000;settings;;false;false]",
-            "tooltip[settings;Settings]",
-
-            "image[0.2,1.4;16.2,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
-            "image[0.2,1.4;0.1,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
-            "image[0.2,6.2;16.2,0.1;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
-            "image[16.3,1.4;0.1,4.9;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
-
-            "style_type[textarea;font=mono,bold;textcolor=black;font_size=*0.85]",
-            "image[0.5,1.7;2.5,0.5;magnify_pixel.png^[multiply:#F5F5F5^[opacity:255]",
-            "textarea[0.6,1.8;3.0,0.8;;;REFERENCE KEY]",
-            "style_type[textarea;font=mono;textcolor=white;font_size=*1]",
-            "textarea[3.2,1.75;8.95,0.8;;;", minetest.formspec_escape(ref) or "Unknown", "]",
-
-            "style_type[textarea;font=mono,bold;font_size=*2.25]",
-            "textarea[0.45,2.35;15.7,1.2;;;", minetest.formspec_escape(info.com_name) or minetest.formspec_escape(info.sci_name) or "Unknown", "]",
-            "style_type[textarea;font=mono;font_size=*1]",
-            "textarea[0.45,3.2;15.7,2.85;;;", info.origin and "Registered by "..info.origin or "Registration origin unknown",
-            "\n\n", "Defined properties: ", table.concat(props, ", "),
-            "]",
-
-            "style_type[label;font=mono,bold]",
-            "label[0.3,6.7;Associated nodes:]",
-            "style[associated_nodes;font=mono]",
-            "textlist[0.2,6.9;16.2,5.5;associated_nodes;", table.concat(nodes, ","), ";1;false]",
-            create_image_column(nodes, {x = 16.6, y = 0.8}, {x = 2.2, y = 11.6}),
-
-            "image[0,12.6;19,0.4;magnify_pixel.png^[multiply:#F5F5F5^[opacity:76]",
-            "style_type[textarea;font=mono;font_size=*0.9;textcolor=white]",
-            "textarea[0.2,12.62;18.6,0.5;;;", info.last_updated and "Last updated on "..info.last_updated or "", "]", 
-        }))
-        return table.concat(formtable, ""), size
-    else
-        -- invalid ref
-        return nil
-    end
-end
-
---[[
-formspec_version[6]
-size[19,13]
-box[0.2,0.8;16.2,4.3;#FFFFFF]
-box[0.3,0.9;16,4.1;#000000]
-box[0,0;19,0.6;#FFFFFF]
-label[7.8,0.3;Plant Compendium]
-image_button[0,0;0.6,0.6;magnify_compendium_x.png;back;;false;false]
-image_button[0.7,0;0.6,0.6;magnify_compendium_nav_fwd.png;nav_forward;;false;false]
-image_button[1.4,0;0.6,0.6;magnify_compendium_nav_back.png;nav_backward;;false;false]
-box[0.5,1.1;0.7,0.5;#FFFFFF]
-textarea[0.45,1.8;15.7,1;;;", info.com_name or info.sci_name or "Unknown", "]
-textarea[0.45,2.7;15.7,2.2;;;Add text here!]
-label[0.3,5.5;Associated nodes:]
-textlist[0.2,5.7;16.2,6.7;associated_nodes;", table.concat(sorted_nodes or nodes, ","), ";1;false]
-box[16.6,0.8;2.2,11.6;#00FF00]
-box[0,12.6;19,0.4;#FFFFFF]
-textarea[0.2,12.62;18.6,0.5;;;Last updated:]
-]]
-
 
 ---------------------------
 -- CALLBACK REGISTRATION --
@@ -1188,6 +1254,7 @@ if minetest.get_modpath("sfinv") ~= nil then
         if formname == "" then
             if fields.magnify_plant_compendium then
                 context.page = MENU
+                context.settings = nil
                 nav_append(context, {
                     p = MENU, exit = false, com = context.show_common, filter_par = context.filter_parity,
                     filter = context.filter and table.copy(context.filter) or get_blank_filter_table(),
@@ -1310,6 +1377,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                     -- open viewer
                     context.image = 1
                     context.page = STANDARD_VIEW
+                    context.settings = nil
                     nav_append(context, {
                         p = STANDARD_VIEW, exit = formname ~= "", img = context.image,
                         sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
@@ -1321,6 +1389,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                 -- open viewer
                 context.image = 1
                 context.page = STANDARD_VIEW
+                context.settings = nil
                 nav_append(context, {
                     p = STANDARD_VIEW, exit = formname ~= "", img = context.image,
                     sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
@@ -1431,12 +1500,36 @@ if minetest.get_modpath("sfinv") ~= nil then
 
                 -- view species in compendium
                 context.page = MENU
+                context.settings = nil
                 nav_append(context, {
                     p = MENU, exit = formname ~= "", com = context.show_common, filter_par = context.filter_parity,
                     filter = context.filter and table.copy(context.filter) or get_blank_filter_table(),
                     sel = {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
                 })
                 open_fs(player, formname == "" and formname or "magnify:compendium", build_compendium_formspec(context, formname ~= ""))
+            end
+            if fields.settings then
+                if context.settings then
+                    context.settings = nil
+                else
+                    context.settings = true
+                end
+                reload = true
+            end
+            if fields.settings_study_on or fields.settings_study_off or fields.settings_study_reset then
+                local mdata = magnify.get_mdata(player)
+                -- toggle study mode on/off
+                if fields.settings_study_on then
+                    mdata.study_mode = true
+                elseif fields.settings_study_off then
+                    mdata.study_mode = false
+                end
+                -- reset study mode
+                if fields.settings_study_reset then
+                    mdata.fam_idenfified = {}
+                end
+                magnify.save_mdata(player, mdata)
+                reload = true
             end
 
             if formname == "magnify:view" or formname == "magnify:tach_view" then
@@ -1457,6 +1550,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                 if fields.tech_view then
                     -- open technical viewer
                     context.page = TECH_VIEW
+                    context.settings = nil
                     nav_append(context, {
                         p = TECH_VIEW, exit = formname ~= "", ref = context.ref,
                         sel = not context.ref and {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
@@ -1471,6 +1565,7 @@ if minetest.get_modpath("sfinv") ~= nil then
                 if fields.species_view then
                     -- open viewer
                     context.page = STANDARD_VIEW
+                    context.settings = nil
                     nav_append(context, {
                         p = STANDARD_VIEW, exit = formname ~= "", img = context.image, ref = context.ref,
                         sel = not context.ref and {f = context.family.selected, g = context.genus.selected, s = context.species.selected}
@@ -1549,6 +1644,7 @@ minetest.register_tool(tool_name, {
                     end
                     local context = get_context(pname)
                     context.ref = ref_key
+                    context.settings = nil
                     nav_append(context, {
                         p = STANDARD_VIEW, exit = true, img = context.image, ref = context.ref
                     })
