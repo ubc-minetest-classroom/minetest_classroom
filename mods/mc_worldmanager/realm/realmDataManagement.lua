@@ -1,3 +1,6 @@
+Realm.tempData = {}
+
+
 ---@private
 ---Loads the persistant global data for the realm class
 ---@return void
@@ -5,6 +8,21 @@ function Realm.LoadDataFromStorage()
     Realm.realmCount = tonumber(mc_worldManager.storage:get_string("realmCount"))
     if Realm.realmCount == nil then
         Realm.realmCount = 0
+    end
+
+    Realm.lastRealmPosition = minetest.deserialize(mc_worldManager.storage:get_string("realmLastPosition"))
+    if Realm.lastRealmPosition == nil then
+        Realm.lastRealmPosition = { x = 0, y = 0, z = 0 }
+    end
+
+    Realm.maxRealmSize = minetest.deserialize(mc_worldManager.storage:get_string("realmMaxSize"))
+    if Realm.maxRealmSize == nil then
+        Realm.maxRealmSize = { x = 0, y = 0, z = 0 }
+    end
+
+    Realm.EmptyChunks = minetest.deserialize(mc_worldManager.storage:get_string("realmEmptyChunks"))
+    if Realm.EmptyChunks == nil then
+        Realm.EmptyChunks = {}
     end
 
     local tmpRealmDict = minetest.deserialize(mc_worldManager.storage:get_string("realmDict"))
@@ -20,9 +38,14 @@ end
 ---@private
 ---Saves the persistant global data for the realm class
 ---@return void
-function Realm.SaveDataToStorage ()
+function Realm.SaveDataToStorage()
     mc_worldManager.storage:set_string("realmDict", minetest.serialize(Realm.realmDict))
     mc_worldManager.storage:set_string("realmCount", tostring(Realm.realmCount))
+
+    mc_worldManager.storage:set_string("realmLastPosition", minetest.serialize(Realm.lastRealmPosition))
+    mc_worldManager.storage:set_string("realmMaxSize", minetest.serialize(Realm.maxRealmSize))
+    mc_worldManager.storage:set_string("realmMaxSize", minetest.serialize(Realm.maxRealmSize))
+    mc_worldManager.storage:set_string("realmEmptyChunks", minetest.serialize(Realm.EmptyChunks))
 end
 
 ---@private
@@ -40,6 +63,7 @@ function Realm:Restore(template)
         PlayerJoinTable = template.PlayerJoinTable,
         PlayerLeaveTable = template.PlayerLeaveTable,
         RealmDeleteTable = template.RealmDeleteTable,
+        Permissions = template.Permissions,
         MetaStorage = template.MetaStorage
     }
 
@@ -51,19 +75,54 @@ function Realm:Restore(template)
     return this
 end
 
+---@public
+---set_data
+---Saves data into the realms metadata. This data will be serialized and saved with the realm.
+---@param key any
+---@param value any
+function Realm:set_data(key, value)
+    if (self.MetaStorage == nil) then
+        self.MetaStorage = {}
+    end
 
-function Realm:set_string(key, value)
     self.MetaStorage[key] = value
 end
 
-function Realm:get_string(key)
+---@public
+---get_data
+---Retrieves data from the realms metadata.
+---@param key any
+---@return any
+function Realm:get_data(key)
+    if (self.MetaStorage == nil) then
+        self.MetaStorage = {}
+    end
+
     return self.MetaStorage[key]
 end
 
-function Realm:set_int(key, value)
-    self.MetaStorage[key] = tostring(value)
+---@public
+---set_tmpData
+---Saves data into temporary realm metadata. This data is not saved with the realm.
+---@param key any
+---@param value any
+function Realm:set_tmpData(key, value)
+    if (Realm.tempData[self] == nil) then
+        Realm.tempData[self] = {}
+    end
+
+    Realm.tempData[self][string.lower(key)] = value
 end
 
-function Realm:get_int(key)
-    return tonumber(self.MetaStorage[key])
+---@public
+---get_data
+---Retrieves data from the realms temporary metadata.
+---@param key any
+---@return any
+function Realm:get_tmpData(key)
+    if (Realm.tempData[self] == nil) then
+        Realm.tempData[self] = {}
+    end
+
+    return Realm.tempData[self][string.lower(key)]
 end
