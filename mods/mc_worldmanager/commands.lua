@@ -704,9 +704,9 @@ commands["coordinates"] = {
             elseif (format == "grid") then
                 pos = Realm.worldToGridSpace(rawPos)
             elseif (format == "utm") then
-                pos = playerRealm:WorldToUTM(rawPos)
+                pos = playerRealm:WorldToUTMSpace(rawPos)
             elseif (format == "latlong") then
-                pos = playerRealm:WorldToLatLong(rawPos)
+                pos = playerRealm:WorldToLatLongSpace(rawPos)
             else
                 return false, "unknown format: " .. tostring(format)
             end
