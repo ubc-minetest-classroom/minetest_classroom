@@ -1,1 +1,0 @@
-A mapgen mod that allows any image to be used as a heightmap. Use of grayscale raster images is recommended.
