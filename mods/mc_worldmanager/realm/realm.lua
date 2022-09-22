@@ -19,6 +19,7 @@ Realm.__index = Realm
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmNodeManipulation.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmDataManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmSchematicSaveLoad.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmRealTerrainLoad.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCoordinateConversion.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPrivileges.lua")
@@ -87,11 +88,11 @@ function Realm:New(name, area, callbacks)
                         y = (this.StartPos.y + 2),
                         z = (this.StartPos.z + this.EndPos.z) / 2 }
 
-    if (areas) then
-        local protectionID = areas:add("Server", this.ID .. this.Name, this.StartPos, this.EndPos)
-        this:set_data("protectionID", protectionID)
-        areas:save()
-    end
+    -- if (areas) then
+    --     local protectionID = areas:add("Server", this.ID .. this.Name, this.StartPos, this.EndPos)
+    --     this:set_data("protectionID", protectionID)
+    --     areas:save()
+    -- end
 
     Realm.SaveDataToStorage()
 
