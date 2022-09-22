@@ -1,4 +1,4 @@
-# Minetest_Classroom
+# minetest_classroom
 
 Repo for Minetest Classroom game
 

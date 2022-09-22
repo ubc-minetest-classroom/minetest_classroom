@@ -55,8 +55,8 @@ local pine = {
     texture = "magnify_default_pinus_contorta_var_latifolia.jpg",
     model_obj = "magnify_default_pinus_contorta_var_latifolia.obj",
     more_info = "Large, straight trunked, column-like tree with a narrow, open crown",
-    external_link = "https://linnet.geog.ubc.ca/Atlas/Atlas.aspx?sciname=Pinus%20contorta", 
-    img_copyright = "Walter Siegmund, licensed under CC BY-SA 3.0"
+    external_link = "https://commons.wikimedia.org/wiki/File:Pinus_contorta_Nederland_CO.jpg", 
+    img_copyright = "Sean Buchan, licensed under CC BY 2.0"
 }
 magnify.register_species(pine, {"default:pine_tree", "default:pine_wood", "default:pine_needles", "default:pine_sapling"})
 

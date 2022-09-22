@@ -118,10 +118,6 @@ function schematicManager.getSchematic(key)
 end
 
 
-
-
-
-
 -- Scan the world realm schematics folder and add them to the schematics list.
 local files = minetest.get_dir_list(minetest.get_worldpath() .. "\\realmSchematics\\", false)
 for k, fileName in pairs(files) do
