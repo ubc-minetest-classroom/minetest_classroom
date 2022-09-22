@@ -19,9 +19,56 @@ end
 ---     GENERAL     ---
 -----------------------
 
+--- Saves data to a player's magnify metadata
+--- @param player Player to save data for
+--- @param data Data to save
+--- @return boolean
+function magnify.save_mdata(player, data)
+    if not player:is_player() or type(data) ~= "table" then
+        return false -- invalid player/metadata
+    end
+
+    local meta = player:get_meta()
+    meta:set_string("magnify:pdata", minetest.serialize(data))
+    return true
+end
+
+--- Gets data from a player's `magnify` metadata
+--- @param player Player to get data for
+--- @return table or nil
+function magnify.get_mdata(player)
+    local current_format = 2;
+    if not player:is_player() then
+        return nil -- invalid player
+    end
+
+    local meta = player:get_meta()
+    local data = minetest.deserialize(meta:get("magnify:pdata") or minetest.serialize(nil))
+    
+    if not data or type(data) ~= "table" then
+        data = {
+            discovered = {},
+            favourites = {},
+            fam_idenfified = {},
+            study_mode = false,
+            format = current_format,
+        }
+        magnify.save_mdata(player, data)
+    elseif not data.format or data.format < current_format then
+        -- iterate through format changes until updated
+        if not data.format or data.format == 1 then
+            data.fam_idenfified = {}
+            data.study_mode = false
+            data.format = math.min((data.format or 1) + 1, current_format)
+        end
+        magnify.save_mdata(player, data)
+    end
+    return data
+end
+
 --- @private
 --- Searches for a reference key with information matching the information in def_table, and returns it if found, along with a string indicating the format of the reference key
---- Otherwise, returns the next unused reference key
+--- Otherwise, returns the next unused reference key, and the latest format
 --- @param def_table Species definition table
 --- @return string, string
 local function find_registration_ref(def_table)
@@ -64,10 +111,11 @@ end
 function magnify.register_species(def_table, nodes)
     if type(nodes) ~= "table" or not next(nodes) then
         return nil -- no nodes given
+    elseif type(def_table) ~= "table" or not def_table.sci_name then
+        return nil -- invalid definition table
     end
 
     local ref, format = find_registration_ref(def_table)
-    def_table["origin"] = minetest.get_current_modname()
 
     -- migrate old format reference keys
     if format ~= "v2" then
@@ -77,6 +125,12 @@ function magnify.register_species(def_table, nodes)
         else
             return nil -- could not determine ref key
         end
+    end
+
+    -- clean and add additional properties to definition table
+    def_table.origin = minetest.get_current_modname()
+    if def_table.texture and type(def_table.texture) ~= "table" then
+        def_table.texture = {def_table.texture}
     end
 
     local serial_table = minetest.serialize(def_table)
@@ -93,7 +147,8 @@ end
 --- @param node Stringified node
 --- @return string or nil
 function magnify.get_ref(node)
-    return tostring(magnify.species.node[node])
+    local ref = magnify.species.node[node]
+    return ref and tostring(ref) or nil
 end
 
 --- @public
@@ -224,196 +279,28 @@ function magnify.get_all_registered_species()
     return name_table, ref_keys
 end
 
---- @private
---- Returns the path of obj in origin's mod directory, or nil if obj could not be found
---- @param origin Name of mod whose directory should be searched
---- @param obj File to search for
---- @return string or nil
-local function get_obj_directory(origin, obj)
-    local root = minetest.get_modpath(origin)
-    if not root then
-        return nil
-    end
+--- @public
+--- Returns a tree of all the species registered in the `magnify` species database, indexed by family name
+--- Each family points to a table indexed by genus name, each genus points to a table indexed by species name, each species points to its associated reference key
+--- @return table
+function magnify.get_registered_species_tree()
+    local storage_data = magnify.species.ref:to_table()
+    local fam_list = {}
 
-    -- check if the "models" contains the object
-    if magnify.table_has(minetest.get_dir_list(root.."/models", false), obj) then
-        -- Return path to object in "models" directory
-        return root.."/models/"..obj
-    else
-        local dir = table.remove(string.split(root, "\\"))
-        local trimmed_root = string.sub(root, 1, #root - #dir - 1)
+    for k,v in pairs(storage_data.fields) do
+        local info = minetest.deserialize(v)
+        if info and tonumber(k) then
+            local split_table = info.sci_name and string.split(info.sci_name, " ", false, 1)
+            if split_table then
+                local genus, species = unpack(split_table)
+                local genus_list = fam_list[info.fam_name or "Unknown"] or {}
+                local species_list = genus_list[genus] or {}
 
-        --- Recursively searches for obj: returns the path of obj in the root directory, or nil if obj could not be found
-        --- @param file File currently being compared with obj
-        --- @param path Path to file
-        --- @param file_wl List of remaining files to be compared with obj
-        --- @param path_wl Corresponding list of paths to files in file_wl
-        --- @return string or nil
-        local function get_file_directory_tr(file, path, file_wl, path_wl)
-            if not file then
-                return nil
-            elseif file == obj then
-                return path.."/"..file
-            else
-                -- add new files/folders to list
-                local new_files = minetest.get_dir_list(path.."/"..file)
-                local new_paths = {}
-                for k,v in ipairs(new_files) do
-                    table.insert(new_paths, path.."/"..file)
-                end
-                table.insert_all(file_wl, new_files)
-                table.insert_all(path_wl, new_paths)
-
-                -- get next file/folder to search
-                local next_file = table.remove(file_wl, 1)
-                local next_path = table.remove(path_wl, 1)
-
-                -- continue recursive search, if file exists
-                return get_file_directory_tr(next_file, next_path, file_wl, path_wl)
+                species_list[species] = k
+                genus_list[genus] = species_list
+                fam_list[info.fam_name or "Unknown"] = genus_list
             end
         end
-
-        -- Begin tail-recursive search
-        return get_file_directory_tr(dir, trimmed_root, {}, {})
     end
+    return fam_list
 end
-
---- @private
---- Reads the textures from a .obj file and returns them as a table of strings
---- @param target_obj Object file to read
---- @return table
-local function read_obj_textures(target_obj)
-    local textures = {}
-    local model_iter = io.lines(target_obj, "r")
-    local line = model_iter()
-    while line do 
-        local match = string.match(line, "^g (.*)")
-        if match then
-            table.insert(textures, match)
-        end
-        line = model_iter()
-        if not line then break end
-    end
-    return textures
-end
-
---- @private
---- Gets the description for a conservation status and returns it as a string, and returns the colour associated with that status
---- @param cons_status Plant definition cons_status field
---- @return string, string
-local function get_cons_status_info(cons_status)
-    if cons_status then
-        local status = (type(cons_status) == "table" and cons_status.ns_bc) or cons_status
-        local status_info = magnify.map.ns_bc[status]
-        if status_info then
-            local desc = status_info["desc"]
-            return status..(desc and desc ~= "" and " - "..desc or ""), status_info["col"]
-        else
-            return status
-        end
-    else
-        return nil
-    end
-end
-
---- @public
---- Builds the general species information formspec for the species indexed at `ref` in the `magnify` species database 
---- @param ref Reference key of the species
---- @param is_exit true if clicking the "Back" button should exit the formspec, false otherwise
---- @param is_inv true if the formspec is being used in the player inventory, false otherwise
---- @return (formspec string, formspec "size[]" string) or nil
-function magnify.build_formspec_from_ref(ref, is_exit, is_inv)
-    local info = minetest.deserialize(magnify.species.ref:get(ref))
-    
-    -- TODO: create V1 and V2 formtables
-    if info ~= nil then
-        -- entry good, return formspec
-        local model_spec_loc = (info.model_obj and info.origin) and get_obj_directory(info.origin, info.model_obj)
-        local cons_status_desc, status_col = get_cons_status_info(info.cons_status)
-        if model_spec_loc then
-            -- v2: model and image
-            local model_spec = read_obj_textures(model_spec_loc)
-            local size = (is_inv and "size[13.8,7.2]") or "size[17.4,9.3]"
-            local formtable_v2 = {
-                "formspec_version[5]", size,
-
-                "box[", (is_inv and "0,0;10,1.6") or "0.4,0.4;12,1.6", ";", minetest.formspec_escape(status_col or "#9192A3"), "]",
-                "textarea[", (is_inv and "0.45,0.08;10.4,0.7") or "0.45,0.45;12.4,0.7", ";;;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
-                "textarea[", (is_inv and "0.45,0.59;10.4,0.7") or "0.45,0.96;12.4,0.7", ";;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
-                "textarea[", (is_inv and "0.45,1.1;10.4,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
-
-                "image[", (is_inv and "10.3,0") or "12.8,0.4", ";4.2,4.2;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
-                "box[", (is_inv and "10.3,3.7;3.35,3.65") or "12.8,4.7;4.2,4.2", ";#789cbf]",
-                "model[", (is_inv and "10.3,3.7") or "12.8,4.7", ";4.2,4.2;plant_model;", info.model_obj, ";", table.concat(model_spec, ","), ";", info.model_rot_x or "0", ",", info.model_rot_y or "180", ";false;true;;]",
-
-                "textarea[", (is_inv and "0.3,1.8;10.45,4.7") or "0.35,2.3;12.4,4.7", ";;;", -- info area
-                "- ", minetest.formspec_escape(cons_status_desc or "Conservation status unknown"), "\n",
-                "- ", minetest.formspec_escape((info.region and "Found in "..info.region) or "Location range unknown"), "\n",
-                "- ", minetest.formspec_escape(info.height or "Height unknown"), "\n",
-                "\n",
-                minetest.formspec_escape((info.more_info and info.more_info.."\n") or ""),
-                minetest.formspec_escape(info.bloom or "Bloom pattern unknown"),
-                "]",
-
-                "textarea[", (is_inv and "0.3,6;10.4,0.7") or "0.35,7.2;12.4,0.7", ";;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
-                "button", (is_exit and "_exit") or "", "[", (is_inv and "0,6.75;10.2,0.6") or "0.4,8;12,0.9", ";back;Back]"
-            }
-            return table.concat(formtable_v2, ""), size
-        else
-            -- v1: image
-            local size = (is_inv and "size[14.7,5.9]") or "size[18.5,7.7]"
-            local formtable_v1 = {  
-                "formspec_version[5]", size,
-                
-                "box[", (is_inv and "0,0;9.6,1.6") or "0.4,0.4;11.6,1.6", ";", minetest.formspec_escape(status_col or "#9192a3"), "]",
-                "textarea[", (is_inv and "0.45,0.08;10,0.7") or "0.45,0.45;12.4,0.7", ";;;", minetest.formspec_escape(info.sci_name or "N/A"), "]",
-                "textarea[", (is_inv and "0.45,0.59;10,0.7") or "0.45,0.96;12.4,0.7", ";;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]",
-                "textarea[", (is_inv and "0.45,1.1;10,0.7") or "0.45,1.47;12.4,0.7", ";;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name..(magnify.map.family[info.fam_name] and " ("..magnify.map.family[info.fam_name]..")" or "")) or "Family unknown"), "]",
-                "image[", (is_inv and "9.9,0") or "12.4,0.4", ";5.7,5.7;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]",
-    
-                "textarea[", (is_inv and "0.3,1.8;10.05,4.3") or "0.35,2.3;12,4.4", ";;;", -- info area
-                "- ", minetest.formspec_escape(cons_status_desc or "Conservation status unknown"), "\n",
-                "- ", minetest.formspec_escape((info.region and "Found in "..info.region) or "Location range unknown"), "\n",
-                "- ", minetest.formspec_escape(info.height or "Height unknown"), "\n",
-                "\n",
-                minetest.formspec_escape((info.more_info and info.more_info.."\n") or ""),
-                minetest.formspec_escape(info.bloom or "Bloom pattern unknown"),
-                "]",
-
-                "textarea[", (is_inv and "0.3,5.6;11.6,0.7") or "0.35,6.9;11.6,0.7", ";;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]",
-                "button", (is_exit and "_exit") or "", "[", (is_inv and "9.9,5.4;4.8,0.6") or "12.4,6.4;5.7,0.9", ";back;Back]"
-            }
-            return table.concat(formtable_v1, ""), size
-        end
-    else
-        -- entry bad, go to fallback
-        return nil
-    end
-end
-
---[[ formtable clean copies, for editing
--- V2
-formspec_version[5]
-size[17.4,9.3]
-box[0.4,0.4;12,1.6;", minetest.formspec_escape(info.status_col or "#9192A3"), "]
-textarea[0.45,0.45;12.4,0.7;;;", minetest.formspec_escape(info.sci_name or "N/A"), "]
-textarea[0.45,0.97;12.4,0.7;;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]
-textarea[0.45,1.47;12.4,0.7;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]
-image[12.8,0.4;4.2,4.2;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]
-box[12.8,4.7;4.2,4.2;#789cbf]
-textarea[0.35,2.3;12.4,4.7;;;"add the original giant text box here"]
-textarea[0.35,7.2;12.4,0.7;;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]
-button[0.4,8;12,0.9;back;Back]
-
--- V1
-formspec_version[5]
-size[18.5,7.7]
-box[0.4,0.4;11.6,1.6;", minetest.formspec_escape(info.status_col or "#9192a3"), "]
-textarea[0.45,0.45;12,0.7;;;", minetest.formspec_escape(info.sci_name or "N/A"), "]
-textarea[0.45,0.97;12,0.7;;;", minetest.formspec_escape((info.com_name and "Common name: "..info.com_name) or "Common name unknown"), "]
-textarea[0.45,1.47;12,0.7;;;", minetest.formspec_escape((info.fam_name and "Family: "..info.fam_name) or "Family unknown"), "]
-image[12.4,0.4;5.7,5.7;", (type(info.texture) == "table" and info.texture[1]) or info.texture or "test.png", "]
-textarea[0.35,2.3;12,4.4;;;"add the original giant text box here"]
-textarea[0.35,6.9;11.6,0.7;;;", minetest.formspec_escape((info.img_copyright and "Image © "..info.img_copyright) or (info.img_credit and "Image courtesy of "..info.img_credit) or ""), "]
-button[12.4,6.4;5.4,0.9;back;Back]
-]]

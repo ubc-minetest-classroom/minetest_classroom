@@ -45,7 +45,7 @@ positionText["latlong"] = function(player, realm)
     return text
 end
 
-positionText["UTM"] = function(player, realm)
+positionText["utm"] = function(player, realm)
     local pos = realm:WorldToUTMSpace(player:get_pos())
     local text = "E: " .. math.ceil(pos.x) .. " N: " .. math.ceil(pos.z)
     return text

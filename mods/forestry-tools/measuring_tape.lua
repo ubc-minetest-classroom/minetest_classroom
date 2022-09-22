@@ -30,7 +30,7 @@ minetest.register_node("forestry_tools:measure_pos1", {
 	tiles = {"measure_pos1.png"},
 	is_ground_content = false,
 	light_source = minetest.LIGHT_MAX,
-	groups = {not_in_creative_inventory, immortal}	
+	groups = {not_in_creative_inventory=1, immortal=1}	
 })
 
 -- pos2 (end position) marker node
@@ -39,7 +39,7 @@ minetest.register_node("forestry_tools:measure_pos2", {
 	tiles = {"measure_pos2.png"},
 	is_ground_content = false,
 	light_source = minetest.LIGHT_MAX,
-	groups = {not_in_creative_inventory, immortal}
+	groups = {not_in_creative_inventory=1, immortal=1}
 })
 
 -- Hud displaying distance between player and pos1
@@ -187,12 +187,12 @@ function reset(player)
 
 	local mark_status = data.mark_status
 
-	pos1 = data.pos1
-	pos2 = data.pos2
-	node1 = data.node1
-	node2 = data.node2
-	tape_nodes = data.tape_nodes
-	orig_nodes = data.orig_nodes
+	local pos1 = data.pos1
+	local pos2 = data.pos2
+	local node1 = data.node1
+	local node2 = data.node2
+	local tape_nodes = data.tape_nodes
+	local orig_nodes = data.orig_nodes
 
 	if mark_status == "none_set" then
 		return
@@ -276,7 +276,7 @@ minetest.register_tool("forestry_tools:measuringTape" , {
 })
 
 minetest.register_alias("measuringTape", "forestry_tools:measuringTape")
-measuringTape = minetest.registered_aliases[measuringTape] or measuringTape
+-- measuringTape = minetest.registered_aliases[measuringTape] or measuringTape
 
 if minetest.get_modpath("mc_toolhandler") then
 	mc_toolhandler.register_tool_manager("forestry_tools:measuringTape", {privs = forestry_tools.priv_table})

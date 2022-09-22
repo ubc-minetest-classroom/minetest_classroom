@@ -58,7 +58,7 @@ end
 -- Randomly assign skin to new player or red to instructor
 skins.ui_context = {}
 minetest.register_on_joinplayer(function(player)
-	local skinlist = skins.get_skinlist()
+	local skinlist = skins.get_skinlist_for_player()
 	local has, missing = minetest.check_player_privs(player,  {teacher = true})
 	if has then
 		skins.set_player_skin(player, skinlist[1])

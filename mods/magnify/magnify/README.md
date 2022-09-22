@@ -2,7 +2,7 @@
 
 Adds a magnifying glass tool and inventory plant compenium for viewing information about various plant species in the MineTest world
 
-*Release version: n/a*  
+*Version: v0.10.1*  
 *Dependencies: [`sfinv`](https://github.com/rubenwardy/sfinv)*
 
 ## API
@@ -17,28 +17,33 @@ Registers a species in the `magnify` species database
 
     ```lua
     local def_table = {
-        sci_name = "",        -- Scientific name of species
-        com_name = "",        -- Common name of species
-        fam_name = "",        -- Family name of species
+        sci_name = "",          -- Scientific name of species
+        com_name = "",          -- Common name of species
+        fam_name = "",          -- Family name of species
 
-        cons_status = {       -- Conservation statuses of species
-            ns_global = "",       -- NatureServe global status
-            ns_bc = "",           -- NatureServe BC status
-            bc_list = ""          -- BC List (Red Blue List) status
+        cons_status = {         -- Conservation statuses of species
+            ns_global = "",         -- NatureServe global status
+            ns_bc = "",             -- NatureServe BC status
+            bc_list = ""            -- BC List (Red Blue List) status
         },
-        region = "",          -- Native region/range of species (displayed as "Found in [region]")
-        height = "",          -- Species height
-        more_info = "",       -- Extended description of species
-        bloom = "",           -- The way the species blooms
+        tags = {""},            -- Tags representing various charactertistics of a species
+        region = "",            -- Native region/range of species (displayed as "Found in [region]")
+        height = "",            -- Species height
+        bloom = "",             -- The way the species blooms
+        more_info = "",         -- Extended description of species
+        
+        texture = {""},         -- Images of species (in `mod/textures`)
+        model_obj = "",         -- Model file (in `mod/models`)
+        model_rot_horiz = 0,    -- Initial horizontal rotation of model, about y-axis (in degrees; defaults to 180)
+        model_rot_verti = 0,    -- Initial vertical rotation of model, about x-axis (in degrees; defaults to 0)
+        model_rot_y = 0,        -- Alias for model_rot_horiz
+        model_rot_x = 0,        -- Alias for model_rot_verti
 
-        texture = {""},       -- Images of species (in `mod/textures`) - can be a string if only one image
-        model_obj = "",       -- Model file (in `mod/models`)
-        model_rot_x = 0,      -- Initial rotation of model about x-axis (in degrees; defaults to 0)
-        model_rot_y = 0,      -- Initial rotation of model about y-axis (in degrees; defaults to 180)
-
-        external_link = "",   -- Link to page with more species information
-        img_copyright = "",   -- Copyright owner of species image (displayed as "Image (c) [img_copyright]")
-        img_credit = ""       -- Author of species image (displayed as "Image courtesy of [img_credit]")
+        external_link = "",     -- Link to page with more species information
+        img_copyright = "",     -- Copyright owner of species image (displayed as "Image (c) [img_copyright]")
+        img_credit = "",        -- Author of species image (displayed as "Image courtesy of [img_credit]")
+        info_source = "",       -- Source that species information was taken from
+        last_updated = "",      -- Timestamp when species was last updated
     }
     ```
 
@@ -104,6 +109,14 @@ Returns the species definition table of the species indexed at `ref` in the `mag
   *OR*
   - `nil` if `ref` is invalid
 
+### `magnify.get_registered_species_tree()  -->  table`
+
+Returns a tree of all the species registered in the `magnify` species database, indexed by family name
+Each family points to a table indexed by genus name, each genus points to a table indexed by species name, each species points to its associated reference key
+
+- Returns:
+  - *`table`*: Tree containing all registered species, indexed by family name
+
 ### `magnify.get_all_registered_species()  -->  table, table`
 
 Returns a human-readable list of all species registered in the `magnify` species database, and a list of reference keys corresponding to them  
@@ -113,19 +126,27 @@ Each species and its corresponding reference key will be at the same index in bo
   - *`table`*: Names of all registered species, formatted as "Common name (Scientific name)"
   - *`table`*: Reference keys for all registered species, in the same order as the list of names
 
-### `magnify.build_formspec_from_ref(ref, is_exit, is_inv)  -->  string, string`
+### `magnify.get_mdata(player)  -->  table`
 
-Builds the general species information formspec for the species indexed at `ref` in the `magnify` species database  
+Gets data from a player's `magnify` metadata
 
 - Parameters:
-  - `ref` (*`string`*): Reference key of the species
-  - `is_exit` (*`boolean`*): `true` if clicking the "Back" button should exit the formspec, `false` otherwise
-  - `is_inv` (*`boolean`*): `true` if the formspec is being used in the player inventory, `false` otherwise
+  - `player` (*`ObjectRef`*): Player to get data for
 - Returns:
-  - *`string`*: Full formspec
-  - *`string`*: Formspec `size[]` element  
+  - *`table`*: `magnify` data table
   *OR*
-  - `nil` if `ref` is invalid
+  - `nil` if `player` is invalid
+
+### `magnify.save_mdata(player, data)  -->  boolean`
+
+Saves data to a player's `magnify` metadata
+Returns `true` if successful, `false` otherwise
+
+- Parameters:
+  - `player` (*`ObjectRef`*): Player to save data for
+  - `data` (*`table`*): Data to save
+- Returns:
+  - *`boolean`*: Whether the data table was successfully saved or not
 
 ## Helper functions
 

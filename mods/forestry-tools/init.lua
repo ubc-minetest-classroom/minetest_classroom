@@ -11,5 +11,4 @@ end
 dofile(forestry_tools.path .. "/measuring_tape.lua")
 dofile(forestry_tools.path .. "/compass.lua")
 dofile(forestry_tools.path .. "/clinometer.lua")
-dofile(forestry_tools.path .. "/wedgeprism.lua")
 dofile(forestry_tools.path .. "/rangefinder.lua")

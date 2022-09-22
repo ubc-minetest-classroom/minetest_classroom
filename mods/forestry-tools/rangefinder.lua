@@ -1,10 +1,3 @@
---[[
-ADDITIONAL CONSIDERATIONS
--- Auto-reset?
--- Implement additional settings?
-  -- Degrees vs. percent slope for INC
-
-CURRENT CONTROL SCHEME
 -- L-CLICK               = take measurement/clear
 -- L-CLICK + AUX         = clear previous measurement
 -- L-CLICK + AUX + SNEAK = clear all measurements
@@ -15,7 +8,6 @@ CURRENT CONTROL SCHEME
 -- R-CLICK + AUX + SNEAK = cycle routine (reverse)
 
 -- L-CLICK + SNEAK       = open measurement settings (IN CONSIDERATION)
-]]
 
 local RAY_RANGE = 500
 local ROUTINES = {
