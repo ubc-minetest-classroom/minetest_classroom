@@ -26,7 +26,7 @@ tutorial.editingTutorial = false
 -- Store and load default settings in the tutorial_settings.conf file
 function tutorial.fetch_setting(name)
     local sname = "tutorial." .. name
-    return settings and settings:get(sname) or minetest.settings:get(sname)
+    return settings:get(sname) or minetest.settings:get(sname)
 end
 local settings = Settings(tutorial.path .. "/tutorial_settings.conf")
 tutorial.player_priv_table = tutorial.fetch_setting("player_priv_table")

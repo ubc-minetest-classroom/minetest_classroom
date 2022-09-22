@@ -16,7 +16,7 @@ minetest.register_tool("tutorial:tutorialbook" , {
 	end,
 })
 minetest.register_alias("tutorialbook", "tutorial:tutorialbook")
-tutorial.tutorialbook = minetest.registered_aliases[tutorialbook] or tutorial.tutorialbook
+-- tutorial.tutorialbook = minetest.registered_aliases[tutorialbook] or tutorial.tutorialbook
 
 if minetest.get_modpath("mc_toolhandler") then
 	mc_toolhandler.register_tool_manager("tutorial:tutorialbook", {privs = {interact = true}, inv_override = "main"})
@@ -80,7 +80,7 @@ minetest.register_tool("tutorial:recording_tool", {
 })
 
 minetest.register_alias("recording_tool", "tutorial:recording_tool")
-tutorial.recording_tool = minetest.registered_aliases[recording_tool] or tutorial.recording_tool
+-- tutorial.recording_tool = minetest.registered_aliases[recording_tool] or tutorial.recording_tool
 
 if minetest.get_modpath("mc_toolhandler") then
 	mc_toolhandler.register_tool_manager("tutorial:recording_tool", {privs = tutorial.recorder_priv_table})
