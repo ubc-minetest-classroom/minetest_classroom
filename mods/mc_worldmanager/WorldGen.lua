@@ -121,7 +121,7 @@ Realm.WorldGen.RegisterHeightMapGenerator("dnr", function(startPos, endPos, vm, 
                 -- Generate a height map from the existing map
                 local previousHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
                 if (previousHeight == nil) then
-                    previousHeight = realmFloorLevel
+                    previousHeight = startPos.y
                 end
 
 

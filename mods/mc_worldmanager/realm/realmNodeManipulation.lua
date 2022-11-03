@@ -127,6 +127,9 @@ function Realm:CreateBarriersFast()
         -- Send finished message
         if context.total_blocks == context.loaded_blocks then
             minetest.chat_send_all("Finished walling realm!")
+            if realterrain.loadRealm then
+                realterrain.realmEmergeDone = true
+            end
         end
 
         local pos1 = { x = blockpos.x * 16, y = blockpos.y * 16, z = blockpos.z * 16 }

@@ -43,6 +43,7 @@ commands["new"] = {
         local newRealm = Realm:New(realmName, { x = sizeX, y = sizeY, z = sizeZ })
         newRealm:CreateGround()
         newRealm:CreateBarriersFast()
+        newRealm:set_data("owner", name)
 
         return true, "created new realm with ID: " .. newRealm.ID
     end,
@@ -340,19 +341,59 @@ commands["schematic"] = {
         end
     end }
 
+commands["realterrain"] = {
+    func = function(name, params)
+        if (params[1] == "list") then
+            table.remove(params, 1)
+
+            minetest.chat_send_player(name, "Key : Filepath")
+            for i, t in pairs(realterrainManager.dems) do
+                minetest.chat_send_player(name, i .. " : " .. t)
+            end
+            return true
+        elseif (params[1] == "load") then
+            table.remove(params, 1)
+            local realmName = params[1]
+            if (realmName == "" or realmName == nil) then
+                realmName = "Unnamed Realm"
+            end
+
+            local key = params[1]
+            if (key == nil) then
+                key = ""
+            end
+
+            local DEM_PATH, config = realterrainManager.getDEM(key)
+
+            if (config == nil) then
+                return false, "DEM key: " .. tostring(key) .. " config file has not been registered with the system."
+            end
+
+            local newRealm = Realm:NewFromDEM(realmName, key)
+            return true, "creat[ing][ed] new realm with name: " .. newRealm.Name .. "and ID: " .. newRealm.ID .. " from DEM with key " .. key
+        else
+            return false, "unknown subcommand. Try realm realterrain list | realm realterrain load"
+        end
+    end }
+
 commands["setspawn"] = {
     func = function(name, params)
         local player = minetest.get_player_by_name(name)
 
         local requestedRealm = Realm.GetRealmFromPlayer(player)
 
-        local position = requestedRealm:WorldToLocalSpace(player:get_pos())
+        local playerPosition = player:get_pos()
 
+        if (not requestedRealm:ContainsCoordinate(playerPosition)) then
+            return false, "You are not physically located in realm" .. tostring(requestedRealm.ID) .. " Please re-enter realm boundaries and try again."
+        end
+
+        local position = requestedRealm:WorldToLocalSpace(playerPosition)
         requestedRealm:UpdateSpawn(position)
 
         return true, "Updated spawnpoint for realm with ID: " .. requestedRealm.ID
     end,
-    help = "realm setspawn <realmID> - Set the spawnpoint of a realm.", }
+    help = "realm setspawn - Set the spawnpoint for the realm that you're currently located.", }
 
 commands["setspawnrealm"] = {
     func = function(name, params)
@@ -422,6 +463,22 @@ commands["consolidate"] = {
         return true, "consolidated realms"
     end,
     help = "consolidate realm placement information." }
+
+commands["entity"] = {
+    func = function(name, params)
+        local subcommand = tostring(params[1])
+        if (subcommand == "clear") then
+            local realmID = tonumber(params[2])
+            local requestedRealm = Realm.GetRealm(tonumber(realmID))
+            if (requestedRealm == nil) then
+                return false, "Requested realm of ID:" .. tostring(realmID) .. " does not exist."
+            end
+            requestedRealm:ClearEntities()
+            return true, "Cleared items for realm with ID: " .. realmID
+        end
+        return false, "unknown subcommand. Try realm entity clear <realmID>"
+    end
+}
 
 commands["help"] = {
     func = function(name, params)
@@ -662,7 +719,7 @@ commands["coordinates"] = {
                 return false, "You do not have permission to set realm coordinates. Missing: " .. tostring(missing)
             end
 
-            if (format == "UTM") then
+            if (format == "utm") then
                 if (utmInfo == nil) then
                     utmInfo = { easting = tonumber(params[3]), northing = tonumber(params[4]), zone = tonumber(params[5]), utm_is_north = tostring(params[6]) }
                 end
@@ -682,9 +739,9 @@ commands["coordinates"] = {
             elseif (format == "grid") then
                 pos = Realm.worldToGridSpace(rawPos)
             elseif (format == "utm") then
-                pos = playerRealm:WorldToUTM(rawPos)
+                pos = playerRealm:WorldToUTMSpace(rawPos)
             elseif (format == "latlong") then
-                pos = playerRealm:WorldToLatLong(rawPos)
+                pos = playerRealm:WorldToLatLongSpace(rawPos)
             else
                 return false, "unknown format: " .. tostring(format)
             end
@@ -693,12 +750,14 @@ commands["coordinates"] = {
             return true, "command executed succesfully"
 
         elseif (operation == "hud") then
+            local player = minetest.get_player_by_name(name)
+            local pmeta = player:get_meta()
             if (mc_worldManager.positionTextFunctions[format] ~= nil) then
                 pmeta:set_string("positionHudMode", format)
                 return true, "enabled position hud element for format " .. format .. "."
             elseif (format == "nil" or format == "none") then
                 pmeta:set_string("positionHudMode", "")
-                mc_worldManager.RemoveHud(minetest.get_player_by_name(name))
+                mc_worldManager.RemoveHud(player)
                 return true, "disabled position hud element."
             end
             return false, "invalid format."

@@ -19,12 +19,14 @@ Realm.__index = Realm
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmNodeManipulation.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmDataManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmSchematicSaveLoad.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmRealTerrainLoad.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCoordinateConversion.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPrivileges.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmIntegrationHelpers.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCategory.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmTerrainGeneration.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmEntityManipulation.lua")
 
 if (areas) then
     dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmAreasIntegration.lua")
@@ -87,11 +89,11 @@ function Realm:New(name, area, callbacks)
                         y = (this.StartPos.y + 2),
                         z = (this.StartPos.z + this.EndPos.z) / 2 }
 
-    if (areas) then
-        local protectionID = areas:add("Server", this.ID .. this.Name, this.StartPos, this.EndPos)
-        this:set_data("protectionID", protectionID)
-        areas:save()
-    end
+    -- if (areas) then
+    --     local protectionID = areas:add("Server", this.ID .. this.Name, this.StartPos, this.EndPos)
+    --     this:set_data("protectionID", protectionID)
+    --     areas:save()
+    -- end
 
     Realm.SaveDataToStorage()
 
@@ -452,6 +454,8 @@ function Realm:Delete()
         end
     end
 
+    -- We need to remove all entities from the realm
+    self:ClearEntities()
 
     -- We clear all nodes from the realm.
     self:ClearNodes()

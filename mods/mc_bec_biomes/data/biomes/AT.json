@@ -1,0 +1,21 @@
+{
+  "depth_filler": 3,
+  "depth_riverbed": 2,
+  "depth_top": 1,
+  "depth_water_top": 10,
+  "heat_point": 50,
+  "humidity_point": 50,
+  "y_min": 2500,
+  "y_max": 31000,
+  "vertical_blend": 8,
+  "node_cave_liquid": "default:water_source",
+  "node_filler": "default:dirt",
+  "node_riverbed": "default:water_source",
+  "node_stone": "default:stone",
+  "node_top": "default:permafrost_with_stones",
+  "node_water": "default:ice",
+  "node_water_top": "default:ice",
+  "node_dust": "default:snow",
+  "name": "mcbecbiome:AT",
+  "_jsonType": "biome"
+}

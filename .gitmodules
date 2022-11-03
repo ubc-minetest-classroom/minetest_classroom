@@ -3,4 +3,25 @@
 	url = https://github.com/ubc-minetest-classroom/UBC_Campus_Minetest_Map.git
 [submodule "mods/areas"]
 	path = mods/areas
-	url = https://github.com/ubc-minetest-classroom/areas.git
+	url = https://github.com/ubc-minetest-classroom/areas
+[submodule "mods/living_trees"]
+	path = mods/living_trees
+	url = https://github.com/ubc-minetest-classroom/living_trees
+[submodule "realterrain"]
+	path = realterrain
+	url = https://github.com/ubc-minetest-classroom/realterrain
+[submodule "living_trees"]
+	path = living_trees
+	url = https://github.com/ubc-minetest-classroom/living_trees
+[submodule "mods/realterrain"]
+	path = mods/realterrain
+	url = https://github.com/ubc-minetest-classroom/realterrain
+[submodule "mods/magnify"]
+	path = mods/magnify
+	url = https://github.com/ubc-minetest-classroom/magnify
+[submodule "mods/forestry-tools"]
+	path = mods/forestry-tools
+	url = https://github.com/ubc-minetest-classroom/forestry-tools
+[submodule "mods/Minetest-WorldEdit"]
+	path = mods/Minetest-WorldEdit
+	url = https://github.com/ubc-minetest-classroom/Minetest-WorldEdit

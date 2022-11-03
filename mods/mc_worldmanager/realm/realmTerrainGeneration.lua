@@ -15,17 +15,17 @@ function Realm.WorldGen.RegisterHeightMapGenerator(name, heightMapGeneratorFunct
 end
 
 function Realm.WorldGen.GetHeightmapGenerators()
-    local keyset={}
-    for k,v in pairs(heightMapGenerator) do
-        keyset[#keyset+1]=k
+    local keyset = {}
+    for k, v in pairs(heightMapGenerator) do
+        keyset[#keyset + 1] = k
     end
     return keyset
 end
 
 function Realm.WorldGen.GetTerrainDecorator()
-    local keyset={}
-    for k,v in pairs(MapDecorator) do
-        keyset[#keyset+1]=k
+    local keyset = {}
+    for k, v in pairs(MapDecorator) do
+        keyset[#keyset + 1] = k
     end
     return keyset
 end
@@ -81,8 +81,17 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     end
 
     -- Set our new spawnpoint
-    local oldSpawnPos = self.SpawnPoint
-    local surfaceLevel = ptable.get2D(heightMapTable, { x = oldSpawnPos.x, y = oldSpawnPos.z })
+    local spawnPos = self.SpawnPoint
+    local surfaceLevel = ptable.get2D(heightMapTable, { x = spawnPos.x, y = spawnPos.z })
 
-    self:UpdateSpawn(self:WorldToLocalSpace({ x = oldSpawnPos.x, y = surfaceLevel + 1, z = oldSpawnPos.z }))
+    if (surfaceLevel == nil) then
+        local spawnPos = { x = (self.StartPos.x + self.EndPos.x) / 2, y = (self.StartPos.y + self.EndPos.y) / 2, z = (self.StartPos.z + self.EndPos.z) / 2 }
+        surfaceLevel = ptable.get2D(heightMapTable, { x = spawnPos.x, y = spawnPos.z })
+
+        if (surfaceLevel == nil) then
+            surfaceLevel = self.EndPos.y - 5
+        end
+    end
+
+    self:UpdateSpawn(self:WorldToLocalSpace({ x = spawnPos.x, y = surfaceLevel + 1, z = spawnPos.z }))
 end

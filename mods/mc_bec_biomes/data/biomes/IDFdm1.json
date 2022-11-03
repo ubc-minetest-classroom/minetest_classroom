@@ -1,0 +1,20 @@
+{
+  "depth_filler": 3,
+  "depth_riverbed": 2,
+  "depth_top": 1,
+  "depth_water_top": 10,
+  "heat_point": 64,
+  "humidity_point": 4,
+  "y_min": -31000,
+  "y_max": 31000,
+  "vertical_blend": 8,
+  "node_cave_liquid": "default:water_source",
+  "node_filler": "default:dirt",
+  "node_riverbed": "default:water_source",
+  "node_stone": "default:stone",
+  "node_top": "default:dirt_with_dry_grass",
+  "node_water": "default:water_source",
+  "node_water_top": "default:water_source",
+  "name": "mcbecbiome:IDFdm1",
+  "_jsonType": "biome"
+}
