@@ -534,23 +534,50 @@ image_button[6.1,8.8;0.8,0.8;blank.png;depend_search_x;X;false;false]
 
 function mc_tutorial.show_record_options_fs(player)
     local record_options_fs = {
-        "formspec_version[5]",
-        "size[10.5,5]",
-        "label[3.1,0.6;What do you want to record?]",
-        "button_exit[0.4,1.4;3,0.8;getpos;Current Position]",
-        "button_exit[0.4,2.6;3,0.8;getlookdir;Look Direction]",
-        "button_exit[3.7,2.6;3,0.8;lookvertical;Look Vertical]",
-        "button_exit[7,2.6;3,0.8;lookhorizontal;Look Horizontal]",
-        "button_exit[3.7,1.4;3,0.8;wieldeditem;Wielded Item]",
-        "button_exit[7,1.4;3,0.8;playercontrol;Pressed Key]",
-        "button_exit[3.7,3.7;3,0.8;exit;Nevermind!]"
+        "formspec_version[6]",
+        "size[11.4,8.3]",
+        "label[3.5,0.6;What would you like to do?]",
+        "box[0.4,6.2;10.6,1.7;#9040a0]",
+        "box[0.4,1.1;10.6,4.7;#0090a0]",
+        "label[3.9,1.5;Add an Action or Event]",
+        "button_exit[0.6,1.8;5,0.8;wieldeditem;Wield an item]",
+        "button_exit[5.8,1.8;5,0.8;playercontrol;Press keys]",
+        "button_exit[0.6,2.8;5,0.8;getpos;Go to current position]",
+        "button_exit[5.8,2.8;5,0.8;getlookdir;Look in current direction]",
+        "button_exit[0.6,3.8;5,0.8;lookvertical;Look in current vertical dir.]",
+        "button_exit[5.8,3.8;5,0.8;lookhorizontal;Look in current horizontal dir.]",
+        "button[3.2,4.8;5,0.8;editor;Add action/event using editor]",
+        "label[4.6,6.6;Other Options]",
+        "button_exit[0.6,6.9;5,0.8;exit;Cancel]",
+        "button_exit[5.8,6.9;5,0.8;stop;End recording]"
     }
     local pname = player:get_player_name()
 	minetest.show_formspec(pname, "mc_tutorial:record_options_fs", table.concat(record_options_fs, ""))
 	return true
 end
 
-function mc_tutorial.show_event_popop_fs(player, is_edit)
+--[[
+OPTIONS CLEAN COPY
+
+formspec_version[6]
+size[11.4,8.3]
+label[3.5,0.6;What would you like to do?]
+box[0.4,6.2;10.6,1.7;#9040a0]
+box[0.4,1.1;10.6,4.7;#0090a0]
+label[3.9,1.5;Add an Action or Event]
+button_exit[0.6,1.8;5,0.8;wieldeditem;Wield an item]
+button_exit[5.8,1.8;5,0.8;playercontrol;Press keys]
+button_exit[0.6,2.8;5,0.8;getpos;Go to current position]
+button_exit[5.8,2.8;5,0.8;getlookdir;Look in current direction]
+button_exit[0.6,3.8;5,0.8;lookvertical;Look in current vertical dir.]
+button_exit[5.8,3.8;5,0.8;lookhorizontal;Look in current horizontal dir.]
+button[3.2,4.8;5,0.8;editor;Add action/event using editor]
+label[4.6,6.6;Other Options]
+button_exit[0.6,6.9;5,0.8;exit;Cancel]
+button_exit[5.8,6.9;5,0.8;stop;End recording]
+]]
+
+function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
     local pname = player:get_player_name()
 	if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
         -- Event popup for adding/editing events in a tutorial
@@ -611,7 +638,7 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
                 end,
             },
             [mc_tutorial.ACTION.WIELD] = {
-                name = "Wield item (WIELD)",
+                name = "Wield an item (WIELD)",
                 fs_elem = function()
                     return {
                         "field[0.4,2.3;7,0.8;tool;Wield (item);", context.epop.fields.tool or "", "]",
@@ -733,6 +760,7 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
         if not context.epop then
             context.epop = {
                 is_edit = is_edit or false,
+                is_iso = is_iso or false,
                 expand = false,
                 selected = 1,
                 actions = {},
@@ -780,8 +808,8 @@ function mc_tutorial.show_event_popop_fs(player, is_edit)
             "size[0", context.epop.expand and 14.4 or 8.4, ",8]",
             "label[0.4,0.5;Event type]",
             "dropdown[0.4,0.7;7,0.8;action;", table.concat(context.epop.actions, ","), ";", context.epop.selected or 1, ";true]",
-            "button[0.4,6.8;3.5,0.8;save;Save event]",
-            "button[3.9,6.8;3.5,0.8;cancel;Cancel]",
+            "button", context.epop.is_iso and "_exit" or "", "[0.4,6.8;3.5,0.8;save;Save event]",
+            "button", context.epop.is_iso and "_exit" or "", "[3.9,6.8;3.5,0.8;cancel;Cancel]",
         }
 
         if action_map[context.epop.i_to_action[context.epop.selected]] then
@@ -1184,6 +1212,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         -- TODO: add formspec to support recording: 
                 ----- put something into or modify inventory player:get_inventory() inv:contains_item() inv:is_empty() ItemStack:get_count()
 
+        if fields.stop then
+            mc_tutorial.stop_recording(player)
+        end
+
         if fields.getpos then
             local pos = player:get_pos()
             local reg_success = mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.POS_ABS, {pos = pos})
@@ -1238,7 +1270,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             return
         end
 
-        if fields.exit then
+        if fields.editor then
+            return mc_tutorial.show_event_popup_fs(player, false, true)
+        end
+
+        if fields.exit or fields.quit then
             return
         end
     end
@@ -1359,7 +1395,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
             if fields.eventlist_add_event then
                 context.selected_event = context.selected_event or 1
-                return mc_tutorial.show_event_popop_fs(player, false)
+                return mc_tutorial.show_event_popup_fs(player, false)
             end
             if fields.eventlist_add_group then
                 context.selected_event = context.selected_event or 1
@@ -1400,7 +1436,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     if removed.action == mc_tutorial.ACTION.GROUP then
                         local removed_id = removed.g_id or math.maxinteger
                         for i,event in pairs(mc_tutorial.record.temp[pname].sequence) do
-                            minetest.log(minetest.serialize(event))
                             if event.action == mc_tutorial.ACTION.GROUP and event.g_id == removed_id then
                                 table.remove(mc_tutorial.record.temp[pname].sequence, i)
                                 table.remove(context.events, i)
@@ -1437,7 +1472,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 if not mc_tutorial.record.temp[pname].sequence[context.selected_event] then
                     minetest.chat_send_player(pname, "[Tutorial] There are no actions to edit.")
                 elseif mc_tutorial.record.temp[pname].sequence[context.selected_event].action ~= mc_tutorial.ACTION.GROUP then
-                    return mc_tutorial.show_event_popop_fs(player, true)
+                    return mc_tutorial.show_event_popup_fs(player, true)
                 else
                     minetest.chat_send_player(pname, "[Tutorial] Group markers can not be edited.")
                 end
@@ -1732,13 +1767,17 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         -- Replace action
                         mc_tutorial.update_tutorial_action(player, context.selected_event, action, action_map[action]())
                         local col, event_string = event_action_map[action](action_table)
-                        context.events[context.selected_event] = (col or "")..minetest.formspec_escape(event_string or "")
+                        if not context.epop.is_iso then
+                            context.events[context.selected_event] = (col or "")..minetest.formspec_escape(event_string or "")
+                        end
                         minetest.chat_send_player(pname, "[Tutorial] Event saved!")
                     else
                         -- Add new action to end of list
                         mc_tutorial.register_tutorial_action(player, action, action_table)
                         local col, event_string = event_action_map[action](action_table)
-                        table.insert(context.events, (col or "")..minetest.formspec_escape(event_string or ""))
+                        if not context.epop.is_iso then
+                            table.insert(context.events, (col or "")..minetest.formspec_escape(event_string or ""))
+                        end
                         minetest.chat_send_player(pname, "[Tutorial] Event added!")
                     end
                 else
@@ -1747,13 +1786,22 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             else
                 minetest.chat_send_player(pname, "[Tutorial] Invalid event; event not "..(context.epop.is_edit and "saved" or "added")..".")
             end
+
+            local iso = context.epop.is_iso
             context.epop = nil
-            return mc_tutorial.show_record_fs(player)
+            if not iso then
+                return mc_tutorial.show_record_fs(player)
+            end
+            return
         end
         if fields.cancel or fields.quit then
             minetest.chat_send_player(pname, "[Tutorial] "..(context.epop.is_edit and "Event not saved" or "No event added")..".")
+            local iso = context.epop.is_iso
             context.epop = nil
-            return mc_tutorial.show_record_fs(player)
+            if not iso then
+                return mc_tutorial.show_record_fs(player)
+            end
+            return
         end
 
         if reload then
@@ -1774,7 +1822,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
 
             -- save context and reload
-            mc_tutorial.show_event_popop_fs(player)
+            mc_tutorial.show_event_popup_fs(player)
         end
     end
 end)

@@ -36,6 +36,21 @@ local function open_recording_menu(itemstack, player, pointed_thing)
     end
 end
 
+function mc_tutorial.stop_recording(player)
+    local pname = player:get_player_name()
+    -- stop the recording and save to mod storage
+    mc_tutorial.record.listener.wield[pname] = nil
+    mc_tutorial.record.listener.key[pname] = nil
+    if mc_tutorial.record.temp[pname] then
+        mc_tutorial.record.active[pname] = "save"
+        mc_tutorial.show_record_fs(player)
+        minetest.chat_send_player(pname, "[Tutorial] Recording has ended!")
+    else
+        mc_tutorial.record.active[pname] = nil
+        minetest.chat_send_player(pname, "[Tutorial] No actions were recorded.")
+    end
+end
+
 -- The tutorial recording tool
 minetest.register_tool("mc_tutorial:recording_tool", {
     description = "Tutorial Recording Tool",
@@ -59,17 +74,7 @@ minetest.register_tool("mc_tutorial:recording_tool", {
                 mc_tutorial.record.active[pname] = "record"
                 minetest.chat_send_player(pname, "[Tutorial] Recording has started! Any actions will now be recorded. Right-click to see more recording options.")
             else
-                -- stop the recording and save to mod storage
-                mc_tutorial.record.listener.wield[pname] = nil
-                mc_tutorial.record.listener.key[pname] = nil
-                if mc_tutorial.record.temp[pname] then
-                    mc_tutorial.record.active[pname] = "save"
-                    mc_tutorial.show_record_fs(player)
-                    minetest.chat_send_player(pname, "[Tutorial] Recording has ended!")
-                else
-                    mc_tutorial.record.active[pname] = nil
-                    minetest.chat_send_player(pname, "[Tutorial] No actions were recorded.")
-                end
+                mc_tutorial.stop_recording(player)
             end
         end
     end,
