@@ -50,11 +50,10 @@ mc_tutorial = {
         START = 1,
         END = 2
     },
-    SIDEBAR = {
+    EPOP_LIST = {
         NONE = 0,
         ITEM = 1,
         KEY = 2,
-        DIR = 3,
     },
     DIR = {
         YAW_PITCH = 1,
@@ -537,8 +536,8 @@ function mc_tutorial.show_record_options_fs(player)
         "formspec_version[6]",
         "size[11.4,8.3]",
         "label[3.5,0.6;What would you like to do?]",
-        "box[0.4,6.2;10.6,1.7;#9040a0]",
         "box[0.4,1.1;10.6,4.7;#0090a0]",
+        "box[0.4,6.2;10.6,1.7;#9040a0]",
         "label[3.9,1.5;Add an Action or Event]",
         "button_exit[0.6,1.8;5,0.8;wieldeditem;Wield an item]",
         "button_exit[5.8,1.8;5,0.8;playercontrol;Press keys]",
@@ -575,6 +574,15 @@ button[3.2,4.8;5,0.8;editor;Add action/event using editor]
 label[4.6,6.6;Other Options]
 button_exit[0.6,6.9;5,0.8;exit;Cancel]
 button_exit[5.8,6.9;5,0.8;stop;End recording]
+
+label[0.4,2.7;Available items]
+textlist[0.4,2.9;5.8,4.7;epop_list;;1;false]
+image[6.4,6.4;1.2,1.2;]
+textarea[7.7,6.3;4.6,1.3;;;Item + desc]
+field[6.4,2.9;5.8,0.8;node;Punch (node);]
+field[6.4,4.2;5.8,0.8;tool;With (item);]
+image_button[11.4,2.9;0.8,0.8;mc_tutorial_add_event.png;node_import;;false;true]
+image_button[11.4,4.2;0.8,0.8;mc_tutorial_add_event.png;tool_import;;false;true]
 ]]
 
 function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
@@ -585,113 +593,125 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
 
         local action_map = {
             [mc_tutorial.ACTION.PUNCH] = {
-                name = "Punch node (PUNCH)",
+                name = "Punch a node",
+                list_mode = mc_tutorial.EPOP_LIST.ITEM,
                 fs_elem = function()
                     return {
-                        "field[0.4,2.3;7,0.8;node;Punch (node);", context.epop.fields.node or "", "]",
-                        "field[0.4,3.6;7,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
+                        "label[0.4,2.7;Registered items]",
+                        "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
+                        "image[6.4,6.5;1.2,1.2;]",
+                        "textarea[7.7,6.4;4.6,1.3;;;Item + desc]",
+                        "field[6.4,2.9;5.8,0.8;node;Punch (node);", context.epop.fields.node or "", "]",
+                        "field[6.4,4.2;5.8,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
+                        "image_button[11.4,2.9;0.8,0.8;mc_tutorial_add_event.png;node_import;;false;true]",
+                        "image_button[11.4,4.2;0.8,0.8;mc_tutorial_add_event.png;tool_import;;false;true]",
                         "field_close_on_enter[node;false]",
                         "field_close_on_enter[tool;false]",
-                    }
-                end,
-                expanded_elem = function()
-                    return {
-                        "image_button[6.6,2.3;0.8,0.8;blank.png;node_import;<;false;false]",
-                        "image_button[6.6,3.6;0.8,0.8;blank.png;tool_import;<;false;false]",
                         "tooltip[node_import;Paste selected]",
                         "tooltip[tool_import;Paste selected]"
                     }
                 end,
             },
             [mc_tutorial.ACTION.DIG] = {
-                name = "Dig node (DIG)",
+                name = "Dig a node",
+                list_mode = mc_tutorial.EPOP_LIST.ITEM,
                 fs_elem = function()
                     return {
-                        "field[0.4,2.3;7,0.8;node;Dig (node);", context.epop.fields.node or "", "]",
-                        "field[0.4,3.6;7,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
+                        "label[0.4,2.7;Registered items]",
+                        "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
+                        "image[6.4,6.5;1.2,1.2;]",
+                        "textarea[7.7,6.4;4.6,1.3;;;Item + desc]",
+                        "field[6.4,2.9;5.8,0.8;node;Dig (node);", context.epop.fields.node or "", "]",
+                        "field[6.4,4.2;5.8,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
+                        "image_button[11.4,2.9;0.8,0.8;mc_tutorial_add_event.png;node_import;;false;true]",
+                        "image_button[11.4,4.2;0.8,0.8;mc_tutorial_add_event.png;tool_import;;false;true]",
                         "field_close_on_enter[node;false]",
                         "field_close_on_enter[tool;false]",
-                    }
-                end,
-                expanded_elem = function()
-                    return {
-                        "image_button[6.6,2.3;0.8,0.8;blank.png;node_import;<;false;false]",
-                        "image_button[6.6,3.6;0.8,0.8;blank.png;tool_import;<;false;false]",
                         "tooltip[node_import;Paste selected]",
                         "tooltip[tool_import;Paste selected]"
                     }
                 end,
             },
             [mc_tutorial.ACTION.PLACE] = {
-                name = "Place node (PLACE)",
+                name = "Place a node",
+                list_mode = mc_tutorial.EPOP_LIST.ITEM,
                 fs_elem = function()
                     return {
-                        "field[0.4,2.3;7,0.8;node;Place (node);", context.epop.fields.node or "", "]",
+                        "label[0.4,2.7;Registered items]",
+                        "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
+                        "image[6.4,6.5;1.2,1.2;]",
+                        "textarea[7.7,6.4;4.6,1.3;;;Item + desc]",
+                        "field[6.4,2.9;5.8,0.8;node;Place (node);", context.epop.fields.node or "", "]",
+                        "image_button[11.4,2.9;0.8,0.8;mc_tutorial_add_event.png;node_import;;false;true]",
                         "field_close_on_enter[node;false]",
-                    }
-                end,
-                expanded_elem = function()
-                    return {
-                        "image_button[6.6,2.3;0.8,0.8;blank.png;node_import;<;false;false]",
                         "tooltip[node_import;Paste selected]",
                     }
                 end,
             },
             [mc_tutorial.ACTION.WIELD] = {
-                name = "Wield an item (WIELD)",
+                name = "Wield an item",
+                list_mode = mc_tutorial.EPOP_LIST.ITEM,
                 fs_elem = function()
                     return {
-                        "field[0.4,2.3;7,0.8;tool;Wield (item);", context.epop.fields.tool or "", "]",
+                        "label[0.4,2.7;Registered items]",
+                        "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
+                        "image[6.4,6.5;1.2,1.2;]",
+                        "textarea[7.7,6.4;4.6,1.3;;;Item + desc]",
+                        "field[6.4,4.2;5.8,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
+                        "image_button[11.4,4.2;0.8,0.8;mc_tutorial_add_event.png;tool_import;;false;true]",
                         "field_close_on_enter[tool;false]",
-                    }
-                end,
-                expanded_elem = function()
-                    return {
-                        "image_button[6.6,2.3;0.8,0.8;blank.png;tool_import;<;false;false]",
                         "tooltip[tool_import;Paste selected]"
                     }
                 end,
             },
             [mc_tutorial.ACTION.KEY] = {
-                name = "Press keys (KEY)",
+                name = "Press keys",
+                list_mode = mc_tutorial.EPOP_LIST.KEY,
                 fs_elem = function()
                     local keys = context.epop.fields.key or {}
                     return {
-                        "textarea[0.4,2.3;7,1.1;;Press (keys);", next(keys) and table.concat(keys, " + ") or minetest.formspec_escape("[none]"), "]",
-                    }
-                end,
-                collapsed_elem = function() 
-                    return {
-                        "label[0.4,3.1;Open the sidebar to modify keys!]"
-                    }
-                end,
-                expanded_elem = function()
-                    return {
-                        "button[0.4,2.9;3.4,0.8;key_add;Add selected]",
-                        "button[4,2.9;3.4,0.8;key_delete;Remove selected]",
+                        "label[0.4,2.7;Available keys]",
+                        "textlist[0.4,2.9;5.58,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
+                        "label[6.7,2.7;Keys to press]",
+                        "textlist[6.62,2.9;5.58,4.8;key_list;", next(keys) and table.concat(keys, ",") or minetest.formspec_escape("[none]"), ";1;false]",
+                        "image_button[5.98,2.9;0.64,2.4;mc_tutorial_reward_add.png;key_add;;false;true]",
+                        "image_button[5.98,5.3;0.64,2.4;mc_tutorial_reward_delete.png;key_delete;;false;true]",
+                        "tooltip[key_add;Add key]",
+                        "tooltip[key_delete;Remove key]"
                     }
                 end,
             },
             [mc_tutorial.ACTION.LOOK_YAW] = {
-                name = "Look in horizontal direction (LOOK_YAW)",
+                name = "Look in a horizontal direction",
+                list_mode = mc_tutorial.EPOP_LIST.NONE,
                 fs_elem = function()
                     return {
-                        "field[0.4,2.3;7,0.8;yaw;Yaw (horizontal degrees);", context.epop.fields.yaw or "", "]",
+                        "textarea[0.4,2.9;5.9,4.8;;Yaw/pitch info;",
+                        "\nYaw: horizontal azimuth/heading, in degrees.\n(0 ≤ yaw < 360)\n",
+                        "\nPitch: vertical inclination, in degrees.\n(-90 < pitch < 90)",
+                        "]",
+                        "field[6.4,2.9;5.8,0.8;yaw;Yaw (horizontal degrees);", context.epop.fields.yaw or "", "]",
                         "field_close_on_enter[yaw;false]",
                     }
                 end,
             },
             [mc_tutorial.ACTION.LOOK_PITCH] = {
-                name = "Look in vertical direction (LOOK_PITCH)",
+                name = "Look in a vertical direction",
+                list_mode = mc_tutorial.EPOP_LIST.NONE,
                 fs_elem = function()
                     return {
-                        "field[0.4,2.3;7,0.8;pitch;Pitch (vertical degrees);", context.epop.fields.pitch or "", "]",
+                        "textarea[0.4,2.9;5.9,4.8;;Yaw/pitch info;",
+                        "\nYaw: horizontal azimuth/heading, in degrees.\n(0 ≤ yaw < 360)\n",
+                        "\nPitch: vertical inclination, in degrees.\n(-90 < pitch < 90)",
+                        "]",
+                        "field[6.4,2.9;5.8,0.8;pitch;Pitch (vertical degrees);", context.epop.fields.pitch or "", "]",
                         "field_close_on_enter[pitch;false]",
                     }
                 end,
             },
             [mc_tutorial.ACTION.LOOK_DIR] = {
-                name = "Look in direction (LOOK_DIR)",
+                name = "Look in a direction",
+                list_mode = mc_tutorial.EPOP_LIST.NONE,
                 fs_elem = function()
                     local input_map = {
                         [mc_tutorial.DIR.YAW_PITCH] = {
@@ -702,8 +722,8 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                                     yaw, pitch = vect_to_yp(context.epop.fields.dir)
                                 end
                                 return table.concat({
-                                    "field[0.4,3.2;7,0.8;dir_yaw;Yaw (horizontal degrees);", yaw or "", "]",
-                                    "field[0.4,4.5;7,0.8;dir_pitch;Pitch (vertical degrees);", pitch or "", "]",
+                                    "field[6.4,4.1;5.8,0.8;dir_yaw;Yaw (horizontal degrees);", yaw or "", "]",
+                                    "field[6.4,5.4;5.8,0.8;dir_pitch;Pitch (vertical degrees);", pitch or "", "]",
                                     "field_close_on_enter[dir_yaw;false]",
                                     "field_close_on_enter[dir_pitch;false]",
                                 })
@@ -713,12 +733,12 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                             name = "Spatial vector",
                             get = function()
                                 return table.concat({
-                                    "label[0.4,3.2;X =]",
-                                    "label[0.4,4.1;Y =]",
-                                    "label[0.4,5.0;Z =]",
-                                    "field[1,2.8;6.4,0.8;dir_x;;", context.epop.fields.dir and context.epop.fields.dir.x or "", "]",
-                                    "field[1,3.7;6.4,0.8;dir_y;;", context.epop.fields.dir and context.epop.fields.dir.y or "", "]",
-                                    "field[1,4.6;6.4,0.8;dir_z;;", context.epop.fields.dir and context.epop.fields.dir.z or "", "]",
+                                    "label[6.4,4.2;X =]",
+                                    "label[6.4,5.1;Y =]",
+                                    "label[6.4,6.0;Z =]",
+                                    "field[7,3.8;5.2,0.8;dir_x;;", context.epop.fields.dir and context.epop.fields.dir.x or "", "]",
+                                    "field[7,4.7;5.2,0.8;dir_y;;", context.epop.fields.dir and context.epop.fields.dir.y or "", "]",
+                                    "field[7,5.6;5.2,0.8;dir_z;;", context.epop.fields.dir and context.epop.fields.dir.z or "", "]",
                                     "field_close_on_enter[dir_x;false]",
                                     "field_close_on_enter[dir_y;false]",
                                     "field_close_on_enter[dir_z;false]",
@@ -733,22 +753,32 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
 
                     context.epop.d_input_type = context.epop.d_input_type or 1
                     return {
-                        "label[0.4,2.2;Input type]",
-                        "dropdown[2.1,1.9;5.3,0.6;dir_type;", table.concat(input_types, ",") , ";", context.epop.d_input_type, ";true]",
+                        "textarea[0.4,2.9;5.9,4.8;;Input types;",
+                        "\nYaw/pitch\n", "Yaw (horizontal azimuth/heading) and pitch (vertical inclination) in degrees.\n(0 ≤ yaw < 360, -90 < pitch < 90)\n",
+                        "\nSpatial vector\n", "Direction of a 3D vector with components (X, Y, Z).",
+                        "]",
+                        "label[6.4,2.7;Selected input type]",
+                        "dropdown[6.4,2.9;5.8,0.7;dir_type;", table.concat(input_types, ",") , ";", context.epop.d_input_type, ";true]",
                         input_map[context.epop.d_input_type] and input_map[context.epop.d_input_type].get() or "",
                     }
                 end,
             },
             [mc_tutorial.ACTION.POS_ABS] = {
-                name = "Go to position (POS_ABS)",
+                name = "Go to a world position",
+                list_mode = mc_tutorial.EPOP_LIST.NONE,
                 fs_elem = function()
                     return {
-                        "label[0.4,2.3;X =]",
-                        "label[0.4,3.2;Y =]",
-                        "label[0.4,4.1;Z =]",
-                        "field[1,1.9;6.4,0.8;pos_x;;", context.epop.fields.pos and context.epop.fields.pos.x or "", "]",
-                        "field[1,2.8;6.4,0.8;pos_y;;", context.epop.fields.pos and context.epop.fields.pos.y or "", "]",
-                        "field[1,3.7;6.4,0.8;pos_z;;", context.epop.fields.pos and context.epop.fields.pos.z or "", "]",
+                        "textarea[0.4,2.9;5.9,4.8;;Position info;",
+                        "\nEach position is an absolute world position with 3 coordinates (X, Y, Z). You can view your position by pressing F5.\n",
+                        "NOTE: In order for a player to complete a tutorials with a position action, they must go to the exact world position specified. This means that players completing these tutorials must have access to the realms the tutorials were recorded in.",
+                        "]",
+                        "label[6.4,2.9;X =]",
+                        "label[6.4,3.8;Y =]",
+                        "label[6.4,4.7;Z =]",
+                        "field[7,2.5;5.2,0.8;pos_x;;", context.epop.fields.pos and context.epop.fields.pos.x or "", "]",
+                        "field[7,3.4;5.2,0.8;pos_y;;", context.epop.fields.pos and context.epop.fields.pos.y or "", "]",
+                        "field[7,4.3;5.2,0.8;pos_z;;", context.epop.fields.pos and context.epop.fields.pos.z or "", "]",
+                        "button[6.3,5.3;5.9,0.8;pos_import_curr;Use current position]",
                         "field_close_on_enter[pos_x;false]",
                         "field_close_on_enter[pos_y;false]",
                         "field_close_on_enter[pos_z;false]",
@@ -761,14 +791,13 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             context.epop = {
                 is_edit = is_edit or false,
                 is_iso = is_iso or false,
-                expand = false,
                 selected = 1,
                 actions = {},
                 i_to_action = {},
                 fields = {},
-                sidebar = {
+                list = {
                     list = {},
-                    mode = mc_tutorial.SIDEBAR.NONE,
+                    mode = mc_tutorial.EPOP_LIST.NONE,
                     selected = 1
                 },
             }
@@ -805,66 +834,84 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
 
         local epop_fs = {
             "formspec_version[6]",
-            "size[0", context.epop.expand and 14.4 or 8.4, ",8]",
-            "label[0.4,0.5;Event type]",
-            "dropdown[0.4,0.7;7,0.8;action;", table.concat(context.epop.actions, ","), ";", context.epop.selected or 1, ";true]",
-            "button", context.epop.is_iso and "_exit" or "", "[0.4,6.8;3.5,0.8;save;Save event]",
-            "button", context.epop.is_iso and "_exit" or "", "[3.9,6.8;3.5,0.8;cancel;Cancel]",
+            "size[12.6,8.1]",
+            "box[0.4,0.4;11.8,1.7;#0090a0]",
+            "label[4.5,0.8;", context.epop.edit and "Edit" or "Add", " an Action or Event]",
+            "dropdown[0.6,1.2;5.6,0.7;action;", table.concat(context.epop.actions, ","), ";", context.epop.selected or 1, ";true]",
+            "button", context.epop.is_iso and "_exit" or "", "[6.4,1.2;2.7,0.7;save;Save]",
+            "button", context.epop.is_iso and "_exit" or "", "[9.3,1.2;2.7,0.7;cancel;Cancel]",
         }
 
-        if action_map[context.epop.i_to_action[context.epop.selected]] then
-            table.insert(epop_fs, table.concat(action_map[context.epop.i_to_action[context.epop.selected]].fs_elem()))
-            if not context.epop.expand and action_map[context.epop.i_to_action[context.epop.selected]].collapsed_elem then
-                table.insert(epop_fs, table.concat(action_map[context.epop.i_to_action[context.epop.selected]].collapsed_elem()))
-            elseif context.epop.expand and action_map[context.epop.i_to_action[context.epop.selected]].expanded_elem then
-                table.insert(epop_fs, table.concat(action_map[context.epop.i_to_action[context.epop.selected]].expanded_elem()))
-            end
-        end
+        local action_info = action_map[context.epop.i_to_action[context.epop.selected]]
+        if action_info then
+            -- check if list needs to be updated
+            local new_mode = action_info.list_mode or mc_tutorial.EPOP_LIST.NONE
+            if new_index ~= context.epop.list.mode then
+                context.epop.list.mode = new_mode
+                context.epop.list.list = {}
+                context.epop.list.selected = 1
 
-        if context.epop.expand then
-            local sidebar_map = {
-                [mc_tutorial.ACTION.KEY] = mc_tutorial.SIDEBAR.KEY,
-                [mc_tutorial.ACTION.PLACE] = mc_tutorial.SIDEBAR.ITEM,
-                [mc_tutorial.ACTION.DIG] = mc_tutorial.SIDEBAR.ITEM,
-                [mc_tutorial.ACTION.PUNCH] = mc_tutorial.SIDEBAR.ITEM,
-                [mc_tutorial.ACTION.WIELD] = mc_tutorial.SIDEBAR.ITEM,
-                [mc_tutorial.ACTION.LOOK_DIR] = mc_tutorial.SIDEBAR.DIR,
-            }
-            local new_mode = sidebar_map[context.epop.i_to_action[context.epop.selected]] or mc_tutorial.SIDEBAR.NONE
-            if new_mode ~= context.epop.sidebar.mode then
-                context.epop.sidebar.mode = new_mode
-                context.epop.sidebar.list = {}
-                context.epop.sidebar.selected = 1
-
-                if context.epop.sidebar.mode == mc_tutorial.SIDEBAR.KEY then
-                    context.epop.sidebar.list = {"up", "down", "left", "right", "aux1", "jump", "sneak", "zoom"}
-                elseif context.epop.sidebar.mode == mc_tutorial.SIDEBAR.ITEM then
+                if context.epop.list.mode == mc_tutorial.EPOP_LIST.KEY then
+                    context.epop.list.list = {"up", "down", "left", "right", "aux1", "jump", "sneak", "zoom"}
+                elseif context.epop.list.mode == mc_tutorial.EPOP_LIST.ITEM then
                     for item,_ in pairs(minetest.registered_items) do
                         if mc_helpers.trim(item) ~= "" then
-                            table.insert(context.epop.sidebar.list, mc_helpers.trim(item))
+                            table.insert(context.epop.list.list, mc_helpers.trim(item))
                         end
                     end
                 end
-                table.sort(context.epop.sidebar.list)
+                table.sort(context.epop.list.list)
             end
-                    
+            -- insert appropriate action dialog
+            table.insert(epop_fs, table.concat(action_info.fs_elem()))
+        end
+
+        minetest.show_formspec(pname, "mc_tutorial:record_epop", table.concat(epop_fs, ""))
+        --[[
+        if context.epop.expand then
+            local sidebar_map = {
+                [mc_tutorial.ACTION.KEY] = mc_tutorial.EPOP_LIST.KEY,
+                [mc_tutorial.ACTION.PLACE] = mc_tutorial.EPOP_LIST.ITEM,
+                [mc_tutorial.ACTION.DIG] = mc_tutorial.EPOP_LIST.ITEM,
+                [mc_tutorial.ACTION.PUNCH] = mc_tutorial.EPOP_LIST.ITEM,
+                [mc_tutorial.ACTION.WIELD] = mc_tutorial.EPOP_LIST.ITEM,
+                [mc_tutorial.ACTION.LOOK_DIR] = mc_tutorial.EPOP_LIST.DIR,
+            }
+            --local new_mode = sidebar_map[context.epop.i_to_action[context.epop.selected]]--[[ or mc_tutorial.EPOP_LIST.NONE
+            if new_mode ~= context.epop.list.mode then
+                context.epop.list.mode = new_mode
+                context.epop.list.list = {}
+                context.epop.list.selected = 1
+
+                if context.epop.list.mode == mc_tutorial.EPOP_LIST.KEY then
+                    context.epop.list.list = {"up", "down", "left", "right", "aux1", "jump", "sneak", "zoom"}
+                elseif context.epop.list.mode == mc_tutorial.EPOP_LIST.ITEM then
+                    for item,_ in pairs(minetest.registered_items) do
+                        if mc_helpers.trim(item) ~= "" then
+                            table.insert(context.epop.list.list, mc_helpers.trim(item))
+                        end
+                    end
+                end
+                table.sort(context.epop.list.list)
+            end
+            
             local sidebar_fs_map = {
-                [mc_tutorial.SIDEBAR.ITEM] = function()
+                [mc_tutorial.EPOP_LIST.ITEM] = function()
                     return {
                         "label[8,0.5;Registered items]",
-                        "textlist[8,0.7;5.4,5.5;sidebar_list;", table.concat(context.epop.sidebar.list, ","), ";", context.epop.sidebar.selected or 1, ";false]",
+                        "textlist[8,0.7;5.4,5.5;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
                         "image[8,6.4;1.2,1.2;mc_tutorial_cancel.png]",
                         "textarea[9.3,6.3;4.1,1.4;;;Item + desc]",
                     }
                 end,
-                [mc_tutorial.SIDEBAR.KEY] = function()
+                [mc_tutorial.EPOP_LIST.KEY] = function()
                     return {
                         "label[8,0.5;Available keys]",
-                        "textlist[8,0.7;5.4,5.5;sidebar_list;", table.concat(context.epop.sidebar.list, ","), ";", context.epop.sidebar.selected or 1, ";false]",
+                        "textlist[8,0.7;5.4,5.5;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
                         "textarea[7.9,6.3;5.5,1.4;;;Key desc]", 
                     }
                 end,
-                [mc_tutorial.SIDEBAR.DIR] = function()
+                [mc_tutorial.EPOP_LIST.DIR] = function()
                     return {
                         "label[8,0.5;Input types]",
                         "textarea[7.9,0.7;5.5,7;;;",
@@ -873,12 +920,12 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                         "]",
                     }
                 end,
-                [mc_tutorial.SIDEBAR.NONE] = function()
+                [mc_tutorial.EPOP_LIST.NONE] = function()
                     return {"textarea[7.9,0.3;5.5,7.2;;;This event has no related sidebar information.]",}
                 end,
             }
             table.insert(epop_fs, table.concat({
-                table.concat(sidebar_fs_map[context.epop.sidebar.mode] and sidebar_fs_map[context.epop.sidebar.mode]() or {}),
+                table.concat(sidebar_fs_map[context.epop.list.mode] and sidebar_fs_map[context.epop.list.mode]() or {}),
                 "box[7.675,0.2;0.05,7.6;#202020]",
                 "button[13.8,0;0.6,8;collapse_list;<]",
                 "tooltip[collapse_list;Collapse]",
@@ -888,12 +935,30 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                 "button[7.8,0;0.6,8;expand_list;>]",
                 "tooltip[expand_list;Expand]",
             }))
-        end
-        minetest.show_formspec(pname, "mc_tutorial:record_epop", table.concat(epop_fs, ""))
+        end]]
     end
 end
 
 --[[
+UNIFIED:
+formspec_version[6]
+size[12.6,8.1]
+box[0.4,0.4;11.8,1.7;#0090a0]
+label[4.5,0.8;Add an Action or Event]
+dropdown[0.6,1.2;5.6,0.7;action;;1;true]
+button[6.4,1.2;2.7,0.7;save;Save]
+button[9.3,1.2;2.7,0.7;cancel;Cancel]
+
+label[0.4,2.7;Available items]
+textlist[0.4,2.9;5.8,4.8;epop_list;;1;false]
+image[6.4,6.5;1.2,1.2;]
+textarea[7.7,6.4;4.6,1.3;;;Item + desc]
+field[6.4,2.9;5.8,0.8;node;Punch (node);]
+field[6.4,4.2;5.8,0.8;tool;With (item);]
+image_button[11.4,2.9;0.8,0.8;mc_tutorial_add_event.png;node_import;;false;true]
+image_button[11.4,4.2;0.8,0.8;mc_tutorial_add_event.png;tool_import;;false;true]
+
+
 CONDENSED:
 formspec_version[6]
 size[8.4,8]
@@ -911,7 +976,7 @@ dropdown[0.4,0.7;7,0.8;action;;1;true]
 button[0.4,6.8;3.5,0.8;save;Save event]
 button[3.9,6.8;3.5,0.8;cancel;Cancel]
 label[8,0.5;Available items]
-textlist[8,0.7;5.4,5.5;sidebar_list;;1;false]
+textlist[8,0.7;5.4,5.5;epop_list;;1;false]
 image[8,6.4;1.2,1.2;]
 textarea[9.3,6.3;4.1,1.3;;;Item + desc]
 box[7.675,0.2;0.05,7.6;#202020]
@@ -1665,46 +1730,36 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             context.epop.selected = tonumber(fields.action)
             reload = true
         end
-        if fields.sidebar_list then
-            local event = minetest.explode_textlist_event(fields.sidebar_list)
+        if fields.epop_list then
+            local event = minetest.explode_textlist_event(fields.epop_list)
             if event.type == "CHG" then
-                context.epop.sidebar.selected = tonumber(event.index)
+                context.epop.list.selected = tonumber(event.index)
             end
         end
 
-        if fields.expand_list then
-            context.epop.expand = true
-            reload = true
-        end
-        if fields.collapse_list then
-            context.epop.expand = false
-            context.epop.sidebar.mode = mc_tutorial.SIDEBAR.NONE
-            reload = true
-        end
-
-        if fields.node_import and context.epop.sidebar.list and context.epop.sidebar.list[context.epop.sidebar.selected] then
-            context.epop.fields.node = context.epop.sidebar.list[context.epop.sidebar.selected]
+        if fields.node_import and context.epop.list.list and context.epop.list.list[context.epop.list.selected] then
+            context.epop.fields.node = context.epop.list.list[context.epop.list.selected]
             reload = true
             save_exception["nd"] = true
         end
-        if fields.tool_import and context.epop.sidebar.list and context.epop.sidebar.list[context.epop.sidebar.selected] then
-            context.epop.fields.tool = context.epop.sidebar.list[context.epop.sidebar.selected]
+        if fields.tool_import and context.epop.list.list and context.epop.list.list[context.epop.list.selected] then
+            context.epop.fields.tool = context.epop.list.list[context.epop.list.selected]
             reload = true
             save_exception["tl"] = true
         end
 
-        if fields.key_add and context.epop.sidebar.list and context.epop.sidebar.list[context.epop.sidebar.selected] then
+        if fields.key_add and context.epop.list.list and context.epop.list.list[context.epop.list.selected] then
             context.epop.fields.key = context.epop.fields.key or {}
-            if not mc_helpers.tableHas(context.epop.fields.key, context.epop.sidebar.list[context.epop.sidebar.selected]) then
-                table.insert(context.epop.fields.key, context.epop.sidebar.list[context.epop.sidebar.selected])
+            if not mc_helpers.tableHas(context.epop.fields.key, context.epop.list.list[context.epop.list.selected]) then
+                table.insert(context.epop.fields.key, context.epop.list.list[context.epop.list.selected])
                 table.sort(context.epop.fields.key)
                 reload = true
             end
         end
-        if fields.key_delete and context.epop.sidebar.list and context.epop.sidebar.list[context.epop.sidebar.selected] then
+        if fields.key_delete and context.epop.list.list and context.epop.list.list[context.epop.list.selected] then
             context.epop.fields.key = context.epop.fields.key or {}
             for i,key in pairs(context.epop.fields.key) do
-                if key == context.epop.sidebar.list[context.epop.sidebar.selected] then
+                if key == context.epop.list.list[context.epop.list.selected] then
                     table.remove(context.epop.fields.key, i)
                     reload = true
                 end
