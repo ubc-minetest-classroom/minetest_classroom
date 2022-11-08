@@ -595,6 +595,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             [mc_tutorial.ACTION.PUNCH] = {
                 name = "Punch a node",
                 list_mode = mc_tutorial.EPOP_LIST.ITEM,
+                modifies_world = false,
                 fs_elem = function()
                     return {
                         "label[0.4,2.7;Registered items]",
@@ -615,6 +616,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             [mc_tutorial.ACTION.DIG] = {
                 name = "Dig a node",
                 list_mode = mc_tutorial.EPOP_LIST.ITEM,
+                modifies_world = true,
                 fs_elem = function()
                     return {
                         "label[0.4,2.7;Registered items]",
@@ -635,6 +637,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             [mc_tutorial.ACTION.PLACE] = {
                 name = "Place a node",
                 list_mode = mc_tutorial.EPOP_LIST.ITEM,
+                modifies_world = true,
                 fs_elem = function()
                     return {
                         "label[0.4,2.7;Registered items]",
@@ -651,6 +654,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             [mc_tutorial.ACTION.WIELD] = {
                 name = "Wield an item",
                 list_mode = mc_tutorial.EPOP_LIST.ITEM,
+                modifies_world = false,
                 fs_elem = function()
                     return {
                         "label[0.4,2.7;Registered items]",
@@ -667,6 +671,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             [mc_tutorial.ACTION.KEY] = {
                 name = "Press keys",
                 list_mode = mc_tutorial.EPOP_LIST.KEY,
+                modifies_world = false,
                 fs_elem = function()
                     local keys = context.epop.fields.key or {}
                     return {
@@ -684,6 +689,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             [mc_tutorial.ACTION.LOOK_YAW] = {
                 name = "Look in a horizontal direction",
                 list_mode = mc_tutorial.EPOP_LIST.NONE,
+                modifies_world = false,
                 fs_elem = function()
                     return {
                         "textarea[0.4,2.9;5.9,4.8;;Yaw/pitch info;",
@@ -698,6 +704,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             [mc_tutorial.ACTION.LOOK_PITCH] = {
                 name = "Look in a vertical direction",
                 list_mode = mc_tutorial.EPOP_LIST.NONE,
+                modifies_world = false,
                 fs_elem = function()
                     return {
                         "textarea[0.4,2.9;5.9,4.8;;Yaw/pitch info;",
@@ -712,6 +719,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             [mc_tutorial.ACTION.LOOK_DIR] = {
                 name = "Look in a direction",
                 list_mode = mc_tutorial.EPOP_LIST.NONE,
+                modifies_world = false,
                 fs_elem = function()
                     local input_map = {
                         [mc_tutorial.DIR.YAW_PITCH] = {
@@ -766,6 +774,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             [mc_tutorial.ACTION.POS_ABS] = {
                 name = "Go to a world position",
                 list_mode = mc_tutorial.EPOP_LIST.NONE,
+                modifies_world = false,
                 fs_elem = function()
                     return {
                         "textarea[0.4,2.9;5.9,4.8;;Position info;",
@@ -803,8 +812,10 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             }
 
             for k,data in pairs(action_map) do
-                table.insert(context.epop.actions, data.name)
-                context.epop.i_to_action[#context.epop.actions] = k
+                if not data.modifies_world or not minetest.is_protected(player:get_pos(), "") then
+                    table.insert(context.epop.actions, data.name)
+                    context.epop.i_to_action[#context.epop.actions] = k
+                end
             end
 
             local temp = mc_tutorial.record.temp[pname]
