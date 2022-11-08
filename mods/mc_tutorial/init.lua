@@ -54,6 +54,7 @@ mc_tutorial = {
         NONE = 0,
         ITEM = 1,
         KEY = 2,
+        NODE = 3,
     },
     DIR = {
         YAW_PITCH = 1,
@@ -160,7 +161,7 @@ local function get_reward_desc(type_id, item)
 
     local desc = ""
     if type_id == "P" then
-        desc = minetest.registered_privileges[item] and minetest.registered_privileges[item].description or ""
+        desc = minetest.registered_privileges[item] and minettutorial_id_safety_checkest.registered_privileges[item].description or ""
     elseif ItemStack(item):is_known() then
         local stack = ItemStack(item)
         desc = stack:get_description() or stack:get_short_description()
@@ -245,7 +246,8 @@ local event_action_map = {
         return nil, "wield "..(event.tool and (event.tool == "" and "nothing" or event.tool) or "[?]")
     end,
     [mc_tutorial.ACTION.KEY] = function(event)
-        return nil, "press key"..(event.key and (#event.key > 1 and "s " or " ")..table.concat(event.key, " + ") or " [?]")
+        local keys = mc_tutorial.bits_to_keys(event.key_bit or 0)
+        return nil, "press key"..(#keys > 1 and "s " or " ")..table.concat(keys, " + ") or " [?]"
     end,
     [mc_tutorial.ACTION.LOOK_YAW] = function(event)
         return nil, "look at yaw (horizontal) "..(event.dir and math.deg(event.dir).."°" or "[?]")
@@ -600,12 +602,12 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                     return {
                         "label[0.4,2.7;Registered items]",
                         "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
-                        "image[6.4,6.5;1.2,1.2;]",
+                        "image[6.4,6.5;1.2,1.2;mc_tutorial_tutorialbook.png]",
                         "textarea[7.7,6.4;4.6,1.3;;;Item + desc]",
                         "field[6.4,2.9;5.8,0.8;node;Punch (node);", context.epop.fields.node or "", "]",
                         "field[6.4,4.2;5.8,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
-                        "image_button[11.4,2.9;0.8,0.8;mc_tutorial_add_event.png;node_import;;false;true]",
-                        "image_button[11.4,4.2;0.8,0.8;mc_tutorial_add_event.png;tool_import;;false;true]",
+                        "image_button[11.1,2.9;1.1,0.8;mc_tutorial_paste.png;node_import;;false;false]",
+                        "image_button[11.1,4.2;1.1,0.8;mc_tutorial_paste.png;tool_import;;false;false]",
                         "field_close_on_enter[node;false]",
                         "field_close_on_enter[tool;false]",
                         "tooltip[node_import;Paste selected]",
@@ -621,12 +623,12 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                     return {
                         "label[0.4,2.7;Registered items]",
                         "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
-                        "image[6.4,6.5;1.2,1.2;]",
+                        "image[6.4,6.5;1.2,1.2;mc_tutorial_tutorialbook.png]",
                         "textarea[7.7,6.4;4.6,1.3;;;Item + desc]",
                         "field[6.4,2.9;5.8,0.8;node;Dig (node);", context.epop.fields.node or "", "]",
                         "field[6.4,4.2;5.8,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
-                        "image_button[11.4,2.9;0.8,0.8;mc_tutorial_add_event.png;node_import;;false;true]",
-                        "image_button[11.4,4.2;0.8,0.8;mc_tutorial_add_event.png;tool_import;;false;true]",
+                        "image_button[11.1,2.9;1.1,0.8;mc_tutorial_paste.png;node_import;;false;false]",
+                        "image_button[11.1,4.2;1.1,0.8;mc_tutorial_paste.png;tool_import;;false;false]",
                         "field_close_on_enter[node;false]",
                         "field_close_on_enter[tool;false]",
                         "tooltip[node_import;Paste selected]",
@@ -636,16 +638,16 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             },
             [mc_tutorial.ACTION.PLACE] = {
                 name = "Place a node",
-                list_mode = mc_tutorial.EPOP_LIST.ITEM,
+                list_mode = mc_tutorial.EPOP_LIST.NODE,
                 modifies_world = true,
                 fs_elem = function()
                     return {
-                        "label[0.4,2.7;Registered items]",
+                        "label[0.4,2.7;Registered nodes]",
                         "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
-                        "image[6.4,6.5;1.2,1.2;]",
-                        "textarea[7.7,6.4;4.6,1.3;;;Item + desc]",
+                        "image[6.4,6.5;1.2,1.2;mc_tutorial_tutorialbook.png]",
+                        "textarea[7.7,6.4;4.6,1.3;;;Node + desc]",
                         "field[6.4,2.9;5.8,0.8;node;Place (node);", context.epop.fields.node or "", "]",
-                        "image_button[11.4,2.9;0.8,0.8;mc_tutorial_add_event.png;node_import;;false;true]",
+                        "image_button[11.1,2.9;1.1,0.8;mc_tutorial_paste.png;node_import;;false;false]",
                         "field_close_on_enter[node;false]",
                         "tooltip[node_import;Paste selected]",
                     }
@@ -659,10 +661,10 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                     return {
                         "label[0.4,2.7;Registered items]",
                         "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
-                        "image[6.4,6.5;1.2,1.2;]",
+                        "image[6.4,6.5;1.2,1.2;mc_tutorial_tutorialbook.png]",
                         "textarea[7.7,6.4;4.6,1.3;;;Item + desc]",
-                        "field[6.4,4.2;5.8,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
-                        "image_button[11.4,4.2;0.8,0.8;mc_tutorial_add_event.png;tool_import;;false;true]",
+                        "field[6.4,2.9;5.8,0.8;tool;Wield (item);", context.epop.fields.tool or "", "]",
+                        "image_button[11.1,2.9;1.1,0.8;mc_tutorial_paste.png;tool_import;;false;false]",
                         "field_close_on_enter[tool;false]",
                         "tooltip[tool_import;Paste selected]"
                     }
@@ -678,7 +680,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                         "label[0.4,2.7;Available keys]",
                         "textlist[0.4,2.9;5.58,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
                         "label[6.7,2.7;Keys to press]",
-                        "textlist[6.62,2.9;5.58,4.8;key_list;", next(keys) and table.concat(keys, ",") or minetest.formspec_escape("[none]"), ";1;false]",
+                        "textlist[6.62,2.9;5.58,4.8;key_list;", next(keys) and table.concat(keys, ",") or minetest.formspec_escape("[none]"), ";", context.epop.fields.key_selected or 1, ";false]",
                         "image_button[5.98,2.9;0.64,2.4;mc_tutorial_reward_add.png;key_add;;false;true]",
                         "image_button[5.98,5.3;0.64,2.4;mc_tutorial_reward_delete.png;key_delete;;false;true]",
                         "tooltip[key_add;Add key]",
@@ -796,6 +798,8 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             },
         }
 
+        minetest.log("epop: "..minetest.serialize(context.epop and true or false))
+
         if not context.epop then
             context.epop = {
                 is_edit = is_edit or false,
@@ -857,17 +861,24 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
         if action_info then
             -- check if list needs to be updated
             local new_mode = action_info.list_mode or mc_tutorial.EPOP_LIST.NONE
+            --minetest.log(minetest.serialize(new_mode).." : "..minetest.serialize(context.epop.list.mode))
             if new_index ~= context.epop.list.mode then
                 context.epop.list.mode = new_mode
                 context.epop.list.list = {}
                 context.epop.list.selected = 1
 
                 if context.epop.list.mode == mc_tutorial.EPOP_LIST.KEY then
-                    context.epop.list.list = {"up", "down", "left", "right", "aux1", "jump", "sneak", "zoom"}
+                    context.epop.list.list = mc_tutorial.bits_to_keys(0xFFFF)
                 elseif context.epop.list.mode == mc_tutorial.EPOP_LIST.ITEM then
                     for item,_ in pairs(minetest.registered_items) do
                         if mc_helpers.trim(item) ~= "" then
                             table.insert(context.epop.list.list, mc_helpers.trim(item))
+                        end
+                    end
+                elseif context.epop.list.mode == mc_tutorial.EPOP_LIST.NODE then
+                    for node,_ in pairs(minetest.registered_nodes) do
+                        if mc_helpers.trim(node) ~= "" then
+                            table.insert(context.epop.list.list, mc_helpers.trim(node))
                         end
                     end
                 end
@@ -878,75 +889,6 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
         end
 
         minetest.show_formspec(pname, "mc_tutorial:record_epop", table.concat(epop_fs, ""))
-        --[[
-        if context.epop.expand then
-            local sidebar_map = {
-                [mc_tutorial.ACTION.KEY] = mc_tutorial.EPOP_LIST.KEY,
-                [mc_tutorial.ACTION.PLACE] = mc_tutorial.EPOP_LIST.ITEM,
-                [mc_tutorial.ACTION.DIG] = mc_tutorial.EPOP_LIST.ITEM,
-                [mc_tutorial.ACTION.PUNCH] = mc_tutorial.EPOP_LIST.ITEM,
-                [mc_tutorial.ACTION.WIELD] = mc_tutorial.EPOP_LIST.ITEM,
-                [mc_tutorial.ACTION.LOOK_DIR] = mc_tutorial.EPOP_LIST.DIR,
-            }
-            --local new_mode = sidebar_map[context.epop.i_to_action[context.epop.selected]]--[[ or mc_tutorial.EPOP_LIST.NONE
-            if new_mode ~= context.epop.list.mode then
-                context.epop.list.mode = new_mode
-                context.epop.list.list = {}
-                context.epop.list.selected = 1
-
-                if context.epop.list.mode == mc_tutorial.EPOP_LIST.KEY then
-                    context.epop.list.list = {"up", "down", "left", "right", "aux1", "jump", "sneak", "zoom"}
-                elseif context.epop.list.mode == mc_tutorial.EPOP_LIST.ITEM then
-                    for item,_ in pairs(minetest.registered_items) do
-                        if mc_helpers.trim(item) ~= "" then
-                            table.insert(context.epop.list.list, mc_helpers.trim(item))
-                        end
-                    end
-                end
-                table.sort(context.epop.list.list)
-            end
-            
-            local sidebar_fs_map = {
-                [mc_tutorial.EPOP_LIST.ITEM] = function()
-                    return {
-                        "label[8,0.5;Registered items]",
-                        "textlist[8,0.7;5.4,5.5;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
-                        "image[8,6.4;1.2,1.2;mc_tutorial_cancel.png]",
-                        "textarea[9.3,6.3;4.1,1.4;;;Item + desc]",
-                    }
-                end,
-                [mc_tutorial.EPOP_LIST.KEY] = function()
-                    return {
-                        "label[8,0.5;Available keys]",
-                        "textlist[8,0.7;5.4,5.5;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
-                        "textarea[7.9,6.3;5.5,1.4;;;Key desc]", 
-                    }
-                end,
-                [mc_tutorial.EPOP_LIST.DIR] = function()
-                    return {
-                        "label[8,0.5;Input types]",
-                        "textarea[7.9,0.7;5.5,7;;;",
-                        "\nYaw/pitch\n", "Yaw (horizontal azimuth/heading) and pitch (vertical inclination) in degrees.\n(0 < yaw < 360, -90 < pitch < 90)\n",
-                        "\nSpatial vector\n", "Direction of a 3D vector with components (X, Y, Z).\n",
-                        "]",
-                    }
-                end,
-                [mc_tutorial.EPOP_LIST.NONE] = function()
-                    return {"textarea[7.9,0.3;5.5,7.2;;;This event has no related sidebar information.]",}
-                end,
-            }
-            table.insert(epop_fs, table.concat({
-                table.concat(sidebar_fs_map[context.epop.list.mode] and sidebar_fs_map[context.epop.list.mode]() or {}),
-                "box[7.675,0.2;0.05,7.6;#202020]",
-                "button[13.8,0;0.6,8;collapse_list;<]",
-                "tooltip[collapse_list;Collapse]",
-            }))
-        else
-            table.insert(epop_fs, table.concat({
-                "button[7.8,0;0.6,8;expand_list;>]",
-                "tooltip[expand_list;Expand]",
-            }))
-        end]]
     end
 end
 
@@ -1157,11 +1099,43 @@ local function reindex_groups(temp)
     temp.next_group = count
 end
 
+local function reformat_tutorial(id)
+    local tutorial_table = minetest.deserialize(mc_tutorial.tutorials:get(id))
+    if not tutorial_table then return end
+
+    if tutorial_table.format < 6 then
+        reindex_groups(tutorial_table)
+        tutorial_table.format = 6
+    end
+    if tutorial_table.format < 7 then
+        -- old key format: update key events
+        for i,action in pairs(tutorial_table.sequence) do
+            if action.action == mc_tutorial.ACTION.KEY then
+                action.key_bit = mc_tutorial.keys_to_bits(action.key)
+                action.key = nil
+            end
+        end
+        tutorial_table.format = 7
+    end
+    -- save changes to tutorial
+    mc_tutorial.tutorials:set_string(id, minetest.serialize(tutorial_table))
+end
+
 -- REWORK
 minetest.register_on_player_receive_fields(function(player, formname, fields)
+    -- return if formspec is not tutorial-related
+    if not mc_helpers.tableHas({"mc_tutorial:tutorials", "mc_tutorial:record_options_fs", "mc_tutorial:record_fs", "mc_tutorial:record_epop"}, formname) then
+        return nil
+    end
+
     local pname = player:get_player_name()
     local context = get_context(pname)
 	mc_tutorial.wait(0.05) --popups don't work without this
+
+    if context.epop then
+        minetest.log("sel: "..minetest.serialize(context.epop.list.selected))
+        minetest.log("key:"..minetest.serialize(context.epop.fields.key_selected))
+    end
 
 	-- Manage recorded tutorials
     if formname == "mc_tutorial:tutorials" then
@@ -1201,8 +1175,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         if mc_tutorial.record.temp[pname] then
                             mc_tutorial.record.temp[pname].has_actions = mc_tutorial.record.temp[pname].length and mc_tutorial.record.temp[pname].length > 0
                             mc_tutorial.record.temp[pname].depend_update = {dep_cy = {}, dep_nt = {}}
-                            if mc_tutorial.record.temp[pname].format < 6 then
-                                reindex_groups(mc_tutorial.record.temp[pname])
+                            -- reformat tutorials if necessary
+                            if mc_tutorial.record.temp[pname].format < mc_tutorial.get_temp_shell().format then
+                                reformat_tutorial(tostring(context.tutorial_i_to_id[context.tutorial_selected]))
+                                mc_tutorial.record.temp[pname] = minetest.deserialize(tutorials.fields[context.tutorial_i_to_id[context.tutorial_selected]])
                             end
                             mc_tutorial.show_record_fs(player)
                         end
@@ -1221,11 +1197,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
                 local tutorial_to_start = minetest.deserialize(tutorials.fields[tostring(context.tutorial_i_to_id[context.tutorial_selected])])
                 
-                -- check format
+                -- check format + update if necessary
                 if not tutorial_to_start.format or tutorial_to_start.format < 3 then
                     minetest.chat_send_player(pname, "[Tutorial] This tutorial was saved in an outdated format and can no longer be started.")
                     return
+                elseif tutorial_to_start.format < mc_tutorial.get_temp_shell().format then
+                    -- reformat tutorial, if necessary
+                    reformat_tutorial(tostring(context.tutorial_i_to_id[context.tutorial_selected]))
+                    tutorial_to_start = minetest.deserialize(tutorials.fields[tostring(context.tutorial_i_to_id[context.tutorial_selected])])
                 end
+
                 -- check if all dependencies have been met by player
                 if not check_dependencies(pdata, tutorial_to_start.dependencies) then
                     minetest.chat_send_player(pname, "[Tutorial] You can't start this tutorial because you haven't completed all of its prerequisites!")
@@ -1745,10 +1726,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             local event = minetest.explode_textlist_event(fields.epop_list)
             if event.type == "CHG" then
                 context.epop.list.selected = tonumber(event.index)
+            elseif event.type == "DCL" then
+                -- add auto-pop code here
             end
         end
 
         if fields.node_import and context.epop.list.list and context.epop.list.list[context.epop.list.selected] then
+            minetest.log(minetest.serialize(context.epop.list.selected))
             context.epop.fields.node = context.epop.list.list[context.epop.list.selected]
             reload = true
             save_exception["nd"] = true
@@ -1759,22 +1743,34 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             save_exception["tl"] = true
         end
 
+        if fields.key_list then
+            local event = minetest.explode_textlist_event(fields.key_list)
+            if event.type == "CHG" then
+                context.epop.fields.key_selected = tonumber(event.index)
+            elseif event.type == "DCL" then
+                fields.key_delete = true
+            end
+        end
         if fields.key_add and context.epop.list.list and context.epop.list.list[context.epop.list.selected] then
             context.epop.fields.key = context.epop.fields.key or {}
+            minetest.log(minetest.serialize(context.epop.list.selected))
+
             if not mc_helpers.tableHas(context.epop.fields.key, context.epop.list.list[context.epop.list.selected]) then
                 table.insert(context.epop.fields.key, context.epop.list.list[context.epop.list.selected])
-                table.sort(context.epop.fields.key)
+                table.remove(context.epop.list.list, context.epop.list.selected)
                 reload = true
             end
         end
-        if fields.key_delete and context.epop.list.list and context.epop.list.list[context.epop.list.selected] then
+        if fields.key_delete and context.epop.list.list then
             context.epop.fields.key = context.epop.fields.key or {}
-            for i,key in pairs(context.epop.fields.key) do
-                if key == context.epop.list.list[context.epop.list.selected] then
-                    table.remove(context.epop.fields.key, i)
-                    reload = true
-                end
+            context.epop.fields.key_selected = context.epop.fields.key_selected or 1
+            minetest.log(minetest.serialize(context.epop.fields.key_selected))
+            
+            if next(context.epop.fields.key) and context.epop.fields.key[context.epop.fields.key_selected] then
+                table.insert(context.epop.list.list, context.epop.fields.key[context.epop.fields.key_selected])
+                table.remove(context.epop.fields.key, context.epop.fields.key_selected)
             end
+            reload = true
         end
 
         if fields.dir_type then
@@ -1797,7 +1793,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     return fields.tool and {tool = fields.tool or ""}
                 end,
                 [mc_tutorial.ACTION.KEY] = function()
-                    return context.epop.fields.key and next(context.epop.fields.key) and {key = context.epop.fields.key or {}}
+                    return context.epop.fields.key and {key_bit = mc_tutorial.keys_to_bits(context.epop.fields.key)}
                 end,
                 [mc_tutorial.ACTION.LOOK_YAW] = function()
                     return fields.yaw and fields.yaw ~= "" and {dir = math.rad(tonumber(fields.yaw or "0"))}

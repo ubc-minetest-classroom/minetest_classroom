@@ -27,8 +27,55 @@ function mc_tutorial.get_temp_shell()
             items = {},
             privs = {},
         },
-        format = 6
+        format = 7
     }
+end
+
+-- converts a table of key strings to a key bitfield
+function mc_tutorial.keys_to_bits(key_table)
+    if not key_table then return 0 end
+
+    local bit_map = {
+        ["up"] = 0x001,
+        ["forward"] = 0x001,
+        ["down"] = 0x002,
+        ["backward"] = 0x002,
+        ["left"] = 0x004,
+        ["right"] = 0x008,
+        ["jump"] = 0x010,
+        ["aux1"] = 0x020,
+        ["sneak"] = 0x040,
+        ["zoom"] = 0x200,
+    }
+    local bitfield = 0
+    for i,key in pairs(key_table) do
+        bitfield = bit.bor(bitfield, bit_map[key])
+    end
+    return bitfield
+end
+
+-- converts a key bitfield to a table of key strings
+function mc_tutorial.bits_to_keys(bitfield)
+    if not bitfield then return {} end
+
+    local bit_map = {
+        [0x001] = "forward",
+        [0x002] = "backward",
+        [0x004] = "left",
+        [0x008] = "right",
+        [0x010] = "jump",
+        [0x020] = "aux1",
+        [0x040] = "sneak",
+        [0x200] = "zoom",
+    }
+    local key_table = {}
+    for b,key in pairs(bit_map) do
+        if bit.band(b, bitfield) > 0 then
+            table.insert(key_table, key)
+        end
+    end
+    table.sort(key_table)
+    return key_table
 end
 
 function mc_tutorial.register_tutorial_action(player, action, action_table)
@@ -144,30 +191,9 @@ function mc_tutorial.tutorial_progress_listener(player)
             [mc_tutorial.ACTION.KEY] = function(index)
                 minetest.chat_send_player(pname, "[Tutorial] Listening for keystroke...")
 
-                local bit_map = {
-                    [0x001] = "up",
-                    [0x002] = "down",
-                    [0x004] = "left",
-                    [0x008] = "right",
-                    [0x010] = "jump",
-                    [0x020] = "aux1",
-                    [0x040] = "sneak",
-                    [0x200] = "zoom",
-                }
                 local key_bits = player:get_player_control_bits()
-                if bit.band(0x27F, key_bits) > 0 then
-                    local p_keys = {}
-                    for b,v in pairs(bit_map) do
-                        if bit.band(b, key_bits) > 0 then
-                            table.insert(p_keys, v)
-                        end
-                    end
-                    table.sort(p_keys)
-                    table.sort(pdata.active.sequence[index].key)
-
-                    if table.concat(p_keys, " ") == table.concat(pdata.active.sequence[index].key, " ") then
-                        mc_tutorial.completed_action(player, index)
-                    end
+                if bit.band(pdata.active.sequence[index].key_bit, key_bits) == pdata.active.sequence[index].key_bit then
+                    mc_tutorial.completed_action(player, index)
                 end
             end
         }

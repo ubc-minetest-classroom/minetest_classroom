@@ -52,16 +52,6 @@ minetest.register_globalstep(function(dtime)
             local reset_timer = false
             local timer = (mc_tutorial.record.timer[pname] or 0) + dtime
             local player = minetest.get_player_by_name(pname)
-            local bit_map = {
-                [0x001] = "up",
-                [0x002] = "down",
-                [0x004] = "left",
-                [0x008] = "right",
-                [0x010] = "jump",
-                [0x020] = "aux1",
-                [0x040] = "sneak",
-                [0x200] = "zoom",
-            }
 
             -- Listen for wield_item
             if timer > 5 and mc_tutorial.record.listener.wield[pname] then
@@ -81,15 +71,10 @@ minetest.register_globalstep(function(dtime)
                 local key_bits = player:get_player_control_bits()
 
                 if bit.band(0x27F, key_bits) > 0 then
-                    local keys = {}
-                    for b,v in pairs(bit_map) do
-                        if bit.band(b, key_bits) > 0 then
-                            table.insert(keys, v)
-                        end
-                    end
+                    local keys = mc_tutorial.bits_to_keys(key_bits)
                     local msg = "[Tutorial] Keystroke "..table.concat(keys, " + ").." recorded."
                     minetest.chat_send_player(pname, msg)
-                    mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.KEY, {key = keys})
+                    mc_tutorial.register_tutorial_action(player, mc_tutorial.ACTION.KEY, {key_bit = bit.band(0x27F, key_bits)})
                     mc_tutorial.record.listener.key[pname] = nil
                 end
             end
