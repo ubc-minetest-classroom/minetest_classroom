@@ -2,13 +2,22 @@ local bit = dofile(minetest.get_modpath("mc_helpers") .. "/numberlua.lua")
 
 function mc_tutorial.check_privs(player, priv_table)
     local priv_table = priv_table or {interact = true}
-    local name = player:get_player_name()
-    return minetest.check_player_privs(name, priv_table)
+    return minetest.check_player_privs(player, priv_table)
 end
 
 function mc_tutorial.wait(seconds)
     local t = os.clock()
     while os.clock() - t < seconds do end
+end
+
+function mc_tutorial.tutorials_exist()
+    local keys = mc_tutorial.get_storage_keys()
+    if keys then
+        for _,key in pairs(keys) do
+            if tonumber(key) then return true end
+        end
+    end
+    return false
 end
 
 local function num_compare(a, b)

@@ -74,16 +74,6 @@ local function get_context(player)
     return mc_tutorial.fs_context[pname]
 end
 
-local function tutorials_exist()
-    local keys = mc_tutorial.get_storage_keys()
-    if keys then
-        for _,key in pairs(keys) do
-            if tonumber(key) then return true end
-        end
-    end
-    return false
-end
-
 -- Store and load default settings in the tutorial_settings.conf file
 local settings = Settings(mc_tutorial.path .. "/tutorial_settings.conf")
 function mc_tutorial.fetch_setting(name)
@@ -118,6 +108,7 @@ mc_tutorial.check_pos_z_tolerance = tonumber(mc_tutorial.fetch_setting("check_po
 dofile(mc_tutorial.path .. "/functions.lua")
 dofile(mc_tutorial.path .. "/tools.lua")
 dofile(mc_tutorial.path .. "/callbacks.lua")
+dofile(mc_tutorial.path .. "/commands.lua")
 
 minetest.register_on_joinplayer(function(player)
     -- Load player meta
@@ -336,7 +327,7 @@ function mc_tutorial.show_record_fs(player)
             context.selected_rewards = selected_rewards
         end
 
-        if tutorials_exist() and not context.tutorials then
+        if mc_tutorial.tutorials_exist() and not context.tutorials then
             context.tutorials = {
                 i_to_t = {},
                 main = {
@@ -369,7 +360,7 @@ function mc_tutorial.show_record_fs(player)
         local record_formtable = {
             "formspec_version[6]",
             "size[14.2,10]",
-            "tabheader[0,0;record_nav;Overview,Events,Rewards", tutorials_exist() and ",Dependencies" or "", ";", context.tab or "1", ";false;false]"
+            "tabheader[0,0;record_nav;Overview,Events,Rewards", mc_tutorial.tutorials_exist() and ",Dependencies" or "", ";", context.tab or "1", ";false;false]"
         }
         local tab_map = {
             ["1"] = function() -- OVERVIEW
@@ -949,7 +940,7 @@ function mc_tutorial.show_tutorials(player)
     
     local count = 0
     context.tutorial_i_to_id = {}
-    if tutorials_exist() then
+    if mc_tutorial.tutorials_exist() then
         for _,id in pairs(tutorial_keys) do
             if tonumber(id) then
                 context.tutorial_i_to_id[count + 1] = id
@@ -1142,7 +1133,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
                 if tutorial_id_safety_check(context.tutorial_i_to_id[context.tutorial_selected], mc_tutorial.active) then
                     if tutorial_id_safety_check(context.tutorial_i_to_id[context.tutorial_selected], mc_tutorial.record.edit) then
-                        if tutorials_exist() then
+                        if mc_tutorial.tutorials_exist() then
                             mc_tutorial.tutorials:set_string(context.tutorial_i_to_id[context.tutorial_selected], "")
                             context.tutorial_selected = 1
                             mc_tutorial.show_tutorials(player)
@@ -1186,7 +1177,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_player(pname, "[Tutorial] You do not have sufficient privileges to edit tutorials.")
             end
         elseif fields.start then
-            if tutorials_exist() then
+            if mc_tutorial.tutorials_exist() then
                 local tutorial_to_start = minetest.deserialize(mc_tutorial.tutorials:get(tostring(context.tutorial_i_to_id[context.tutorial_selected])))
                 if not tutorial_to_start then
                     return minetest.chat_send_player(pname, "[Tutorial] You have not selected a valid tutorial.")
@@ -1645,7 +1636,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 }
 
                 -- Send to mod storage
-                if not tutorials_exist() then
+                if not mc_tutorial.tutorials_exist() then
                     mc_tutorial.tutorials:set_int("next_id", 2)
                     mc_tutorial.tutorials:set_string("1", minetest.serialize(recorded_tutorial))
                 else
@@ -1900,74 +1891,3 @@ end)
 --minetest.register_allow_player_inventory_action(function(player, action, inventory, inventory_info))
 --minetest.register_on_craft(func(itemstack, player, old_craft_grid, craft_inv))
 --minetest.register_on_receiving_chat_messages(function(message))
-
--- below commands for debugging only
--- consider consolidating into single tutorial command with subcommand options or removing
---minetest.register_chatcommand("tutorial", {
-
---})
-
-local tutorial_cmd_table = {
-    -- TODO
-}
-
-minetest.register_chatcommand("clearTutorials", {
-	description = "Clear all tutorials from mod storage.",
-	privs = mc_tutorial.recorder_priv_table,
-	func = function(name, param)
-        mc_tutorial.tutorials:from_table(nil) -- refactor to :set_string()
-        minetest.chat_send_all("[Tutorial] All tutorials have been cleared from memory.")
-	end
-})
-
-minetest.register_chatcommand("listTutorials", {
-	description = "List titles of all stored tutorials.",
-	privs = mc_tutorial.recorder_priv_table,
-	func = function(name, param)
-        if tutorials_exist() then
-            minetest.chat_send_player(name, "Recorded tutorials:")
-            local tutorial_keys = mc_tutorial.get_storage_keys()
-            for i,k in ipairs(tutorial_keys) do
-                if tonumber(k) then
-                    local tutorial = minetest.deserialize(mc_tutorial.tutorials:get(tostring(k)))
-                    minetest.chat_send_player(name, "- ["..k.."] "..tutorial.title)
-                end
-            end
-        else
-            minetest.chat_send_player(name, "No tutorials have been recorded.")
-        end
-	end
-})
-
-minetest.register_chatcommand("dumpTutorials", {
-	description = "Dumps mc_tutorial mod storage table.",
-	privs = mc_tutorial.recorder_priv_table,
-	func = function(name, param)
-        local tutorials = mc_tutorial.tutorials:to_table()
-        minetest.chat_send_player(name, tostring(_G.dump(tutorials)))
-	end
-})
-
-minetest.register_chatcommand("dumppdata", {
-	description = "Dumps player meta table.",
-	privs = mc_tutorial.recorder_priv_table,
-	func = function(name, param)
-        local player = minetest.get_player_by_name(name)
-        local pmeta = player:get_meta()
-        local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
-        minetest.chat_send_player(name, tostring(_G.dump(pdata)))
-	end
-})
-
-minetest.register_chatcommand("clearCompleted", {
-	description = "Clears list of tutorials player has completed.",
-	privs = mc_tutorial.recorder_priv_table,
-	func = function(name, param)
-        local player = minetest.get_player_by_name(name)
-        local pmeta = player:get_meta()
-        local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
-        pdata.completed = {}
-        pmeta:set_string("mc_tutorial:tutorials", minetest.serialize(pdata))
-        minetest.chat_send_player(name, "Cleared list of completed tutorials!")
-	end
-})
