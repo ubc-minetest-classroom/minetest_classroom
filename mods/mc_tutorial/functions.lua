@@ -11,6 +11,38 @@ function mc_tutorial.wait(seconds)
     while os.clock() - t < seconds do end
 end
 
+local function num_compare(a, b)
+    local num_a = tonumber(a)
+    local num_b = tonumber(b)
+    if num_a and num_b then
+        return num_a < num_b
+    elseif not num_a and not num_b then
+        return a < b
+    else
+        return num_a
+    end
+end
+
+--- Function to get all keys in mc_tutorial.tutorials
+--- Calls MetaDataRef:get_keys() if present, otherwise fetches keys based on assumption that the only keys that exist are next_id and numerals up to next_id
+function mc_tutorial.get_storage_keys()
+    local keys
+    if mc_tutorial.tutorials.get_keys then
+        keys = mc_tutorial.tutorials:get_keys()
+    else
+        local next_id = mc_tutorial.tutorials:get("next_id")
+        keys = next_id and {"next_id"} or {}
+        for i = 1, (next_id or 1) do
+            if mc_tutorial.tutorials:contains(tostring(i)) then
+                table.insert(keys, tostring(i))
+            end
+        end
+    end
+    table.sort(keys, num_compare)
+    return keys
+end
+
+--- Returns an empty shell for a tutorial
 function mc_tutorial.get_temp_shell()
     return {
         dependencies = {}, -- table of tutorial IDs that must be compeleted before the player can attempt this tutorial
