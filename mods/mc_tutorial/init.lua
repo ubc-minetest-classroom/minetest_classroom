@@ -798,8 +798,6 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             },
         }
 
-        minetest.log("epop: "..minetest.serialize(context.epop and true or false))
-
         if not context.epop then
             context.epop = {
                 is_edit = is_edit or false,
@@ -839,7 +837,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                     tool = temp.sequence[context.selected_event]["tool"],
                     node = temp.sequence[context.selected_event]["node"],
                     pos = temp.sequence[context.selected_event]["pos"],
-                    key = temp.sequence[context.selected_event]["key"],
+                    key = mc_tutorial.bits_to_keys(temp.sequence[context.selected_event]["key_bit"]),
                     dir = edit_action == mc_tutorial.ACTION.LOOK_DIR and temp.sequence[context.selected_event]["dir"],
                     yaw = edit_action == mc_tutorial.ACTION.LOOK_YAW and math.deg(temp.sequence[context.selected_event]["dir"] or 0),
                     pitch = edit_action == mc_tutorial.ACTION.LOOK_PITCH and math.deg(temp.sequence[context.selected_event]["dir"] or 0),
@@ -861,14 +859,14 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
         if action_info then
             -- check if list needs to be updated
             local new_mode = action_info.list_mode or mc_tutorial.EPOP_LIST.NONE
-            --minetest.log(minetest.serialize(new_mode).." : "..minetest.serialize(context.epop.list.mode))
-            if new_index ~= context.epop.list.mode then
+            if new_mode ~= context.epop.list.mode then
                 context.epop.list.mode = new_mode
                 context.epop.list.list = {}
                 context.epop.list.selected = 1
 
                 if context.epop.list.mode == mc_tutorial.EPOP_LIST.KEY then
-                    context.epop.list.list = mc_tutorial.bits_to_keys(0xFFFF)
+                    local keys_to_exclude = mc_tutorial.keys_to_bits(context.epop.fields.key or {})
+                    context.epop.list.list = mc_tutorial.bits_to_keys(bit.bxor(0xFFFF, keys_to_exclude))
                 elseif context.epop.list.mode == mc_tutorial.EPOP_LIST.ITEM then
                     for item,_ in pairs(minetest.registered_items) do
                         if mc_helpers.trim(item) ~= "" then
@@ -1132,11 +1130,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     local context = get_context(pname)
 	mc_tutorial.wait(0.05) --popups don't work without this
 
-    if context.epop then
-        minetest.log("sel: "..minetest.serialize(context.epop.list.selected))
-        minetest.log("key:"..minetest.serialize(context.epop.fields.key_selected))
-    end
-
 	-- Manage recorded tutorials
     if formname == "mc_tutorial:tutorials" then
         local tutorials = mc_tutorial.tutorials:to_table() --minetest.deserialize(mc_tutorial.tutorials:get_string("mc_tutorial:tutorials"))
@@ -1171,16 +1164,18 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 if tutorial_id_safety_check(context.tutorial_i_to_id[context.tutorial_selected], mc_tutorial.active) then
                     if tutorial_id_safety_check(context.tutorial_i_to_id[context.tutorial_selected], mc_tutorial.record.edit) then
                         mc_tutorial.record.temp[pname] = minetest.deserialize(tutorials.fields[context.tutorial_i_to_id[context.tutorial_selected]])
-                        mc_tutorial.record.edit[pname] = context.tutorial_i_to_id[context.tutorial_selected]
-                        if mc_tutorial.record.temp[pname] then
+                        if mc_tutorial.record.temp[pname] and mc_tutorial.record.temp[pname].format and mc_tutorial.record.temp[pname].format >= 3 then
+                            mc_tutorial.record.edit[pname] = context.tutorial_i_to_id[context.tutorial_selected]
                             mc_tutorial.record.temp[pname].has_actions = mc_tutorial.record.temp[pname].length and mc_tutorial.record.temp[pname].length > 0
                             mc_tutorial.record.temp[pname].depend_update = {dep_cy = {}, dep_nt = {}}
                             -- reformat tutorials if necessary
                             if mc_tutorial.record.temp[pname].format < mc_tutorial.get_temp_shell().format then
                                 reformat_tutorial(tostring(context.tutorial_i_to_id[context.tutorial_selected]))
-                                mc_tutorial.record.temp[pname] = minetest.deserialize(tutorials.fields[context.tutorial_i_to_id[context.tutorial_selected]])
+                                mc_tutorial.record.temp[pname] = minetest.deserialize(mc_tutorial.tutorials:get(context.tutorial_i_to_id[context.tutorial_selected]))
                             end
                             mc_tutorial.show_record_fs(player)
+                        else
+                            minetest.chat_send_player(pname, "[Tutorial] This tutorial could not be loaded. Please delete it and create a new one.")
                         end
                     else
                         minetest.chat_send_player(pname, "[Tutorial] You can't edit a tutorial that is being edited by another player.")
@@ -1204,7 +1199,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 elseif tutorial_to_start.format < mc_tutorial.get_temp_shell().format then
                     -- reformat tutorial, if necessary
                     reformat_tutorial(tostring(context.tutorial_i_to_id[context.tutorial_selected]))
-                    tutorial_to_start = minetest.deserialize(tutorials.fields[tostring(context.tutorial_i_to_id[context.tutorial_selected])])
+                    tutorial_to_start = minetest.deserialize(mc_tutorial.tutorials:get(context.tutorial_i_to_id[context.tutorial_selected]))
                 end
 
                 -- check if all dependencies have been met by player
@@ -1452,7 +1447,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
             if fields.eventlist_add_event then
                 context.selected_event = context.selected_event or 1
-                return mc_tutorial.show_event_popup_fs(player, false)
+                return mc_tutorial.show_event_popup_fs(player, false, false)
             end
             if fields.eventlist_add_group then
                 context.selected_event = context.selected_event or 1
@@ -1529,7 +1524,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 if not mc_tutorial.record.temp[pname].sequence[context.selected_event] then
                     minetest.chat_send_player(pname, "[Tutorial] There are no actions to edit.")
                 elseif mc_tutorial.record.temp[pname].sequence[context.selected_event].action ~= mc_tutorial.ACTION.GROUP then
-                    return mc_tutorial.show_event_popup_fs(player, true)
+                    return mc_tutorial.show_event_popup_fs(player, true, false)
                 else
                     minetest.chat_send_player(pname, "[Tutorial] Group markers can not be edited.")
                 end
@@ -1732,7 +1727,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
 
         if fields.node_import and context.epop.list.list and context.epop.list.list[context.epop.list.selected] then
-            minetest.log(minetest.serialize(context.epop.list.selected))
             context.epop.fields.node = context.epop.list.list[context.epop.list.selected]
             reload = true
             save_exception["nd"] = true
@@ -1753,7 +1747,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
         if fields.key_add and context.epop.list.list and context.epop.list.list[context.epop.list.selected] then
             context.epop.fields.key = context.epop.fields.key or {}
-            minetest.log(minetest.serialize(context.epop.list.selected))
 
             if not mc_helpers.tableHas(context.epop.fields.key, context.epop.list.list[context.epop.list.selected]) then
                 table.insert(context.epop.fields.key, context.epop.list.list[context.epop.list.selected])
@@ -1764,7 +1757,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.key_delete and context.epop.list.list then
             context.epop.fields.key = context.epop.fields.key or {}
             context.epop.fields.key_selected = context.epop.fields.key_selected or 1
-            minetest.log(minetest.serialize(context.epop.fields.key_selected))
             
             if next(context.epop.fields.key) and context.epop.fields.key[context.epop.fields.key_selected] then
                 table.insert(context.epop.list.list, context.epop.fields.key[context.epop.fields.key_selected])
@@ -1793,7 +1785,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     return fields.tool and {tool = fields.tool or ""}
                 end,
                 [mc_tutorial.ACTION.KEY] = function()
-                    return context.epop.fields.key and {key_bit = mc_tutorial.keys_to_bits(context.epop.fields.key)}
+                    return context.epop.fields.key and next(context.epop.fields.key) and {key_bit = mc_tutorial.keys_to_bits(context.epop.fields.key)}
                 end,
                 [mc_tutorial.ACTION.LOOK_YAW] = function()
                     return fields.yaw and fields.yaw ~= "" and {dir = math.rad(tonumber(fields.yaw or "0"))}
