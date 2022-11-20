@@ -839,7 +839,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
             "formspec_version[6]",
             "size[12.6,8.1]",
             "box[0.4,0.4;11.8,1.7;#0090a0]",
-            "label[4.5,0.8;", context.epop.edit and "Edit" or "Add", " an Action or Event]",
+            "label[4.5,0.8;", context.epop.edit and "Edit" or "Add", " an action or event]",
             "dropdown[0.6,1.2;5.6,0.7;action;", table.concat(context.epop.actions, ","), ";", context.epop.selected or 1, ";true]",
             "button", context.epop.is_iso and "_exit" or "", "[6.4,1.2;2.7,0.7;save;Save]",
             "button", context.epop.is_iso and "_exit" or "", "[9.3,1.2;2.7,0.7;cancel;Cancel]",
@@ -885,7 +885,7 @@ UNIFIED:
 formspec_version[6]
 size[12.6,8.1]
 box[0.4,0.4;11.8,1.7;#0090a0]
-label[4.5,0.8;Add an Action or Event]
+label[4.5,0.8;Add an action or event]
 dropdown[0.6,1.2;5.6,0.7;action;;1;true]
 button[6.4,1.2;2.7,0.7;save;Save]
 button[9.3,1.2;2.7,0.7;cancel;Cancel]
@@ -898,31 +898,37 @@ field[6.4,2.9;5.8,0.8;node;Punch (node);]
 field[6.4,4.2;5.8,0.8;tool;With (item);]
 image_button[11.4,2.9;0.8,0.8;mc_tutorial_add_event.png;node_import;;false;true]
 image_button[11.4,4.2;0.8,0.8;mc_tutorial_add_event.png;tool_import;;false;true]
-
-
-CONDENSED:
-formspec_version[6]
-size[8.4,8]
-label[0.4,0.5;Event type]
-dropdown[0.4,0.7;7,0.8;action;;1;true]
-button[0.4,6.8;3.5,0.8;save;Save event]
-button[3.9,6.8;3.5,0.8;cancel;Cancel]
-button[7.8,0;0.6,8;expand_list;>]
-
-EXPANDED:
-formspec_version[6]
-size[14.4,8]
-label[0.4,0.5;Event type]
-dropdown[0.4,0.7;7,0.8;action;;1;true]
-button[0.4,6.8;3.5,0.8;save;Save event]
-button[3.9,6.8;3.5,0.8;cancel;Cancel]
-label[8,0.5;Available items]
-textlist[8,0.7;5.4,5.5;epop_list;;1;false]
-image[8,6.4;1.2,1.2;]
-textarea[9.3,6.3;4.1,1.3;;;Item + desc]
-box[7.675,0.2;0.05,7.6;#202020]
-button[13.8,0;0.6,8;collapse_list;<]
 ]]
+
+local function draw_book_bg(width, height, rule_table)
+    local book_bg = {
+        -- book border: L=0.25, R=0.5, T=1.1, B=0.4, LX=0.5, RX=0.75
+        "style_type[image;noclip=true]",
+        "image[-0.5,-0.85;0.4,", height + 1, ";mc_tutorial_pixel.png^[multiply:#403e65]",
+        "image[", width + 0.4, ",-0.85;0.35,", height + 1, ";mc_tutorial_pixel.png^[multiply:#363349]", -- #302e3f
+        "image[-0.25,-1.1;", width + 0.75, ",", height + 1.5, ";mc_tutorial_pixel.png^[multiply:#403e65]",
+        -- book binding
+        "image[", width/2 - 0.125, ",-1.1;0.25,", height + 1.5, ";mc_tutorial_pixel.png^[multiply:#2f3054]",
+        -- page edges
+        "image[-0.15,0;0.2,", height, ";mc_tutorial_pixel.png^[multiply:#d9d9d9]",
+        "image[", width - 0.05, ",0;0.2,", height, ";mc_tutorial_pixel.png^[multiply:#d9d9d9]",
+        "image[0,-0.25;", width, ",0.3;mc_tutorial_pixel.png^[multiply:#d9d9d9]",
+        "style_type[image;noclip=false]",
+        -- page BG
+        "image[0,0;15.8,11;mc_tutorial_pixel.png^[multiply:#f5f5f5]",
+    }
+
+    local y = 0.85
+    while (y + 0.035) < height do
+        table.insert(book_bg, table.concat({"image[0,", y, ";", width, ",0.035;mc_tutorial_pixel.png^[multiply:#cbecf7]"}, ""))
+        y = y + 0.65
+    end
+    for _,x in pairs(rule_table) do
+        table.insert(book_bg, table.concat({"image[", x, ",0;0.035,", height, ";mc_tutorial_pixel.png^[multiply:#f6e3e3]"}, ""))
+    end
+
+    return table.concat(book_bg, "")
+end
 
 function mc_tutorial.show_tutorials(player)
     local pname = player:get_player_name()
@@ -931,10 +937,16 @@ function mc_tutorial.show_tutorials(player)
     local context = get_context(player)
     local tutorial_keys = mc_tutorial.get_storage_keys()
 
-    local fs_core = {
-        "formspec_version[5]",
-        "size[13,10]",
-        "button_exit[11.3,8.9;1.5,0.8;exit;Exit]"
+    local fs_core = { 
+        "formspec_version[6]",
+        "size[15.8,11]",
+        draw_book_bg(15.8, 11, {1, 8.9}),                                   -- book BG
+        "image[0,0;7.9,0.5;mc_tutorial_pixel.png^[multiply:#acacac]",       -- header
+        "image[7.875,0;0.05,11;mc_tutorial_pixel.png^[multiply:#000000]",   -- dividing line
+        "image_button_exit[0.2,0.05;0.4,0.4;mc_tutorial_x.png;exit;;false;false]",
+        "tooltip[exit;Exit]",
+        "style_type[label;font=mono]",
+        "label[3,0.25;Tutorials]",
     }
     local fs = {}
     
@@ -950,17 +962,18 @@ function mc_tutorial.show_tutorials(player)
     end
         
     if count > 0 then
+        local has_recorder_privs = mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table)
         local titles = {}
         for _,id in pairs(tutorial_keys) do
             if tonumber(id) then
                 local col = ""
                 local tutorial_info = minetest.deserialize(mc_tutorial.tutorials:get(tostring(id)))
                 if mc_tutorial.active[pname] == id then
-                    col = "#ACABFF"
+                    col = "#acabff"
                 elseif not check_dependencies(pdata, tutorial_info.dependencies) then
-                    col = "#F5627D"
+                    col = "#f5627d"
                 elseif mc_helpers.tableHas(pdata.completed, id) then
-                    col = "#71EBA8"
+                    col = "#71eba8"
                 end
                 table.insert(titles, col..tutorial_info.title)
             end
@@ -969,26 +982,33 @@ function mc_tutorial.show_tutorials(player)
         local selected_info = minetest.deserialize(mc_tutorial.tutorials:get(tostring(context.tutorial_i_to_id[context.tutorial_selected])) or minetest.serialize(nil))
         
         fs = {
-            "textlist[0.2,0.2;4.6,8.4;tutoriallist;", table.concat(titles, ","), ";", context.tutorial_selected, ";false]",
-            "textarea[5,0.2;7.8,8.4;;;", selected_info and selected_info.description or "", "]",
+            "style_type[textarea;font=mono,bold;textcolor=black]",
+            "textarea[0.55,1;6.8,1.1;;;Select a tutorial]",
+            "style[tutoriallist;font=mono]",
+            "textlist[0.6,1.5;6.7,", has_recorder_privs and "7.8" or "8.9", ";tutoriallist;", table.concat(titles, ","), ";", context.tutorial_selected, ";false]",
+            "style_type[textarea;font=mono,bold;textcolor=black;font_size=*1.5]",
+            "textarea[8.5,0.6;5.7,1.15;;;", selected_info and selected_info.title or "Untitled tutorial", "]",
+            "image[14.2,0.6;1,1;mc_tutorial_tutorialbook.png]",
+            "style_type[textarea;font=mono;textcolor=black;font_size=*1]",
+            "textarea[8.5,1.8;6.7,7.3;;;", selected_info and selected_info.description or "", "]",
         }
 
         if mc_tutorial.active[pname] then
             if context.tutorial_i_to_id[context.tutorial_selected] == mc_tutorial.active[pname] then
                 table.insert(fs, table.concat({
-                    "box[0.1,8.8;5.7,1;#FF0000]",
-                    "button[0.2,8.9;5.5,0.8;stop;Stop tutorial]",
+                    "box[8.4,9.4;6.9,1.1;#ff0000]",
+                    "button[8.5,9.5;6.7,0.9;stop;Stop tutorial]",
                 }))
             else
                 table.insert(fs, table.concat({
-                    "box[0.1,8.8;5.7,1;#FFBB00]",
-                    "button_exit[0.2,8.9;5.5,0.8;start;Start tutorial (stops active tutorial)]",
+                    "box[8.4,9.4;6.9,1.1;#ffbb00]",
+                    "button_exit[8.5,9.5;6.7,0.9;start;Start tutorial (stops active tutorial)]",
                 }))
             end
         else
             table.insert(fs, table.concat({
-                "box[0.1,8.8;5.7,1;#00FF00]",
-                "button_exit[0.2,8.9;5.5,0.8;start;Start tutorial]",
+                "box[8.4,9.4;6.9,1.1;#00ff00]",
+                "button_exit[8.5,9.5;6.7,0.9;start;Start tutorial]",
             }))
         end
 
@@ -996,19 +1016,46 @@ function mc_tutorial.show_tutorials(player)
         if mc_tutorial.check_privs(player,mc_tutorial.recorder_priv_table) then
             if not mc_tutorial.active[pname] or context.tutorial_i_to_id[context.tutorial_selected] ~= mc_tutorial.active[pname] then
                 table.insert(fs, table.concat({
-                    "box[5.9,8.8;5.2,1;#FF0000]",
-                    "button[6,8.9;2.3,0.8;delete;Delete]",
-                    "button[8.6,8.9;2.4,0.8;edit;Edit]",
+                    "image_button[0.6,9.5;2.1,0.9;blank.png;edit;Edit;false;true]",
+                    "image_button[2.9,9.5;2.1,0.9;blank.png;hide;Hide;false;true]",
+                    "image_button[5.2,9.5;2.1,0.9;blank.png;delete;Delete;false;true]",
                 }))
             end
         end
     else
-        fs = {"textlist[0.2,0.2;4.6,8.4;tutoriallist;No Tutorials Found;1;false]"}
+        fs = {
+            "style_type[textarea;font=mono,bold;textcolor=black]",
+            "textarea[0.55,0.9;6.8,1.1;;;No tutorials found]",
+            "textlist[0.6,1.5;6.7,8.9;tutoriallist;;1;false]",
+            "style_type[textarea;font=mono,bold;textcolor=black;font_size=*1.5]",
+            "textarea[8.4,0.5;5.8,1.2;;;No tutorial selected]",
+            "image[14.2,0.55;1,1;mc_tutorial_tutorialbook.png]",
+        }
     end
 
     minetest.show_formspec(pname, "mc_tutorial:tutorials", table.concat(fs_core, "")..table.concat(fs, ""))
     return true
 end
+
+--[[
+TUTORIAL BOOK CLEAN COPY
+
+formspec_version[6]
+size[15.8,11]
+box[0,0;7.9,0.5;#acacac]
+box[7.875,0;0.05,11;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_tutorial_x.png;exit;;false;false]
+label[3,0.25;Tutorials]
+textarea[0.55,1;6.8,1.1;;;Select a tutorial]
+textlist[0.6,1.5;6.7,7.8;tutoriallist;;1;false]
+image_button[0.6,9.5;2.1,0.9;blank.png;edit;Edit;false;true]
+image_button[2.9,9.5;2.1,0.9;blank.png;hide;Hide;false;true]
+image_button[5.2,9.5;2.1,0.9;blank.png;delete;Delete;false;true]
+textarea[8.5,0.6;5.7,1.15;;;name]
+image[14.2,0.6;1,1;status.png]
+textarea[8.5,1.8;6.7,7.3;;;info]
+button[8.5,9.5;6.7,0.9;start;Start tutorial]
+]]
 
 local function move_list_item(index, from_list, to_list, comp_func)
     local item_to_move = table.remove(from_list, index)
