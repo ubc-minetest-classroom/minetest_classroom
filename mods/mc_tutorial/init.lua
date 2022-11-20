@@ -369,7 +369,8 @@ function mc_tutorial.show_record_fs(player)
                     "textarea[0.4,1.9;13.4,1.3;description;Description;", temp.description or "", "]",
                     "textarea[0.4,3.7;13.4,1.3;message;Completion message;", temp.on_completion and temp.on_completion.message or "", "]",
                     "textarea[0.4,5.5;13.4,3.2;;Tutorial summary;", minetest.formspec_escape("[TBD]"), "]",
-                    "button_exit[0.4,8.8;13.4,0.8;finish;Finish and save]",
+                    "button_exit[0.4,8.8;6.6,0.8;finish;Finish and save]",
+                    "button_exit[7.2,8.8;6.6,0.8;cancel;Exit without saving]",
                     "tooltip[title;Title of tutorial, will be listed in the tutorial book]",
                     "tooltip[message;Message sent to chat when the player completes the tutorial]",
                     "tooltip[description;This description will be displayed in the tutorial book]",
@@ -470,7 +471,8 @@ field[0.4,0.7;13.4,0.7;title;Title;]
 textarea[0.4,1.9;13.4,1.3;description;Description;]
 textarea[0.4,3.7;13.4,1.3;message;Completion message;]
 textarea[0.4,5.5;13.4,3.2;;Tutorial summary;]
-button_exit[0.4,8.8;13.4,0.8;finish;Finish and save]
+button_exit[0.4,8.8;6.6,0.8;finish;Finish and save]
+button_exit[7.2,8.8;6.6,0.8;cancel;Exit without saving]
 
 EVENT/GROUP TAB:
 formspec_version[6]
@@ -996,18 +998,19 @@ function mc_tutorial.show_tutorials(player)
         if mc_tutorial.active[pname] then
             if context.tutorial_i_to_id[context.tutorial_selected] == mc_tutorial.active[pname] then
                 table.insert(fs, table.concat({
-                    "box[8.4,9.4;6.9,1.1;#ff0000]",
+                    "style[stop;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#590c0c]",
                     "button[8.5,9.5;6.7,0.9;stop;Stop tutorial]",
                 }))
             else
                 table.insert(fs, table.concat({
-                    "box[8.4,9.4;6.9,1.1;#ffbb00]",
-                    "button_exit[8.5,9.5;6.7,0.9;start;Start tutorial (stops active tutorial)]",
+                    "style[start;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#6e5205]",
+                    "button_exit[8.5,9.5;6.7,0.9;start;Start new tutorial]",
+                    "tooltip[start;This will stop the active tutorial]",
                 }))
             end
         else
             table.insert(fs, table.concat({
-                "box[8.4,9.4;6.9,1.1;#00ff00]",
+                "style[start;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#055c22]",
                 "button_exit[8.5,9.5;6.7,0.9;start;Start tutorial]",
             }))
         end
@@ -1016,6 +1019,7 @@ function mc_tutorial.show_tutorials(player)
         if mc_tutorial.check_privs(player,mc_tutorial.recorder_priv_table) then
             if not mc_tutorial.active[pname] or context.tutorial_i_to_id[context.tutorial_selected] ~= mc_tutorial.active[pname] then
                 table.insert(fs, table.concat({
+                    "style_type[image_button;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#1e1e1e]",
                     "image_button[0.6,9.5;2.1,0.9;blank.png;edit;Edit;false;true]",
                     "image_button[2.9,9.5;2.1,0.9;blank.png;hide;Hide;false;true]",
                     "image_button[5.2,9.5;2.1,0.9;blank.png;delete;Delete;false;true]",
@@ -1731,7 +1735,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             mc_tutorial.record.active[pname] = nil
             context:clear()
             return -- formspec was closed, do not continue
-        elseif fields.quit then -- forced quit
+        elseif fields.cancel or fields.quit then -- forced quit
             minetest.chat_send_player(pname, "[Tutorial] No tutorial was saved.")
             mc_tutorial.record.temp[pname] = nil
             mc_tutorial.record.edit[pname] = nil
