@@ -902,15 +902,24 @@ image_button[11.4,2.9;0.8,0.8;mc_tutorial_add_event.png;node_import;;false;true]
 image_button[11.4,4.2;0.8,0.8;mc_tutorial_add_event.png;tool_import;;false;true]
 ]]
 
-local function draw_book_bg(width, height, rule_table)
+--- Creates a notebook formspec with a content area of the given width and height
+--- The created formspec will exceed the bounds of the content area (0.5u left, 0.75u right, 1.1u above, 0.4u below)
+--- @param width Content area width
+--- @param height Content area height
+--- @param options Formspec options
+--- @return formspec string
+local function draw_book_fs(width, height, options)
+    options = options or {}
     local book_bg = {
+        "formspec_version[6]",
+        "size[", width, ",", height, "]",
         -- book border: L=0.25, R=0.5, T=1.1, B=0.4, LX=0.5, RX=0.75
         "style_type[image;noclip=true]",
-        "image[-0.5,-0.85;0.4,", height + 1, ";mc_tutorial_pixel.png^[multiply:#403e65]",
-        "image[", width + 0.4, ",-0.85;0.35,", height + 1, ";mc_tutorial_pixel.png^[multiply:#363349]", -- #302e3f
-        "image[-0.25,-1.1;", width + 0.75, ",", height + 1.5, ";mc_tutorial_pixel.png^[multiply:#403e65]",
+        "image[-0.5,-0.85;0.4,", height + 1, ";mc_tutorial_pixel.png^[multiply:", options.bg or "#325140", "]",
+        "image[", width + 0.4, ",-0.85;0.35,", height + 1, ";mc_tutorial_pixel.png^[multiply:", options.shadow or "#23392d", "]", -- #302e3f
+        "image[-0.25,-1.1;", width + 0.75, ",", height + 1.5, ";mc_tutorial_pixel.png^[multiply:", options.bg or "#325140", "]",
         -- book binding
-        "image[", width/2 - 0.125, ",-1.1;0.25,", height + 1.5, ";mc_tutorial_pixel.png^[multiply:#2f3054]",
+        "image[", width/2 - 0.125, ",-1.1;0.25,", height + 1.5, ";mc_tutorial_pixel.png^[multiply:", options.binding or "#164326", "]",
         -- page edges
         "image[-0.15,0;0.2,", height, ";mc_tutorial_pixel.png^[multiply:#d9d9d9]",
         "image[", width - 0.05, ",0;0.2,", height, ";mc_tutorial_pixel.png^[multiply:#d9d9d9]",
@@ -925,7 +934,7 @@ local function draw_book_bg(width, height, rule_table)
         table.insert(book_bg, table.concat({"image[0,", y, ";", width, ",0.035;mc_tutorial_pixel.png^[multiply:#cbecf7]"}, ""))
         y = y + 0.65
     end
-    for _,x in pairs(rule_table) do
+    for _,x in pairs(options.margin_lines or {1, width/2 + 1}) do
         table.insert(book_bg, table.concat({"image[", x, ",0;0.035,", height, ";mc_tutorial_pixel.png^[multiply:#f6e3e3]"}, ""))
     end
 
@@ -940,15 +949,13 @@ function mc_tutorial.show_tutorials(player)
     local tutorial_keys = mc_tutorial.get_storage_keys()
 
     local fs_core = { 
-        "formspec_version[6]",
-        "size[15.8,11]",
-        draw_book_bg(15.8, 11, {1, 8.9}),                                   -- book BG
+        draw_book_fs(15.8, 11, {bg = "#403e65", shadow = "#363349", binding = "#2f3054"}),
         "image[0,0;7.9,0.5;mc_tutorial_pixel.png^[multiply:#acacac]",       -- header
         "image[7.875,0;0.05,11;mc_tutorial_pixel.png^[multiply:#000000]",   -- dividing line
         "image_button_exit[0.2,0.05;0.4,0.4;mc_tutorial_x.png;exit;;false;false]",
         "tooltip[exit;Exit]",
         "style_type[label;font=mono]",
-        "label[3,0.25;Tutorials]",
+        "label[3.05,0.25;Tutorials]",
     }
     local fs = {}
     
@@ -980,17 +987,19 @@ function mc_tutorial.show_tutorials(player)
                 table.insert(titles, col..tutorial_info.title)
             end
         end
+
         context.tutorial_selected = context.tutorial_selected or 1
         local selected_info = minetest.deserialize(mc_tutorial.tutorials:get(tostring(context.tutorial_i_to_id[context.tutorial_selected])) or minetest.serialize(nil))
-        
+        local dep_check = check_dependencies(pdata, selected_info.dependencies)
+
         fs = {
             "style_type[textarea;font=mono,bold;textcolor=black]",
             "textarea[0.55,1;6.8,1.1;;;Select a tutorial]",
             "style[tutoriallist;font=mono]",
             "textlist[0.6,1.5;6.7,", has_recorder_privs and "7.8" or "8.9", ";tutoriallist;", table.concat(titles, ","), ";", context.tutorial_selected, ";false]",
             "style_type[textarea;font=mono,bold;textcolor=black;font_size=*1.5]",
-            "textarea[8.5,0.6;5.7,1.15;;;", selected_info and selected_info.title or "Untitled tutorial", "]",
-            "image[14.2,0.6;1,1;mc_tutorial_tutorialbook.png]",
+            "textarea[8.5,0.6;5.5,1.15;;;", selected_info and selected_info.title or "Untitled tutorial", "]",
+            "image[14.05,0.6;1.15,1.15;mc_tutorial_tutorialbook.png]",
             "style_type[textarea;font=mono;textcolor=black;font_size=*1]",
             "textarea[8.5,1.8;6.7,7.3;;;", selected_info and selected_info.description or "", "]",
         }
@@ -1003,26 +1012,34 @@ function mc_tutorial.show_tutorials(player)
                 }))
             else
                 table.insert(fs, table.concat({
-                    "style[start;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#6e5205]",
+                    "style[start;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:", dep_check and "#6e5205" or "#acacac", "]",
                     "button_exit[8.5,9.5;6.7,0.9;start;Start new tutorial]",
                     "tooltip[start;This will stop the active tutorial]",
                 }))
             end
         else
             table.insert(fs, table.concat({
-                "style[start;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#055c22]",
+                "style[start;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:", dep_check and "#055c22" or "#acacac", "]",
                 "button_exit[8.5,9.5;6.7,0.9;start;Start tutorial]",
             }))
         end
 
         -- Add edit/delete options for those privileged
-        if mc_tutorial.check_privs(player,mc_tutorial.recorder_priv_table) then
-            if not mc_tutorial.active[pname] or context.tutorial_i_to_id[context.tutorial_selected] ~= mc_tutorial.active[pname] then
+        if has_recorder_privs then
+            if (not mc_tutorial.active[pname] or context.tutorial_i_to_id[context.tutorial_selected] ~= mc_tutorial.active[pname]) then
                 table.insert(fs, table.concat({
                     "style_type[image_button;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#1e1e1e]",
                     "image_button[0.6,9.5;2.1,0.9;blank.png;edit;Edit;false;true]",
                     "image_button[2.9,9.5;2.1,0.9;blank.png;hide;Hide;false;true]",
                     "image_button[5.2,9.5;2.1,0.9;blank.png;delete;Delete;false;true]",
+                }))
+            else
+                table.insert(fs, table.concat({
+                    "style_type[image_button;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#acacac]",
+                    "image_button[0.6,9.5;2.1,0.9;blank.png;blocked;Edit;false;true]",
+                    "image_button[2.9,9.5;2.1,0.9;blank.png;blocked;Hide;false;true]",
+                    "image_button[5.2,9.5;2.1,0.9;blank.png;blocked;Delete;false;true]",
+                    "tooltip[blocked;Tutorials in progress can not be edited, hidden, or deleted]",
                 }))
             end
         end
@@ -1032,8 +1049,8 @@ function mc_tutorial.show_tutorials(player)
             "textarea[0.55,0.9;6.8,1.1;;;No tutorials found]",
             "textlist[0.6,1.5;6.7,8.9;tutoriallist;;1;false]",
             "style_type[textarea;font=mono,bold;textcolor=black;font_size=*1.5]",
-            "textarea[8.4,0.5;5.8,1.2;;;No tutorial selected]",
-            "image[14.2,0.55;1,1;mc_tutorial_tutorialbook.png]",
+            "textarea[8.5,0.6;5.5,1.15;;;No tutorial selected]",
+            "image[14.05,0.6;1.15,1.15;mc_tutorial_cancel.png^[multiply:#fd5959]",
         }
     end
 
@@ -1060,6 +1077,21 @@ image[14.2,0.6;1,1;status.png]
 textarea[8.5,1.8;6.7,7.3;;;info]
 button[8.5,9.5;6.7,0.9;start;Start tutorial]
 ]]
+
+function mc_tutorial.show_delete_confirm_popup(player)
+    local pname = player:get_player_name()
+    local context = get_context(player)
+    local selected = minetest.deserialize(mc_tutorial.tutorials:get(tostring(context.tutorial_i_to_id[context.tutorial_selected])) or minetest.serialize(nil))
+
+    local fs = {
+        "formspec_version[6]",
+        "size[8,3.2]",
+        "textarea[0.4,0.4;7.2,1.4;;;Are you sure you want to delete \"", selected.title or "Untitled tutorial", "\"?\nThis action is irreversible.]",
+        "button[0.4,2;3.5,0.8;confirm;Delete]",
+        "button[4.1,2;3.5,0.8;cancel;Cancel]",
+    }
+    minetest.show_formspec(pname, "mc_tutorial:tutorials_dpop", table.concat(fs, ""))
+end
 
 local function move_list_item(index, from_list, to_list, comp_func)
     local item_to_move = table.remove(from_list, index)
@@ -1163,7 +1195,7 @@ end
 -- REWORK
 minetest.register_on_player_receive_fields(function(player, formname, fields)
     -- return if formspec is not tutorial-related
-    if not mc_helpers.tableHas({"mc_tutorial:tutorials", "mc_tutorial:record_options_fs", "mc_tutorial:record_fs", "mc_tutorial:record_epop"}, formname) then
+    if not mc_helpers.tableHas({"mc_tutorial:tutorials", "mc_tutorial:record_options_fs", "mc_tutorial:record_fs", "mc_tutorial:record_epop", "mc_tutorial:tutorials_dpop"}, formname) then
         return nil
     end
 
@@ -1184,13 +1216,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
                 if tutorial_id_safety_check(context.tutorial_i_to_id[context.tutorial_selected], mc_tutorial.active) then
                     if tutorial_id_safety_check(context.tutorial_i_to_id[context.tutorial_selected], mc_tutorial.record.edit) then
-                        if mc_tutorial.tutorials_exist() then
-                            mc_tutorial.tutorials:set_string(context.tutorial_i_to_id[context.tutorial_selected], "")
-                            context.tutorial_selected = 1
-                            mc_tutorial.show_tutorials(player)
-                        else
-                            return
-                        end
+                        -- show confirmation popup
+                        mc_tutorial.show_delete_confirm_popup(player)
                     else
                         minetest.chat_send_player(pname, "[Tutorial] You can't delete a tutorial that is being edited by another player.")
                     end
@@ -1300,6 +1327,34 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
     end
     
+    if formname == "mc_tutorial:tutorials_dpop" then
+        if fields.confirm then
+            if mc_tutorial.check_privs(player, mc_tutorial.recorder_priv_table) then
+                if tutorial_id_safety_check(context.tutorial_i_to_id[context.tutorial_selected], mc_tutorial.active) then
+                    if tutorial_id_safety_check(context.tutorial_i_to_id[context.tutorial_selected], mc_tutorial.record.edit) then
+                        if mc_tutorial.tutorials_exist() then
+                            mc_tutorial.tutorials:set_string(context.tutorial_i_to_id[context.tutorial_selected], "")
+                            minetest.chat_send_player(pname, "[Tutorial] Tutorial #"..context.tutorial_i_to_id[context.tutorial_selected].." successfully deleted.")
+                            context.tutorial_selected = 1
+                        else
+                            return
+                        end
+                    else
+                        minetest.chat_send_player(pname, "[Tutorial] You can't delete a tutorial that is being edited by another player.")
+                    end
+                else
+                    minetest.chat_send_player(pname, "[Tutorial] You can't delete a tutorial that a player is currently playing.")
+                end
+            else
+                minetest.chat_send_player(pname, "[Tutorial] You do not have sufficient privileges to delete tutorials.")
+            end
+            mc_tutorial.show_tutorials(player)
+        elseif fields.cancel or fields.quit then
+            minetest.chat_send_player(pname, "[Tutorial] No tutorials were deleted.")
+            mc_tutorial.show_tutorials(player)
+        end
+    end
+
     -- Continue the recording with other options with on_right_click callback
     if formname == "mc_tutorial:record_options_fs" then
 
