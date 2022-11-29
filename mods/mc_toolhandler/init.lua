@@ -20,7 +20,7 @@ end
 -- Returns name of list item is in, if it is in player's inventory
 local function get_player_item_location(player, itemstack)
     local inv = player:get_inventory()
-    return mc_helpers.getInventoryItemLocation(inv, itemstack)
+    return mc_core.getInventoryItemLocation(inv, itemstack)
 end
 
 -- Returns name of list and index of first item in group in player's inventory, if an item in group is in player's inventory
@@ -123,13 +123,13 @@ function mc_toolhandler.register_tool_manager(tool, options)
         local stack = ItemStack(tool)
         local list = get_player_item_location(player, stack)
 
-        if not list and mc_helpers.checkPrivs(player, options.privs) then
+        if not list and mc_core.checkPrivs(player, options.privs) then
             -- Player should have the tool but does not: give one copy
             player:get_inventory():add_item(options.inv_override or mc_toolhandler.default_inv, tool)
             if (options.inv_override or mc_toolhandler.default_inv) ~= "main" then
                 minetest.chat_send_player(player:get_player_name(), "New tool added to toolbox: "..tool)
             end
-        elseif not mc_helpers.checkPrivs(player, options.privs) then
+        elseif not mc_core.checkPrivs(player, options.privs) then
             -- Player has the tool but should not: remove all copies
             local inv = player:get_inventory()
             while list do
@@ -151,7 +151,7 @@ function mc_toolhandler.register_tool_manager(tool, options)
     -- Give the tool to any player who is granted adequate privileges
     minetest.register_on_priv_grant(function(name, granter, priv)
         -- Check if priv has an effect on the privileges needed for the tool
-        if name == nil or not mc_helpers.tableHas(options.privs, priv) or not minetest.get_player_by_name(name) then
+        if name == nil or not mc_core.tableHas(options.privs, priv) or not minetest.get_player_by_name(name) then
             return true -- skip this callback, continue to next callback
         end
     
@@ -159,7 +159,7 @@ function mc_toolhandler.register_tool_manager(tool, options)
         local player = minetest.get_player_by_name(name)
         local list = get_player_item_location(player, stack)
 
-        if mc_helpers.checkPrivs(player, options.privs) then
+        if mc_core.checkPrivs(player, options.privs) then
             if not list then
                 -- Player should have the tool but does not: give one copy
                 player:get_inventory():add_item(options.inv_override or mc_toolhandler.default_inv, tool)
@@ -181,7 +181,7 @@ function mc_toolhandler.register_tool_manager(tool, options)
     -- Take the tool away from anyone who is revoked privileges and no longer has adequate ones
     minetest.register_on_priv_revoke(function(name, revoker, priv)
         -- Check if priv has an effect on the privileges needed for the tool
-        if name == nil or not mc_helpers.tableHas(options.privs, priv) or not minetest.get_player_by_name(name) then
+        if name == nil or not mc_core.tableHas(options.privs, priv) or not minetest.get_player_by_name(name) then
             return true -- skip this callback, continue to next callback
         end
     
@@ -189,7 +189,7 @@ function mc_toolhandler.register_tool_manager(tool, options)
         local player = minetest.get_player_by_name(name)
         local list = get_player_item_location(player, stack)
     
-        if list and not mc_helpers.checkPrivs(player, options.privs) then
+        if list and not mc_core.checkPrivs(player, options.privs) then
             -- Player has the tool but should not: remove all copies
             local inv = player:get_inventory()
             while list do
@@ -226,7 +226,7 @@ function mc_toolhandler.register_group_manager(tools, options)
     options.inv_override = options.inv_override or nil
     options.default_tool = options.default_tool or tools[1] or get_first_v(tools)
 
-    if not minetest.registered_tools[options.default_tool] or not mc_helpers.tableHas(tools, options.default_tool) then
+    if not minetest.registered_tools[options.default_tool] or not mc_core.tableHas(tools, options.default_tool) then
         return false -- default tool invalid
     end
 
@@ -238,13 +238,13 @@ function mc_toolhandler.register_group_manager(tools, options)
     minetest.register_on_joinplayer(function(player)
         local list, item_name = get_player_group_location(player, group)
 
-        if not list and mc_helpers.checkPrivs(player, options.privs) then
+        if not list and mc_core.checkPrivs(player, options.privs) then
             -- Player should have the tool but does not: give one copy
             player:get_inventory():add_item(options.inv_override or mc_toolhandler.default_inv, options.default_tool)
             if (options.inv_override or mc_toolhandler.default_inv) ~= "main" then
                 minetest.chat_send_player(player:get_player_name(), "New tool added to toolbox: "..options.default_tool)
             end
-        elseif not mc_helpers.checkPrivs(player, options.privs) then
+        elseif not mc_core.checkPrivs(player, options.privs) then
             -- Player has the tool but should not: remove all copies
             local inv = player:get_inventory()
             while list do
@@ -265,14 +265,14 @@ function mc_toolhandler.register_group_manager(tools, options)
     -- Give the tool to any player who is granted adequate privileges
     minetest.register_on_priv_grant(function(name, granter, priv)
         -- Check if priv has an effect on the privileges needed for the tool
-        if name == nil or not mc_helpers.tableHas(options.privs, priv) or not minetest.get_player_by_name(name) then
+        if name == nil or not mc_core.tableHas(options.privs, priv) or not minetest.get_player_by_name(name) then
             return true -- skip this callback, continue to next callback
         end
     
         local player = minetest.get_player_by_name(name)
         local list, item_name = get_player_group_location(player, group)
 
-        if mc_helpers.checkPrivs(player, options.privs) then
+        if mc_core.checkPrivs(player, options.privs) then
             if not list then
                 -- Player should have the tool but does not: give one copy
                 player:get_inventory():add_item(options.inv_override or mc_toolhandler.default_inv, options.default_tool)
@@ -293,14 +293,14 @@ function mc_toolhandler.register_group_manager(tools, options)
     -- Take the tool away from anyone who is revoked privileges and no longer has adequate ones
     minetest.register_on_priv_revoke(function(name, revoker, priv)
         -- Check if priv has an effect on the privileges needed for the tool
-        if name == nil or not mc_helpers.tableHas(options.privs, priv) or not minetest.get_player_by_name(name) then
+        if name == nil or not mc_core.tableHas(options.privs, priv) or not minetest.get_player_by_name(name) then
             return true -- skip this callback, continue to next callback
         end
         
         local player = minetest.get_player_by_name(name)
         local list, item_name = get_player_group_location(player, group)
         
-        if list and not mc_helpers.checkPrivs(player, options.privs) then
+        if list and not mc_core.checkPrivs(player, options.privs) then
             -- Player has the tool but should not: remove all copies
             local inv = player:get_inventory()
             while list do
@@ -342,7 +342,7 @@ end
 local function tool_perm_check_abstract(player, stack, abstract)
     local func_return = nil
     if mc_toolhandler.reg_tools[stack:get_name()] then 
-        if not mc_helpers.checkPrivs(player, mc_toolhandler.reg_tools[stack:get_name()]["privs"]) then
+        if not mc_core.checkPrivs(player, mc_toolhandler.reg_tools[stack:get_name()]["privs"]) then
             func_return = abstract.t_np and abstract.t_np(unpack(abstract.t_np_p or {})) or func_return
         elseif player_has_item_copies(player, stack) then
             func_return = abstract.t_pm and abstract.t_pm(unpack(abstract.t_pm_p or {})) or func_return
@@ -353,7 +353,7 @@ local function tool_perm_check_abstract(player, stack, abstract)
     else
         local group = mc_toolhandler.reg_group_tools[stack:get_name()]
         if group and mc_toolhandler.reg_groups[group] then
-            if not mc_helpers.checkPrivs(player, mc_toolhandler.reg_groups[group]["privs"]) then
+            if not mc_core.checkPrivs(player, mc_toolhandler.reg_groups[group]["privs"]) then
                 func_return = abstract.g_np and abstract.g_np(unpack(abstract.g_np_p or {})) or func_return
             elseif player_has_group_copies(player, group) then
                 func_return = abstract.g_pm and abstract.g_pm(unpack(abstract.g_pm_p or {})) or func_return
@@ -434,7 +434,7 @@ end)
 
 minetest.register_on_chatcommand(function(name, command, params)
     if command == "give" or command == "giveme" then
-        local p_table = mc_helpers.split(params, " ")
+        local p_table = mc_core.split(params, " ")
         if not p_table[1] or (command == "give" and not p_table[2]) then return end -- missing params, skip
 
         local player = (command == "giveme" and minetest.get_player_by_name(name)) or minetest.get_player_by_name(p_table[1])
@@ -503,7 +503,7 @@ function mc_toolhandler.create_tool_inventory(player)
     local list_name = "store"
 
     -- get items to add to store
-    local tools_to_check = mc_helpers.shallowCopy(mc_toolhandler.reg_tools)
+    local tools_to_check = mc_core.shallowCopy(mc_toolhandler.reg_tools)
     for id,options in pairs(mc_toolhandler.reg_groups) do
         tools_to_check[options.default_tool] = {privs = options.privs, allow_take = options.allow_take}
     end
@@ -521,7 +521,7 @@ function mc_toolhandler.create_tool_inventory(player)
                 return 0
             end,
             allow_take = function(inv, listname, index, stack, player)
-                if not mc_helpers.checkPrivs(player, tools_to_check[stack:get_name()]["privs"]) then
+                if not mc_core.checkPrivs(player, tools_to_check[stack:get_name()]["privs"]) then
                     -- no permissions: do not allow player to take item
                     return 0
                 else
@@ -537,7 +537,7 @@ function mc_toolhandler.create_tool_inventory(player)
     local count = 0
     for item, options in pairs(tools_to_check) do
         local stack = ItemStack(item)
-        if stack and mc_helpers.checkPrivs(player, options["privs"]) then
+        if stack and mc_core.checkPrivs(player, options["privs"]) then
             count = count + 1
             store_inv:set_size(list_name, count)
             store_inv:add_item(list_name, stack)

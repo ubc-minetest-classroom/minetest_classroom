@@ -167,5 +167,5 @@ end
 --    decompress = decompress,
 --}
 
-mc_helpers.compress = compress
-mc_helpers.decompress = decompress
+mc_core.compress = compress
+mc_core.decompress = decompress

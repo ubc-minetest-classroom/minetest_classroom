@@ -24,7 +24,7 @@ function schematicManager.registerSchematicPath(key, rootPath)
         return false
     end
 
-    if (mc_helpers.fileExists(rootPath .. ".conf") == false) then
+    if (mc_core.fileExists(rootPath .. ".conf") == false) then
         minetest.log("warning", "trying to register schematic " .. rootPath .. "without a config file. Default config values will be used.")
     end
 
@@ -98,7 +98,7 @@ function schematicManager.getSchematic(key)
 
     local settingNames = settings:get_names()
     for k, v in pairs(settingNames) do
-        if (mc_helpers.starts(string.lower(tostring(v)), "d_")) then
+        if (mc_core.starts(string.lower(tostring(v)), "d_")) then
             _miscData[string.gsub(v, "d_", "", 1)] = settings:get(v)
         end
     end
