@@ -67,6 +67,15 @@ Returns true if `mc_toolhandler` is currently managing the tool, false otherwise
 - Returns:
   - *`boolean`*: `true` if `mc_toolhandler` is currently managing the tool, `false` otherwise
 
+### `mc_toolhandler.get_tool_privs(tool)  -->  table`
+
+Returns the list of privileges required to use the tool if `mc_toolhandler` is managing the tool, or an empty list otherwise
+
+- Parameters:
+  - `tool` (*`string`*): Name of tool to check
+- Returns:
+  - *`table`*: List of privileges
+
 ### `mc_toolhandler.create_tool_inventory(player)  -->  InvRef, string, string`
 
 Returns a detached inventory containing all tools `player` has the privileges to use, which `player` can freely take copies of as desired  

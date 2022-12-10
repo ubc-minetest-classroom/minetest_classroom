@@ -110,6 +110,51 @@ dofile(mc_tutorial.path .. "/tools.lua")
 dofile(mc_tutorial.path .. "/callbacks.lua")
 dofile(mc_tutorial.path .. "/commands.lua")
 
+--- Creates a notebook formspec with a content area of the given width and height
+--- The created formspec will exceed the bounds of the content area (0.5u left, 0.75u right, 1.1u above, 0.4u below)
+--- @param width Content area width
+--- @param height Content area height
+--- @param options Formspec options
+--- @return formspec string
+local function draw_book_fs(width, height, options)
+    options = options or {}
+    local book_bg = {
+        "formspec_version[6]",
+        "size[", width, ",", height, "]",
+        -- book border: L=0.25, R=0.5, T=1.1, B=0.4, LX=0.5, RX=0.75
+        "style_type[image;noclip=true]",
+        "image[-0.5,-0.85;0.4,", height + 1, ";mc_tutorial_pixel.png^[multiply:", options.bg or "#325140", "]",
+        "image[", width + 0.4, ",-0.85;0.35,", height + 1, ";mc_tutorial_pixel.png^[multiply:", options.shadow or "#23392d", "]", -- #302e3f
+        "image[-0.25,-1.1;", width + 0.75, ",", height + 1.5, ";mc_tutorial_pixel.png^[multiply:", options.bg or "#325140", "]",
+        -- book binding
+        "image[", width/2 - 0.125, ",-1.1;0.25,", height + 1.5, ";mc_tutorial_pixel.png^[multiply:", options.binding or "#164326", "]",
+        -- page edges
+        "image[-0.15,0;0.2,", height, ";mc_tutorial_pixel.png^[multiply:#d9d9d9]",
+        "image[", width - 0.05, ",0;0.2,", height, ";mc_tutorial_pixel.png^[multiply:#d9d9d9]",
+        "image[0,-0.25;", width, ",0.3;mc_tutorial_pixel.png^[multiply:#d9d9d9]",
+        "style_type[image;noclip=false]",
+        -- page BG
+        "image[0,0;", width, ",", height, ";mc_tutorial_pixel.png^[multiply:#f5f5f5]",
+    }
+
+    -- margins + lines
+    local y = 0.85
+    while (y + 0.035) < height do
+        table.insert(book_bg, table.concat({"image[0,", y, ";", width, ",0.035;mc_tutorial_pixel.png^[multiply:#cbecf7]"}, ""))
+        y = y + 0.65
+    end
+    for _,x in pairs(options.margin_lines or {1, width/2 + 1}) do
+        table.insert(book_bg, table.concat({"image[", x, ",0;0.035,", height, ";mc_tutorial_pixel.png^[multiply:#f6e3e3]"}, ""))
+    end
+
+    -- divider
+    if options.divider then
+        table.insert(book_bg, table.concat({"image[", width/2 - 0.025, ",0;0.05,", height, ";mc_tutorial_pixel.png^[multiply:", options.divider, "]"}))
+    end
+
+    return table.concat(book_bg, "")
+end
+
 minetest.register_on_joinplayer(function(player)
     -- Load player meta
     local pmeta = player:get_meta()
@@ -160,14 +205,30 @@ local function get_reward_desc(type_id, item)
         return minetest.formspec_escape("No reward selected!")
     end
 
-    local desc = ""
+    local desc = "<style font=mono color=#000000>"
     if type_id == "P" then
-        desc = minetest.registered_privileges[item] and minettutorial_id_safety_checkest.registered_privileges[item].description or ""
+        desc = desc..(minetest.registered_privileges[item] and minetest.registered_privileges[item].description or "")
     elseif ItemStack(item):is_known() then
         local stack = ItemStack(item)
-        desc = stack:get_description() or stack:get_short_description()
+        desc = desc..(stack:get_description() or stack:get_short_description() or "")
+
+        if minetest.get_modpath("mc_toolhandler") and mc_toolhandler.tool_is_being_managed(item) then
+            local tool_privs = mc_toolhandler.get_tool_privs(item)
+            local priv_list = {}
+            desc = desc.."\n<style color=#B55E00><b>This tool is managed by mc_toolhandler.</b> "
+            for k,v in pairs(tool_privs) do
+                table.insert(priv_list, k)
+            end
+            if next(priv_list) then
+                desc = desc.."If you would like to add it as a reward, you should reward the following privileges instead: <b>"..table.concat(priv_list, "</b>, <b>").."</b>.</style>"
+            else
+                desc = desc.."All players have this tool by default.</style>"
+            end
+
+            -- hacky line replacement code by @rubenwardy
+        end
     end
-    return minetest.formspec_escape(item).."\n"..desc
+    return minetest.formspec_escape(desc.."</style>")
 end
 
 local function get_selected_reward_info(context, list_id)
@@ -314,10 +375,15 @@ function mc_tutorial.show_record_fs(player)
                 local item_trim = mc_helpers.trim(item)
                 if item_trim ~= "" then
                     local raw_col_field = item_map[def.type] or {col = "#FFFFCC", s_pre = minetest.formspec_escape("[I] ")}
+                    local col_override = nil
+                    if minetest.get_modpath("mc_toolhandler") and mc_toolhandler.tool_is_being_managed(item) then
+                        -- add warning for tools managed by mc_toolhandler
+                        col_override = "#FFE5CC"
+                    end
                     if mc_helpers.tableHas(temp.on_completion.items, item) then
-                        table.insert(selected_rewards, {col = raw_col_field.col, s = raw_col_field.s_pre..item_trim})
+                        table.insert(selected_rewards, {col = col_override or raw_col_field.col, s = raw_col_field.s_pre..item_trim})
                     else
-                        table.insert(rewards, {col = raw_col_field.col, s = raw_col_field.s_pre..item_trim})
+                        table.insert(rewards, {col = col_override or raw_col_field.col, s = raw_col_field.s_pre..item_trim})
                     end
                 end
             end
@@ -357,20 +423,26 @@ function mc_tutorial.show_record_fs(player)
             end
         end
 
+        local divider_col = {
+            ["2"] = "#b0b0b0",
+            ["3"] = "#a0a0a0",
+        }
         local record_formtable = {
             "formspec_version[6]",
-            "size[14.2,10]",
-            "tabheader[0,0;record_nav;Overview,Events,Rewards", mc_tutorial.tutorials_exist() and ",Dependencies" or "", ";", context.tab or "1", ";false;false]"
+            "size[16.4,10.2]",
+            draw_book_fs(16.4, 10.2, {divider = divider_col[context.tab] or "#000000"}),
+            "style[tabheader;noclip=true]",
+            "tabheader[0,-0.25;16,0.55;record_nav;Overview,Events,Rewards", mc_tutorial.tutorials_exist() and ",Dependencies" or "", ";", context.tab or "1", ";true;false]"
         }
         local tab_map = {
             ["1"] = function() -- OVERVIEW
                 return {
-                    "field[0.4,0.7;13.4,0.7;title;Title;", temp.title or "", "]",
-                    "textarea[0.4,1.9;13.4,1.3;description;Description;", temp.description or "", "]",
-                    "textarea[0.4,3.7;13.4,1.3;message;Completion message;", temp.on_completion and temp.on_completion.message or "", "]",
-                    "textarea[0.4,5.5;13.4,3.2;;Tutorial summary;", minetest.formspec_escape("[TBD]"), "]",
-                    "button_exit[0.4,8.8;6.6,0.8;finish;Finish and save]",
-                    "button_exit[7.2,8.8;6.6,0.8;cancel;Exit without saving]",
+                    "textarea[0.6,0.9;7,0.7;title;Title;", temp.title or "", "]",
+                    "textarea[0.6,2.2;7,2;description;Description;", temp.description or "", "]",
+                    "textarea[0.6,4.8;7,2;message;Completion message;", temp.on_completion and temp.on_completion.message or "", "]",
+                    "button_exit[0.6,7.9;7,0.8;finish;Finish and save]",
+                    "button_exit[0.6,8.8;7,0.8;cancel;Exit without saving]",
+                    "textarea[8.8,0.9;7,8.7;;Tutorial summary;", minetest.formspec_escape("[TBD]"), "]",
                     "tooltip[title;Title of tutorial, will be listed in the tutorial book]",
                     "tooltip[message;Message sent to chat when the player completes the tutorial]",
                     "tooltip[description;This description will be displayed in the tutorial book]",
@@ -378,17 +450,17 @@ function mc_tutorial.show_record_fs(player)
             end,
             ["2"] = function() -- EVENTS
                 return { 
-                    "textlist[0.4,0.8;13.4,7.3;eventlist;", table.concat(context.events, ","), ";", context.selected_event or 1, ";false]",
-                    "label[0.4,0.6;Recorded events]",
-                    "image_button[0.4,8.2;1.4,1.4;mc_tutorial_add_event.png;eventlist_add_event;;false;true]",
-                    "image_button[1.9,8.2;1.4,1.4;mc_tutorial_add_group.png;eventlist_add_group;;false;true]",
-                    "image_button[3.4,8.2;1.4,1.4;mc_tutorial_edit.png;eventlist_edit;;false;true]",
-                    "image_button[4.9,8.2;1.4,1.4;mc_tutorial_delete.png;eventlist_delete;;false;true]",
-                    "image_button[6.4,8.2;1.4,1.4;mc_tutorial_duplicate.png;eventlist_duplicate;;false;true]",
-                    "image_button[7.9,8.2;1.4,1.4;mc_tutorial_move_top.png;eventlist_move_top;;false;true]",
-                    "image_button[9.4,8.2;1.4,1.4;mc_tutorial_move_up.png;eventlist_move_up;;false;true]",
-                    "image_button[10.9,8.2;1.4,1.4;mc_tutorial_move_down.png;eventlist_move_down;;false;true]",
-                    "image_button[12.4,8.2;1.4,1.4;mc_tutorial_move_bottom.png;eventlist_move_bottom;;false;true]",
+                    "textlist[0.6,0.9;15.2,7;eventlist;", table.concat(context.events, ","), ";", context.selected_event or 1, ";false]",
+                    "label[0.6,0.7;Recorded events]",
+                    "image_button[0.6,8.0;1.6,1.6;mc_tutorial_add_event.png;eventlist_add_event;;false;true]",
+                    "image_button[2.3,8.0;1.6,1.6;mc_tutorial_add_group.png;eventlist_add_group;;false;true]",
+                    "image_button[4.0,8.0;1.6,1.6;mc_tutorial_edit.png;eventlist_edit;;false;true]",
+                    "image_button[5.7,8.0;1.6,1.6;mc_tutorial_delete.png;eventlist_delete;;false;true]",
+                    "image_button[7.4,8.0;1.6,1.6;mc_tutorial_duplicate.png;eventlist_duplicate;;false;true]",
+                    "image_button[9.1,8.0;1.6,1.6;mc_tutorial_move_top.png;eventlist_move_top;;false;true]",
+                    "image_button[10.8,8.0;1.6,1.6;mc_tutorial_move_up.png;eventlist_move_up;;false;true]",
+                    "image_button[12.5,8.0;1.6,1.6;mc_tutorial_move_down.png;eventlist_move_down;;false;true]",
+                    "image_button[14.2,8.0;1.6,1.6;mc_tutorial_move_bottom.png;eventlist_move_bottom;;false;true]",
                     "tooltip[eventlist_add_event;Add new event]",
                     "tooltip[eventlist_add_group;Add new group]",
                     "tooltip[eventlist_edit;Edit]",
@@ -406,22 +478,23 @@ function mc_tutorial.show_record_fs(player)
                 local col, type_id, item = get_selected_reward_info(context, context.reward_selected["active"])
 
                 return { -- REWARDS
-                    "label[0.4,0.6;Available rewards]",
-                    "label[7.5,0.6;Selected rewards]",
-                    "textlist[0.4,0.8;6.3,6;reward_list;", concat_col_field_list(context.rewards, ","), ";", context.reward_selected and context.reward_selected[1] or 1, ";false]",
-                    "textlist[7.5,0.8;6.3,6;reward_selection;", concat_col_field_list(context.selected_rewards, ","), ";", context.reward_selected and context.reward_selected[2] or 1, ";false]",
-                    "image_button[6.7,0.8;0.8,3;mc_tutorial_reward_add.png;reward_add;;false;true]",
-                    "image_button[6.7,3.8;0.8,3;mc_tutorial_reward_delete.png;reward_delete;;false;true]",
-                    "field[7,7.4;4.9,0.8;reward_quantity;Quantity (WIP);1]",
+                    "label[0.6,0.7;Available rewards]",
+                    "label[8.8,0.7;Selected rewards]",
+                    "textlist[0.6,0.9;7,6;reward_list;", concat_col_field_list(context.rewards, ","), ";", context.reward_selected and context.reward_selected[1] or 1, ";false]",
+                    "textlist[8.8,0.9;7,6;reward_selection;", concat_col_field_list(context.selected_rewards, ","), ";", context.reward_selected and context.reward_selected[2] or 1, ";false]",
+                    "image_button[7.8,0.9;0.8,3;mc_tutorial_reward_add.png;reward_add;;false;true]",
+                    "image_button[7.8,3.9;0.8,3;mc_tutorial_reward_delete.png;reward_delete;;false;true]",
+                    "field[8.8,7.5;7,0.8;reward_quantity;Quantity (WIP);1]",
                     "field_close_on_enter[reward_quantity;false]",
-                    --"button[11.9,7.4;1.9,0.8;reward_quantity_update;Update]",
-                    "field[7,8.8;6.8,0.8;reward_search;Search for items/privileges/nodes (WIP);]",
+                    --"button[13.9,7.5;1.9,0.8;reward_quantity_update;Update]",
+                    "field[8.8,8.8;7,0.8;reward_search;Search for items/privileges/nodes (WIP);]",
                     "field_close_on_enter[depend_search;false]",
-                    --"image_button[12.2,8.8;0.8,0.8;mc_tutorial_search.png;reward_search_go;;false;false]",
-                    --"image_button[13,8.8;0.8,0.8;mc_tutorial_cancel.png;reward_search_x;;false;false]",
-                    "label[0.4,7.2;Selected reward]",
-                    type_id and type_id ~= "P" and "item_" or "", "image[0.4,7.5;2.1,2.1;", type_id and (type_id ~= "P" and item or "mc_tutorial_tutorialbook.png") or "mc_tutorial_cancel.png", "]",
-                    "textarea[2.6,7.4;4.2,2.2;;;", get_reward_desc(type_id, item), "]",
+                    --"image_button[14.2,8.8;0.8,0.8;mc_tutorial_search.png;reward_search_go;;false;false]",
+                    --"image_button[15,8.8;0.8,0.8;mc_tutorial_cancel.png;reward_search_x;;false;false]",
+                    "hypertext[0.6,7.1;7,1.2;reward_name;<style color=#000000 font=mono><b>", item, "</b></style>]",
+                    type_id and type_id ~= "P" and "item_" or "", "image[0.6,7.7;1.9,1.9;", type_id and (type_id ~= "P" and item or "mc_tutorial_tutorialbook.png") or "mc_tutorial_cancel.png", "]",
+                    "hypertext[2.6,7.6;5,2;reward_desc;", get_reward_desc(type_id, item), "]",
+                     
                     "tooltip[reward_add;Add reward]",
                     "tooltip[reward_delete;Remove reward]",
                     --"tooltip[reward_search_go;Search]",
@@ -434,20 +507,20 @@ function mc_tutorial.show_record_fs(player)
                 table.sort(context.tutorials.dep_nt.list, id_compare)
 
                 return { -- DEPENDENCIES
-                    "label[0.4,0.6;Available tutorials]",
-                    "label[7.3,0.6;Dependencies]",
-                    "label[7.3,5.3;Dependents]",
-                    "textlist[0.4,0.8;6.5,6.5;depend_tutorials;", table.concat(context.tutorials.main.list, ","), ";", context.tutorials.main.selected or 1, ";false]",
-                    "textlist[7.3,0.8;6.5,3.3;dependencies;", table.concat(context.tutorials.dep_cy.list, ","), ";", context.tutorials.dep_cy.selected or 1, ";false]",
-                    "textlist[7.3,5.5;6.5,3.3;dependents;", table.concat(context.tutorials.dep_nt.list, ","), ";", context.tutorials.dep_nt.selected or 1, ";false]",
-                    "button[0.4,7.4;3.2,0.8;dependencies_add;Add dependency]",
-                    "button[7.3,4.1;6.5,0.8;dependencies_delete;Delete dependency]",
-                    "button[3.7,7.4;3.2,0.8;dependents_add;Add dependent]",
-                    "button[7.3,8.8;6.5,0.8;dependents_delete;Delete dependent]",
-                    "field[0.4,8.8;6.5,0.8;depend_search;Search for tutorials (WIP);]",
+                    "label[0.6,0.7;Available tutorials]",
+                    "label[8.8,0.7;Dependencies]",
+                    "label[8.8,5.4;Dependents]",
+                    "textlist[0.6,0.9;7,6.3;depend_tutorials;", table.concat(context.tutorials.main.list, ","), ";", context.tutorials.main.selected or 1, ";false]",
+                    "textlist[8.8,0.9;7,3.1;dependencies;", table.concat(context.tutorials.dep_cy.list, ","), ";", context.tutorials.dep_cy.selected or 1, ";false]",
+                    "textlist[8.8,5.6;7,3.1;dependents;", table.concat(context.tutorials.dep_nt.list, ","), ";", context.tutorials.dep_nt.selected or 1, ";false]",
+                    "button[0.6,7.3;3.45,0.8;dependencies_add;Add dependency]",
+                    "button[8.8,4.1;7,0.8;dependencies_delete;Delete dependency]",
+                    "button[4.15,7.3;3.45,0.8;dependents_add;Add dependent]",
+                    "button[8.8,8.8;7,0.8;dependents_delete;Delete dependent]",
+                    "field[0.6,8.8;7,0.8;depend_search;Search for tutorials (WIP);]",
                     "field_close_on_enter[depend_search;false]",
-                    --"image_button[5.3,8.8;0.8,0.8;mc_tutorial_search.png;depend_search_go;;false;false]",
-                    --"image_button[6.1,8.8;0.8,0.8;mc_tutorial_cancel.png;depend_search_x;;false;false]",
+                    --"image_button[6,8.8;0.8,0.8;mc_tutorial_search.png;depend_search_go;;false;false]",
+                    --"image_button[6.8,8.8;0.8,0.8;mc_tutorial_cancel.png;depend_search_x;;false;false]",
                     --"tooltip[depend_search_go;Search]",
                     --"tooltip[depend_search_x;Clear]",
                     "tooltip[dependencies;List of tutorials that must be completed before this tutorial can be started]",
@@ -466,63 +539,67 @@ NEW FORMSPEC CLEAN COPIES
 
 OVERVIEW TAB:
 formspec_version[6]
-size[14.2,10]
-field[0.4,0.7;13.4,0.7;title;Title;]
-textarea[0.4,1.9;13.4,1.3;description;Description;]
-textarea[0.4,3.7;13.4,1.3;message;Completion message;]
-textarea[0.4,5.5;13.4,3.2;;Tutorial summary;]
-button_exit[0.4,8.8;6.6,0.8;finish;Finish and save]
-button_exit[7.2,8.8;6.6,0.8;cancel;Exit without saving]
+size[16.4,10.2]
+box[8.195,0;0.05,10.2;#000000]
+textarea[0.6,0.9;7,0.7;title;Title;]
+textarea[0.6,2.2;7,2;description;Description;]
+textarea[0.6,4.8;7,2;message;Completion message;]
+button_exit[0.6,7.9;7,0.8;finish;Finish and save]
+button_exit[0.6,8.8;7,0.8;cancel;Exit without saving]
+textarea[8.8,0.9;7,8.7;;Tutorial summary;]
 
-EVENT/GROUP TAB:
+EVENTS TAB:
 formspec_version[6]
-size[14.2,10]
-textlist[0.4,0.8;13.4,7.3;eventlist;;1;false]
-label[0.4,0.6;Recorded events]
-image_button[0.4,8.2;1.4,1.4;blank.png;eventlist_add_event;;false;true]
-image_button[1.9,8.2;1.4,1.4;blank.png;eventlist_add_group;;false;true]
-image_button[3.4,8.2;1.4,1.4;blank.png;eventlist_edit;;false;true]
-image_button[4.9,8.2;1.4,1.4;blank.png;eventlist_delete;;false;true]
-image_button[6.4,8.2;1.4,1.4;blank.png;eventlist_duplicate;;false;true]
-image_button[7.9,8.2;1.4,1.4;blank.png;eventlist_move_top;;false;true]
-image_button[9.4,8.2;1.4,1.4;blank.png;eventlist_move_up;;false;true]
-image_button[10.9,8.2;1.4,1.4;blank.png;eventlist_move_down;;false;true]
-image_button[12.4,8.2;1.4,1.4;blank.png;eventlist_move_bottom;;false;true]
+size[16.4,10.2]
+box[8.195,0;0.05,10.2;#000000]
+textlist[0.6,0.9;15.2,7;eventlist;;1;false]
+label[0.6,0.7;Recorded events]
+image_button[0.6,8;1.6,1.6;blank.png;eventlist_add_event;;false;true]
+image_button[2.3,8;1.6,1.6;blank.png;eventlist_add_group;;false;true]
+image_button[4,8;1.6,1.6;blank.png;eventlist_edit;;false;true]
+image_button[5.7,8;1.6,1.6;blank.png;eventlist_delete;;false;true]
+image_button[7.4,8;1.6,1.6;blank.png;eventlist_duplicate;;false;true]
+image_button[9.1,8;1.6,1.6;blank.png;eventlist_move_top;;false;true]
+image_button[10.8,8;1.6,1.6;blank.png;eventlist_move_up;;false;true]
+image_button[12.5,8;1.6,1.6;blank.png;eventlist_move_down;;false;true]
+image_button[14.2,8;1.6,1.6;blank.png;eventlist_move_bottom;;false;true]
 
 REWARDS TAB:
 formspec_version[6]
-size[14.2,10]
-label[0.4,0.6;Available items/privileges to reward]
-label[7.5,0.6;Selected rewards]
-textlist[0.4,0.8;6.3,6;reward_list;;1;false]
-textlist[7.5,0.8;6.3,6;reward_selection;;1;false]
-image_button[6.7,0.8;0.8,3;blank.png;reward_add;-->;false;true]
-image_button[6.7,3.8;0.8,3;blank.png;button_delete;<--;false;true]
-field[7.5,7.4;4.4,0.8;reward_quantity;Quantity;1]
-button[11.9,7.4;1.9,0.8;reward_quantity_update;Update]
-field[7.5,8.8;6.3,0.8;reward_search;Search for items/privileges/nodes;]
-image_button[12.2,8.8;0.8,0.8;blank.png;reward_search_go;Go!;false;false]
-image_button[13,8.8;0.8,0.8;blank.png;reward_search_x;X;false;false]
-image[0.4,7.5;2.1,2.1;blank.png]
-textarea[2.6,7.4;4.2,2.2;;;This is the info text! Lorem ipsum dolor\, sit amet.]
-label[0.4,7.2;Selected reward]
+size[16.4,10.2]
+box[8.195,0;0.05,10.2;#000000]
+label[0.6,0.7;Available items/privileges to reward]
+label[8.8,0.7;Selected rewards]
+textlist[0.6,0.9;7,6;reward_list;;1;false]
+textlist[8.8,0.9;7,6;reward_selection;;1;false]
+image_button[7.8,0.9;0.8,3;blank.png;reward_add;-->;false;true]
+image_button[7.8,3.9;0.8,3;blank.png;button_delete;<--;false;true]
+field[8.8,7.5;7,0.8;reward_quantity;Quantity;1]
+button[13.9,7.5;1.9,0.8;reward_quantity_update;Update]
+field[8.8,8.8;7,0.8;reward_search;Search for items/privileges/nodes;]
+image_button[14.2,8.8;0.8,0.8;blank.png;reward_search_go;Go!;false;true]
+image_button[15,8.8;0.8,0.8;blank.png;reward_search_x;X;false;true]
+textarea[0.6,7.1;7,0.8;;;Selected:]
+image[0.6,7.8;1.8,1.8;blank.png]
+textarea[2.5,7.7;5.1,1.9;;;This is the info text! Lorem ipsum dolor\, sit amet.]
 
 DEPENDENCIES TAB:
 formspec_version[6]
-size[14.2,10]
-label[0.4,0.6;Available tutorials]
-label[7.3,0.6;Dependencies (required BEFORE)]
-label[7.3,5.3;Dependents (unlocked AFTER)]
-textlist[0.4,0.8;6.5,6.5;depend_tutorials;;1;false]
-textlist[7.3,0.8;6.5,3.3;dependencies;;1;false]
-textlist[7.3,5.5;6.5,3.3;dependents;;1;false]
-button[0.4,7.4;3.2,0.8;dependencies_add;Add dependency]
-button[7.3,4.1;6.5,0.8;dependencies_delete;Delete selected dependency]
-button[3.7,7.4;3.2,0.8;dependents_add;Add dependent]
-button[7.3,8.8;6.5,0.8;dependents_delete;Delete selected dependent]
-field[0.4,8.8;6.5,0.8;depend_search;Search for tutorials;]
-image_button[5.3,8.8;0.8,0.8;blank.png;depend_search_go;Go!;false;false]
-image_button[6.1,8.8;0.8,0.8;blank.png;depend_search_x;X;false;false]
+size[16.4,10.2]
+box[8.195,0;0.05,10.2;#000000]
+label[0.6,0.7;Available tutorials]
+label[8.8,0.7;Dependencies (required BEFORE)]
+label[8.8,5.4;Dependents (unlocked AFTER)]
+textlist[0.6,0.9;7,6.3;depend_tutorials;;1;false]
+textlist[8.8,0.9;7,3.1;dependencies;;1;false]
+textlist[8.8,5.6;7,3.1;dependents;;1;false]
+button[0.6,7.3;3.45,0.8;dependencies_add;Add dependency]
+button[8.8,4.1;7,0.8;dependencies_delete;Delete selected dependency]
+button[4.15,7.3;3.45,0.8;dependents_add;Add dependent]
+button[8.8,8.8;7,0.8;dependents_delete;Delete selected dependent]
+field[0.6,8.8;7,0.8;depend_search;Search for tutorials;]
+image_button[6,8.8;0.8,0.8;blank.png;depend_search_go;Go!;false;true]
+image_button[6.8,8.8;0.8,0.8;blank.png;depend_search_x;X;false;true]
 ]]
 
 function mc_tutorial.show_record_options_fs(player)
@@ -902,45 +979,6 @@ image_button[11.4,2.9;0.8,0.8;mc_tutorial_add_event.png;node_import;;false;true]
 image_button[11.4,4.2;0.8,0.8;mc_tutorial_add_event.png;tool_import;;false;true]
 ]]
 
---- Creates a notebook formspec with a content area of the given width and height
---- The created formspec will exceed the bounds of the content area (0.5u left, 0.75u right, 1.1u above, 0.4u below)
---- @param width Content area width
---- @param height Content area height
---- @param options Formspec options
---- @return formspec string
-local function draw_book_fs(width, height, options)
-    options = options or {}
-    local book_bg = {
-        "formspec_version[6]",
-        "size[", width, ",", height, "]",
-        -- book border: L=0.25, R=0.5, T=1.1, B=0.4, LX=0.5, RX=0.75
-        "style_type[image;noclip=true]",
-        "image[-0.5,-0.85;0.4,", height + 1, ";mc_tutorial_pixel.png^[multiply:", options.bg or "#325140", "]",
-        "image[", width + 0.4, ",-0.85;0.35,", height + 1, ";mc_tutorial_pixel.png^[multiply:", options.shadow or "#23392d", "]", -- #302e3f
-        "image[-0.25,-1.1;", width + 0.75, ",", height + 1.5, ";mc_tutorial_pixel.png^[multiply:", options.bg or "#325140", "]",
-        -- book binding
-        "image[", width/2 - 0.125, ",-1.1;0.25,", height + 1.5, ";mc_tutorial_pixel.png^[multiply:", options.binding or "#164326", "]",
-        -- page edges
-        "image[-0.15,0;0.2,", height, ";mc_tutorial_pixel.png^[multiply:#d9d9d9]",
-        "image[", width - 0.05, ",0;0.2,", height, ";mc_tutorial_pixel.png^[multiply:#d9d9d9]",
-        "image[0,-0.25;", width, ",0.3;mc_tutorial_pixel.png^[multiply:#d9d9d9]",
-        "style_type[image;noclip=false]",
-        -- page BG
-        "image[0,0;15.8,11;mc_tutorial_pixel.png^[multiply:#f5f5f5]",
-    }
-
-    local y = 0.85
-    while (y + 0.035) < height do
-        table.insert(book_bg, table.concat({"image[0,", y, ";", width, ",0.035;mc_tutorial_pixel.png^[multiply:#cbecf7]"}, ""))
-        y = y + 0.65
-    end
-    for _,x in pairs(options.margin_lines or {1, width/2 + 1}) do
-        table.insert(book_bg, table.concat({"image[", x, ",0;0.035,", height, ";mc_tutorial_pixel.png^[multiply:#f6e3e3]"}, ""))
-    end
-
-    return table.concat(book_bg, "")
-end
-
 function mc_tutorial.show_tutorials(player)
     local pname = player:get_player_name()
     local pmeta = player:get_meta()
@@ -949,9 +987,8 @@ function mc_tutorial.show_tutorials(player)
     local tutorial_keys = mc_tutorial.get_storage_keys()
 
     local fs_core = { 
-        draw_book_fs(15.8, 11, {bg = "#403e65", shadow = "#363349", binding = "#2f3054"}),
-        "image[0,0;7.9,0.5;mc_tutorial_pixel.png^[multiply:#acacac]",       -- header
-        "image[7.875,0;0.05,11;mc_tutorial_pixel.png^[multiply:#000000]",   -- dividing line
+        draw_book_fs(15.8, 11, {bg = "#403e65", shadow = "#363349", binding = "#2f3054", divider = "#000000"}),
+        "image[0,0;7.875,0.5;mc_tutorial_pixel.png^[multiply:#acacac]",       -- header
         "image_button_exit[0.2,0.05;0.4,0.4;mc_tutorial_x.png;exit;;false;false]",
         "tooltip[exit;Exit]",
         "style_type[label;font=mono]",
