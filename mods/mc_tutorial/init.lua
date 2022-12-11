@@ -239,6 +239,73 @@ local function get_selected_reward_info(context, list_id)
     return reward and (reward.col_override or reward.col), type_id and mc_helpers.trim(type_id), item and mc_helpers.trim(item)
 end
 
+local function count_tutorial_actions(sequence)
+    local a_count, e_count = 0, 0
+    if sequence then
+        for i,action in pairs(sequence) do
+            if action.action == mc_tutorial.ACTION.MSG_CHAT or action.action == mc_tutorial.ACTION.MSG_POPUP then
+                e_count = e_count + 1
+            elseif action.action ~= mc_tutorial.ACTION.GROUP then
+                a_count = a_count + 1
+            end
+        end
+    end
+    return a_count, e_count
+end
+
+local function get_tutorial_summary(tutorial)
+    local actions, events = count_tutorial_actions(tutorial.sequence)
+    local sum_table = {
+        actions == 1 and "1 action" or actions.." actions", ", ", events, " event", events == 1 and "" or "s", "\n",
+    }
+    -- add rewards
+    if tutorial.on_completion and (next(tutorial.on_completion.items or {}) or next(tutorial.on_completion.privs or {})) then
+        table.insert(sum_table, "Rewards: ")
+        local rewards = {}
+        if next(tutorial.on_completion.items or {}) then
+            table.insert(rewards, #tutorial.on_completion.items == 1 and "1 item" or #tutorial.on_completion.items.." items")
+        end
+        if next(tutorial.on_completion.privs or {}) then
+            local privs = {}
+            for _,priv in pairs(tutorial.on_completion.privs) do
+                table.insert(privs, priv)
+            end
+            table.insert(rewards, table.concat({
+                #tutorial.on_completion.privs == 1 and "1 privilege (" or #tutorial.on_completion.privs.." privileges (",
+                table.concat(privs, ", "), ")"
+            }))
+        end
+        table.insert(sum_table, table.concat(rewards, ", ").."\n")
+    else
+        table.insert(sum_table, "No rewards\n")
+    end
+    -- add dependencies (prerequisites)
+    if tutorial.dependencies and next(tutorial.dependencies) then
+        local depends = {}
+        for id,_ in pairs(tutorial.dependencies) do
+            local dep_tut = mc_tutorial.tutorials:get(id)
+            if dep_tut then
+                table.insert(depends, (minetest.deserialize(dep_tut) or {title = "[?]"}).title)
+            end
+        end
+        table.insert(sum_table, table.concat({"Prerequisite", #depends == 1 and "" or "s", ": ", table.concat(depends, ", "), "\n"}, ""))
+    else
+        table.insert(sum_table, "No prerequisites\n")
+    end
+    -- add dependendents (unlocks)
+    if tutorial.dependents and next(tutorial.dependents) then
+        local depends = {}
+        for id,_ in pairs(tutorial.dependents) do
+            local dep_tut = mc_tutorial.tutorials:get(id)
+            if dep_tut then
+                table.insert(depends, (minetest.deserialize(dep_tut) or {title = "[?]"}).title)
+            end
+        end
+        table.insert(sum_table, table.concat({"Required for: ", table.concat(depends, ", "), "\n"}, ""))
+    end
+    return table.concat(sum_table, "")
+end
+
 --- @return string or nil
 local function extract_id(id_str)
     if type(id_str) == "string" then
@@ -423,35 +490,45 @@ function mc_tutorial.show_record_fs(player)
             end
         end
 
-        local divider_col = {
-            ["2"] = "#b0b0b0",
-            ["3"] = "#a0a0a0",
-        }
         local record_formtable = {
             "formspec_version[6]",
             "size[16.4,10.2]",
-            draw_book_fs(16.4, 10.2, {divider = divider_col[context.tab] or "#000000"}),
+            draw_book_fs(16.4, 10.2, {bg = "#63406a", shadow = "#3e2b45", binding = "#5d345e", divider = "#d9d9d9"}),
             "style[tabheader;noclip=true]",
             "tabheader[0,-0.25;16,0.55;record_nav;Overview,Events,Rewards", mc_tutorial.tutorials_exist() and ",Dependencies" or "", ";", context.tab or "1", ";true;false]"
         }
         local tab_map = {
             ["1"] = function() -- OVERVIEW
                 return {
-                    "textarea[0.6,0.9;7,0.7;title;Title;", temp.title or "", "]",
-                    "textarea[0.6,2.2;7,2;description;Description;", temp.description or "", "]",
-                    "textarea[0.6,4.8;7,2;message;Completion message;", temp.on_completion and temp.on_completion.message or "", "]",
+                    "style_type[textarea;font=mono,bold;textcolor=black]",
+                    "textarea[0.55,0.5;7.1,1;;;Title]",
+                    "textarea[0.55,1.8;7.1,1;;;Description]",
+                    "textarea[0.55,4.4;7.1,1;;;Completion message]",
+                    "textarea[8.75,0.5;7.1,1;;;Tutorial summary]",
+                    "style_type[textarea;border=false;font=mono;textcolor=white]",
+                    "image[0.6,0.9;7,0.7;mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "image[0.6,2.2;7,2;mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "image[0.6,4.8;7,2;mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "textarea[0.6,0.9;7,0.7;title;;", temp.title or "", "]",
+                    "textarea[0.6,2.2;7,2;description;;", temp.description or "", "]",
+                    "textarea[0.6,4.8;7,2;message;;", temp.on_completion and temp.on_completion.message or "", "]",
+                    "style_type[textarea;border=true;font=mono;textcolor=black]",
+                    "textarea[8.8,0.9;7,8.7;;;", minetest.formspec_escape(get_tutorial_summary(temp)), "]",
+                    "style_type[button_exit;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#1e1e1e]",
                     "button_exit[0.6,7.9;7,0.8;finish;Finish and save]",
                     "button_exit[0.6,8.8;7,0.8;cancel;Exit without saving]",
-                    "textarea[8.8,0.9;7,8.7;;Tutorial summary;", minetest.formspec_escape("[TBD]"), "]",
                     "tooltip[title;Title of tutorial, will be listed in the tutorial book]",
                     "tooltip[message;Message sent to chat when the player completes the tutorial]",
                     "tooltip[description;This description will be displayed in the tutorial book]",
                 }
             end,
             ["2"] = function() -- EVENTS
-                return { 
+                return {
+                    "style_type[textarea;font=mono,bold;textcolor=black]",
+                    "textarea[0.55,0.5;15.3,1;;;Recorded events]",
+                    "style[eventlist;font=mono]",
                     "textlist[0.6,0.9;15.2,7;eventlist;", table.concat(context.events, ","), ";", context.selected_event or 1, ";false]",
-                    "label[0.6,0.7;Recorded events]",
+                    "style_type[image_button;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#1e1e1e]",
                     "image_button[0.6,8.0;1.6,1.6;mc_tutorial_add_event.png;eventlist_add_event;;false;true]",
                     "image_button[2.3,8.0;1.6,1.6;mc_tutorial_add_group.png;eventlist_add_group;;false;true]",
                     "image_button[4.0,8.0;1.6,1.6;mc_tutorial_edit.png;eventlist_edit;;false;true]",
@@ -478,20 +555,28 @@ function mc_tutorial.show_record_fs(player)
                 local col, type_id, item = get_selected_reward_info(context, context.reward_selected["active"])
 
                 return { -- REWARDS
-                    "label[0.6,0.7;Available rewards]",
-                    "label[8.8,0.7;Selected rewards]",
+                    "style_type[textarea;font=mono,bold;textcolor=black]",
+                    "textarea[0.55,0.5;7.1,1;;;Available rewards]",
+                    "textarea[8.75,0.5;7.1,1;;;Selected rewards]",
+                    "style_type[textlist;font=mono]",
                     "textlist[0.6,0.9;7,6;reward_list;", concat_col_field_list(context.rewards, ","), ";", context.reward_selected and context.reward_selected[1] or 1, ";false]",
                     "textlist[8.8,0.9;7,6;reward_selection;", concat_col_field_list(context.selected_rewards, ","), ";", context.reward_selected and context.reward_selected[2] or 1, ";false]",
-                    "image_button[7.8,0.9;0.8,3;mc_tutorial_reward_add.png;reward_add;;false;true]",
-                    "image_button[7.8,3.9;0.8,3;mc_tutorial_reward_delete.png;reward_delete;;false;true]",
-                    "field[8.8,7.5;7,0.8;reward_quantity;Quantity (WIP);1]",
+                    "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "style_type[field;border=false;font=mono]",
+                    "image_button[7.8,0.9;0.8,2.9;mc_tutorial_reward_add.png;reward_add;;false;true]",
+                    "image_button[7.8,4;0.8,2.9;mc_tutorial_reward_delete.png;reward_delete;;false;true]",
+                    "textarea[8.75,7.1;7.1,1;;;Quantity (WIP)]",
+                    "textarea[8.75,8.4;7.1,1;;;Search for rewards (WIP)]",
+                    "image[8.8,7.5;7,0.8;mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "field[8.8,7.5;7,0.8;reward_quantity;;1]",
                     "field_close_on_enter[reward_quantity;false]",
                     --"button[13.9,7.5;1.9,0.8;reward_quantity_update;Update]",
-                    "field[8.8,8.8;7,0.8;reward_search;Search for items/privileges/nodes (WIP);]",
+                    "image[8.8,8.8;7,0.8;mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "field[8.8,8.8;7,0.8;reward_search;;]",
                     "field_close_on_enter[depend_search;false]",
                     --"image_button[14.2,8.8;0.8,0.8;mc_tutorial_search.png;reward_search_go;;false;false]",
                     --"image_button[15,8.8;0.8,0.8;mc_tutorial_cancel.png;reward_search_x;;false;false]",
-                    "hypertext[0.6,7.1;7,1.2;reward_name;<style color=#000000 font=mono><b>", item, "</b></style>]",
+                    "hypertext[0.6,7.1;7,0.8;reward_name;<style color=#000000 font=mono><b>", item, "</b></style>]",
                     type_id and type_id ~= "P" and "item_" or "", "image[0.6,7.7;1.9,1.9;", type_id and (type_id ~= "P" and item or "mc_tutorial_tutorialbook.png") or "mc_tutorial_cancel.png", "]",
                     "hypertext[2.6,7.6;5,2;reward_desc;", get_reward_desc(type_id, item), "]",
                      
@@ -507,17 +592,23 @@ function mc_tutorial.show_record_fs(player)
                 table.sort(context.tutorials.dep_nt.list, id_compare)
 
                 return { -- DEPENDENCIES
-                    "label[0.6,0.7;Available tutorials]",
-                    "label[8.8,0.7;Dependencies]",
-                    "label[8.8,5.4;Dependents]",
+                    "style_type[textarea;font=mono,bold;textcolor=black]",
+                    "textarea[0.55,0.5;7.1,1;;;Available tutorials]",
+                    "textarea[8.75,0.5;7.1,1;;;Dependencies]",
+                    "textarea[8.75,5.2;7.1,1;;;Dependents]",
+                    "style_type[textlist;font=mono]",
                     "textlist[0.6,0.9;7,6.3;depend_tutorials;", table.concat(context.tutorials.main.list, ","), ";", context.tutorials.main.selected or 1, ";false]",
                     "textlist[8.8,0.9;7,3.1;dependencies;", table.concat(context.tutorials.dep_cy.list, ","), ";", context.tutorials.dep_cy.selected or 1, ";false]",
                     "textlist[8.8,5.6;7,3.1;dependents;", table.concat(context.tutorials.dep_nt.list, ","), ";", context.tutorials.dep_nt.selected or 1, ";false]",
+                    "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "style_type[field;border=false;font=mono]",
                     "button[0.6,7.3;3.45,0.8;dependencies_add;Add dependency]",
                     "button[8.8,4.1;7,0.8;dependencies_delete;Delete dependency]",
                     "button[4.15,7.3;3.45,0.8;dependents_add;Add dependent]",
                     "button[8.8,8.8;7,0.8;dependents_delete;Delete dependent]",
-                    "field[0.6,8.8;7,0.8;depend_search;Search for tutorials (WIP);]",
+                    "textarea[0.55,8.4;7.1,1;;;Search for tutorials (WIP)]",
+                    "image[0.6,8.8;7,0.8;mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "field[0.6,8.8;7,0.8;depend_search;;]",
                     "field_close_on_enter[depend_search;false]",
                     --"image_button[6,8.8;0.8,0.8;mc_tutorial_search.png;depend_search_go;;false;false]",
                     --"image_button[6.8,8.8;0.8,0.8;mc_tutorial_cancel.png;depend_search_x;;false;false]",
@@ -541,19 +632,24 @@ OVERVIEW TAB:
 formspec_version[6]
 size[16.4,10.2]
 box[8.195,0;0.05,10.2;#000000]
-textarea[0.6,0.9;7,0.7;title;Title;]
-textarea[0.6,2.2;7,2;description;Description;]
-textarea[0.6,4.8;7,2;message;Completion message;]
+textarea[0.55,0.5;7.1,1;;;Title]
+textarea[0.55,1.8;7.1,1;;;Description]
+textarea[0.55,4.4;7.1,1;;;Completion message]
+textarea[8.75,0.5;7.1,1;;;Tutorial summary]
+textarea[0.6,0.9;7,0.7;title;;]
+textarea[0.6,2.2;7,2;description;;]
+textarea[0.6,4.8;7,2;message;;]
+textarea[8.8,0.9;7,8.7;;;]
 button_exit[0.6,7.9;7,0.8;finish;Finish and save]
 button_exit[0.6,8.8;7,0.8;cancel;Exit without saving]
-textarea[8.8,0.9;7,8.7;;Tutorial summary;]
+
 
 EVENTS TAB:
 formspec_version[6]
 size[16.4,10.2]
 box[8.195,0;0.05,10.2;#000000]
+textarea[0.55,0.5;15.3,1;;;Recorded events]
 textlist[0.6,0.9;15.2,7;eventlist;;1;false]
-label[0.6,0.7;Recorded events]
 image_button[0.6,8;1.6,1.6;blank.png;eventlist_add_event;;false;true]
 image_button[2.3,8;1.6,1.6;blank.png;eventlist_add_group;;false;true]
 image_button[4,8;1.6,1.6;blank.png;eventlist_edit;;false;true]
@@ -568,28 +664,30 @@ REWARDS TAB:
 formspec_version[6]
 size[16.4,10.2]
 box[8.195,0;0.05,10.2;#000000]
-label[0.6,0.7;Available items/privileges to reward]
-label[8.8,0.7;Selected rewards]
+textarea[0.55,0.5;7.1,1;;;Available rewards]
+textarea[8.75,0.5;7.1,1;;;Selected rewards]
 textlist[0.6,0.9;7,6;reward_list;;1;false]
 textlist[8.8,0.9;7,6;reward_selection;;1;false]
-image_button[7.8,0.9;0.8,3;blank.png;reward_add;-->;false;true]
-image_button[7.8,3.9;0.8,3;blank.png;button_delete;<--;false;true]
-field[8.8,7.5;7,0.8;reward_quantity;Quantity;1]
+image_button[7.8,0.9;0.8,2.9;blank.png;reward_add;-->;false;true]
+image_button[7.8,4;0.8,2.9;blank.png;button_delete;<--;false;true]
+textarea[8.75,7.1;7.1,1;;;Quantity]
+textarea[8.75,8.4;7.1,1;;;Search for rewards]
+field[8.8,7.5;7,0.8;reward_quantity;;1]
 button[13.9,7.5;1.9,0.8;reward_quantity_update;Update]
-field[8.8,8.8;7,0.8;reward_search;Search for items/privileges/nodes;]
+field[8.8,8.8;7,0.8;reward_search;;]
 image_button[14.2,8.8;0.8,0.8;blank.png;reward_search_go;Go!;false;true]
 image_button[15,8.8;0.8,0.8;blank.png;reward_search_x;X;false;true]
-textarea[0.6,7.1;7,0.8;;;Selected:]
-image[0.6,7.8;1.8,1.8;blank.png]
-textarea[2.5,7.7;5.1,1.9;;;This is the info text! Lorem ipsum dolor\, sit amet.]
+textarea[0.6,7.1;7,0.8;;;Selected item]
+image[0.6,7.7;1.9,1.9;blank.png]
+textarea[2.6,7.6;5,2;;;This is the info text! Lorem ipsum dolor\, sit amet.]
 
 DEPENDENCIES TAB:
 formspec_version[6]
 size[16.4,10.2]
 box[8.195,0;0.05,10.2;#000000]
-label[0.6,0.7;Available tutorials]
-label[8.8,0.7;Dependencies (required BEFORE)]
-label[8.8,5.4;Dependents (unlocked AFTER)]
+textarea[0.55,0.5;7.1,1;;;Available tutorials]
+textarea[8.75,0.5;7.1,1;;;Dependencies]
+textarea[8.75,5.2;7.1,1;;;Dependents]
 textlist[0.6,0.9;7,6.3;depend_tutorials;;1;false]
 textlist[8.8,0.9;7,3.1;dependencies;;1;false]
 textlist[8.8,5.6;7,3.1;dependents;;1;false]
@@ -597,7 +695,8 @@ button[0.6,7.3;3.45,0.8;dependencies_add;Add dependency]
 button[8.8,4.1;7,0.8;dependencies_delete;Delete selected dependency]
 button[4.15,7.3;3.45,0.8;dependents_add;Add dependent]
 button[8.8,8.8;7,0.8;dependents_delete;Delete selected dependent]
-field[0.6,8.8;7,0.8;depend_search;Search for tutorials;]
+textarea[0.55,8.4;7.1,1;;;Search for tutorials]
+field[0.6,8.8;7,0.8;depend_search;;]
 image_button[6,8.8;0.8,0.8;blank.png;depend_search_go;Go!;false;true]
 image_button[6.8,8.8;0.8,0.8;blank.png;depend_search_x;X;false;true]
 ]]
@@ -1038,7 +1137,7 @@ function mc_tutorial.show_tutorials(player)
             "textarea[8.5,0.6;5.5,1.15;;;", selected_info and selected_info.title or "Untitled tutorial", "]",
             "image[14.05,0.6;1.15,1.15;mc_tutorial_tutorialbook.png]",
             "style_type[textarea;font=mono;textcolor=black;font_size=*1]",
-            "textarea[8.5,1.8;6.7,7.3;;;", selected_info and selected_info.description or "", "]",
+            "textarea[8.5,1.8;6.7,7.3;;;", selected_info and selected_info.description.."\n\n"..get_tutorial_summary(selected_info) or "", "]",
         }
 
         if mc_tutorial.active[pname] then
@@ -1479,6 +1578,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             local event = minetest.explode_textlist_event(fields.eventlist)
             if event.type == "CHG" then
                 context.selected_event = event.index
+            elseif event.type == "DCL" then
+                fields.eventlist_edit = true -- trigger edit
             end
         end
         if fields.reward_list then

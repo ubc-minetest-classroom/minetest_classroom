@@ -298,7 +298,7 @@ function mc_tutorial.initialize_action_group(pdata)
 end
 
 -- This function is used to update the search index on completion of an action and check if the tutorial is completed.
--- If tutorial is completed, then initiate the on_complettion callbacks: give tool, give item, grant priv.
+-- If tutorial is completed, then initiate the on_completion callbacks: give tool, give item, grant priv.
 function mc_tutorial.completed_action(player, g_index)
     local pname = player:get_player_name()
     local pmeta = player:get_meta()
