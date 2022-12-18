@@ -157,8 +157,8 @@ function Realm.UTMToLatLong(utmX, utmY, zone, isNorthHemisphere)
     local delt = Math.Atan(senoheps / (Math.Cos(nab)))
     local tao = Math.Atan(Math.Cos(delt) * Math.Tan(nab))
 
-    local longitude = mc_helpers.round(((delt * (180.0 / Math.PI)) + s) + diflon,5)
-    local latitude = mc_helpers.round(((lat + (1 + e2cuadrada * Math.Pow(Math.Cos(lat), 2) - (3.0 / 2.0) * e2cuadrada * Math.Sin(lat) * Math.Cos(lat) * (tao - lat)) * (tao - lat)) * (180.0 / Math.PI)) + diflat,5)
+    local longitude = mc_core.round(((delt * (180.0 / Math.PI)) + s) + diflon,5)
+    local latitude = mc_core.round(((lat + (1 + e2cuadrada * Math.Pow(Math.Cos(lat), 2) - (3.0 / 2.0) * e2cuadrada * Math.Sin(lat) * Math.Cos(lat) * (tao - lat)) * (tao - lat)) * (180.0 / Math.PI)) + diflat,5)
 
     return {
         longitude = longitude,

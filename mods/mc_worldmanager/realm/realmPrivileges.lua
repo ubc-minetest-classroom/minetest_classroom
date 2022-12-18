@@ -92,7 +92,7 @@ function Realm:ApplyPrivileges(player)
     minetest.set_player_privs(name, privs)
 end
 
-if (mc_helpers.fileExists(worldRealmPrivWhitelist)) then
+if (mc_core.fileExists(worldRealmPrivWhitelist)) then
     Realm.GetPrivWhitelist(worldRealmPrivWhitelist)
 else
     Debug.log("No realm permissions whitelist found, load mod defaults...")
