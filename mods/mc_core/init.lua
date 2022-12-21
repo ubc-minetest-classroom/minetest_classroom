@@ -6,6 +6,7 @@ dofile(mc_core.path.."/Debugging.lua")
 dofile(mc_core.path.."/lualzw.lua")
 dofile(mc_core.path.."/PointTable.lua")
 dofile(mc_core.path.."/Hooks.lua")
+dofile(mc_core.path.."/gui.lua")
 
 ---@public
 ---checkPrivs
