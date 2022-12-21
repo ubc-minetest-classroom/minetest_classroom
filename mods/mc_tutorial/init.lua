@@ -63,6 +63,26 @@ mc_tutorial = {
 }
 -- local constants
 local RW_LIST, RW_SELECT = 1, 2
+local SAFE, CAUTION, UNSAFE = 0, 1, 2
+
+-- basic privilege safety: may be worth moving?
+local PRIV_SAFETY = { -- basic privileges by overall safety
+    -- SAFE: generally safe to give to players
+    ["fast"] = SAFE, ["fly"] = SAFE, ["interact"] = SAFE, ["shout"] = SAFE,
+    -- CAUTION: privileges which may be appropriate to grant in some circumstances, but have the potential to be abused
+    ["noclip"] = CAUTION, ["give"] = CAUTION, ["teleport"] = CAUTION, ["bring"] = CAUTION, ["creative"] = CAUTION,
+    ["settime"] = CAUTION, ["debug"] = CAUTION,
+    -- UNSAFE: privileges which may cause significant damage if abused and should only be given to teachers or administrators
+    ["privs"] = UNSAFE, ["teacher"] = UNSAFE, ["basic_privs"] = UNSAFE, ["ban"] = UNSAFE, ["kick"] = UNSAFE,
+    ["password"] = UNSAFE, ["protection_bypass"] = UNSAFE, ["server"] = UNSAFE, ["rollback"] = UNSAFE, 
+}
+if minetest.get_modpath("areas") then
+    PRIV_SAFETY["areas"] = UNSAFE
+    PRIV_SAFETY["areas_high_limit"] = UNSAFE
+end
+if minetest.get_modpath("Minetest-WorldEdit") then
+    PRIV_SAFETY["worldedit"] = CAUTION
+end
 
 local function get_context(player)
     local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name()) or ""
@@ -208,7 +228,15 @@ local function get_reward_desc(type_id, item)
     local desc = "<style font=mono color=#000000>"
     if type_id == "P" then
         desc = desc..(minetest.registered_privileges[item] and minetest.registered_privileges[item].description or "")
-    elseif ItemStack(item):is_known() then
+
+        if not PRIV_SAFETY[item] then
+            desc = desc.."\n<style color=#B55E00><b>Reward with caution.</b> This privilege comes from an external mod and may be dangerous. Make sure you know what it does before adding it as a reward."
+        elseif PRIV_SAFETY[item] == CAUTION then
+            desc = desc.."\n<style color=#B55E00><b>Reward with caution.</b> This privilege gives players access to utilities which may be dangerous if used irresponsibly."
+        elseif PRIV_SAFETY[item] == UNSAFE then
+            desc = desc.."\n<style color=#CC0000><b>Reward with extreme caution.</b> This privilege allows players to modify the server and should only be given to trusted users."
+        end
+     elseif ItemStack(item):is_known() then
         local stack = ItemStack(item)
         desc = desc..(stack:get_description() or stack:get_short_description() or "")
 
@@ -224,8 +252,6 @@ local function get_reward_desc(type_id, item)
             else
                 desc = desc.."All players have this tool by default.</style>"
             end
-
-            -- hacky line replacement code by @rubenwardy
         end
     end
     return minetest.formspec_escape(desc.."</style>")
@@ -427,10 +453,16 @@ function mc_tutorial.show_record_fs(player)
             local rewards = {}
             local selected_rewards = {}
             for priv,_ in pairs(minetest.registered_privileges) do
+                local priv_col = "#FFCCFF"
+                --[[if PRIV_SAFETY[priv] == CAUTION then
+                    priv_col = "#FFE5CC"
+                else]]if PRIV_SAFETY[priv] == UNSAFE then
+                    priv_col = "#FFBABA"
+                end
                 if mc_helpers.tableHas(temp.on_completion.privs, priv) then
-                    table.insert(selected_rewards, {col = "#FFCCFF", s = minetest.formspec_escape("[P] ")..priv})
+                    table.insert(selected_rewards, {col = priv_col, s = minetest.formspec_escape("[P] ")..priv})
                 else
-                    table.insert(rewards, {col = "#FFCCFF", s = minetest.formspec_escape("[P] ")..priv})
+                    table.insert(rewards, {col = priv_col, s = minetest.formspec_escape("[P] ")..priv})
                 end
             end
 
@@ -1229,6 +1261,18 @@ function mc_tutorial.show_delete_confirm_popup(player)
     minetest.show_formspec(pname, "mc_tutorial:tutorials_dpop", table.concat(fs, ""))
 end
 
+function mc_tutorial.show_priv_confirm_popup(player, priv)
+    local pname = player:get_player_name()
+    local fs = {
+        "formspec_version[6]",
+        "size[8,4]",
+        "textarea[0.4,0.4;7.2,2.2;;;Are you sure you want to add ", priv and "\""..priv.."\"" or "this privilege", " as a reward for completing this tutorial?\nUsers with this privilege could cause irreversible server damage if this privilege is misused!]",
+        "button[0.4,2.8;3.5,0.8;confirm;Add reward]",
+        "button[4.1,2.8;3.5,0.8;cancel;Cancel]",
+    }
+    minetest.show_formspec(pname, "mc_tutorial:record_fs_privpop", table.concat(fs, ""))
+end
+
 local function move_list_item(index, from_list, to_list, comp_func)
     local item_to_move = table.remove(from_list, index)
     table.insert(to_list, item_to_move)
@@ -1328,10 +1372,10 @@ local function reformat_tutorial(id)
     mc_tutorial.tutorials:set_string(id, minetest.serialize(tutorial_table))
 end
 
--- REWORK
+-- REWORK: dynamically get names of all formspecs
 minetest.register_on_player_receive_fields(function(player, formname, fields)
     -- return if formspec is not tutorial-related
-    if not mc_helpers.tableHas({"mc_tutorial:tutorials", "mc_tutorial:record_options_fs", "mc_tutorial:record_fs", "mc_tutorial:record_epop", "mc_tutorial:tutorials_dpop"}, formname) then
+    if not mc_helpers.tableHas({"mc_tutorial:tutorials", "mc_tutorial:record_options_fs", "mc_tutorial:record_fs", "mc_tutorial:record_epop", "mc_tutorial:tutorials_dpop", "mc_tutorial:record_fs_privpop"}, formname) then
         return nil
     end
 
@@ -1564,9 +1608,27 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
     end
 
+    if formname == "mc_tutorial:record_fs_privpop" then
+        if fields.confirm then
+            local col, type_id, item = get_selected_reward_info(context, RW_LIST)
+            table.insert(mc_tutorial.record.temp[pname].on_completion.privs, item)
+
+            local new_index
+            context.rewards, context.selected_rewards, new_index = move_list_item(context.reward_selected[RW_LIST], context.rewards, context.selected_rewards, col_field_compare)
+            context.reward_selected = {
+                [RW_LIST] = math.max(1, math.min(context.reward_selected[RW_LIST], #context.rewards)),
+                [RW_SELECT] = new_index,
+                ["active"] = RW_SELECT
+            }
+        end
+        if fields.confirm or fields.cancel or fields.quit then
+            mc_tutorial.show_record_fs(player)
+        end
+    end
+    
     -- Complete the recording
 	if formname == "mc_tutorial:record_fs" then
-        local reload = false
+        local reload, popup = false, false
 
         -- NAV + SELECTION
         if fields.record_nav then
@@ -1624,19 +1686,26 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             context.reward_selected = context.reward_selected or {[RW_LIST] = 1, [RW_SELECT] = 1, ["active"] = RW_LIST}
             local col, type_id, item = get_selected_reward_info(context, RW_LIST)
             if type_id == "P" then
-                table.insert(mc_tutorial.record.temp[pname].on_completion.privs, item)
+                if PRIV_SAFETY[item] == UNSAFE then
+                    popup = true
+                    mc_tutorial.show_priv_confirm_popup(player, item)
+                else
+                    table.insert(mc_tutorial.record.temp[pname].on_completion.privs, item)
+                end
             else
                 table.insert(mc_tutorial.record.temp[pname].on_completion.items, item)
             end
 
-            local new_index
-            context.rewards, context.selected_rewards, new_index = move_list_item(context.reward_selected[RW_LIST], context.rewards, context.selected_rewards, col_field_compare)
-            context.reward_selected = {
-                [RW_LIST] = math.max(1, math.min(context.reward_selected[RW_LIST], #context.rewards)),
-                [RW_SELECT] = new_index,
-                ["active"] = RW_SELECT
-            }
-            reload = true
+            if not popup then
+                local new_index
+                context.rewards, context.selected_rewards, new_index = move_list_item(context.reward_selected[RW_LIST], context.rewards, context.selected_rewards, col_field_compare)
+                context.reward_selected = {
+                    [RW_LIST] = math.max(1, math.min(context.reward_selected[RW_LIST], #context.rewards)),
+                    [RW_SELECT] = new_index,
+                    ["active"] = RW_SELECT
+                }
+                reload = true
+            end
         end
         if fields.reward_delete and #context.selected_rewards > 0 then
             context.reward_selected = context.reward_selected or {[RW_LIST] = 1, [RW_SELECT] = 1, ["active"] = RW_LIST}
@@ -1938,7 +2007,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
 
         -- Save context and refresh formspec, if necessary
-        if reload then
+        if reload and not popup then
             mc_tutorial.show_record_fs(player)
         end
     end
