@@ -150,7 +150,7 @@ Finds the first inventory list that contains the given item, returning its name 
   - `inv` (*`InvRef`*): Inventory to search
   - `itemstack` (*`ItemStack`*): Item to look for
 - Returns:
-  - *`string`*: Name of inventory list containing `itemstack`
+  - *`string`*: Name of inventory list containing `itemstack`  
   *OR*
   - `nil` if `itemstack` was not found
 
@@ -214,7 +214,8 @@ Decompresses a string compressed using LZW compression
 
 ### `ptable.store(table, coords, value)`
 
-Stores a value in a 3D table
+Stores a value in a 3D table  
+*For the 2D equivalent, see [`ptable.store2D`](#ptablestore2dtable-coords-value)*
 
 - Parameters:
   - `table` (*`table`*): 3D table
@@ -223,7 +224,8 @@ Stores a value in a 3D table
 
 ### `ptable.get(table, coords)  -->  any`
 
-Gets a value from a 3D table
+Gets a value from a 3D table  
+*For the 2D equivalent, see [`ptable.get2D`](#ptableget2dtable-coords------any)*
 
 - Parameters:
   - `table` (*`table`*): 3D table
@@ -231,9 +233,10 @@ Gets a value from a 3D table
 - Returns:
   - *`any`*: Value stored at `coords`
 
-### `ptable.delete(table, coords)  -->  any`
+### `ptable.delete(table, coords)`
 
-Deletes a value from a 3D table
+Deletes a value from a 3D table  
+*For the 2D equivalent, see [`ptable.delete2Ds`](#ptabledelete2dstable-coords)*
 
 - Parameters:
   - `table` (*`table`*): 3D table
@@ -241,7 +244,8 @@ Deletes a value from a 3D table
 
 ### `ptable.store2D(table, coords, value)`
 
-2D equivalent of `ptable.store`
+Stores a value in a 2D table  
+*For the 3D equivalent, see [`ptable.store`](#ptablestoretable-coords-value)*
 
 - Parameters:
   - `table` (*`table`*): 2D table
@@ -250,7 +254,8 @@ Deletes a value from a 3D table
 
 ### `ptable.get2D(table, coords)  -->  any`
 
-2D equivalent of `ptable.get`
+Gets a value from a 2D table  
+*For the 3D equivalent, see [`ptable.get`](#ptablegettable-coords------any)*
 
 - Parameters:
   - `table` (*`table`*): 2D table
@@ -258,9 +263,10 @@ Deletes a value from a 3D table
 - Returns:
   - *`any`*: Value stored at `coords`
 
-### `ptable.delete2Ds(table, coords)  -->  any`
+### `ptable.delete2Ds(table, coords)`
 
-2D equivalent of `ptable.delete`
+Deletes a value from a 2D table  
+*For the 3D equivalent, see [`ptable.delete`](#ptabledeletetable-coords)*
 
 - Parameters:
   - `table` (*`table`*): 2D table
