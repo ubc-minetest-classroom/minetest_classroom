@@ -5,7 +5,7 @@
 --- @param width Content area width
 --- @param height Content area height
 --- @param options Formspec options
---- @see README.md > API > GUI Templates
+--- @see README.md > GUI Templates
 --- @return formspec string
 function mc_core.draw_book_fs(width, height, options)
     options = options or {}
