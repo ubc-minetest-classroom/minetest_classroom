@@ -341,40 +341,68 @@ commands["schematic"] = {
         end
     end }
 
-commands["realterrain"] = {
-    func = function(name, params)
-        if (params[1] == "list") then
-            table.remove(params, 1)
-
-            minetest.chat_send_player(name, "Key : Filepath")
-            for i, t in pairs(realterrainManager.dems) do
-                minetest.chat_send_player(name, i .. " : " .. t)
+    commands["realterrain"] = {
+        func = function(name, params)
+            if params[1] == "list" then
+                table.remove(params, 1)
+    
+                minetest.chat_send_player(name, "Key : Filepath")
+                for i, t in pairs(realterrainManager.dems) do
+                    minetest.chat_send_player(name, i .. " : " .. t)
+                end
+                return true
+            elseif params[1] == "load" then
+                table.remove(params, 1)
+                local realmName = params[1]
+                if (realmName == "" or realmName == nil) then
+                    realmName = "Unnamed Realm"
+                end
+    
+                local key = params[1]
+                if (key == nil) then
+                    key = ""
+                end
+    
+                local DEM_PATH, config = realterrainManager.getDEM(key)
+    
+                if (config == nil) then
+                    return false, "DEM key: " .. tostring(key) .. " config file has not been registered with the system."
+                end
+    
+                -- Check if we are symbolizing a layer
+                if params[2] and params[2] == "symbolize" then
+                    realterrain.symbology.flag = true
+                    -- Check for colorbrewer dependency
+                    if minetest.get_modpath("colorbrewer") ~= nil then
+                        -- Check if colorbrewer palette is specified correctly
+                        if params[3] then
+                            if minetest.registered_nodes["colorbrewer:"..params[3]] then
+                                -- Check which layer the symbology will apply to
+                                if params[4] == "dem" or params[4] == "chm" or params[4] == "urban" or params[4] == "cover" then 
+                                    realterrain.symbology.palette = params[3]
+                                    realterrain.symbology.layer = params[4]
+                                else
+                                    if params[4] then
+                                        return false, "layer specified '"..params[4].."' is not valid, cannot symbolize realterrain. Try realm realterrain load [dem key] symbolize [palette name] [dem | chm | urban | cover]"
+                                    else
+                                        return false, "missing a specified layer to symbolize, cannot symbolize realterrain. Try realm realterrain load [dem key] symbolize [palette name] [dem | chm | urban | cover]"
+                                    end
+                                end
+                            else
+                                return false, "colorbrewer palette specified '"..params[3].."' is not registered, cannot symbolize realterrain. Try realm realterrain load [dem key] symbolize [palette_name] or use the /palettes command to see all registered colorbrewer palettes."
+                            end
+                        else
+                            return false, "missing a specified colorbrewer palette, cannot symbolize realterrain. Try realm realterrain load [dem key] symbolize [palette_name] or use the /palettes command to see all registered colorbrewer palettes."
+                        end
+                    else
+                        return false, "colorbrewer mod is not installed, cannot symbolize realterrain"
+                    end
+                end
+                
+                local newRealm = Realm:NewFromDEM(realmName, key)
+                return true, "creat[ing][ed] new realm with name: " .. newRealm.Name .. "and ID: " .. newRealm.ID .. " from DEM with key " .. key
             end
-            return true
-        elseif (params[1] == "load") then
-            table.remove(params, 1)
-            local realmName = params[1]
-            if (realmName == "" or realmName == nil) then
-                realmName = "Unnamed Realm"
-            end
-
-            local key = params[1]
-            if (key == nil) then
-                key = ""
-            end
-
-            local DEM_PATH, config = realterrainManager.getDEM(key)
-
-            if (config == nil) then
-                return false, "DEM key: " .. tostring(key) .. " config file has not been registered with the system."
-            end
-
-            local newRealm = Realm:NewFromDEM(realmName, key)
-            return true, "creat[ing][ed] new realm with name: " .. newRealm.Name .. "and ID: " .. newRealm.ID .. " from DEM with key " .. key
-        else
-            return false, "unknown subcommand. Try realm realterrain list | realm realterrain load"
-        end
-    end }
+        end }
 
 commands["setspawn"] = {
     func = function(name, params)
