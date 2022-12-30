@@ -21,3 +21,4 @@ Licenses
 - Theme 10 sound is by [jamesfarrell_97](https://freesound.org/people/JamesFarrell_97/sounds/566504/) (CC BY 3.0)
 - Theme 11 sound is by [tomlija](https://freesound.org/people/Tomlija/sounds/110333/) (CC BY 3.0)
 - Map splashscreens (overlays 1-12) by pauldpickell (CC BY 4.0)
+- `mc_rules` header by pauldpickell (CC BY 4.0)
