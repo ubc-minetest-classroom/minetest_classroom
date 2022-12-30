@@ -16,7 +16,7 @@ local checkTimer = 0
 
 minetest.register_on_joinplayer(function(player)
     local playerName = player:get_player_name()
-    if mc_helpers.checkPrivs(player) then
+    if mc_core.checkPrivs(player) then
         -- player is teacher, do not time or kick
         players[playerName] = nil
     else

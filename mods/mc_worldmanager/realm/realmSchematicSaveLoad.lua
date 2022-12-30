@@ -40,7 +40,7 @@ function Realm:Save_Schematic(schematicName, author, mode)
                 end)
     elseif (mode == "worldedit") then
         local data, count = worldedit.serialize(self.StartPos, self.EndPos)
-        local compressed = mc_helpers.compress(data)
+        local compressed = mc_core.compress(data)
         local file, err = io.open(filepath .. ".wes", 'wb')
         if file then
             file:write(data)
@@ -158,7 +158,7 @@ function Realm:Load_Schematic(schematic, config)
             Debug.log("Unable to save realm; save file wouldn't open...")
         end
 
-        local decompressed = mc_helpers.decompress(data)
+        local decompressed = mc_core.decompress(data)
         worldedit.deserialize(schematicStartPos, decompressed)
     elseif (config.format == "procedural") then
         -- do nothing if we're a procedural map; it will be taking care of by the onSchematicPlaceFunction

@@ -41,7 +41,7 @@ function minetest_classroom.get_students()
 end
 
 function minetest_classroom.get_group_students(name)
-    name = mc_helpers.trim(name)
+    name = mc_core.trim(name)
     local group = minetest_classroom.get_group(name)
     if not group then
         return nil
