@@ -5,16 +5,16 @@ mc_mapper = {}
 local c_air = minetest.CONTENT_AIR
 local registered_nodes = minetest.registered_nodes
 
--- TODO: remove tool registration and intgrate with student notebook
+--[[ -- TODO: remove tool registration and intgrate with student notebook
 minetest.register_tool("mc_mapper:map", {
 	description = "map",
 	inventory_image = "map_block.png",
 	on_use = function(itemstack, user, pointed_thing)
 	mc_mapper.map_handler(itemstack,user,pointed_thing)
 	end,
-})
+}) ]]
 
-function mc_mapper.map_handler(itemstack, player, pointed_thing)
+function mc_mapper.map_handler(player)
 	local realm = Realm.GetRealmFromPlayer(player)
 	local pos = player:getpos()
 	pos.x, pos.y, pos.z = math.floor(pos.x), math.floor(pos.y), math.floor(pos.z)
@@ -26,27 +26,6 @@ function mc_mapper.map_handler(itemstack, player, pointed_thing)
 	local pp
 	local po = {x = 0, y = 0, z = 0}
 	local tile = ""
-	local yaw
-	local rotate = 0
-    yaw = player:get_look_yaw()
-    if yaw ~= nil then
-        -- Find rotation and texture based on yaw.
-        yaw = math.deg(yaw)
-    	yaw = math.fmod (yaw, 360)
-        if yaw<0 then yaw = 360 + yaw end
-        if yaw>360 then yaw = yaw - 360 end           
-        if yaw < 90 then
-            rotate = 90
-        elseif yaw < 180 then
-            rotate = 180
-        elseif yaw < 270 then
-            rotate = 270
-        else
-            rotate = 0
-        end
-        yaw = math.fmod(yaw, 90)
-        yaw = math.floor(yaw / 10) * 10   
-    end
 
 	-- Cache our results in player metadata to speed things and reduce calls to SQLlite database for large realms with many players
 	pmeta = player:get_meta()
@@ -318,38 +297,6 @@ function mc_mapper.map_handler(itemstack, player, pointed_thing)
 		pmeta:set_string("realmMapCache", minetest.serialize(realmMapCache))
 	end
 
-	p = {}
-	pp = #p
-	pp = pp + 1
-	p[pp] = "size[5.2,5]"
-
-	for i=1,32,1 do
-		for j=1,32,1 do
-			if mapar[i][j].im ~= nil then
-				-- The following for colorbrewer integration
-				if mapar[i][j].pa then
-					local y_im = math.ceil(mapar[i][j].p2/16)
-					local x_im = mapar[i][j].p2-((y_im-1)*16)
-					mapar[i][j].im = mapar[i][j].pa.."_palette.png\\^[sheet\\:16x16:"..tostring(x_im)..","..tostring(y_im) -- double backslash required to first escape lua and then escape the API
-				end
-				if mapar[i][j].y ~= mapar[i][j+1].y then mapar[i][j].im = mapar[i][j].im .. "^1black_blockt.png" end
-				if mapar[i][j].y ~= mapar[i][j-1].y then mapar[i][j].im = mapar[i][j].im .. "^1black_blockb.png" end
-				if mapar[i][j].y ~= mapar[i-1][j].y then mapar[i][j].im = mapar[i][j].im .. "^1black_blockl.png" end
-				if mapar[i][j].y ~= mapar[i+1][j].y then mapar[i][j].im = mapar[i][j].im .. "^1black_blockr.png" end
-				pp = pp + 1
-				p[pp] = "image[".. 0.15*(i) ..",".. 0.15*(32-j)+0.1 ..";0.2,0.2;" .. mapar[i][j].im .. "]"
-			end
-		end
-	end
-
-	pp = pp + 1
-	if rotate ~= 0 then
-		p[pp] = "image[".. 0.15*(16)+0.075 ..",".. 0.15*(16)-0.085 ..";0.4,0.4;d" .. yaw .. ".png^[transformFYR".. rotate .."]"
-	else
-		p[pp] = "image[".. 0.15*(16)+0.075 ..",".. 0.15*(16)-0.085 ..";0.4,0.4;d" .. yaw .. ".png^[transformFY]"
-	end
-
-	map = table.concat(p, "\n")
-
-	minetest.show_formspec(player_name, "mc_mapper:map", map)
+	return mapar
+	--minetest.show_formspec(player_name, "mc_mapper:map", map)
 end
