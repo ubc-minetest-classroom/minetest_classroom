@@ -6,7 +6,7 @@ function mc_realmportals.newPortal(modName, realmName, playerInstanced, schemati
     playerInstanced = playerInstanced or false
     schematic = schematic or nil
 
-    local portalColor = mc_helpers.stringToColor(realmName)
+    local portalColor = mc_core.stringToColor(realmName)
 
     minetest.register_node(modName .. ":" .. realmName .. "stone", {
         description = realmName .. " Portal Stone",

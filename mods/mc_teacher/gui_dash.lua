@@ -41,7 +41,7 @@ end
 
 -- Label the teacher in red
 minetest.register_on_joinplayer(function(player)
-    if mc_helpers.checkPrivs(player, priv_table) then
+    if mc_core.checkPrivs(player, priv_table) then
         player:set_nametag_attributes({ color = { r = 255, g = 0, b = 0 } })
     end
 end)
@@ -62,7 +62,7 @@ local mc_teacher_menu = {
 }
 
 local function show_teacher_menu(player)
-    if mc_helpers.checkPrivs(player, priv_table) then
+    if mc_core.checkPrivs(player, priv_table) then
         local pname = player:get_player_name()
         minetest.show_formspec(pname, "mc_teacher:menu", table.concat(mc_teacher_menu, ""))
         return true
@@ -81,7 +81,7 @@ local mc_teacher_tasks = {
 }
 
 local function show_tasks(player)
-    if mc_helpers.checkPrivs(player, priv_table) then
+    if mc_core.checkPrivs(player, priv_table) then
         local pname = player:get_player_name()
         minetest.show_formspec(pname, "mc_teacher:tasks", table.concat(mc_teacher_tasks, ""))
         return true
@@ -134,7 +134,7 @@ end
 local DASHBOARD_HEADER = "formspec_version[5]size[13,11]"
 
 local function get_player_list_formspec(player, context)
-    if not mc_helpers.checkPrivs(player, priv_table) then
+    if not mc_core.checkPrivs(player, priv_table) then
         return "label[0,0;" .. FS "Access denied" .. "]"
     end
 
@@ -395,7 +395,7 @@ local function get_player_list_formspec(player, context)
 end
 
 local function handle_results(player, context, fields)
-    if not mc_helpers.checkPrivs(player, priv_table) then
+    if not mc_core.checkPrivs(player, priv_table) then
         return false
     end
 
@@ -482,7 +482,7 @@ end
 
 local _contexts = {}
 local function show_players(player)
-    if mc_helpers.checkPrivs(player, priv_table) then
+    if mc_core.checkPrivs(player, priv_table) then
         local pname = player:get_player_name()
         local context = _contexts[pname] or {}
         _contexts[pname] = context
@@ -496,7 +496,7 @@ end
 local mc_teacher_lessons = "formspec_version[5]"
 
 local function show_lessons(player)
-    if mc_helpers.checkPrivs(player, priv_table) then
+    if mc_core.checkPrivs(player, priv_table) then
         local pname = player:get_player_name()
         minetest.show_formspec(pname, "mc_teacher:lessons", mc_teacher_lessons)
         return true
@@ -505,7 +505,7 @@ end
 
 -- Define the Manage Classrooms formspec
 local function show_classrooms(player)
-    if mc_helpers.checkPrivs(player, priv_table) then
+    if mc_core.checkPrivs(player, priv_table) then
         local mc_teacher_classrooms = {
             "formspec_version[5]",
             "size[14,14]",
@@ -610,7 +610,7 @@ local function get_reports_formspec(reports)
 end
 
 local function show_mail(player)
-    if mc_helpers.checkPrivs(player, priv_table) then
+    if mc_core.checkPrivs(player, priv_table) then
         local pname = player:get_player_name()
         minetest.show_formspec(pname, "mc_teacher:mail", get_reports_formspec(minetest_classroom.reports))
         return true
@@ -622,7 +622,7 @@ end
 
 -- Processing the form from the menu
 minetest.register_on_player_receive_fields(function(player, formname, fields)
-    if string.sub(formname, 1, 10) ~= "mc_teacher" or not mc_helpers.checkPrivs(player, priv_table) then
+    if string.sub(formname, 1, 10) ~= "mc_teacher" or not mc_core.checkPrivs(player, priv_table) then
         return false
     end
 
@@ -835,7 +835,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 end)
 
 function record_classroom(player, cc, sn, sy, sm, sd, ey, em, ed, map)
-    if mc_helpers.checkPrivs(player, priv_table) then
+    if mc_core.checkPrivs(player, priv_table) then
         local pname = player:get_player_name()
         pmeta = player:get_meta()
 
@@ -932,7 +932,7 @@ minetest.register_tool(tool_name, {
     on_use = function(itemstack, player, pointed_thing)
         local pname = player:get_player_name()
         -- Check for teacher privileges
-        if mc_helpers.checkPrivs(player, priv_table) then
+        if mc_core.checkPrivs(player, priv_table) then
             show_teacher_menu(player)
         end
     end,

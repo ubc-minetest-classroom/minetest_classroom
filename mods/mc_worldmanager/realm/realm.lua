@@ -282,7 +282,7 @@ function Realm.consolidateEmptySpace()
             local lastY = nil
             local lastZ = nil
 
-            for kx, xTable in mc_helpers.pairsByKeys(pointGrid) do
+            for kx, xTable in mc_core.pairsByKeys(pointGrid) do
                 if (lastX == nil) then
                     lastX = kx
                 end
@@ -301,7 +301,7 @@ function Realm.consolidateEmptySpace()
                 end
 
                 if (repeatFlag == false) then
-                    for ky, yTable in mc_helpers.pairsByKeys(xTable) do
+                    for ky, yTable in mc_core.pairsByKeys(xTable) do
                         if (lastY == nil) then
                             lastY = ky
                         end
@@ -313,7 +313,7 @@ function Realm.consolidateEmptySpace()
                             break
                         end
 
-                        for kz, zTable in mc_helpers.pairsByKeys(yTable) do
+                        for kz, zTable in mc_core.pairsByKeys(yTable) do
                             if (lastZ == nil) then
                                 lastZ = kz
                             end
