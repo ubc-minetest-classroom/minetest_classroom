@@ -499,7 +499,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 end)
 
 -- The student notebook for accessing the student actions
-minetest.register_tool(tool_name , {
+--[[minetest.register_tool(tool_name , {
 	description = "Notebook for students",
 	inventory_image = "notebook.png",
 	_mc_tool_privs = priv_table,
@@ -513,7 +513,7 @@ minetest.register_tool(tool_name , {
 	
 	on_drop = function(itemstack, dropper, pos)
 	end,
-})
+}) --]]
 -------------------------------
 
 
@@ -521,9 +521,11 @@ minetest.register_tool(tool_name , {
 --- MARKER HELPERS ---
 ----------------------
 
+--[[
 if minetest.get_modpath("mc_toolhandler") then
 	mc_toolhandler.register_tool_manager(tool_name, {privs = priv_table, inv_override = "main"})
 end
+--]]
 
 -- Functions and variables for placing markers
 hud = mhud.init()
