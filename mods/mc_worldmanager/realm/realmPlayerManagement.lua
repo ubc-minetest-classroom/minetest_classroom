@@ -35,6 +35,9 @@ function Realm:TeleportPlayer(player)
     -- We run the teleport functions of the new realm. These are added by non-core features, other mods, and realms.
     self:RunTeleportInFunctions(player)
 
+    -- Remove active huds that are realm-specific
+    mc_student.remove_marker(player:get_player_name())
+
     return true, "Successfully teleported to realm."
 end
 
@@ -90,7 +93,9 @@ end
 ---Loops through all currently connected players and updates the realm inhabitant data.
 ---This should not be necessary, but is useful for testing to see if the realm list has become out-of-sync.
 function Realm.ScanForPlayerRealms()
-    for k, realm in ipairs(Realm.realmDict) do
+    for k, realm in ipairs(
+        
+    ) do
         realm:set_tmpData("Inhabitants", {})
     end
 

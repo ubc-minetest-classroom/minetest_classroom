@@ -213,6 +213,148 @@ minetest.register_chatcommand("add_ipv4_range", {
 	end
 })
 
+function networking.modify_ipv4(player,startRange,endRange,add)
+	if mc_helpers.checkPrivs(player,{server = true}) then
+        local pname = player:get_player_name()
+        local startOctets, endOctets
+        -- Validate entry
+        if not startRange or startRange == "" then
+            minetest.chat_send_player(pname,"[networking] Error: Input was empty. Add an IPV4 address in the format '0.0.0.0'.")
+        elseif #startRange > 15 then
+            minetest.chat_send_player(pname,"[networking] Error: Input start range value had more characters than expected. Check the input string is no larger than the format '000.000.000.000'.")
+        elseif #startRange < 7 then
+            minetest.chat_send_player(pname,"[networking] Error: Input start range value had fewer characters than expected. Check the input string is no smaller than the format '0.0.0.0'.'")
+        else
+            startOctets = networking.parse(startRange,".")
+            -- Check if endRange was specified, otherwise treat as a single entry
+            if endRange then
+                if #endRange > 15 then
+                    minetest.chat_send_player(pname,"[networking] Error: Input end range value had more characters than expected. Check the input string is no larger than the format '000.000.000.000'.")
+                elseif #endRange < 7 then
+                    minetest.chat_send_player(pname,"[networking] Error: Input end range value had fewer characters than expected. Check the input string is no smaller than the format '0.0.0.0'.'")
+                else
+                    endOctets = networking.parse(endRange,".")
+                    if #startOctets == 4 and #endOctets == 4 then
+                        -- Validate all octets are integers
+                        if tonumber(startOctets[1]) and tonumber(startOctets[2]) and tonumber(startOctets[3]) and tonumber(startOctets[4]) and tonumber(endOctets[1]) and tonumber(endOctets[2]) and tonumber(endOctets[3]) and tonumber(endOctets[4]) then
+                            minetest.chat_send_player(pname,"[networking] Starting to add range of IPV4 addresses to the whitelist, this may take a moment. Please wait for the success message.")
+                            networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+                            networking.counter = 0
+                            if startOctets[1] == endOctets[1] then
+                                if startOctets[2] == endOctets[2] then
+                                    if startOctets[3] == endOctets[3] then
+                                        if startOctets[4] == endOctets[4] then
+                                            -- Start and end of range are equivalent, so there is only one IPV4 address to add in this range
+                                            networking.ipv4_whitelist[startRange] = add
+                                            networking.counter = networking.counter + 1
+                                        else
+                                            -- First three octets are equivalent
+                                            if startOctets[4] < endOctets[4] then
+                                                for oct4=tonumber(startOctets[4]),tonumber(endOctets[4]),1 do
+                                                    local address = startOctets[1].."."..startOctets[2].."."..startOctets[3].."."..tostring(oct4)
+                                                    networking.ipv4_whitelist[address] = add
+                                                    networking.counter = networking.counter + 1
+                                                end
+                                            else
+                                                minetest.chat_send_player(pname,"[networking] Error: Input '"..input.."' was misspecified. The start of the range comes after the end of the range. Check input and try again.")
+                                            end
+                                        end
+                                    else
+                                        -- First two octets are equivalent
+                                        if tonumber(startOctets[3]) < tonumber(endOctets[3]) then
+                                            for oct3=tonumber(startOctets[3]),tonumber(endOctets[3]),1 do
+                                                if oct3 == tonumber(endOctets[3]) then lastOct = tonumber(endOctets[4]) else lastOct = 255 end
+                                                for oct4=tonumber(startOctets[4]),lastOct,1 do
+                                                    local address = startOctets[1].."."..startOctets[2].."."..tostring(oct3).."."..tostring(oct4)
+                                                    networking.ipv4_whitelist[address] = add
+                                                    networking.counter = networking.counter + 1
+                                                end
+                                            end
+                                        else
+                                            minetest.chat_send_player(pname,"[networking] Error: Input '"..input.."' was misspecified. The start of the range comes after the end of the range. Check input and try again.")
+                                        end
+                                    end
+                                else
+                                    -- First octet is equivalent
+                                    if tonumber(startOctets[2]) < tonumber(endOctets[2]) then
+                                        for oct2=tonumber(startOctets[2]),tonumber(endOctets[2]),1 do
+                                            for oct3=tonumber(startOctets[3]),lastOct3,1 do
+                                                if oct3 == tonumber(endOctets[3]) then lastOct = tonumber(endOctets[4]) else lastOct = 255 end
+                                                for oct4=tonumber(startOctets[4]),lastOct,1 do
+                                                    local address = startOctets[1].."."..tostring(oct2).."."..tostring(oct3).."."..tostring(oct4)
+                                                    networking.ipv4_whitelist[address] = add
+                                                    networking.counter = networking.counter + 1
+                                                end
+                                            end
+                                        end
+                                    else
+                                        minetest.chat_send_player(pname,"[networking] Error: Input '"..input.."' was misspecified. The start of the range comes after the end of the range. Check input and try again.")
+                                        return
+                                    end
+                                end
+                            else
+                                -- No octets are equivalent
+                                if tonumber(startOctets[1]) < tonumber(endOctets[1]) then
+                                    for oct1=tonumber(startOctets[1]),tonumber(endOctets[1]),1 do
+                                        for oct2=tonumber(startOctets[2]),tonumber(endOctets[2]),1 do
+                                            for oct3=tonumber(startOctets[3]),tonumber(endOctets[3]),1 do
+                                                if oct3 == tonumber(endOctets[3]) then lastOct = tonumber(endOctets[4]) else lastOct = 255 end
+                                                for oct4=tonumber(startOctets[4]),lastOct,1 do
+                                                    local address = tostring(oct2).."."..tostring(oct2).."."..tostring(oct3).."."..tostring(oct4)
+                                                    networking.ipv4_whitelist[address] = add
+                                                    networking.counter = networking.counter + 1
+                                                end
+                                            end
+                                        end
+                                    end
+                                else
+                                    minetest.chat_send_player(pname,"[networking] Error: Input '"..input.."' was misspecified. The start of the range comes after the end of the range. Check input and try again.")
+                                    return
+                                end
+                            end
+                            networking.storage:set_string("ipv4_whitelist", minetest.serialize(networking.ipv4_whitelist))
+                            if add then
+                                minetest.chat_send_player(pname,"[networking] Success: Total of "..tostring(networking.counter).." IPV4 addresses in range of "..startRange.." to "..endRange.." were added to the whitelist.")
+                            else
+                                minetest.chat_send_player(pname,"[networking] Success: Total of "..tostring(networking.counter).." IPV4 addresses in range of "..startRange.." to "..endRange.." were removed from the whitelist.")
+                            end
+                        else
+                            minetest.chat_send_player(pname,"[networking] Error: Input '"..input.."' was misspecified. Check the input string is in the format of '0.0.0.0'.")
+                            return
+                        end
+                    else
+                        minetest.chat_send_player(pname,"[networking] Error: Input '"..input.."' was misspecified. Check the input string is in the format of '0.0.0.0'.")
+                        return
+                    end
+                end
+            else
+                if #startOctets == 4 then
+                    if tonumber(startOctets[1]) and tonumber(startOctets[2]) and tonumber(startOctets[3]) and tonumber(startOctets[4]) then
+                        networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+                        if not networking.ipv4_whitelist[startRange] then
+                            networking.ipv4_whitelist[startRange] = add
+                            networking.storage:set_string("ipv4_whitelist", minetest.serialize(networking.ipv4_whitelist))
+                            if add then
+                                minetest.chat_send_player(pname,"[networking] Success: Added IPV4 address at '"..startRange.."'.")
+                            else
+                                minetest.chat_send_player(pname,"[networking] Success: Removed IPV4 address at '"..startRange.."'.")
+                            end
+                        else
+                            minetest.chat_send_player(pname,"[networking] Warning: Input IPV4 address '"..startRange.."' is already in the whitelist.")
+                        end
+                    else
+                        minetest.chat_send_player(pname,"[networking] Error: Expected four octets of format '0.0.0.0'. Check input '"..startRange.."' and try again.")
+                    end
+                else 
+                    minetest.chat_send_player(pname,"[networking] Error: Expected four octets of format '0.0.0.0'. Check input '"..startRange.."' and try again.")
+                end
+            end
+        end
+    else
+        minetest.chat_send_player(pname,"[networking] Error: You do not have the Server privilege to run this function.")
+    end
+end
+
 minetest.register_chatcommand("remove_ipv4", {
 	description = "Removes a single IPV4 address or a comma-separated list of IPV4 addresses from the whitelist.",
 	privs = {server = true},
@@ -307,9 +449,28 @@ minetest.register_chatcommand("whitelist", {
 			if not networking.ipv4_whitelist[ipv4] then
 				minetest.chat_send_player(pname,"[networking] WARNING: You need to join from a whitelisted IP address before you can enable the whitelist otherwise you will be locked out of the server.")
 			else
-				networking.storage:set_string("enabled", minetest.serialize(false))
+				networking.storage:set_string("enabled", minetest.serialize(true))
 				minetest.chat_send_player(pname,"[networking] Whitelist is now enabled.")
 			end
         end
 	end
 })
+
+function networking.toggle_whitelist(player)
+    local pname = player:get_player_name()
+    local state = minetest.deserialize(networking.storage:get_string("enabled"))
+    if state then
+		networking.storage:set_string("enabled", minetest.serialize(false))
+		minetest.chat_send_player(pname,"[networking] Whitelist is now disabled.")
+    else
+		-- Quick check to ensure current admin player is connected from a whitelisted IP to avoid unintentional lock-out
+		local ipv4 = minetest.get_player_ip(pname)
+		networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+		if not networking.ipv4_whitelist[ipv4] then
+			minetest.chat_send_player(pname,"[networking] WARNING: You need to join from a whitelisted IP address before you can enable the whitelist otherwise you will be locked out of the server.")
+		else
+			networking.storage:set_string("enabled", minetest.serialize(true))
+			minetest.chat_send_player(pname,"[networking] Whitelist is now enabled.")
+		end
+    end
+end

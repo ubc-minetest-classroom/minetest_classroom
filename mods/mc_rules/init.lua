@@ -1,6 +1,5 @@
 mc_rules = {}
 mc_rules.meta = minetest.get_mod_storage()
-mc_rules.data = mc_rules.meta:get_string("rules")
 local priv_table = { server = true }
 
 function mc_rules.show_rules_formspec(accepted)
@@ -43,7 +42,7 @@ function mc_rules.show_edit_formspec(message)
     fs[#fs+1] = "no_prepend[]"
     fs[#fs+1] = "bgcolor[#00000000]"
     fs[#fs+1] = "image[0,0;10,13;background.png]"
-    fs[#fs+1] = "image[0.5,0;9,3.6;header.png]"
+    fs[#fs+1] = "image[0.2,0;9.6,3.84;header.png]"
     fs[#fs+1] = "style_type[label;font=bold]"
     fs[#fs+1] = "label[1,3;"..minetest.colorize("#FFF", "MINETEST CLASSROOM").."]"
     fs[#fs+1] = "style_type[label;font_size=*2.5;font=bold]"
@@ -140,6 +139,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if mc_helpers.checkPrivs(player, priv_table) then
                 mc_rules.meta:set_string("rules",fields.message)
                 mc_rules.show_edit_formspec(fields.message)
+                local pmeta = player:get_meta()
+                pmeta:set_int("mc_rules", 1)
             end
         else
             -- Unhandled exit, treat as dismiss
