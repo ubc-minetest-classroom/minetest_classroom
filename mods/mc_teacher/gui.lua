@@ -3,7 +3,7 @@ function mc_teacher.show_controller_fs(player,tab)
 	local controller_height = 10.2
     local pname = player:get_player_name()
 	local pmeta = player:get_meta()
-    if mc_helpers.checkPrivs(player,{teacher = true}) then
+	if mc_helpers.checkPrivs(player) then
 		local teacher_formtable = {
 			"formspec_version[6]",
 			"size[",
@@ -387,17 +387,7 @@ function mc_teacher.show_controller_fs(player,tab)
 				return fs
 			end,
 		}
-        -- debugging
-        if not tab then
-            if not pmeta:get_string("default_teacher_tab") then
-                if not mc_teacher.fs_context.tab then
-                end
-            end
-        end
-        local tab_index = tab or pmeta:get_string("default_teacher_tab") or mc_teacher.fs_context.tab or "1"
-        print(tab_index)
-        if not tab_map then  print("tab_map is nil") end
-		table.insert(teacher_formtable, table.concat(tab_map[tab_index](), ""))
+		table.insert(teacher_formtable, table.concat(tab_map[tab or pmeta:get_string("default_teacher_tab") or mc_teacher.fs_context.tab or "1"](), ""))
 		minetest.show_formspec(pname, "mc_teacher:controller_fs", table.concat(teacher_formtable, ""))
 		return true
 	end

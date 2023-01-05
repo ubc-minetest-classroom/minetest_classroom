@@ -16,7 +16,7 @@ minetest.register_tool("mc_mapper:map", {
 
 function mc_mapper.map_handler(player)
 	local realm = Realm.GetRealmFromPlayer(player)
-	local pos = player:get_pos()
+	local pos = player:getpos()
 	pos.x, pos.y, pos.z = math.floor(pos.x), math.floor(pos.y), math.floor(pos.z)
 	local ceiling = realm.EndPos.y-1
 	local player_name = player:get_player_name()
@@ -28,8 +28,8 @@ function mc_mapper.map_handler(player)
 	local tile = ""
 
 	-- Cache our results in player metadata to speed things and reduce calls to SQLlite database for large realms with many players
-	local pmeta = player:get_meta()
-    local realmMapCache = minetest.deserialize(pmeta:get_string("realmMapCache"))
+	pmeta = player:get_meta()
+    realmMapCache = minetest.deserialize(pmeta:get_string("realmMapCache"))
 	if realmMapCache then
 		-- Tile cache exists, check if the current realmID is the same as what was cached, otherwise we need to start caching again
 		if realmMapCache.realmID == realm.realmID then

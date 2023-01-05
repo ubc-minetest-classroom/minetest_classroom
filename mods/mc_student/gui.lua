@@ -361,7 +361,7 @@ function mc_student.show_notebook_fs(player,tab)
 						fscount = fscount + 1
 						if fscount < 15 then fsx = 1.1 end
 						if fscount == 1 then 
-							fs[#fs + 1] = "style_type[label;font_size=*1;font=bold]label["
+							fs[#fs + 1] = "style_type[label;font=bold]label["
 							fs[#fs + 1] = tostring(fsx)
 							fs[#fs + 1] = ","
 							fs[#fs + 1] = tostring(fsy)
@@ -383,7 +383,7 @@ function mc_student.show_notebook_fs(player,tab)
 							fs[#fs + 1] = tostring(fsy)
 							fs[#fs + 1] = ";0.454,0.568;"
 							fs[#fs + 1] = ping_texture
-							fs[#fs + 1] = "]style_type[label;font_size=*1;font=normal]label["
+							fs[#fs + 1] = "]style_type[label;font=normal]label["
 							fs[#fs + 1] = tostring(fsx+0.55)
 							fs[#fs + 1] = ","
 							fs[#fs + 1] = tostring(fsy+0.35)
@@ -506,7 +506,7 @@ function mc_student.show_notebook_fs(player,tab)
 						end
 						if studentidx == 0 then
 							fsy = fsy + 0.4
-							fs[#fs + 1] = "style_type[label;font_size=*1;font=bold]label["
+							fs[#fs + 1] = "label["
 							fs[#fs + 1] = tostring(fsx)
 							fs[#fs + 1] = ","
 							fs[#fs + 1] = tostring(fsy)
@@ -524,7 +524,7 @@ function mc_student.show_notebook_fs(player,tab)
 							fs[#fs + 1] = tostring(fsy)
 							fs[#fs + 1] = ";0.454,0.568;"
 							fs[#fs + 1] = ping_texture
-							fs[#fs + 1] = "]style_type[label;font_size=*1;font=normal]label["
+							fs[#fs + 1] = "]label["
 							fs[#fs + 1] = tostring(fsx+0.55)
 							fs[#fs + 1] = ","
 							fs[#fs + 1] = tostring(fsy+0.35)
