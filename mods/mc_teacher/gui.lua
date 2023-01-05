@@ -387,8 +387,8 @@ function mc_teacher.show_controller_fs(player,tab)
 				return fs
 			end,
 		}
-        -- tab or pmeta:get_string("default_teacher_tab") or  or 
-		table.insert(teacher_formtable, table.concat(tab_map[mc_teacher.fs_context.tab or "1"](), ""))
+        -- tab or  or  or 
+		table.insert(teacher_formtable, table.concat(tab_map[pmeta:get_string("default_teacher_tab") or mc_teacher.fs_context.tab or "1"](), ""))
 		minetest.show_formspec(pname, "mc_teacher:controller_fs", table.concat(teacher_formtable, ""))
 		return true
 	end
