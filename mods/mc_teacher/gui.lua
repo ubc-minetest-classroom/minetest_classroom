@@ -3,7 +3,7 @@ function mc_teacher.show_controller_fs(player,tab)
 	local controller_height = 10.2
     local pname = player:get_player_name()
 	local pmeta = player:get_meta()
-	if mc_helpers.checkPrivs(player) then
+	if mc_helpers.checkPrivs(player,{teacher = true}) then
 		local teacher_formtable = {
 			"formspec_version[6]",
 			"size[",
@@ -114,24 +114,25 @@ function mc_teacher.show_controller_fs(player,tab)
                         end 
                     end
                     local unique_chat_players = {}
-                    if chatmessages then
-                        minetest.chat_send_all("there are chatmessages")
-                        for pnamec,_ in pairs(chatmessages) do
-                            minetest.chat_send_all("   "..pnamec)
-                            table.insert(unique_chat_players,pnamec)
-                            table.insert(indexed_chat_players,pnamec)
-                        end
-                    end
                     if directmessages then
                         minetest.chat_send_all("there are directmessages")
                         for pnamed,_ in pairs(directmessages) do
                             minetest.chat_send_all("   "..pnamed)
+                            table.insert(unique_chat_players,pnamed)
+                            table.insert(indexed_chat_players,pnamed)
+                        end
+                    end
+
+                    if chatmessages then
+                        minetest.chat_send_all("there are chatmessages")
+                        for pnamec,_ in pairs(chatmessages) do
                             for pnamec,_ in pairs(unique_chat_players) do
                                 if pnamed ~= pnamec then
                                     table.insert(unique_chat_players,pnamed)
                                     table.insert(indexed_chat_players,pnamed)
                                 end
                             end
+                            minetest.chat_send_all("   "..pnamec)
                         end
                     end
                     -- Send indexed_chat_players to mod storage so that we can use it later for delete/clear callbacks
