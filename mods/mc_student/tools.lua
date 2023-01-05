@@ -6,7 +6,11 @@ minetest.register_tool("mc_student:notebook" , {
         local pname = player:get_player_name()
 		local pmeta = player:get_meta()
 		if mc_core.checkPrivs(player,{interact = true}) then
-			mc_student.show_notebook_fs(player,pmeta:get_string("default_student_tab"))
+			if pmeta:get_string("default_student_tab") ~= "" then
+				mc_student.show_notebook_fs(player,pmeta:get_string("default_student_tab"))
+			else
+				mc_student.show_notebook_fs(player,"1")
+			end
 		end
 	end,
 	on_drop = function(itemstack, dropper, pos)

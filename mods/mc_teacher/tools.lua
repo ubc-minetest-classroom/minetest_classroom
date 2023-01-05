@@ -5,10 +5,13 @@ minetest.register_tool("mc_teacher:controller", {
     _mc_tool_privs = {teacher = true},
     -- Left-click the tool activates the teacher menu
     on_use = function(itemstack, player, pointed_thing)
-        local pname = player:get_player_name()
         local pmeta = player:get_meta()
         if mc_helpers.checkPrivs(player) then
-            mc_teacher.show_controller_fs(player,pmeta:get_string("default_student_tab"))
+            if pmeta:get_string("default_student_tab") ~= "" then
+				mc_teacher.show_controller_fs(player,pmeta:get_string("default_teacher_tab"))
+			else
+				mc_teacher.show_controller_fs(player,"1")
+			end
         end
     end,
     on_drop = function(itemstack, dropper, pos)

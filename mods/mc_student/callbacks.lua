@@ -34,25 +34,46 @@ minetest.register_on_chatcommand(function(name, command, params)
 		-- For some reason, the params in this callback is a string rather than a table; need to parse the player name
 		local params_table = mc_helpers.split(params, " ")
 		local to_player = params_table[1]
-		local message = string.sub(params, #to_player+2, #params)
-		local key = tostring(os.date("%d-%m-%Y %H:%M:%S"))
-		local directmessages = minetest.deserialize(mc_student.meta:get_string("direct_messages"))
-		if directmessages then
-			directmessages[name] = {
-				[to_player] = {
-					[key] = message
-				}
-			}
-		else
-			directmessages = {
-				[name] = {
-					[to_player] = {
-						[key] = message
+		if minetest.get_player_by_name(to_player) then
+			local message = string.sub(params, #to_player+2, #params)
+			local key = tostring(os.date("%d-%m-%Y %H:%M:%S"))
+			local directmessages = minetest.deserialize(mc_student.meta:get_string("direct_messages"))
+			if directmessages then
+				local playermessages = directmessages[name]
+				if playermessages then
+					local toplayermessages = playermessages[to_player]
+					if toplayermessages then
+						toplayermessages[key] = message
+						playermessages[to_player] = toplayermessages
+						directmessages[name] = playermessages
+					else
+						local newtoplayer = {
+							[key] = message
+						}
+						playermessages[to_player] = newtoplayer
+						directmessages[name] = playermessages
+					end
+				else
+					directmessages[name] = {
+						[to_player] = {
+							[key] = message
+						}
+					}
+				end
+			else
+				directmessages = {
+					[name] = {
+						[to_player] = {
+							[key] = message
+						}
 					}
 				}
-			}
+			end
+			mc_student.meta:set_string("direct_messages", minetest.serialize(directmessages))
+		else
+			-- Submitted name is not a player, probably a typo, do not log
+			return
 		end
-		mc_student.meta:set_string("direct_messages", minetest.serialize(directmessages))
 	end
 end)
 
@@ -61,10 +82,20 @@ minetest.register_on_chat_message(function(name, message)
 	local key = tostring(os.date("%d-%m-%Y %H:%M:%S"))
 	local chatmessages = minetest.deserialize(mc_student.meta:get_string("chat_messages"))
 	if chatmessages then
-		chatmessages[name] = message
+		local playermessages = chatmessages[name]
+		if playermessages then
+			playermessages[key] = message
+			chatmessages[name] = playermessages
+		else
+			chatmessages[name] = {
+				[key] = message
+			}
+		end
 	else
 		chatmessages = {
-			[name] = message
+			[name] = {
+				[key] = message
+			}
 		}
 	end
 	mc_student.meta:set_string("chat_messages", minetest.serialize(chatmessages))
