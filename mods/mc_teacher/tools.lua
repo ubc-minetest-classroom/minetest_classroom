@@ -16,5 +16,5 @@ minetest.register_tool("mc_teacher:controller", {
 })
 
 if minetest.get_modpath("mc_toolhandler") then
-	mc_toolhandler.register_tool_manager("mc_teacher:controller", {privs = priv_table, inv_override = "main"})
+	mc_toolhandler.register_tool_manager("mc_teacher:controller", {privs = {teacher = true}, inv_override = "main"})
 end
