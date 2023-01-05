@@ -387,7 +387,15 @@ function mc_teacher.show_controller_fs(player,tab)
 				return fs
 			end,
 		}
-		table.insert(teacher_formtable, table.concat(tab_map[tab or pmeta:get_string("default_teacher_tab") or mc_teacher.fs_context.tab or "1"](), ""))
+        -- debugging
+        if not tab then
+            if not pmeta:get_string("default_teacher_tab") then
+                if not mc_teacher.fs_context.tab then
+                end
+            end
+        end
+        local tab_index = tab or pmeta:get_string("default_teacher_tab") or mc_teacher.fs_context.tab or "1"
+		table.insert(teacher_formtable, table.concat(tab_map[tab_index](), ""))
 		minetest.show_formspec(pname, "mc_teacher:controller_fs", table.concat(teacher_formtable, ""))
 		return true
 	end
