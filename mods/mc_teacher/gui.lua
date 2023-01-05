@@ -133,12 +133,6 @@ function mc_teacher.show_controller_fs(player,tab)
                                 end
                             end
                             minetest.chat_send_all("   "..pnamec)
-                         end
-                            end
-                            minetest.chat_send_all("   "..pnamec)
-                          end
-                            end
-                            minetest.chat_send_all("   "..pnamec)
                         end
                     end
                     -- Send indexed_chat_players to mod storage so that we can use it later for delete/clear callbacks
