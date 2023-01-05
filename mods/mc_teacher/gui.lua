@@ -387,8 +387,9 @@ function mc_teacher.show_controller_fs(player,tab)
 				return fs
 			end,
 		}
-        -- tab or  or  or 
-		table.insert(teacher_formtable, table.concat(tab_map[pmeta:get_string("default_teacher_tab") or mc_teacher.fs_context.tab or "1"](), ""))
+        -- pmeta:get_string("default_teacher_tab") -- this is causing fatal crash 
+        -- is there a global pmeta somewhere else that makes this nil?
+		table.insert(teacher_formtable, table.concat(tab_map[tab or mc_teacher.fs_context.tab or "1"](), ""))
 		minetest.show_formspec(pname, "mc_teacher:controller_fs", table.concat(teacher_formtable, ""))
 		return true
 	end
