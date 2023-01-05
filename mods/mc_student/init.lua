@@ -1,4 +1,4 @@
--- Global variable
+-- Global variables
 mc_student = {
 	path = minetest.get_modpath("mc_student"),
 	teachers = {},

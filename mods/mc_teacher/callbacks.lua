@@ -58,12 +58,61 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             mc_teacher.fs_context.tab = fields.record_nav
             mc_teacher.show_controller_fs(player,mc_teacher.fs_context.tab)
 		end
+        if fields.playerlist then
+			local event = minetest.explode_textlist_event(fields.playerlist)
+			if event.type == "CHG" then
+				mc_teacher.fs_context.chat_player_index = event.index
+                mc_teacher.show_controller_fs(player,"4")
+			end
+        end
+        if fields.playerchatlist then
+			local event = minetest.explode_textlist_event(fields.playerchatlist)
+			if event.type == "CHG" then
+				mc_teacher.fs_context.chat_index = event.index
+                mc_teacher.show_controller_fs(player,"4")
+			end
+        end
 		if fields.default_tab then
 			pmeta:set_string("default_teacher_tab",mc_teacher.fs_context.tab)
 			mc_teacher.show_controller_fs(player,mc_teacher.fs_context.tab)
 		end
-
-		if fields.submitmessage then
+		if fields.clearlog then
+            local chatmessages = minetest.deserialize(mc_student.meta:get_string("chat_messages"))
+            local directmessages = minetest.deserialize(mc_student.meta:get_string("direct_messages"))
+            local pname = mc_teacher.fs_context.indexed_chat_players[tonumber(mc_teacher.fs_context.chat_player_index)]
+            if directmessages then
+                local player_dm_log = directmessages[pname]
+                if player_dm_log then
+                    for to_player,_ in pairs(player_dm_log) do
+                        local to_player_dms = player_dm_log[to_player]
+                        for key,_ in pairs(to_player_dms) do
+                            to_player_dms[key] = nil
+                        end
+                        player_dm_log[to_player] = to_player_dms
+                    end
+                    directmessages[pname] = player_dm_log
+                end
+                directmessages[pname] = {}
+                if directmessages[pname] then directmessages[pname] = nil end
+            end
+            if chatmessages then
+                local player_chat_log = chatmessages[pname]
+                if player_chat_log then
+                    for key,_ in pairs(player_chat_log) do
+                        player_chat_log[key] = nil
+                    end
+                    chatmessages[pname] = player_chat_log
+                end
+                chatmessages[pname] = {}
+                if chatmessages[pname] then chatmessages[pname] = nil end
+            end
+            mc_student.meta:set_string("chat_messages", minetest.serialize(chatmessages))
+            mc_student.meta:set_string("direct_messages", minetest.serialize(directmessages))
+            mc_teacher.show_controller_fs(player,"4")
+        elseif fields.deletemessage then
+            -- TODO: delete a specific message
+            mc_teacher.show_controller_fs(player,"4")
+        elseif fields.submitmessage then
             minetest.chat_send_all(minetest.colorize("#FF00FF","[Minetest Classroom] "..fields.servermessage))
 			mc_teacher.show_controller_fs(player,"5")
         elseif fields.submitsched then

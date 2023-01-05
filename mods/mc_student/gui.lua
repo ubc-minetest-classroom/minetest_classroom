@@ -6,7 +6,7 @@ function mc_student.show_notebook_fs(player,tab)
 	local notebook_height = 10.2
     local pname = player:get_player_name()
 	local pmeta = player:get_meta()
-	if mc_core.checkPrivs(player,{interact = true}) then
+	if mc_helpers.checkPrivs(player,{interact = true}) then
 		local student_formtable = {
 			"formspec_version[6]",
 			"size[",
