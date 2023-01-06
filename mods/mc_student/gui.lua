@@ -41,6 +41,25 @@ function mc_student.show_notebook_fs(player,tab)
 				fs[#fs + 1] = ";overviewmsg;;"
 				fs[#fs + 1] = "This is the Student Notebook, your tool for accessing classrooms and other features. You cannot drop or delete the Student Notebook, so you will never lose it, but you can move it out of your hotbar and into your inventory. \n   The world that you have spawned into is known as the Spawn Classroom. From here, you can teleport to other classrooms from the tab above. \n   Use the Map tab to see a quick map of your surroundings, record and share spatial notes within classrooms. If you are on a multiplayer server, you can check Players Online and the Appearance tab will allow you to customize your skin and flair. \n    When you joined, you accepted the Server Rules (if they were set) and you can view those at anytime or report bugs or issues under the Rules and Help tab."
 				fs[#fs + 1] = "]"
+
+				-- page two
+				fsx = ((notebook_width/2)-(((notebook_width/8)*3)))/2
+				fsy = 1
+				fs[#fs + 1] = "style_type[label;font_size=*1.2]label["
+				fs[#fs + 1] = tostring(notebook_width/2+3.3)
+				fs[#fs + 1] = ",0.4;"
+				fs[#fs + 1] = minetest.colorize("#000","Student Dashboard")
+				fs[#fs + 1] = "]style[classrooms;bgcolor=#FFFFFF]image_button["
+				fs[#fs + 1] = tostring(notebook_width/2+1)
+				fs[#fs + 1] = ",0.85;1.514,1.43;icon_classrooms.png;classrooms;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
+				fs[#fs + 1] = tostring(notebook_width/2+1)
+				fs[#fs + 1] = ",2.475;1.514,1.43;icon_map.png;map;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
+				fs[#fs + 1] = tostring(notebook_width/2+1)
+				fs[#fs + 1] = ",4.1;1.514,1.43;icon_players_online.png;playersonline;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
+				fs[#fs + 1] = tostring(notebook_width/2+1)
+				fs[#fs + 1] = ",5.725;1.514,1.43;icon_appearance.png;appearance;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
+				fs[#fs + 1] = tostring(notebook_width/2+1)
+				fs[#fs + 1] = ",7.35;1.514,1.43;icon_help.png;help;;true;false;]"
 				return fs
 			end,
 			["2"] = function() -- CLASSROOMS
