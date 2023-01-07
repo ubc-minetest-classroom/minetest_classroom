@@ -115,16 +115,13 @@ function mc_teacher.show_controller_fs(player,tab)
                     end
                     local unique_chat_players = {}
                     if directmessages then
-                        minetest.chat_send_all("there are directmessages")
                         for pnamed,_ in pairs(directmessages) do
-                            minetest.chat_send_all("   "..pnamed)
                             table.insert(unique_chat_players,pnamed)
                             table.insert(indexed_chat_players,pnamed)
                         end
                     end
 
                     if chatmessages then
-                        minetest.chat_send_all("there are chatmessages")
                         for pnamec,_ in pairs(chatmessages) do
                             for pnamec,_ in pairs(unique_chat_players) do
                                 if pnamed ~= pnamec then
@@ -132,7 +129,6 @@ function mc_teacher.show_controller_fs(player,tab)
                                     table.insert(indexed_chat_players,pnamed)
                                 end
                             end
-                            minetest.chat_send_all("   "..pnamec)
                         end
                     end
                     -- Send indexed_chat_players to mod storage so that we can use it later for delete/clear callbacks
@@ -183,11 +179,8 @@ function mc_teacher.show_controller_fs(player,tab)
                             end
                         end
                         -- Direct messages first
-                        minetest.chat_send_all("countdm = "..countdm)
                         if player_dm_log then
-                            minetest.chat_send_all("player_dm_log is not nil")
                             for to_player,_ in pairs(player_dm_log) do
-                                minetest.chat_send_all("player_dm_log: to_playr is "..to_player)
                                 counter = 0
                                 for key,message in pairs(player_dm_log[to_player]) do
                                     counter = counter + 1
@@ -387,10 +380,7 @@ function mc_teacher.show_controller_fs(player,tab)
 				return fs
 			end,
 		}
-        -- pmeta:get_string("default_teacher_tab") -- this is causing fatal crash
-        -- is there a global pmeta somewhere else that makes this nil?
-        -- tab also causes crash
-		table.insert(teacher_formtable, table.concat(tab_map[tab or mc_teacher.fs_context.tab or "1"](), ""))
+		table.insert(teacher_formtable, table.concat(tab_map[tab or pmeta:get_string("default_teacher_tab") or mc_teacher.fs_context.tab or "1"](), ""))
 		minetest.show_formspec(pname, "mc_teacher:controller_fs", table.concat(teacher_formtable, ""))
 		return true
 	end

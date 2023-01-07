@@ -93,9 +93,7 @@ end
 ---Loops through all currently connected players and updates the realm inhabitant data.
 ---This should not be necessary, but is useful for testing to see if the realm list has become out-of-sync.
 function Realm.ScanForPlayerRealms()
-    for k, realm in ipairs(
-        
-    ) do
+    for k, realm in ipairs(Realm.realmDict) do
         realm:set_tmpData("Inhabitants", {})
     end
 
@@ -140,5 +138,12 @@ end
 ---GetPlayerCount retrieves the number of players currently in this realm.
 ---@return number of players currently in this realm.
 function Realm:GetPlayerCount()
-    return #self:get_tmpData("Inhabitants")
+    local inhabitants = self:get_tmpData("Inhabitants")
+    if inhabitants then
+        local countInhabitants = 0
+        for _ in pairs(inhabitants) do countInhabitants = countInhabitants + 1 end
+        return countInhabitants
+    else
+        return 0
+    end
 end

@@ -1,4 +1,5 @@
 local selectedCoord = nil
+local selectedRealmID = nil
 local marker_expiry = 30
 
 function mc_student.show_notebook_fs(player,tab)
@@ -20,6 +21,9 @@ function mc_student.show_notebook_fs(player,tab)
 		}
 		local tab_map = {
 			["1"] = function() -- OVERVIEW
+				local fsx, fsy, last_height
+				fsx = notebook_width/2+1
+				fsy = 0.85
 				local fs = {}
 				if pmeta:get_string("default_student_tab") == "1" then
 					fs[#fs + 1] = "style_type[label;font_size=*0.8;textcolor=#000]label[0.2,"
@@ -38,31 +42,147 @@ function mc_student.show_notebook_fs(player,tab)
 				fs[#fs + 1] = tostring((notebook_width/8)*3.5)
 				fs[#fs + 1] = ","
 				fs[#fs + 1] = tostring(notebook_height-1.7)
-				fs[#fs + 1] = ";overviewmsg;;"
-				fs[#fs + 1] = "This is the Student Notebook, your tool for accessing classrooms and other features. You cannot drop or delete the Student Notebook, so you will never lose it, but you can move it out of your hotbar and into your inventory. \n   The world that you have spawned into is known as the Spawn Classroom. From here, you can teleport to other classrooms from the tab above. \n   Use the Map tab to see a quick map of your surroundings, record and share spatial notes within classrooms. If you are on a multiplayer server, you can check Players Online and the Appearance tab will allow you to customize your skin and flair. \n    When you joined, you accepted the Server Rules (if they were set) and you can view those at anytime or report bugs or issues under the Rules and Help tab."
-				fs[#fs + 1] = "]"
-
-				-- page two
-				fsx = ((notebook_width/2)-(((notebook_width/8)*3)))/2
-				fsy = 1
+				fs[#fs + 1] = ";overviewmsg;;This is the Student Notebook, your tool for accessing classrooms and other features. You cannot drop or delete the Student Notebook, so you will never lose it, but you can move it out of your hotbar and into your inventory.]"
+				fsx = notebook_width/2+1
+				fsy = 0.85
 				fs[#fs + 1] = "style_type[label;font_size=*1.2]label["
 				fs[#fs + 1] = tostring(notebook_width/2+3.3)
 				fs[#fs + 1] = ",0.4;"
 				fs[#fs + 1] = minetest.colorize("#000","Student Dashboard")
 				fs[#fs + 1] = "]style[classrooms;bgcolor=#FFFFFF]image_button["
-				fs[#fs + 1] = tostring(notebook_width/2+1)
-				fs[#fs + 1] = ",0.85;1.514,1.43;icon_classrooms.png;classrooms;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
-				fs[#fs + 1] = tostring(notebook_width/2+1)
-				fs[#fs + 1] = ",2.475;1.514,1.43;icon_map.png;map;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
-				fs[#fs + 1] = tostring(notebook_width/2+1)
-				fs[#fs + 1] = ",4.1;1.514,1.43;icon_players_online.png;playersonline;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
-				fs[#fs + 1] = tostring(notebook_width/2+1)
-				fs[#fs + 1] = ",5.725;1.514,1.43;icon_appearance.png;appearance;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
-				fs[#fs + 1] = tostring(notebook_width/2+1)
-				fs[#fs + 1] = ",7.35;1.514,1.43;icon_help.png;help;;true;false;]"
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(fsy)
+				last_height = 1.43
+				last_width = 1.514
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = last_width
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = last_height
+				fs[#fs + 1] = ";icon_classrooms.png;classrooms;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fsy = fsy + 1.625
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = last_width
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = last_height
+				fs[#fs + 1] = ";icon_map.png;map;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fsy = fsy + 1.625
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = last_width
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = last_height
+				fs[#fs + 1] = ";icon_players_online.png;playersonline;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fsy = fsy + 1.625
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = last_width
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = last_height
+				fs[#fs + 1] = ";icon_appearance.png;appearance;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fsy = fsy + 1.625
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = last_width
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = last_height
+				fs[#fs + 1] = ";icon_help.png;help;;true;false;]"
+				-- Labels go here to increment fsx properly
+				fsy = 1.3
+				fsx = fsx + last_width + 0.2
+				fs[#fs + 1] = "style_type[label;font_size=*1;font=bold]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = minetest.colorize("#000","Classrooms")
+				fsy = fsy + 0.4
+				fs[#fs + 1] = "]style_type[label;font_size=*1;font=normal]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = minetest.colorize("#000","Find classrooms to join")
+				fs[#fs + 1] = "]"
+				fsy = fsy + 1.225
+				fs[#fs + 1] = "style_type[label;font_size=*1;font=bold]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = minetest.colorize("#000","Map")
+				fs[#fs + 1] = "]"
+				fsy = fsy + 0.4
+				fs[#fs + 1] = "]style_type[label;font_size=*1;font=normal]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = minetest.colorize("#000","Record locations and take spatial notes")
+				fs[#fs + 1] = "]"
+				fsy = fsy + 1.225
+				fs[#fs + 1] = "style_type[label;font_size=*1;font=bold]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = minetest.colorize("#000","Players Online")
+				fs[#fs + 1] = "]"
+				fsy = fsy + 0.4
+				fs[#fs + 1] = "]style_type[label;font_size=*1;font=normal]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = minetest.colorize("#000","See who's online")
+				fs[#fs + 1] = "]"
+				fsy = fsy + 1.225
+				fs[#fs + 1] = "style_type[label;font_size=*1;font=bold]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = minetest.colorize("#000","Appearance")
+				fs[#fs + 1] = "]"
+				fsy = fsy + 0.4
+				fs[#fs + 1] = "]style_type[label;font_size=*1;font=normal]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = minetest.colorize("#000","Personalize your avatar")
+				fs[#fs + 1] = "]"
+				fsy = fsy + 1.225
+				fs[#fs + 1] = "style_type[label;font_size=*1;font=bold]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = minetest.colorize("#000","Help")
+				fs[#fs + 1] = "]"
+				fsy = fsy + 0.4
+				fs[#fs + 1] = "]style_type[label;font_size=*1;font=normal]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = minetest.colorize("#000","Report an issue or player")
+				fs[#fs + 1] = "]"
 				return fs
 			end,
 			["2"] = function() -- CLASSROOMS
+				local fsx, fsy, last_height
+				fsx = notebook_width/2+1
+				fsy = 0.85
 				local fs = {}
 				if pmeta:get_string("default_student_tab") == "2" then
 					fs[#fs + 1] = "style_type[label;font_size=*0.8;textcolor=#000]label[0.2,"
@@ -75,8 +195,134 @@ function mc_student.show_notebook_fs(player,tab)
 					fs[#fs + 1] = minetest.colorize("#000","Bookmark?")
 					fs[#fs + 1] = ";false]"
 				end
-				fs[#fs + 1] = "style_type[textarea;font=mono,bold;textcolor=black]"
-				fs[#fs + 1] = "textarea[0.55,0.5;7.1,1;;;Coming Soon]"
+				-- PAGE TWO
+				fs[#fs + 1] = "style_type[label;font_size=*1.2]label["
+				fs[#fs + 1] = tostring(notebook_width/2+3)
+				fs[#fs + 1] = ",0.4;"
+				fs[#fs + 1] = minetest.colorize("#000","Available Classrooms")
+				fs[#fs + 1] = "]textlist["
+				fs[#fs + 1] = tostring((notebook_width/2)+1)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = tostring((notebook_width/8)*3.5)
+				fs[#fs + 1] = ","
+				last_height = notebook_height/3
+				fs[#fs + 1] = tostring(last_height)
+				fs[#fs + 1] = ";classroomlist;"
+
+				--[[ -- METHODS
+				Realm:TeleportPlayer(player)
+				Realm.GetRealmFromPlayer(player)
+				mc_worldManager.GetSpawnRealm()
+				Realm:getCategory() -- default, spawn, classroom
+				Realm.GetRealm(ID) ]]
+
+				-- below is realm structure
+				--[[ local this = {
+					Name = name,
+					ID = Realm.realmCount + 1,
+					StartPos = { x = 0, y = 0, z = 0 },
+					EndPos = { x = 0, y = 0, z = 0 },
+					SpawnPoint = { x = 0, y = 0, z = 0 },
+					PlayerJoinTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
+					PlayerLeaveTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
+					RealmDeleteTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
+					Permissions = {},
+					MetaStorage = {}
+				} ]]
+				
+				-- return all realms
+				local counter = 0
+				local countRealms = mc_worldManager.storage:get_string("realmCount")
+				-- Quickly update where players are
+				Realm.ScanForPlayerRealms()
+				for _,thisRealm in pairs(Realm.realmDict) do
+					counter = counter + 1
+					-- check if the realm is something that should be shown to this player
+					if mc_helpers.checkPrivs(player,{teacher = true}) then
+						-- show all realms to teachers
+						fs[#fs + 1] = thisRealm.Name
+						fs[#fs + 1] = " ("
+						local playerCount = tonumber(thisRealm:GetPlayerCount())
+						fs[#fs + 1] = tostring(playerCount)
+						if playerCount == 1 then
+							fs[#fs + 1] = " Player)"
+						else
+							fs[#fs + 1] = " Players)"
+						end
+					else
+						-- check the category
+						local realmCategory = thisRealm:getCategory()
+						local joinable, reason = realmCategory.joinable(thisRealm, player)
+						if joinable then
+							fs[#fs + 1] = thisRealm.Name
+							fs[#fs + 1] = " ("
+							local playerCount = tonumber(thisRealm:GetPlayerCount())
+							fs[#fs + 1] = tostring(playerCount)
+							if playerCount == 1 then
+								fs[#fs + 1] = " Player)"
+							else
+								fs[#fs + 1] = " Players)"
+							end
+						end
+					end
+					if counter ~= countRealms then fs[#fs + 1] = "," end
+				end
+				if not selectedRealmID then selectedRealmID = mc_worldManager.spawnRealmID end
+				local realm = Realm.GetRealm(tonumber(selectedRealmID))
+				fs[#fs + 1] = ";1;false]button["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fsy = fsy + last_height + 0.2
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";1.7,"
+				last_height = 0.6
+				fs[#fs + 1] = tostring(last_height)
+				fs[#fs + 1] = ";teleportrealm;Teleport]"
+				--[[ fs[#fs + 1] = "style_type[label;font_size=*1,font=bold]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fsy = fsy + last_height + 0.2
+				last_height = 0.3
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = minetest.colorize("#000","Classroom Name: ")
+				fs[#fs + 1] = minetest.colorize("#000",realm.Name)
+				fs[#fs + 1] = "]style_type[label;font_size=*1,font=bold]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fsy = fsy + last_height + 0.2
+				last_height = 0.3
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";" ]]
+				--[[ -- TODO: add area owner information
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = minetest.colorize("#000","Classroom Owner: "..)
+				fs[#fs + 1] = "]style_type[label;font_size=*1,font=bold]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fsy = fsy + last_height + 0.2
+				last_height = 0.3
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";" ]]
+				--[[ local privs = ""
+				counter = 0
+				for priv,v in pairs(realm.Permissions) do
+					if v then privs = privs .. priv end
+					if counter ~= #realm.Permissions then privs = privs .. ", " end
+				end
+				fs[#fs + 1] = minetest.colorize("#000","Privileges: ")
+				fs[#fs + 1] = minetest.colorize("#000",privs)
+				fs[#fs + 1] = "]style_type[label;font_size=*1,font=bold]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fsy = fsy + last_height + 0.2
+				last_height = 0.3
+				fs[#fs + 1] = tostring(fsy)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = minetest.colorize("#000","Status: You can join this classroom")
+				fs[#fs + 1] = "]" ]]
 				return fs
 			end,
 			["3"] = function() -- MAP
@@ -380,7 +626,7 @@ function mc_student.show_notebook_fs(player,tab)
 						fscount = fscount + 1
 						if fscount < 15 then fsx = 1.1 end
 						if fscount == 1 then 
-							fs[#fs + 1] = "style_type[label;font=bold]label["
+							fs[#fs + 1] = "style_type[label;font_size=*1,font=bold]label["
 							fs[#fs + 1] = tostring(fsx)
 							fs[#fs + 1] = ","
 							fs[#fs + 1] = tostring(fsy)
@@ -402,7 +648,7 @@ function mc_student.show_notebook_fs(player,tab)
 							fs[#fs + 1] = tostring(fsy)
 							fs[#fs + 1] = ";0.454,0.568;"
 							fs[#fs + 1] = ping_texture
-							fs[#fs + 1] = "]style_type[label;font=normal]label["
+							fs[#fs + 1] = "]style_type[label;font_size=*1,font=normal]label["
 							fs[#fs + 1] = tostring(fsx+0.55)
 							fs[#fs + 1] = ","
 							fs[#fs + 1] = tostring(fsy+0.35)
@@ -525,7 +771,7 @@ function mc_student.show_notebook_fs(player,tab)
 						end
 						if studentidx == 0 then
 							fsy = fsy + 0.4
-							fs[#fs + 1] = "label["
+							fs[#fs + 1] = "style_type[label;font_size=*1,font=bold]label["
 							fs[#fs + 1] = tostring(fsx)
 							fs[#fs + 1] = ","
 							fs[#fs + 1] = tostring(fsy)
@@ -543,7 +789,7 @@ function mc_student.show_notebook_fs(player,tab)
 							fs[#fs + 1] = tostring(fsy)
 							fs[#fs + 1] = ";0.454,0.568;"
 							fs[#fs + 1] = ping_texture
-							fs[#fs + 1] = "]label["
+							fs[#fs + 1] = "]style_type[label;font_size=*1,font=normal]label["
 							fs[#fs + 1] = tostring(fsx+0.55)
 							fs[#fs + 1] = ","
 							fs[#fs + 1] = tostring(fsy+0.35)
