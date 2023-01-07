@@ -127,7 +127,7 @@ function mc_toolhandler.register_tool_manager(tool, options)
             -- Player should have the tool but does not: give one copy
             player:get_inventory():add_item(options.inv_override or mc_toolhandler.default_inv, tool)
             if (options.inv_override or mc_toolhandler.default_inv) ~= "main" then
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize("#FF00FF", "[Minetest Classroom] New tool added to toolbox: "..tool)
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize("#FF00FF", "[Minetest Classroom] New tool added to toolbox: "..tool))
             end
         elseif not mc_core.checkPrivs(player, options.privs) then
             -- Player has the tool but should not: remove all copies
@@ -164,7 +164,7 @@ function mc_toolhandler.register_tool_manager(tool, options)
                 -- Player should have the tool but does not: give one copy
                 player:get_inventory():add_item(options.inv_override or mc_toolhandler.default_inv, tool)
                 if (options.inv_override or mc_toolhandler.default_inv) ~= "main" then
-                    minetest.chat_send_player(name, minetest.colorize("#FF00FF", "[Minetest Classroom] New tool added to toolbox: "..tool)
+                    minetest.chat_send_player(name, minetest.colorize("#FF00FF", "[Minetest Classroom] New tool added to toolbox: "..tool))
                 end
             elseif player_has_item_copies(player, ItemStack(tool)) then
                 -- Player has multiple copies of the tool already: remove all but one
@@ -242,7 +242,7 @@ function mc_toolhandler.register_group_manager(tools, options)
             -- Player should have the tool but does not: give one copy
             player:get_inventory():add_item(options.inv_override or mc_toolhandler.default_inv, options.default_tool)
             if (options.inv_override or mc_toolhandler.default_inv) ~= "main" then
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize("#FF00FF", "[Minetest Classroom] New tool added to toolbox: "..options.default_tool)
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize("#FF00FF", "[Minetest Classroom] New tool added to toolbox: "..options.default_tool))
             end
         elseif not mc_core.checkPrivs(player, options.privs) then
             -- Player has the tool but should not: remove all copies
@@ -277,7 +277,7 @@ function mc_toolhandler.register_group_manager(tools, options)
                 -- Player should have the tool but does not: give one copy
                 player:get_inventory():add_item(options.inv_override or mc_toolhandler.default_inv, options.default_tool)
                 if (options.inv_override or mc_toolhandler.default_inv) ~= "main" then
-                    minetest.chat_send_player(name, minetest.colorize("#FF00FF", "[Minetest Classroom] New tool added to toolbox: "..options.default_tool)
+                    minetest.chat_send_player(name, minetest.colorize("#FF00FF", "[Minetest Classroom] New tool added to toolbox: "..options.default_tool))
                 end
             elseif player_has_group_copies(player, group) then
                 -- Player has multiple copies of the tool already: remove all but one
@@ -450,7 +450,7 @@ minetest.register_on_chatcommand(function(name, command, params)
             for k,v in pairs(privs) do
                 table.insert(keys, k)
             end
-            minetest.chat_send_player(name, minetest.colorize("#FF00FF", "[Minetest Classroom] Target player is missing privileges required for item use: "..table.concat(keys, ", ")..".")
+            minetest.chat_send_player(name, minetest.colorize("#FF00FF", "[Minetest Classroom] Target player is missing privileges required for item use: "..table.concat(keys, ", ").."."))
             return true
         end
 
@@ -466,7 +466,7 @@ minetest.register_on_chatcommand(function(name, command, params)
 
             t_final = function(player, stack, name)
                 if get_player_item_location(player, stack) then
-                    minetest.chat_send_player(name, minetest.colorize("#FF00FF", "[Minetest Classroom] Target player already has the specified item.")
+                    minetest.chat_send_player(name, minetest.colorize("#FF00FF", "[Minetest Classroom] Target player already has the specified item."))
                     return true
                 end
             end,
@@ -483,7 +483,7 @@ minetest.register_on_chatcommand(function(name, command, params)
 
             g_final = function(player, group, name)
                 if group and get_player_group_location(player, group) then
-                    minetest.chat_send_player(name, minetest.colorize("#FF00FF", "[Minetest Classroom] Target player already has the specified item.")
+                    minetest.chat_send_player(name, minetest.colorize("#FF00FF", "[Minetest Classroom] Target player already has the specified item."))
                     return true
                 end
             end,
