@@ -1,8 +1,3 @@
-local selectedCoord = nil
-local selectedClassroom = nil
-local selectedRealmID = nil
-local marker_expiry = 30
-
 function mc_student.show_notebook_fs(player,tab)
 	local notebook_width = 16.4
 	local notebook_height = 10.2
@@ -211,38 +206,12 @@ function mc_student.show_notebook_fs(player,tab)
 				last_height = notebook_height/3
 				fs[#fs + 1] = tostring(last_height)
 				fs[#fs + 1] = ";classroomlist;"
-
-				--[[ -- METHODS
-				Realm:TeleportPlayer(player)
-				Realm.GetRealmFromPlayer(player)
-				mc_worldManager.GetSpawnRealm()
-				Realm:getCategory() -- default, spawn, classroom
-				Realm.GetRealm(ID) ]]
-
-				-- below is realm structure
-				--[[ local this = {
-					Name = name,
-					ID = Realm.realmCount + 1,
-					StartPos = { x = 0, y = 0, z = 0 },
-					EndPos = { x = 0, y = 0, z = 0 },
-					SpawnPoint = { x = 0, y = 0, z = 0 },
-					PlayerJoinTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
-					PlayerLeaveTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
-					RealmDeleteTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
-					Permissions = {},
-					MetaStorage = {}
-				} ]]
-				
-				-- return all realms
 				local counter = 0
 				local countRealms = mc_worldManager.storage:get_string("realmCount")
-				-- Quickly update where players are
 				Realm.ScanForPlayerRealms()
 				for _,thisRealm in pairs(Realm.realmDict) do
 					counter = counter + 1
-					-- check if the realm is something that should be shown to this player
 					if mc_helpers.checkPrivs(player,{teacher = true}) then
-						-- show all realms to teachers
 						fs[#fs + 1] = thisRealm.Name
 						fs[#fs + 1] = " ("
 						local playerCount = tonumber(thisRealm:GetPlayerCount())
@@ -253,7 +222,6 @@ function mc_student.show_notebook_fs(player,tab)
 							fs[#fs + 1] = " Players)"
 						end
 					else
-						-- check the category
 						local realmCategory = thisRealm:getCategory()
 						local joinable, reason = realmCategory.joinable(thisRealm, player)
 						if joinable then

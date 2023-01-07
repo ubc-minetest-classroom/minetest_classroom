@@ -6,7 +6,8 @@ mc_student = {
 	markers = {},
 	meta = minetest.get_mod_storage(),
 	hud = mhud.init(),
-	fs_context = {}
+	fs_context = {},
+	marker_expiry = 30
 }
 
 dofile(mc_student.path .. "/functions.lua")

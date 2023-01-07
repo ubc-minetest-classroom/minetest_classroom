@@ -1,3 +1,7 @@
+local selectedCoord = nil
+local selectedClassroom = nil
+local selectedRealmID = nil
+
 -- Student joins/leaves
 minetest.register_on_joinplayer(function(player)
 	local pname = player:get_player_name()
