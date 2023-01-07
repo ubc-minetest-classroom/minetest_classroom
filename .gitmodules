@@ -25,3 +25,6 @@
 [submodule "mods/Minetest-WorldEdit"]
 	path = mods/Minetest-WorldEdit
 	url = https://github.com/ubc-minetest-classroom/Minetest-WorldEdit
+[submodule "mods/--force"]
+	path = mods/--force
+	url = https://github.com/ubc-minetest-classroom/forestry-tools
