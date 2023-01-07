@@ -164,7 +164,7 @@ function mc_toolhandler.register_tool_manager(tool, options)
                 -- Player should have the tool but does not: give one copy
                 player:get_inventory():add_item(options.inv_override or mc_toolhandler.default_inv, tool)
                 if (options.inv_override or mc_toolhandler.default_inv) ~= "main" then
-                    minetest.chat_send_player(name, "New tool added to toolbox: "..tool)
+                    minetest.chat_send_player(name, minetest.colorize("#FF00FF", "[Minetest Classroom] New tool added to toolbox: "..tool)
                 end
             elseif player_has_item_copies(player, ItemStack(tool)) then
                 -- Player has multiple copies of the tool already: remove all but one

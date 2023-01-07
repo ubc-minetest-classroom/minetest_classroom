@@ -1,5 +1,6 @@
 mc_teacher = {
     teachers = {},
+    students = {},
     meta = minetest.get_mod_storage(),
     path = minetest.get_modpath("mc_teacher"),
     fs_context = {},
