@@ -7,7 +7,7 @@ minetest.register_tool("mc_teacher:controller", {
     on_use = function(itemstack, player, pointed_thing)
         local pmeta = player:get_meta()
         if mc_helpers.checkPrivs(player) then
-            if pmeta:get_string("default_student_tab") ~= "" then
+            if pmeta:get_string("default_teacher_tab") ~= "" then
 				mc_teacher.show_controller_fs(player,pmeta:get_string("default_teacher_tab"))
 			else
 				mc_teacher.show_controller_fs(player,"1")
