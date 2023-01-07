@@ -341,7 +341,7 @@ function mc_student.show_notebook_fs(player,tab)
 				end
 				local yaw
 				local rotate = 0
-				yaw = player:get_look_yaw()
+				yaw = player:get_look_horizontal()
 				if yaw ~= nil then
 					-- Find rotation and texture based on yaw.
 					yaw = math.deg(yaw)

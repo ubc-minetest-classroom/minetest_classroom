@@ -5,9 +5,10 @@ function mc_student.record_coordinates(player,message)
 		local pmeta = player:get_meta()
 		local pos = player:get_pos()
 		local realmID = pmeta:get_int("realm")
-		local temp
+		local temp, clean_message
 		clean_message = minetest.formspec_escape(message)
 		temp = minetest.deserialize(pmeta:get_string("coordinates"))
+		local datanew
 		if temp == nil then
 			datanew = {
 				realms = { realmID, },
