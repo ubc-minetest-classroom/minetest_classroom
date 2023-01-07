@@ -1,4 +1,5 @@
 local selectedCoord = nil
+local selectedClassroom = nil
 local selectedRealmID = nil
 local marker_expiry = 30
 
@@ -21,7 +22,7 @@ function mc_student.show_notebook_fs(player,tab)
 		}
 		local tab_map = {
 			["1"] = function() -- OVERVIEW
-				local fsx, fsy, last_height
+				local fsx, fsy, last_height, last_width
 				fsx = notebook_width/2+1
 				fsy = 0.85
 				local fs = {}
