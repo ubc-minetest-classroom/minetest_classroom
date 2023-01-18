@@ -3,7 +3,9 @@ mc_teacher = {
     students = {},
     meta = minetest.get_mod_storage(),
     path = minetest.get_modpath("mc_teacher"),
-    fs_context = {},
+    fs_context = {
+        selectedMode = "1",
+    },
     restart_scheduled = {}
 }
 
