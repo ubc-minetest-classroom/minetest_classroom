@@ -56,8 +56,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mc_teacher:controller_fs" then
 		if fields.record_nav then
             mc_teacher.fs_context.tab = fields.record_nav
-            minetest.chat_send_all("you pushed "..fields.record_nav)
-            minetest.chat_send_all("mc_teacher.fs_context.tab is "..fields.record_nav)
             mc_teacher.show_controller_fs(player,mc_teacher.fs_context.tab)
 		end
         if fields.default_tab then
