@@ -1,7 +1,3 @@
-local selectedCoord = nil
-local selectedClassroom = nil
-local selectedRealmID = nil
-
 -- Student joins/leaves
 minetest.register_on_joinplayer(function(player)
 	local pname = player:get_player_name()
@@ -269,7 +265,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				local connRealm = Realm.GetRealmFromPlayer(connplayer)
 				if connRealm.ID == realm.ID then
 					local pos = coords[selectedCoord]
-					minetest.chat_send_player(connplayer:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] "..player:get_player_name().." shared location {x="..tostring(pos.x)..", y="..tostring(pos.y)..", z="..tostring(pos.z).."} with the note: "..notes[selectedCoord]))
+					minetest.chat_send_player(connplayer:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] "..player:get_player_name().." shared location {x="..tostring(math.round(pos.x-realm.StartPos.x))..", y="..tostring(math.round(pos.y-realm.StartPos.y))..", z="..tostring(math.round(pos.z-realm.StartPos.z)).."} with the note: "..notes[selectedCoord]))
 				end
 			end
 			mc_student.show_notebook_fs(player,"3")
@@ -323,6 +319,19 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			mc_student.show_notebook_fs(player,"5")
 		elseif fields.help then
 			mc_student.show_notebook_fs(player,"6")
+		elseif fields.utmcoords then
+            local pmeta = player:get_meta()
+            pmeta:set_string("positionHudMode", "utm")
+		elseif fields.latloncoords then
+			local pmeta = player:get_meta()
+            pmeta:set_string("positionHudMode", "latlong")
+		elseif fields.classroomcoords then
+			local pmeta = player:get_meta()
+            pmeta:set_string("positionHudMode", "local")
+		elseif fields.coordsoff then
+			local pmeta = player:get_meta()
+			pmeta:set_string("positionHudMode", "")
+            mc_worldManager.RemoveHud(player)
 		else
 			-- Unhandled input
 			return

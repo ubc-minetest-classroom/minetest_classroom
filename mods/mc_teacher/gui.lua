@@ -70,7 +70,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 fs[#fs + 1] = tostring(last_height)
                 fs[#fs + 1] = ";intro;"
                 fs[#fs + 1] = minetest.colorize("#000","Instructions")
-                fs[#fs + 1] = ";View classrooms to edit or create a new classroom below. Once the classroom has been created, it will appear in the list. The classrom highlighted in the list will expose more edit options for that classroom. You can hover over most elements to learn what a button or field does.]"
+                fs[#fs + 1] = ";View classrooms to edit or create a new classroom below. Once the classroom has been created, it will appear in the list. The classroom highlighted in the list will expose more edit options for that classroom. You can hover over most elements to learn what a button or field does.]"
                 
                 fs[#fs + 1] = "style_type[label;font_size=*1]label["
                 fs[#fs + 1] = tostring(fsx+2)
@@ -453,7 +453,7 @@ function mc_teacher.show_controller_fs(player,tab)
 			end,
 			["3"] = function() -- PLAYERS
                 local fs = {}
-				if pmeta:get_string("default_teacher_tab") == "4" then
+				if pmeta:get_string("default_teacher_tab") == "3" then
 					fs[#fs + 1] = "style_type[label;font_size=*0.8;textcolor=#000]label[0.2,"
 					fs[#fs + 1] = tostring(controller_height-0.2)
 					fs[#fs + 1] = ";This tab is the default]"
@@ -470,7 +470,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 local fs = {}
                 local fsx, fsy
                 fsx = ((controller_width/2)-(((controller_width/8)*3)))/2
-				if pmeta:get_string("default_teacher_tab") == "3" then
+				if pmeta:get_string("default_teacher_tab") == "4" then
 					fs[#fs + 1] = "style_type[label;font_size=*0.8;textcolor=#000]label[0.2,"
 					fs[#fs + 1] = tostring(controller_height-0.2)
 					fs[#fs + 1] = ";This tab is the default]"

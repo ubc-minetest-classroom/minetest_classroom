@@ -2,8 +2,7 @@ minetest.register_tool("mc_student:notebook" , {
 	description = "Notebook for students",
 	inventory_image = "notebook.png",
 	_mc_tool_privs = {interact = true},
-	on_use = function (itemstack, player, pointed_thing)
-        local pname = player:get_player_name()
+	on_use = function(itemstack, player, pointed_thing)
 		local pmeta = player:get_meta()
 		if mc_core.checkPrivs(player,{interact = true}) then
 			if pmeta:get_string("default_student_tab") ~= "" then

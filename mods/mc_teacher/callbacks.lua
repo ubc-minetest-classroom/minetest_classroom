@@ -56,7 +56,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mc_teacher:controller_fs" then
 		if fields.record_nav then
             mc_teacher.fs_context.tab = fields.record_nav
+            minetest.chat_send_all("you pushed "..fields.record_nav)
+            minetest.chat_send_all("mc_teacher.fs_context.tab is "..fields.record_nav)
             mc_teacher.show_controller_fs(player,mc_teacher.fs_context.tab)
+		end
+        if fields.default_tab then
+			pmeta:set_string("default_teacher_tab",mc_teacher.fs_context.tab)
+			mc_teacher.show_controller_fs(player,mc_teacher.fs_context.tab)
 		end
         if fields.playerlist then
 			local event = minetest.explode_textlist_event(fields.playerlist)
@@ -72,10 +78,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 mc_teacher.show_controller_fs(player,"4")
 			end
         end
-		if fields.default_tab then
-			pmeta:set_string("default_teacher_tab",mc_teacher.fs_context.tab)
-			mc_teacher.show_controller_fs(player,mc_teacher.fs_context.tab)
-		end
 
         ---------------------------------
         -- MANAGE CLASSROOMS
@@ -306,6 +308,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             mc_teacher.show_controller_fs(player,"5")
         elseif fields.modifyrules then
             minetest.show_formspec(player:get_player_name(), "mc_rules:edit", mc_rules.show_edit_formspec(nil))
+        else
+            -- Unhandled input
+            return
         end
     end
 end) 

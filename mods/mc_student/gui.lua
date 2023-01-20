@@ -1,3 +1,7 @@
+local selectedCoord = nil
+local selectedRealmID = nil
+local marker_expiry = 30
+
 function mc_student.show_notebook_fs(player,tab)
 	local notebook_width = 16.4
 	local notebook_height = 10.2
@@ -206,12 +210,38 @@ function mc_student.show_notebook_fs(player,tab)
 				last_height = notebook_height/3
 				fs[#fs + 1] = tostring(last_height)
 				fs[#fs + 1] = ";classroomlist;"
+
+				--[[ -- METHODS
+				Realm:TeleportPlayer(player)
+				Realm.GetRealmFromPlayer(player)
+				mc_worldManager.GetSpawnRealm()
+				Realm:getCategory() -- default, spawn, classroom
+				Realm.GetRealm(ID) ]]
+
+				-- below is realm structure
+				--[[ local this = {
+					Name = name,
+					ID = Realm.realmCount + 1,
+					StartPos = { x = 0, y = 0, z = 0 },
+					EndPos = { x = 0, y = 0, z = 0 },
+					SpawnPoint = { x = 0, y = 0, z = 0 },
+					PlayerJoinTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
+					PlayerLeaveTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
+					RealmDeleteTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
+					Permissions = {},
+					MetaStorage = {}
+				} ]]
+				
+				-- return all realms
 				local counter = 0
 				local countRealms = mc_worldManager.storage:get_string("realmCount")
+				-- Quickly update where players are
 				Realm.ScanForPlayerRealms()
 				for _,thisRealm in pairs(Realm.realmDict) do
 					counter = counter + 1
+					-- check if the realm is something that should be shown to this player
 					if mc_helpers.checkPrivs(player,{teacher = true}) then
+						-- show all realms to teachers
 						fs[#fs + 1] = thisRealm.Name
 						fs[#fs + 1] = " ("
 						local playerCount = tonumber(thisRealm:GetPlayerCount())
@@ -222,6 +252,7 @@ function mc_student.show_notebook_fs(player,tab)
 							fs[#fs + 1] = " Players)"
 						end
 					else
+						-- check the category
 						local realmCategory = thisRealm:getCategory()
 						local joinable, reason = realmCategory.joinable(thisRealm, player)
 						if joinable then
@@ -309,7 +340,7 @@ function mc_student.show_notebook_fs(player,tab)
 				end
 				local yaw
 				local rotate = 0
-				yaw = player:get_look_horizontal()
+				yaw = player:get_look_yaw()
 				if yaw ~= nil then
 					-- Find rotation and texture based on yaw.
 					yaw = math.deg(yaw)
@@ -388,14 +419,42 @@ function mc_student.show_notebook_fs(player,tab)
 				fsx = ((notebook_width/2)-(((notebook_width/8)*3)))/2
 				fs[#fs + 1] = "style_type[label;font_size=*1.2]label[2.9,0.4;"
 				fs[#fs + 1] = minetest.colorize("#000","Map of Surroundings")
-				fs[#fs + 1] = "]style[note;textcolor=#000]textarea["
+				fs[#fs + 1] = "]style[note;textcolor=#000]"
+				fs[#fs + 1] = "style_type[label;font_size=*1]label["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(32*0.15+fsy+0.6)
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = minetest.colorize("#000","Display Coordinates and Elevation")
+				fs[#fs + 1] = "]"
+				fs[#fs + 1] = "button["
 				fs[#fs + 1] = tostring(fsx)
 				fs[#fs + 1] = ","
 				fs[#fs + 1] = tostring(32*0.15+fsy+0.9)
+				fs[#fs + 1] = ";1,0.6;utmcoords;UTM]"
+				fs[#fs + 1] = "button["
+				fs[#fs + 1] = tostring(fsx+1.2)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(32*0.15+fsy+0.9)
+				fs[#fs + 1] = ";1.7,0.6;latloncoords;Lat/Long]"
+				fs[#fs + 1] = "button["
+				fs[#fs + 1] = tostring(fsx+1.2+1.9)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(32*0.15+fsy+0.9)
+				fs[#fs + 1] = ";1.7,0.6;classroomcoords;Classroom]"
+				fs[#fs + 1] = "button["
+				fs[#fs + 1] = tostring(fsx+1.2+1.9+1.9)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(32*0.15+fsy+0.9)
+				fs[#fs + 1] = ";1,0.6;coordsoff;Off]"
+				fs[#fs + 1] = "textarea["
+				fs[#fs + 1] = tostring(fsx)
+				fs[#fs + 1] = ","
+				fs[#fs + 1] = tostring(32*0.15+fsy+0.9+1.3)
 				fs[#fs + 1] = ";"
 				fs[#fs + 1] = tostring((notebook_width/8)*3.5)
 				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(notebook_height/4)
+				fs[#fs + 1] = tostring((notebook_height/4)-1.3)
 				fs[#fs + 1] = ";note;"
 				fs[#fs + 1] = minetest.colorize("#000","Add a note at your current location")
 				fs[#fs + 1] = ";]button["
