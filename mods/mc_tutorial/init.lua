@@ -102,7 +102,7 @@ function mc_tutorial.fetch_setting(name)
 end
 function mc_tutorial.fetch_setting_table(name)
     local setting_string = mc_tutorial.fetch_setting(name)
-    local table = mc_helpers.split(setting_string, ",")
+    local table = mc_core.split(setting_string, ",")
     for i,v in ipairs(table) do
         table[i] = v:trim()
     end
@@ -206,7 +206,7 @@ end
 
 local function check_dependencies(pdata, dep_list)
     for dep,_ in pairs(dep_list) do
-        if mc_tutorial.tutorials:get(dep) and not mc_helpers.tableHas(pdata.completed, dep) then
+        if mc_tutorial.tutorials:get(dep) and not mc_core.tableHas(pdata.completed, dep) then
             return false
         end
     end
@@ -262,7 +262,7 @@ local function get_selected_reward_info(context, list_id)
     local selection = context.reward_selected[list_id]
     local reward = list_id == RW_LIST and context.rewards[selection] or list_id == RW_SELECT and context.selected_rewards[selection]
     local type_id, item = string.match(reward and reward.s or "", pattern)
-    return reward and (reward.col_override or reward.col), type_id and mc_helpers.trim(type_id), item and mc_helpers.trim(item)
+    return reward and (reward.col_override or reward.col), type_id and mc_core.trim(type_id), item and mc_core.trim(item)
 end
 
 local function count_tutorial_actions(sequence)
@@ -459,7 +459,7 @@ function mc_tutorial.show_record_fs(player)
                 else]]if PRIV_SAFETY[priv] == UNSAFE then
                     priv_col = "#FFBABA"
                 end
-                if mc_helpers.tableHas(temp.on_completion.privs, priv) then
+                if mc_core.tableHas(temp.on_completion.privs, priv) then
                     table.insert(selected_rewards, {col = priv_col, s = minetest.formspec_escape("[P] ")..priv})
                 else
                     table.insert(rewards, {col = priv_col, s = minetest.formspec_escape("[P] ")..priv})
@@ -471,7 +471,7 @@ function mc_tutorial.show_record_fs(player)
                 ["node"] = {col = "#CCFFCC", s_pre = minetest.formspec_escape("[N] ")},
             }
             for item,def in pairs(minetest.registered_items) do
-                local item_trim = mc_helpers.trim(item)
+                local item_trim = mc_core.trim(item)
                 if item_trim ~= "" then
                     local raw_col_field = item_map[def.type] or {col = "#FFFFCC", s_pre = minetest.formspec_escape("[I] ")}
                     local col_override = nil
@@ -479,7 +479,7 @@ function mc_tutorial.show_record_fs(player)
                         -- add warning for tools managed by mc_toolhandler
                         col_override = "#FFE5CC"
                     end
-                    if mc_helpers.tableHas(temp.on_completion.items, item) then
+                    if mc_core.tableHas(temp.on_completion.items, item) then
                         table.insert(selected_rewards, {col = col_override or raw_col_field.col, s = raw_col_field.s_pre..item_trim})
                     else
                         table.insert(rewards, {col = col_override or raw_col_field.col, s = raw_col_field.s_pre..item_trim})
@@ -511,9 +511,9 @@ function mc_tutorial.show_record_fs(player)
             for _,id in pairs(mc_tutorial.get_storage_keys()) do
                 if tonumber(id) and id ~= mc_tutorial.record.edit[pname] then
                     local tut = minetest.deserialize(mc_tutorial.tutorials:get(tostring(id)))
-                    if mc_helpers.tableHas(temp.dependencies, id) then
+                    if mc_core.tableHas(temp.dependencies, id) then
                         table.insert(context.tutorials.dep_cy.list, "ID "..id..": "..tut.title)
-                    elseif mc_helpers.tableHas(temp.dependents, id) then
+                    elseif mc_core.tableHas(temp.dependents, id) then
                         table.insert(context.tutorials.dep_nt.list, "ID "..id..": "..tut.title)
                     else
                         table.insert(context.tutorials.main.list, "ID "..id..": "..tut.title)
@@ -1069,14 +1069,14 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                     context.epop.list.list = mc_tutorial.bits_to_keys(bit.bxor(0xFFFF, keys_to_exclude))
                 elseif context.epop.list.mode == mc_tutorial.EPOP_LIST.ITEM then
                     for item,_ in pairs(minetest.registered_items) do
-                        if mc_helpers.trim(item) ~= "" then
-                            table.insert(context.epop.list.list, mc_helpers.trim(item))
+                        if mc_core.trim(item) ~= "" then
+                            table.insert(context.epop.list.list, mc_core.trim(item))
                         end
                     end
                 elseif context.epop.list.mode == mc_tutorial.EPOP_LIST.NODE then
                     for node,_ in pairs(minetest.registered_nodes) do
-                        if mc_helpers.trim(node) ~= "" then
-                            table.insert(context.epop.list.list, mc_helpers.trim(node))
+                        if mc_core.trim(node) ~= "" then
+                            table.insert(context.epop.list.list, mc_core.trim(node))
                         end
                     end
                 end
@@ -1149,7 +1149,7 @@ function mc_tutorial.show_tutorials(player)
                     col = "#acabff"
                 elseif not check_dependencies(pdata, tutorial_info.dependencies) then
                     col = "#f5627d"
-                elseif mc_helpers.tableHas(pdata.completed, id) then
+                elseif mc_core.tableHas(pdata.completed, id) then
                     col = "#71eba8"
                 end
                 table.insert(titles, col..tutorial_info.title)
@@ -1375,7 +1375,7 @@ end
 -- REWORK: dynamically get names of all formspecs
 minetest.register_on_player_receive_fields(function(player, formname, fields)
     -- return if formspec is not tutorial-related
-    if not mc_helpers.tableHas({"mc_tutorial:tutorials", "mc_tutorial:record_options_fs", "mc_tutorial:record_fs", "mc_tutorial:record_epop", "mc_tutorial:tutorials_dpop", "mc_tutorial:record_fs_privpop"}, formname) then
+    if not mc_core.tableHas({"mc_tutorial:tutorials", "mc_tutorial:record_options_fs", "mc_tutorial:record_fs", "mc_tutorial:record_epop", "mc_tutorial:tutorials_dpop", "mc_tutorial:record_fs_privpop"}, formname) then
         return nil
     end
 
@@ -2051,7 +2051,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.key_add and context.epop.list.list and context.epop.list.list[context.epop.list.selected] then
             context.epop.fields.key = context.epop.fields.key or {}
 
-            if not mc_helpers.tableHas(context.epop.fields.key, context.epop.list.list[context.epop.list.selected]) then
+            if not mc_core.tableHas(context.epop.fields.key, context.epop.list.list[context.epop.list.selected]) then
                 table.insert(context.epop.fields.key, context.epop.list.list[context.epop.list.selected])
                 table.remove(context.epop.list.list, context.epop.list.selected)
                 reload = true

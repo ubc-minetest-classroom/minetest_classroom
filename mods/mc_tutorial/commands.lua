@@ -102,7 +102,7 @@ local tutorial_cmd = {
     params = "<subcommand> [<params>]",
 	privs = mc_tutorial.recorder_priv_table,
 	func = function(name, param)
-        local params = mc_helpers.split(param, " ")
+        local params = mc_core.split(param, " ")
         if #params >= 1 then
             local action = params[1]
             table.remove(params, 1)

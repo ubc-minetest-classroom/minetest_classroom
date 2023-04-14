@@ -1,4 +1,4 @@
-local bit = dofile(minetest.get_modpath("mc_helpers") .. "/numberlua.lua")
+local bit = dofile(minetest.get_modpath("mc_core") .. "/numberlua.lua")
 
 -- Register the punch, dig, and place callbacks
 minetest.register_on_punchnode(function(pos, node, player, pointed_thing)

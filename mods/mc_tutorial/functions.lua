@@ -1,4 +1,4 @@
-local bit = dofile(minetest.get_modpath("mc_helpers") .. "/numberlua.lua")
+local bit = dofile(minetest.get_modpath("mc_core") .. "/numberlua.lua")
 
 function mc_tutorial.check_privs(player, priv_table)
     local priv_table = priv_table or {interact = true}
@@ -331,11 +331,11 @@ function mc_tutorial.completed_action(player, g_index)
         -- on_completion callbacks here
         minetest.chat_send_player(pname, "[Tutorial] "..pdata.active.on_completion.message)
 
-        if not mc_helpers.tableHas(pdata.completed, mc_tutorial.active[pname]) then
+        if not mc_core.tableHas(pdata.completed, mc_tutorial.active[pname]) then
             -- Give rewards for first-time completion
             local inv = player:get_inventory()
             for _,item in pairs(pdata.active.on_completion.items) do
-                if (not minetest.get_modpath("mc_toolhandler") or not mc_toolhandler.tool_is_being_managed(item)) and not mc_helpers.getInventoryItemLocation(inv, ItemStack(item)) then
+                if (not minetest.get_modpath("mc_toolhandler") or not mc_toolhandler.tool_is_being_managed(item)) and not mc_core.getInventoryItemLocation(inv, ItemStack(item)) then
                     inv:add_item("main", item)
                 end
             end
