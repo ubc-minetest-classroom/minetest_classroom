@@ -38,7 +38,7 @@ local mc_student_menu = {
 }
 
 local function show_student_menu(player)
-	if mc_helpers.checkPrivs(player,priv_table) then
+	if mc_core.checkPrivs(player,priv_table) then
 		minetest.show_formspec(player:get_player_name(), "mc_student:menu", table.concat(mc_student_menu,""))
 	end
 end
@@ -62,7 +62,7 @@ local classroomRealms = {}
 local selectedClassroom = 1
 
 local function show_classrooms(player)
-	if mc_helpers.checkPrivs(player,priv_table) then
+	if mc_core.checkPrivs(player,priv_table) then
 		local textlist = "textlist[0.6,0.9;5.4,4.3;realms;;1]"
 		local is_first = true
 
@@ -131,7 +131,7 @@ local mc_student_marker = {
 }
 
 	local function show_marker(player)
-	if mc_helpers.checkPrivs(player,priv_table) then
+	if mc_core.checkPrivs(player,priv_table) then
 		local pname = player:get_player_name()
 		minetest.show_formspec(pname, "mc_student:marker", table.concat(mc_student_marker,""))
 		return true
@@ -223,7 +223,7 @@ local function show_coordinates(player)
 end
 
 local function record_coordinates(player,message)
-	if mc_helpers.checkPrivs(player,priv_table) then
+	if mc_core.checkPrivs(player,priv_table) then
 		local pmeta = player:get_meta()
 		local pos = player:get_pos()
 		local realmID = pmeta:get_int("realm")
@@ -506,7 +506,7 @@ minetest.register_tool(tool_name , {
 	-- Left-click the tool activates the teacher menu
 	on_use = function (itemstack, player, pointed_thing)
         local pname = player:get_player_name()
-		if mc_helpers.checkPrivs(player,priv_table) then
+		if mc_core.checkPrivs(player,priv_table) then
 			show_student_menu(player)
 		end
 	end,
@@ -641,7 +641,7 @@ minetest.register_chatcommand("m", {
 })
 
 function place_marker(player,message)
-	if mc_helpers.checkPrivs(player,priv_table) then
+	if mc_core.checkPrivs(player,priv_table) then
 		local pname = player:get_player_name()
 		local pos1 = vector.offset(player:get_pos(), 0, player:get_properties().eye_height, 0)
 
@@ -717,7 +717,7 @@ end
 -- }
 
 -- local function show_accesscode(player)
--- 	if mc_helpers.checkPrivs(player,priv_table) then
+-- 	if mc_core.checkPrivs(player,priv_table) then
 -- 		local pname = player:get_player_name()
 -- 		minetest.show_formspec(pname, "mc_student:accesscode", table.concat(mc_student_accesscode,""))
 -- 		return true
@@ -736,7 +736,7 @@ end
 -- }
 
 -- local function show_accesscode_fail(player)
--- 	if mc_helpers.checkPrivs(player,priv_table) then
+-- 	if mc_core.checkPrivs(player,priv_table) then
 -- 		local pname = player:get_player_name()
 -- 		minetest.show_formspec(pname, "mc_student:accesscode_fail", table.concat(mc_student_accesscode_fail,""))
 -- 		return true

@@ -143,7 +143,7 @@ commands["walls"] = {
 commands["gen"] = {
     func = function(name, params)
 
-        if (not mc_helpers.isNumber(params[1])) then
+        if (not mc_core.isNumber(params[1])) then
             if (params[1] ~= nil and params[1] == "list") then
 
 
@@ -341,40 +341,68 @@ commands["schematic"] = {
         end
     end }
 
-commands["realterrain"] = {
-    func = function(name, params)
-        if (params[1] == "list") then
-            table.remove(params, 1)
-
-            minetest.chat_send_player(name, "Key : Filepath")
-            for i, t in pairs(realterrainManager.dems) do
-                minetest.chat_send_player(name, i .. " : " .. t)
+    commands["realterrain"] = {
+        func = function(name, params)
+            if params[1] == "list" then
+                table.remove(params, 1)
+    
+                minetest.chat_send_player(name, "Key : Filepath")
+                for i, t in pairs(realterrainManager.dems) do
+                    minetest.chat_send_player(name, i .. " : " .. t)
+                end
+                return true
+            elseif params[1] == "load" then
+                table.remove(params, 1)
+                local realmName = params[1]
+                if (realmName == "" or realmName == nil) then
+                    realmName = "Unnamed Realm"
+                end
+    
+                local key = params[1]
+                if (key == nil) then
+                    key = ""
+                end
+    
+                local DEM_PATH, config = realterrainManager.getDEM(key)
+    
+                if (config == nil) then
+                    return false, "DEM key: " .. tostring(key) .. " config file has not been registered with the system."
+                end
+    
+                -- Check if we are symbolizing a layer
+                if params[2] and params[2] == "symbolize" then
+                    realterrain.symbology.flag = true
+                    -- Check for colorbrewer dependency
+                    if minetest.get_modpath("colorbrewer") ~= nil then
+                        -- Check if colorbrewer palette is specified correctly
+                        if params[3] then
+                            if minetest.registered_nodes["colorbrewer:"..params[3]] then
+                                -- Check which layer the symbology will apply to
+                                if params[4] == "dem" or params[4] == "chm" or params[4] == "urban" or params[4] == "cover" then 
+                                    realterrain.symbology.palette = params[3]
+                                    realterrain.symbology.layer = params[4]
+                                else
+                                    if params[4] then
+                                        return false, "layer specified '"..params[4].."' is not valid, cannot symbolize realterrain. Try realm realterrain load [dem key] symbolize [palette name] [dem | chm | urban | cover]"
+                                    else
+                                        return false, "missing a specified layer to symbolize, cannot symbolize realterrain. Try realm realterrain load [dem key] symbolize [palette name] [dem | chm | urban | cover]"
+                                    end
+                                end
+                            else
+                                return false, "colorbrewer palette specified '"..params[3].."' is not registered, cannot symbolize realterrain. Try realm realterrain load [dem key] symbolize [palette_name] or use the /palettes command to see all registered colorbrewer palettes."
+                            end
+                        else
+                            return false, "missing a specified colorbrewer palette, cannot symbolize realterrain. Try realm realterrain load [dem key] symbolize [palette_name] or use the /palettes command to see all registered colorbrewer palettes."
+                        end
+                    else
+                        return false, "colorbrewer mod is not installed, cannot symbolize realterrain"
+                    end
+                end
+                
+                local newRealm = Realm:NewFromDEM(realmName, key)
+                return true, "creat[ing][ed] new realm with name: " .. newRealm.Name .. "and ID: " .. newRealm.ID .. " from DEM with key " .. key
             end
-            return true
-        elseif (params[1] == "load") then
-            table.remove(params, 1)
-            local realmName = params[1]
-            if (realmName == "" or realmName == nil) then
-                realmName = "Unnamed Realm"
-            end
-
-            local key = params[1]
-            if (key == nil) then
-                key = ""
-            end
-
-            local DEM_PATH, config = realterrainManager.getDEM(key)
-
-            if (config == nil) then
-                return false, "DEM key: " .. tostring(key) .. " config file has not been registered with the system."
-            end
-
-            local newRealm = Realm:NewFromDEM(realmName, key)
-            return true, "creat[ing][ed] new realm with name: " .. newRealm.Name .. "and ID: " .. newRealm.ID .. " from DEM with key " .. key
-        else
-            return false, "unknown subcommand. Try realm realterrain list | realm realterrain load"
-        end
-    end }
+        end }
 
 commands["setspawn"] = {
     func = function(name, params)
@@ -655,7 +683,7 @@ commands["blocks"] = {
 
             local count = params[2]
 
-            if (mc_helpers.isNumber(tostring(params[3]))) then
+            if (mc_core.isNumber(tostring(params[3]))) then
                 realmID = tonumber(params[3])
             elseif (string.lower(tostring(params[3])) == "true") then
                 instanced = true
@@ -801,7 +829,7 @@ commands["data"] = {
 minetest.register_chatcommand("realm", {
     params = "Subcommand Realm ID Option",
     func = function(name, param)
-        local params = mc_helpers.split(param, " ")
+        local params = mc_core.split(param, " ")
         local subcommand = params[1]
         table.remove(params, 1)
 
@@ -831,11 +859,11 @@ minetest.register_on_chatcommand(function(name, command, params)
 
 
     if (command == "grantme") then
-        local privTable = mc_helpers.split(params, ", ")
+        local privTable = mc_core.split(params, ", ")
         mc_worldManager.grantUniversalPriv(minetest.get_player_by_name(name), privTable)
         return false -- we must return false so that the regular grant command proceeds.
     elseif (command == "revokeme") then
-        local privTable = mc_helpers.split(params, ", ")
+        local privTable = mc_core.split(params, ", ")
         mc_worldManager.revokeUniversalPriv(minetest.get_player_by_name(name), privTable)
         return false -- we must return false so that the regular grant command proceeds.
     end
@@ -844,8 +872,8 @@ minetest.register_on_chatcommand(function(name, command, params)
     -- Gets called when grant / revoke is called. We're using this to add permissions that are granted onto the universalPrivs table.
 
     if (command == "grant" or command == "revoke") then
-        local privsTable = mc_helpers.split(params, ", ")
-        local tmpTable = mc_helpers.split(table.remove(privsTable, 1), " ")
+        local privsTable = mc_core.split(params, ", ")
+        local tmpTable = mc_core.split(table.remove(privsTable, 1), " ")
 
         local name = tmpTable[1]
         table.insert(privsTable, tmpTable[2])
@@ -908,12 +936,12 @@ minetest.register_chatcommand("teleport", {
             return true, "Teleported to " .. tostring(othername) .. " in realm " .. tostring(realmID)
         end
 
-        local paramTable = mc_helpers.split(param, " ")
+        local paramTable = mc_core.split(param, " ")
         if (paramTable == nil) then
             paramTable = { param }
         end
 
-        if (mc_helpers.isNumber(paramTable[1]) and mc_helpers.isNumber(paramTable[2]) and mc_helpers.isNumber(paramTable[3]) and mc_helpers.isNumber(paramTable[4])) then
+        if (mc_core.isNumber(paramTable[1]) and mc_core.isNumber(paramTable[2]) and mc_core.isNumber(paramTable[3]) and mc_core.isNumber(paramTable[4])) then
             local realmID = paramTable[1]
             local requestedRealm = Realm.realmDict[tonumber(realmID)]
 
@@ -936,11 +964,11 @@ minetest.register_chatcommand("teleport", {
 
             requestedRealm:TeleportPlayer(player)
             player:set_pos(worldPosition)
-        elseif (mc_helpers.isNumber(paramTable[1]) and paramTable[2] == nil) then
+        elseif (mc_core.isNumber(paramTable[1]) and paramTable[2] == nil) then
             return commands["tp"].func(name, paramTable)
         elseif (paramTable[1] ~= nil and paramTable[2] == nil) then
             return teleport(name, paramTable[1])
-        elseif (paramTable[1] ~= nil and mc_helpers.isNumber(paramTable[2])) then
+        elseif (paramTable[1] ~= nil and mc_core.isNumber(paramTable[2])) then
             return commands["tp"].func(paramTable[1], { paramTable[2] })
         elseif (paramTable[1] ~= nil and paramTable[2] ~= nil) then
             return teleport(paramTable[1], paramTable[2])
