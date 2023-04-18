@@ -1,6 +1,8 @@
 -- initialize minetest_classroom global object + mod table
 minetest_classroom = {}
 mc_core = {path = minetest.get_modpath("mc_core")}
+-- for compatibility with older mods
+mc_helpers = mc_core
 
 dofile(mc_core.path.."/Debugging.lua")
 dofile(mc_core.path.."/lualzw.lua")
