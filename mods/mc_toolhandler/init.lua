@@ -493,6 +493,36 @@ minetest.register_on_chatcommand(function(name, command, params)
 end)
 
 --- @public
+--- Returns true if `mc_toolhandler` is currently managing the tool, false otherwise
+--- @param tool Name of tool to check
+--- @return boolean
+function mc_toolhandler.tool_is_being_managed(tool)
+    local tool_name = minetest.registered_aliases[tool] or tool
+    if mc_toolhandler.reg_tools[tool_name] or mc_toolhandler.reg_group_tools[tool_name] then
+        return true
+    else
+        return false
+    end
+end
+
+--- @public
+--- Returns the list of privileges required to use the tool, or an empty list if the tool is not being managed
+--- @param tool Name of tool to check
+--- @return table
+function mc_toolhandler.get_tool_privs(tool)
+    if not mc_toolhandler.tool_is_being_managed(tool) then
+        return {}
+    else
+        local tool_name = minetest.registered_aliases[tool] or tool
+        if mc_toolhandler.reg_group_tools[tool_name] then
+            return mc_toolhandler.reg_groups[mc_toolhandler.reg_group_tools[tool_name]].privs
+        else
+            return mc_toolhandler.reg_tools[tool_name].privs
+        end
+    end
+end
+
+--- @public
 --- Returns a detached inventory containing all tools `player` has the privileges to use, which `player` can freely take copies of as desired
 --- It is recommended to call this every time access to the detached inventory is needed in case player privileges change between uses
 --- @param player Player to generate the detached inventory for
