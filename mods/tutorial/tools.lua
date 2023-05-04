@@ -19,7 +19,7 @@ minetest.register_alias("tutorialbook", "tutorial:tutorialbook")
 -- tutorial.tutorialbook = minetest.registered_aliases[tutorialbook] or tutorial.tutorialbook
 
 if minetest.get_modpath("mc_toolhandler") then
-	mc_toolhandler.register_tool_manager("tutorial:tutorialbook", {privs = {interact = true}, inv_override = "main"})
+	mc_toolhandler.register_tool_manager("tutorial:tutorialbook", {privs = {teacher = true}, inv_override = "main"})
 end
 
 -- The tutorial recording tool

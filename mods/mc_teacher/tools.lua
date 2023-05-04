@@ -1,13 +1,11 @@
--- The controller for accessing the teacher actions
 minetest.register_tool("mc_teacher:controller", {
     description = "Controller for teachers",
     inventory_image = "controller.png",
     _mc_tool_privs = {teacher = true},
-    -- Left-click the tool activates the teacher menu
     on_use = function(itemstack, player, pointed_thing)
         local pmeta = player:get_meta()
         if mc_helpers.checkPrivs(player) then
-            if pmeta:get_string("default_student_tab") ~= "" then
+            if pmeta:get_string("default_teacher_tab") ~= "" then
 				mc_teacher.show_controller_fs(player,pmeta:get_string("default_teacher_tab"))
 			else
 				mc_teacher.show_controller_fs(player,"1")

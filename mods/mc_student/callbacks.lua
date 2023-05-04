@@ -150,6 +150,45 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			if event.type == "CHG" then
 				selectedCoord = event.index
 			end
+		elseif fields.classroomlist then
+			local event = minetest.explode_textlist_event(fields.classroomlist)
+			if event.type == "CHG" then
+				-- We should not use the index here because the realm could be deleted while the formspec is active
+				-- So return the actual realm.ID to avoid unexpected behaviour
+				local counter = 0
+				for _,thisRealm in pairs(Realm.realmDict) do
+					if mc_helpers.checkPrivs(player,{teacher = true}) then
+						counter = counter + 1
+						if counter == tonumber(event.index) then
+							selectedRealmID = thisRealm.ID
+						end
+					else
+						counter = counter + 1
+						-- check the category
+						local realmCategory = thisRealm:getCategory()
+						local joinable, reason = realmCategory.joinable(thisRealm, player)
+						if joinable then
+							if counter == tonumber(event.index) then
+								selectedRealmID = thisRealm.ID
+							end
+						end
+					end
+				end
+				mc_student.show_notebook_fs(player,"2")
+			end
+		elseif fields.teleportrealm then
+			-- Still a remote possibility that the realm is deleted in the time that the callback is executed
+			-- So always check that the requested realm exists and the realm category allows the player to join
+			-- Check that the player selected something from the textlist, otherwise default to spawn realm
+			if not selectedRealmID then selectedRealmID = mc_worldManager.spawnRealmID end
+			local realm = Realm.GetRealm(tonumber(selectedRealmID))
+			if realm then
+				realm:TeleportPlayer(player)
+				selectedRealmID = nil
+			else
+				minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
+			end
+			mc_student.show_notebook_fs(player,"2")
 		elseif fields.go then
 			if not selectedCoord then selectedCoord = 1 end
 			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
@@ -226,7 +265,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				local connRealm = Realm.GetRealmFromPlayer(connplayer)
 				if connRealm.ID == realm.ID then
 					local pos = coords[selectedCoord]
-					minetest.chat_send_player(connplayer:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] "..player:get_player_name().." shared location {x="..tostring(pos.x)..", y="..tostring(pos.y)..", z="..tostring(pos.z).."} with the note: "..notes[selectedCoord]))
+					minetest.chat_send_player(connplayer:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] "..player:get_player_name().." shared location {x="..tostring(math.round(pos.x-realm.StartPos.x))..", y="..tostring(math.round(pos.y-realm.StartPos.y))..", z="..tostring(math.round(pos.z-realm.StartPos.z)).."} with the note: "..notes[selectedCoord]))
 				end
 			end
 			mc_student.show_notebook_fs(player,"3")
@@ -270,6 +309,29 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			chatlog.write_log(pname,"[REPORT] " .. clean_report)
 			minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] Your report has been received."))
 			mc_student.show_notebook_fs(player,"6")
+		elseif fields.classrooms then
+			mc_student.show_notebook_fs(player,"2")
+		elseif fields.map then
+			mc_student.show_notebook_fs(player,"3")
+		elseif fields.playersonline then
+			mc_student.show_notebook_fs(player,"4")
+		elseif fields.appearance then
+			mc_student.show_notebook_fs(player,"5")
+		elseif fields.help then
+			mc_student.show_notebook_fs(player,"6")
+		elseif fields.utmcoords then
+            local pmeta = player:get_meta()
+            pmeta:set_string("positionHudMode", "utm")
+		elseif fields.latloncoords then
+			local pmeta = player:get_meta()
+            pmeta:set_string("positionHudMode", "latlong")
+		elseif fields.classroomcoords then
+			local pmeta = player:get_meta()
+            pmeta:set_string("positionHudMode", "local")
+		elseif fields.coordsoff then
+			local pmeta = player:get_meta()
+			pmeta:set_string("positionHudMode", "")
+            mc_worldManager.RemoveHud(player)
 		else
 			-- Unhandled input
 			return

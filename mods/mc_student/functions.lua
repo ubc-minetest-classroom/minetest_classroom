@@ -1,13 +1,12 @@
-local marker_expiry = 30
-
 function mc_student.record_coordinates(player,message)
 	if mc_core.checkPrivs(player,{interact = true}) then
 		local pmeta = player:get_meta()
 		local pos = player:get_pos()
 		local realmID = pmeta:get_int("realm")
-		local temp
+		local temp, clean_message
 		clean_message = minetest.formspec_escape(message)
 		temp = minetest.deserialize(pmeta:get_string("coordinates"))
+		local datanew
 		if temp == nil then
 			datanew = {
 				realms = { realmID, },
@@ -37,7 +36,7 @@ function mc_student.queue_marker(player,message,pos)
 			mc_student.markers[pname].timer:cancel()
 		end
 		mc_student.markers[pname] = {
-			timer = minetest.after(marker_expiry, mc_student.remove_marker, pname),
+			timer = minetest.after(mc_student.marker_expiry, mc_student.remove_marker, pname),
 		}
 		mc_student.show_marker(pname,message,pos)
 	end
