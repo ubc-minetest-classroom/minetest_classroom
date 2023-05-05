@@ -7,7 +7,7 @@ function mc_student.show_notebook_fs(player,tab)
 	local notebook_height = 10.2
     local pname = player:get_player_name()
 	local pmeta = player:get_meta()
-	if mc_helpers.checkPrivs(player,{interact = true}) then
+	if mc_core.checkPrivs(player,{interact = true}) then
 		local student_formtable = {
 			"formspec_version[6]",
 			"size[",
@@ -240,7 +240,7 @@ function mc_student.show_notebook_fs(player,tab)
 				for _,thisRealm in pairs(Realm.realmDict) do
 					counter = counter + 1
 					-- check if the realm is something that should be shown to this player
-					if mc_helpers.checkPrivs(player,{teacher = true}) then
+					if mc_core.checkPrivs(player,{teacher = true}) then
 						-- show all realms to teachers
 						fs[#fs + 1] = thisRealm.Name
 						fs[#fs + 1] = " ("

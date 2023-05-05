@@ -32,7 +32,7 @@ end)
 minetest.register_on_chatcommand(function(name, command, params)
 	if command == "msg" then
 		-- For some reason, the params in this callback is a string rather than a table; need to parse the player name
-		local params_table = mc_helpers.split(params, " ")
+		local params_table = mc_core.split(params, " ")
 		local to_player = params_table[1]
 		if minetest.get_player_by_name(to_player) then
 			local message = string.sub(params, #to_player+2, #params)
@@ -157,7 +157,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				-- So return the actual realm.ID to avoid unexpected behaviour
 				local counter = 0
 				for _,thisRealm in pairs(Realm.realmDict) do
-					if mc_helpers.checkPrivs(player,{teacher = true}) then
+					if mc_core.checkPrivs(player,{teacher = true}) then
 						counter = counter + 1
 						if counter == tonumber(event.index) then
 							selectedRealmID = thisRealm.ID

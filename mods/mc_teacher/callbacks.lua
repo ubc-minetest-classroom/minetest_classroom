@@ -102,12 +102,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
 
         if fields.requestrealm then
-            if mc_helpers.checkPrivs(player,{teacher = true}) then
+            if mc_core.checkPrivs(player,{teacher = true}) then
                 local realmName, realmSizeX, realmSizeZ, realmSizeY
                 if fields.realmname == "" or fields.realmname == nil then realmName = "Unnamed Classroom" else realmName = fields.realmname end
                 if mc_teacher.fs_context.selectedMode == "2" then
                     -- Sanitize input
-                    if mc_helpers.checkPrivs(player,{server = true}) then
+                    if mc_core.checkPrivs(player,{server = true}) then
                         if tonumber(fields.realmxsize) and tonumber(fields.realmxsize) >= 80 then
                             realmSizeX = tonumber(fields.realmxsize)
                         else
@@ -181,7 +181,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 -- So return the actual realm.ID to avoid unexpected behaviour
                 local counter = 0
                 for _,thisRealm in pairs(Realm.realmDict) do
-                    if mc_helpers.checkPrivs(player,{teacher = true}) then
+                    if mc_core.checkPrivs(player,{teacher = true}) then
                         counter = counter + 1
                         if counter == tonumber(event.index) then
                             selectedRealmID = thisRealm.ID

@@ -119,7 +119,7 @@ function mc_mapper.map_handler(player)
 							tiles = def["tiles"]
 							if tiles ~= nil then
 								tile = tiles[1]
-								local palette = mc_helpers.split(def["name"], ":")
+								local palette = mc_core.split(def["name"], ":")
 								if type(tile) == "table" then
 									tile = tile["name"]
 								end
@@ -153,7 +153,7 @@ function mc_mapper.map_handler(player)
 							tiles = def["tiles"]
 							if tiles ~= nil then
 								tile = tiles[1]
-								palette = mc_helpers.split(def["name"], ":")
+								palette = mc_core.split(def["name"], ":")
 								if type(tile) == "table" then
 									tile = tile["name"]
 								end
@@ -215,7 +215,7 @@ function mc_mapper.map_handler(player)
 						tiles = def["tiles"]
 						if tiles ~= nil then
 							tile = tiles[1]
-							local palette = mc_helpers.split(def["name"], ":")
+							local palette = mc_core.split(def["name"], ":")
 							if type(tile) == "table" then
 								tile = tile["name"]
 							end
@@ -278,7 +278,7 @@ function mc_mapper.map_handler(player)
 					tiles = def["tiles"]
 					if tiles ~= nil then
 						tile = tiles[1]
-						local palette = mc_helpers.split(def["name"], ":")
+						local palette = mc_core.split(def["name"], ":")
 						if type(tile) == "table" then
 							tile = tile["name"]
 						end

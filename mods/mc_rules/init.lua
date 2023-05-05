@@ -72,7 +72,7 @@ minetest.register_chatcommand("rules", {
 	description = "Server rules",
 	func = function(name, param)
 	minetest.after((0.1), function()
-        if mc_helpers.checkPrivs(minetest.get_player_by_name(name), priv_table) then
+        if mc_core.checkPrivs(minetest.get_player_by_name(name), priv_table) then
             return minetest.show_formspec(name, "mc_rules:edit", mc_rules.show_edit_formspec(nil))
         else
             local pmeta = minetest.get_player_by_name(name):get_meta()
@@ -91,7 +91,7 @@ minetest.register_on_joinplayer(function(player)
     local pmeta = player:get_meta()
     local pdata = pmeta:get_int("mc_rules")
     if pdata ~= nil and pdata == 0 then
-        if mc_helpers.checkPrivs(player, priv_table) then
+        if mc_core.checkPrivs(player, priv_table) then
             minetest.show_formspec(player:get_player_name(), "mc_rules:rules", mc_rules.show_edit_formspec(nil))
         else
             minetest.show_formspec(player:get_player_name(), "mc_rules:rules", mc_rules.show_rules_formspec(false))
@@ -125,7 +125,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if pdata and pdata == 1 then
                 return true
             else
-                if not mc_helpers.checkPrivs(player, priv_table) then
+                if not mc_core.checkPrivs(player, priv_table) then
                     minetest.kick_player(player:get_player_name(), "You must agree to the rules in order to play on this server.")
                 end
             end
@@ -136,7 +136,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.dismiss then
             return true
         elseif fields.save then
-            if mc_helpers.checkPrivs(player, priv_table) then
+            if mc_core.checkPrivs(player, priv_table) then
                 mc_rules.meta:set_string("rules",fields.message)
                 mc_rules.show_edit_formspec(fields.message)
                 local pmeta = player:get_meta()
