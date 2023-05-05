@@ -130,51 +130,6 @@ dofile(mc_tutorial.path .. "/tools.lua")
 dofile(mc_tutorial.path .. "/callbacks.lua")
 dofile(mc_tutorial.path .. "/commands.lua")
 
---- Creates a notebook formspec with a content area of the given width and height
---- The created formspec will exceed the bounds of the content area (0.5u left, 0.75u right, 1.1u above, 0.4u below)
---- @param width Content area width
---- @param height Content area height
---- @param options Formspec options
---- @return formspec string
-local function draw_book_fs(width, height, options)
-    options = options or {}
-    local book_bg = {
-        "formspec_version[6]",
-        "size[", width, ",", height, "]",
-        -- book border: L=0.25, R=0.5, T=1.1, B=0.4, LX=0.5, RX=0.75
-        "style_type[image;noclip=true]",
-        "image[-0.5,-0.85;0.4,", height + 1, ";mc_tutorial_pixel.png^[multiply:", options.bg or "#325140", "]",
-        "image[", width + 0.4, ",-0.85;0.35,", height + 1, ";mc_tutorial_pixel.png^[multiply:", options.shadow or "#23392d", "]", -- #302e3f
-        "image[-0.25,-1.1;", width + 0.75, ",", height + 1.5, ";mc_tutorial_pixel.png^[multiply:", options.bg or "#325140", "]",
-        -- book binding
-        "image[", width/2 - 0.125, ",-1.1;0.25,", height + 1.5, ";mc_tutorial_pixel.png^[multiply:", options.binding or "#164326", "]",
-        -- page edges
-        "image[-0.15,0;0.2,", height, ";mc_tutorial_pixel.png^[multiply:#d9d9d9]",
-        "image[", width - 0.05, ",0;0.2,", height, ";mc_tutorial_pixel.png^[multiply:#d9d9d9]",
-        "image[0,-0.25;", width, ",0.3;mc_tutorial_pixel.png^[multiply:#d9d9d9]",
-        "style_type[image;noclip=false]",
-        -- page BG
-        "image[0,0;", width, ",", height, ";mc_tutorial_pixel.png^[multiply:#f5f5f5]",
-    }
-
-    -- margins + lines
-    local y = 0.85
-    while (y + 0.035) < height do
-        table.insert(book_bg, table.concat({"image[0,", y, ";", width, ",0.035;mc_tutorial_pixel.png^[multiply:#cbecf7]"}, ""))
-        y = y + 0.65
-    end
-    for _,x in pairs(options.margin_lines or {1, width/2 + 1}) do
-        table.insert(book_bg, table.concat({"image[", x, ",0;0.035,", height, ";mc_tutorial_pixel.png^[multiply:#f6e3e3]"}, ""))
-    end
-
-    -- divider
-    if options.divider then
-        table.insert(book_bg, table.concat({"image[", width/2 - 0.025, ",0;0.05,", height, ";mc_tutorial_pixel.png^[multiply:", options.divider, "]"}))
-    end
-
-    return table.concat(book_bg, "")
-end
-
 minetest.register_on_joinplayer(function(player)
     -- Load player meta
     local pmeta = player:get_meta()
@@ -525,7 +480,7 @@ function mc_tutorial.show_record_fs(player)
         local record_formtable = {
             "formspec_version[6]",
             "size[16.4,10.2]",
-            draw_book_fs(16.4, 10.2, {bg = "#63406a", shadow = "#3e2b45", binding = "#5d345e", divider = "#d9d9d9"}),
+            mc_core.draw_book_fs(16.4, 10.2, {bg = "#63406a", shadow = "#3e2b45", binding = "#5d345e", divider = "#d9d9d9"}),
             "style[tabheader;noclip=true]",
             "tabheader[0,-0.25;16,0.55;record_nav;Overview,Events,Rewards", mc_tutorial.tutorials_exist() and ",Dependencies" or "", ";", context.tab or "1", ";true;false]"
         }
@@ -1118,7 +1073,7 @@ function mc_tutorial.show_tutorials(player)
     local tutorial_keys = mc_tutorial.get_storage_keys()
 
     local fs_core = { 
-        draw_book_fs(15.8, 11, {bg = "#403e65", shadow = "#363349", binding = "#2f3054", divider = "#000000"}),
+        mc_core.draw_book_fs(15.8, 11, {bg = "#403e65", shadow = "#363349", binding = "#2f3054", divider = "#000000"}),
         "image[0,0;7.875,0.5;mc_tutorial_pixel.png^[multiply:#acacac]",       -- header
         "image_button_exit[0.2,0.05;0.4,0.4;mc_tutorial_x.png;exit;;false;false]",
         "tooltip[exit;Exit]",
