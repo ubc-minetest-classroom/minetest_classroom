@@ -35,6 +35,9 @@ function Realm:TeleportPlayer(player)
     -- We run the teleport functions of the new realm. These are added by non-core features, other mods, and realms.
     self:RunTeleportInFunctions(player)
 
+    -- Remove active huds that are realm-specific
+    mc_student.remove_marker(player:get_player_name())
+
     return true, "Successfully teleported to realm."
 end
 
@@ -135,5 +138,12 @@ end
 ---GetPlayerCount retrieves the number of players currently in this realm.
 ---@return number of players currently in this realm.
 function Realm:GetPlayerCount()
-    return #self:get_tmpData("Inhabitants")
+    local inhabitants = self:get_tmpData("Inhabitants")
+    if inhabitants then
+        local countInhabitants = 0
+        for _ in pairs(inhabitants) do countInhabitants = countInhabitants + 1 end
+        return countInhabitants
+    else
+        return 0
+    end
 end

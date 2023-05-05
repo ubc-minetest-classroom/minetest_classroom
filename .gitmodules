@@ -7,12 +7,6 @@
 [submodule "mods/living_trees"]
 	path = mods/living_trees
 	url = https://github.com/ubc-minetest-classroom/living_trees
-[submodule "realterrain"]
-	path = realterrain
-	url = https://github.com/ubc-minetest-classroom/realterrain
-[submodule "living_trees"]
-	path = living_trees
-	url = https://github.com/ubc-minetest-classroom/living_trees
 [submodule "mods/realterrain"]
 	path = mods/realterrain
 	url = https://github.com/ubc-minetest-classroom/realterrain

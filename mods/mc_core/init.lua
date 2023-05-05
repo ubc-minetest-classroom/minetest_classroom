@@ -1,8 +1,33 @@
 -- initialize minetest_classroom global object + mod table
 minetest_classroom = {}
-mc_core = {path = minetest.get_modpath("mc_core")}
+mc_core = {
+    path = minetest.get_modpath("mc_core"),
+    meta = minetest.get_mod_storage()
+}
 -- for compatibility with older mods
 mc_helpers = mc_core
+
+-- Required MT version
+assert(minetest.features.formspec_version_element, "Minetest 5.1 or later is required")
+
+-- Internationalisaton
+minetest_classroom.S = minetest.get_translator("minetest_classroom")
+minetest_classroom.FS = function(...)
+    return minetest.formspec_escape(minetest_classroom.S(...))
+end
+
+-- Hooks needed to make api.lua testable
+minetest_classroom.get_connected_players = minetest.get_connected_players
+minetest_classroom.get_player_by_name = minetest.get_player_by_name
+minetest_classroom.check_player_privs = minetest.check_player_privs
+
+--[[ minetest_classroom.load_from(mc_core.meta)
+
+function minetest_classroom.save()
+    minetest_classroom.save_to(mc_core.meta)
+end
+
+minetest.register_on_shutdown(minetest_classroom.save) ]]
 
 dofile(mc_core.path.."/Debugging.lua")
 dofile(mc_core.path.."/lualzw.lua")
