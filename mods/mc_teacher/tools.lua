@@ -6,10 +6,10 @@ minetest.register_tool("mc_teacher:controller", {
         local pmeta = player:get_meta()
         if mc_core.checkPrivs(player) then
             if pmeta:get_string("default_teacher_tab") ~= "" then
-				mc_teacher.show_controller_fs(player,pmeta:get_string("default_teacher_tab"))
-			else
-				mc_teacher.show_controller_fs(player,"1")
-			end
+                mc_teacher.show_controller_fs(player,pmeta:get_string("default_teacher_tab"))
+            else
+                mc_teacher.show_controller_fs(player,"1")
+            end
         end
     end,
     on_drop = function(itemstack, dropper, pos)

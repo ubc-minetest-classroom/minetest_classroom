@@ -214,7 +214,7 @@ minetest.register_chatcommand("add_ipv4_range", {
 })
 
 function networking.modify_ipv4(player,startRange,endRange,add)
-	if mc_core.checkPrivs(player,{server = true}) then
+    if mc_core.checkPrivs(player,{server = true}) then
         local pname = player:get_player_name()
         local startOctets, endOctets
         -- Validate entry
