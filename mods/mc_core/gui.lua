@@ -1,7 +1,7 @@
 --- Creates a notebook formspec with a content area of the given width and height
 --- The created formspec will exceed the bounds of the content area
 --- --- General bounds are (0.5 units left, 0.75 units right, 1.1 units above, 0.4 units below)
---- --- Upper page edge starts at (0, -0.25)
+--- --- Upper page edge starts at (0, -0.25), content area starts at (0, 0)
 --- @param width Content area width
 --- @param height Content area height
 --- @param options Formspec options

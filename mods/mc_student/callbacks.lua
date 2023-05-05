@@ -114,11 +114,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname == "mc_student:notebook_fs" then
 		if fields.record_nav then
             mc_student.fs_context.tab = fields.record_nav
-            mc_student.show_notebook_fs(player,mc_student.fs_context.tab)
+            mc_student.show_notebook_fs(player, mc_student.fs_context.tab)
 		end
 		if fields.default_tab then
-			pmeta:set_string("default_student_tab",mc_student.fs_context.tab)
-			mc_student.show_notebook_fs(player,mc_student.fs_context.tab)
+			pmeta:set_string("default_student_tab", mc_student.fs_context.tab)
+			mc_student.show_notebook_fs(player, mc_student.fs_context.tab)
 		end
 		if fields.realms then
 			local event = minetest.explode_textlist_event(fields.realms)

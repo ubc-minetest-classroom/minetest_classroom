@@ -2,26 +2,90 @@ local selectedCoord = nil
 local selectedRealmID = nil
 local marker_expiry = 30
 
-function mc_student.show_notebook_fs(player,tab)
+--[[
+				local rules_text = mc_rules.meta:get_string("rules")
+				if rules_text and rules_text ~= "" then
+					fs[#fs + 1] = rules_text
+				else
+					fs[#fs + 1] = "Rules have not yet been set for this server. Please contact a Teacher for more information."
+				end
+
+				if pmeta:get_string("default_student_tab") == "1" then
+					fs[#fs + 1] = "style_type[label;font_size=*0.8;textcolor=#000]label[0.2,"
+					fs[#fs + 1] = tostring(notebook_height-0.2)
+					fs[#fs + 1] = ";This tab is the default]"
+				else
+					fs[#fs + 1] = "checkbox[0.2,"
+					fs[#fs + 1] = tostring(notebook_height-0.2)
+					fs[#fs + 1] = ";default_tab;"
+					fs[#fs + 1] = minetest.colorize("#000","Bookmark?")
+					fs[#fs + 1] = ";false]"
+				end
+]]
+
+function mc_student.show_notebook_fs(player, tab)
 	local notebook_width = 16.4
 	local notebook_height = 10.2
     local pname = player:get_player_name()
 	local pmeta = player:get_meta()
+	if not mc_student.fs_context.tab then
+		mc_student.fs_context.tab = "1"
+	end
+
 	if mc_core.checkPrivs(player,{interact = true}) then
 		local student_formtable = {
 			"formspec_version[6]",
-			"size[",
-			tostring(notebook_width),
-			",",
-			tostring(notebook_height),
-			"]",
-			mc_core.draw_book_fs(notebook_width, notebook_height, {bg = "#63406a", shadow = "#3e2b45", binding = "#5d345e", divider = "#d9d9d9"}),
+			"size[", tostring(notebook_width), ",", tostring(notebook_height), "]",
+			mc_core.draw_book_fs(notebook_width, notebook_height, {divider = "#d9d9d9"}),
 			"style[tabheader;noclip=true]",
 			"tabheader[0,-0.25;16,0.55;record_nav;Overview,Classrooms,Map,Players Online,Appearance,Rules and Help;", tab or pmeta:get_string("default_student_tab") or mc_student.fs_context.tab or "1", ";true;false]"
 		}
+		
+		local bookmarked_tab = pmeta:get_string("default_student_tab")
 		local tab_map = {
 			["1"] = function() -- OVERVIEW
-				local fsx, fsy, last_height, last_width
+				local button_width = 1.7
+				local button_height = 1.6
+				local rules = mc_rules.meta:get_string("rules")
+				if not rules or rules == "" then
+					rules = "Rules have not yet been set for this server. Please contact a teacher for more information."
+				end
+
+				local fs = {
+					"style_type[textarea;textcolor=#000000]",
+					"hypertext[0.55,0.5;7.1,1;;<center><style font=mono color=#000000 size=*1.25></b>Welcome to Minetest Classroom!</b></style></center>]",
+					"textarea[0.55,1.2;7.1,2.8;;;", minetest.formspec_escape("This is the Student Notebook, your tool for accessing classrooms and other features."),
+					"\n", minetest.formspec_escape("You cannot drop or delete the Student Notebook, so you will never lose it, but you can move it out of your hotbar and into your inventory or the toolbox."), "]",
+					"hypertext[0.55,4.2;7.1,1;;<center><style font=mono color=#000000 size=*1.25></b>Server Rules</b></style></center>]",
+					"textarea[0.55,4.9;7.1,4.7;;;", minetest.formspec_escape(rules), "]",
+					"hypertext[8.75,0.5;7.1,1;;<center><style font=mono color=#000000 size=*1.25></b>Student Dashboard</b></style></center>]",
+					"image_button[8.8,1.2;", button_width, ",", button_height, ";mc_student_classrooms.png;;;false;false]",
+					"image_button[8.8,2.9;", button_width, ",", button_height, ";mc_student_map.png;;;false;false]",
+					"image_button[8.8,4.6;", button_width, ",", button_height, ";mc_student_appearance.png;;;false;false]",
+					"image_button[8.8,6.3;", button_width, ",", button_height, ";mc_student_help.png;;;false;false]",
+					"hypertext[10.55,1.5;5.3,1.6;;<style color=#000000><b>Classrooms</b>\n", minetest.formspec_escape("Find classrooms or players"), "</style>]",
+					"hypertext[10.55,3.2;5.3,1.6;;<style color=#000000><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "</style>]",
+					"hypertext[10.55,4.9;5.3,1.6;;<style color=#000000><b>Appearance</b>\n", minetest.formspec_escape("Personalize your avatar"), "</style>]",
+					"hypertext[10.55,6.6;5.3,1.6;;<style color=#000000><b>Help</b>\n", minetest.formspec_escape("Report a player or server issue"), "</style>]",
+				}
+
+				minetest.log(minetest.serialize(bookmarked_tab))
+				if bookmarked_tab == "1" then
+					table.insert(fs, table.concat{
+						"image[15.8,-0.25;0.5,1;mc_student_bookmark_filled.png]",
+						"tooltip[15.8,-0.25;0.5,1;This tab is currently bookmarked]"
+					})
+				else
+					table.insert(fs, table.concat{
+						"image_button[15.8,-0.25;0.5,1;mc_student_bookmark_hollow.png;default_tab;M;true;false]",
+						"tooltip[default_tab;Bookmark this tab?]"
+					})
+				end
+
+				return fs
+
+
+				--[[local fsx, fsy, last_height, last_width
 				fsx = notebook_width/2+1
 				fsy = 0.85
 				local fs = {}
@@ -177,7 +241,7 @@ function mc_student.show_notebook_fs(player,tab)
 				fs[#fs + 1] = ";"
 				fs[#fs + 1] = minetest.colorize("#000","Report an issue or player")
 				fs[#fs + 1] = "]"
-				return fs
+				return fs]]--
 			end,
 			["2"] = function() -- CLASSROOMS
 				local fsx, fsy, last_height
@@ -911,8 +975,39 @@ function mc_student.show_notebook_fs(player,tab)
 				return fs
 			end,
 		}
+		
 		table.insert(student_formtable, table.concat(tab_map[tab or pmeta:get_string("default_student_tab") or mc_student.fs_context.tab or "1"](), ""))
 		minetest.show_formspec(pname, "mc_student:notebook_fs", table.concat(student_formtable, ""))
 		return true
 	end
 end
+
+--[[
+NEW FORMSPEC CLEAN COPIES
+
+TAB GROUPING:
+[1] OVERVIEW + RULES
+[2] CLASSROOMS + ONLINE PLAYERS (classrooms)
+[3] MAP + COORDINATES (map)
+[4] APPEARANCE (appearance)
+[5] HELP + REPORT (help)
+
+OVERVIEW + RULES TAB:
+formspec_version[6]
+size[16.4,10.2]
+box[8.195,0;0.05,10.2;#000000]
+textarea[0.55,0.5;7.1,1;;;Welcome to Minetest Classroom!]
+textarea[0.55,1.2;7.1,2.8;;;This is the Student Notebook\, your tool for accessing classrooms and other features. You cannot drop or delete the Student Notebook\, so you will never lose it\, but you can move it out of your hotbar and into your inventory or the toolbox.]
+textarea[0.55,4.2;7.1,1;;;Server Rules]
+textarea[8.75,0.5;7.1,1;;;Student Dashboard]
+textarea[0.55,4.9;7.1,4.7;;;These are the server rules!]
+image_button[15.8,-0.25;0.5,1;mc_student_bookmark_hollow.png;default_tab;M;true;false]
+image_button[8.8,1.2;1.7,1.6;mc_student_classrooms.png;;;false;true]
+image_button[8.8,2.9;1.7,1.6;mc_student_map.png;;;false;true]
+image_button[8.8,4.6;1.7,1.6;mc_student_appearance.png;;;false;true]
+image_button[8.8,6.3;1.7,1.6;mc_student_help.png;;;false;true]
+textarea[10.65,1.2;5.2,1.6;;;Classrooms: find classrooms\, view online players]
+textarea[10.65,2.9;5.2,1.6;;;Map: record and share locations\, take spatial notes]
+textarea[10.65,4.6;5.2,1.6;;;Appearance: personalize your avatar]
+textarea[10.65,6.3;5.2,1.6;;;Help: Report a player or server issue]
+]]
