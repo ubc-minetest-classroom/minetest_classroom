@@ -493,15 +493,15 @@ function mc_tutorial.show_record_fs(player)
                     "textarea[0.55,4.4;7.1,1;;;Completion message]",
                     "textarea[8.75,0.5;7.1,1;;;Tutorial summary]",
                     "style_type[textarea;border=false;font=mono;textcolor=white]",
-                    "image[0.6,0.9;7,0.7;mc_tutorial_pixel.png^[multiply:#1e1e1e]",
-                    "image[0.6,2.2;7,2;mc_tutorial_pixel.png^[multiply:#1e1e1e]",
-                    "image[0.6,4.8;7,2;mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "image[0.6,0.9;7,0.7;mc_pixel.png^[multiply:#1e1e1e]",
+                    "image[0.6,2.2;7,2;mc_pixel.png^[multiply:#1e1e1e]",
+                    "image[0.6,4.8;7,2;mc_pixel.png^[multiply:#1e1e1e]",
                     "textarea[0.6,0.9;7,0.7;title;;", temp.title or "", "]",
                     "textarea[0.6,2.2;7,2;description;;", temp.description or "", "]",
                     "textarea[0.6,4.8;7,2;message;;", temp.on_completion and temp.on_completion.message or "", "]",
                     "style_type[textarea;border=true;font=mono;textcolor=black]",
                     "textarea[8.8,0.9;7,8.7;;;", minetest.formspec_escape(get_tutorial_summary(temp)), "]",
-                    "style_type[button_exit;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "style_type[button_exit;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
                     "button_exit[0.6,7.9;7,0.8;finish;Finish and save]",
                     "button_exit[0.6,8.8;7,0.8;cancel;Exit without saving]",
                     "tooltip[title;Title of tutorial, will be listed in the tutorial book]",
@@ -515,7 +515,7 @@ function mc_tutorial.show_record_fs(player)
                     "textarea[0.55,0.5;15.3,1;;;Recorded events]",
                     "style[eventlist;font=mono]",
                     "textlist[0.6,0.9;15.2,7;eventlist;", table.concat(context.events, ","), ";", context.selected_event or 1, ";false]",
-                    "style_type[image_button;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "style_type[image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
                     "image_button[0.6,8.0;1.6,1.6;mc_tutorial_add_event.png;eventlist_add_event;;false;true]",
                     "image_button[2.3,8.0;1.6,1.6;mc_tutorial_add_group.png;eventlist_add_group;;false;true]",
                     "image_button[4.0,8.0;1.6,1.6;mc_tutorial_edit.png;eventlist_edit;;false;true]",
@@ -548,17 +548,17 @@ function mc_tutorial.show_record_fs(player)
                     "style_type[textlist;font=mono]",
                     "textlist[0.6,0.9;7,6;reward_list;", concat_col_field_list(context.rewards, ","), ";", context.reward_selected and context.reward_selected[1] or 1, ";false]",
                     "textlist[8.8,0.9;7,6;reward_selection;", concat_col_field_list(context.selected_rewards, ","), ";", context.reward_selected and context.reward_selected[2] or 1, ";false]",
-                    "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
                     "style_type[field;border=false;font=mono]",
                     "image_button[7.8,0.9;0.8,2.9;mc_tutorial_reward_add.png;reward_add;;false;true]",
                     "image_button[7.8,4;0.8,2.9;mc_tutorial_reward_delete.png;reward_delete;;false;true]",
                     "textarea[8.75,7.1;7.1,1;;;Quantity (WIP)]",
                     "textarea[8.75,8.4;7.1,1;;;Search for rewards (WIP)]",
-                    "image[8.8,7.5;7,0.8;mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "image[8.8,7.5;7,0.8;mc_pixel.png^[multiply:#1e1e1e]",
                     "field[8.8,7.5;7,0.8;reward_quantity;;1]",
                     "field_close_on_enter[reward_quantity;false]",
                     --"button[13.9,7.5;1.9,0.8;reward_quantity_update;Update]",
-                    "image[8.8,8.8;7,0.8;mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "image[8.8,8.8;7,0.8;mc_pixel.png^[multiply:#1e1e1e]",
                     "field[8.8,8.8;7,0.8;reward_search;;]",
                     "field_close_on_enter[depend_search;false]",
                     --"image_button[14.2,8.8;0.8,0.8;mc_tutorial_search.png;reward_search_go;;false;false]",
@@ -587,14 +587,14 @@ function mc_tutorial.show_record_fs(player)
                     "textlist[0.6,0.9;7,6.3;depend_tutorials;", table.concat(context.tutorials.main.list, ","), ";", context.tutorials.main.selected or 1, ";false]",
                     "textlist[8.8,0.9;7,3.1;dependencies;", table.concat(context.tutorials.dep_cy.list, ","), ";", context.tutorials.dep_cy.selected or 1, ";false]",
                     "textlist[8.8,5.6;7,3.1;dependents;", table.concat(context.tutorials.dep_nt.list, ","), ";", context.tutorials.dep_nt.selected or 1, ";false]",
-                    "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
                     "style_type[field;border=false;font=mono]",
                     "button[0.6,7.3;3.45,0.8;dependencies_add;Add dependency]",
                     "button[8.8,4.1;7,0.8;dependencies_delete;Delete dependency]",
                     "button[4.15,7.3;3.45,0.8;dependents_add;Add dependent]",
                     "button[8.8,8.8;7,0.8;dependents_delete;Delete dependent]",
                     "textarea[0.55,8.4;7.1,1;;;Search for tutorials (WIP)]",
-                    "image[0.6,8.8;7,0.8;mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "image[0.6,8.8;7,0.8;mc_pixel.png^[multiply:#1e1e1e]",
                     "field[0.6,8.8;7,0.8;depend_search;;]",
                     "field_close_on_enter[depend_search;false]",
                     --"image_button[6,8.8;0.8,0.8;mc_tutorial_search.png;depend_search_go;;false;false]",
@@ -629,7 +629,6 @@ textarea[0.6,4.8;7,2;message;;]
 textarea[8.8,0.9;7,8.7;;;]
 button_exit[0.6,7.9;7,0.8;finish;Finish and save]
 button_exit[0.6,8.8;7,0.8;cancel;Exit without saving]
-
 
 EVENTS TAB:
 formspec_version[6]
@@ -1074,8 +1073,8 @@ function mc_tutorial.show_tutorials(player)
 
     local fs_core = { 
         mc_core.draw_book_fs(15.8, 11, {bg = "#403e65", shadow = "#363349", binding = "#2f3054", divider = "#000000"}),
-        "image[0,0;7.875,0.5;mc_tutorial_pixel.png^[multiply:#acacac]",       -- header
-        "image_button_exit[0.2,0.05;0.4,0.4;mc_tutorial_x.png;exit;;false;false]",
+        "image[0,0;7.875,0.5;mc_pixel.png^[multiply:#acacac]",       -- header
+        "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
         "tooltip[exit;Exit]",
         "style_type[label;font=mono]",
         "label[3.05,0.25;Tutorials]",
@@ -1130,19 +1129,19 @@ function mc_tutorial.show_tutorials(player)
         if mc_tutorial.active[pname] then
             if context.tutorial_i_to_id[context.tutorial_selected] == mc_tutorial.active[pname] then
                 table.insert(fs, table.concat({
-                    "style[stop;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#590c0c]",
+                    "style[stop;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#590c0c]",
                     "button[8.5,9.5;6.7,0.9;stop;Stop tutorial]",
                 }))
             else
                 table.insert(fs, table.concat({
-                    "style[start;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:", dep_check and "#6e5205" or "#acacac", "]",
+                    "style[start;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", dep_check and "#6e5205" or "#acacac", "]",
                     "button_exit[8.5,9.5;6.7,0.9;start;Start new tutorial]",
                     "tooltip[start;This will stop the active tutorial]",
                 }))
             end
         else
             table.insert(fs, table.concat({
-                "style[start;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:", dep_check and "#055c22" or "#acacac", "]",
+                "style[start;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", dep_check and "#055c22" or "#acacac", "]",
                 "button_exit[8.5,9.5;6.7,0.9;start;Start tutorial]",
             }))
         end
@@ -1151,14 +1150,14 @@ function mc_tutorial.show_tutorials(player)
         if has_recorder_privs then
             if (not mc_tutorial.active[pname] or context.tutorial_i_to_id[context.tutorial_selected] ~= mc_tutorial.active[pname]) then
                 table.insert(fs, table.concat({
-                    "style_type[image_button;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#1e1e1e]",
+                    "style_type[image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
                     "image_button[0.6,9.5;2.1,0.9;blank.png;edit;Edit;false;true]",
                     "image_button[2.9,9.5;2.1,0.9;blank.png;hide;Hide;false;true]",
                     "image_button[5.2,9.5;2.1,0.9;blank.png;delete;Delete;false;true]",
                 }))
             else
                 table.insert(fs, table.concat({
-                    "style_type[image_button;border=false;font=mono,bold;bgimg=mc_tutorial_pixel.png^[multiply:#acacac]",
+                    "style_type[image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#acacac]",
                     "image_button[0.6,9.5;2.1,0.9;blank.png;blocked;Edit;false;true]",
                     "image_button[2.9,9.5;2.1,0.9;blank.png;blocked;Hide;false;true]",
                     "image_button[5.2,9.5;2.1,0.9;blank.png;blocked;Delete;false;true]",
@@ -1188,7 +1187,7 @@ formspec_version[6]
 size[15.8,11]
 box[0,0;7.9,0.5;#acacac]
 box[7.875,0;0.05,11;#000000]
-image_button_exit[0.2,0.05;0.4,0.4;mc_tutorial_x.png;exit;;false;false]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 label[3,0.25;Tutorials]
 textarea[0.55,1;6.8,1.1;;;Select a tutorial]
 textlist[0.6,1.5;6.7,7.8;tutoriallist;;1;false]
