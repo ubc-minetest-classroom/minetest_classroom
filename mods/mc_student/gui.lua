@@ -1,27 +1,56 @@
-local selectedCoord = nil
-local selectedRealmID = nil
-local marker_expiry = 30
+local marker_expiry = mc_student.marker_expiry
+
+local function player_can_join_realm(player, realm)
+	local realmCategory = realm:getCategory()
+	local joinable, reason = realmCategory.joinable(realm, player)
+	return joinable
+end
+
+local function get_fs_classroom_list(player)
+	local list = {}
+	Realm.ScanForPlayerRealms()
+
+	for _,realm in pairs(Realm.realmDict) do
+		-- check if the realm is something that should be shown to this player
+		if mc_core.checkPrivs(player, {teacher = true}) or player_can_join_realm(player, realm) then
+			local playerCount = tonumber(realm:GetPlayerCount())
+			table.insert(list, table.concat({
+				realm.Name, " (", playerCount, " player", playerCount == 1 and "" or "s", ")"
+			}))
+		end
+	end
+	return table.concat(list, ",")
+end
+
+local function get_ping_texture(pinfo)
+	local tile = 5
+	if pinfo then
+		local ping = math.floor(pinfo.avg_rtt * 1000/2)
+		if ping >= 750 then
+			tile = 4
+		elseif ping >= 350 then
+			tile = 3
+		elseif ping >= 150 then
+			tile = 2
+		elseif ping >= 50 then
+			tile = 1
+		elseif ping >= 0 then
+			tile = 0
+		end	
+	end
+	return "mc_student_ping.png^[sheet:1x6:0,"..tile
+end
 
 function mc_student.show_notebook_fs(player, tab)
 	local notebook_width = 16.4
 	local notebook_height = 10.2
     local pname = player:get_player_name()
 	local pmeta = player:get_meta()
-	if not mc_student.fs_context.tab then
-		mc_student.fs_context.tab = "1"
-	end
+	local context = mc_student.get_fs_context(player)
 
 	if mc_core.checkPrivs(player,{interact = true}) then
-		local student_formtable = {
-			"formspec_version[6]",
-			"size[", tostring(notebook_width), ",", tostring(notebook_height), "]",
-			mc_core.draw_book_fs(notebook_width, notebook_height, {divider = "#d9d9d9"}),
-			"style[tabheader;noclip=true]",
-			"tabheader[0,-0.25;16,0.55;record_nav;Overview,Classrooms,Map,Players Online,Appearance,Rules and Help;", tab or pmeta:get_string("default_student_tab") or mc_student.fs_context.tab or "1", ";true;false]"
-		}
-
 		local tab_map = {
-			["1"] = function() -- OVERVIEW
+			[mc_student.TABS.OVERVIEW] = function() -- OVERVIEW + RULES
 				local button_width = 1.7
 				local button_height = 1.6
 				local rules = mc_rules.meta:get_string("rules")
@@ -53,304 +82,96 @@ function mc_student.show_notebook_fs(player, tab)
 					"hypertext[10.6,4.8;5.25,1.6;;<style color=#000000><b>Appearance</b>\n", minetest.formspec_escape("Personalize your avatar"), "</style>]",
 					"hypertext[10.6,6.55;5.25,1.6;;<style color=#000000><b>Help</b>\n", minetest.formspec_escape("Report a player or server issue"), "</style>]",
 				}
-
 				return fs
-
-
-				--[[local fsx, fsy, last_height, last_width
-				fsx = notebook_width/2+1
-				fsy = 0.85
-				local fs = {}
-				if pmeta:get_string("default_student_tab") == "1" then
-					fs[#fs + 1] = "style_type[label;font_size=*0.8;textcolor=#000]label[0.2,"
-					fs[#fs + 1] = tostring(notebook_height-0.2)
-					fs[#fs + 1] = ";This tab is the default]"
-				else
-					fs[#fs + 1] = "checkbox[0.2,"
-					fs[#fs + 1] = tostring(notebook_height-0.2)
-					fs[#fs + 1] = ";default_tab;"
-					fs[#fs + 1] = minetest.colorize("#000","Bookmark?")
-					fs[#fs + 1] = ";false]"
-				end
-				fs[#fs + 1] = "style_type[label;font_size=*1.2]label[2,0.4;"
-				fs[#fs + 1] = minetest.colorize("#000", "Welcome to Minetest Classroom!")
-				fs[#fs + 1] = "]style[overviewmsg;textcolor=#000;border=false]textarea[1,0.85;"
-				fs[#fs + 1] = tostring((notebook_width/8)*3.5)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(notebook_height-1.7)
-				fs[#fs + 1] = ";overviewmsg;;This is the Student Notebook, your tool for accessing classrooms and other features. You cannot drop or delete the Student Notebook, so you will never lose it, but you can move it out of your hotbar and into your inventory.]"
-				fsx = notebook_width/2+1
-				fsy = 0.85
-				fs[#fs + 1] = "style_type[label;font_size=*1.2]label["
-				fs[#fs + 1] = tostring(notebook_width/2+3.3)
-				fs[#fs + 1] = ",0.4;"
-				fs[#fs + 1] = minetest.colorize("#000","Student Dashboard")
-				fs[#fs + 1] = "]style[classrooms;bgcolor=#FFFFFF]image_button["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(fsy)
-				last_height = 1.43
-				last_width = 1.514
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = last_width
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = last_height
-				fs[#fs + 1] = ";icon_classrooms.png;classrooms;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fsy = fsy + 1.625
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = last_width
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = last_height
-				fs[#fs + 1] = ";icon_map.png;map;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fsy = fsy + 1.625
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = last_width
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = last_height
-				fs[#fs + 1] = ";icon_players_online.png;playersonline;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fsy = fsy + 1.625
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = last_width
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = last_height
-				fs[#fs + 1] = ";icon_appearance.png;appearance;;true;false;]style[map;bgcolor=#FFFFFF]image_button["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fsy = fsy + 1.625
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = last_width
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = last_height
-				fs[#fs + 1] = ";icon_help.png;help;;true;false;]"
-				-- Labels go here to increment fsx properly
-				fsy = 1.3
-				fsx = fsx + last_width + 0.2
-				fs[#fs + 1] = "style_type[label;font_size=*1;font=bold]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","Classrooms")
-				fsy = fsy + 0.4
-				fs[#fs + 1] = "]style_type[label;font_size=*1;font=normal]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","Find classrooms to join")
-				fs[#fs + 1] = "]"
-				fsy = fsy + 1.225
-				fs[#fs + 1] = "style_type[label;font_size=*1;font=bold]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","Map")
-				fs[#fs + 1] = "]"
-				fsy = fsy + 0.4
-				fs[#fs + 1] = "]style_type[label;font_size=*1;font=normal]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","Record locations and take spatial notes")
-				fs[#fs + 1] = "]"
-				fsy = fsy + 1.225
-				fs[#fs + 1] = "style_type[label;font_size=*1;font=bold]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","Players Online")
-				fs[#fs + 1] = "]"
-				fsy = fsy + 0.4
-				fs[#fs + 1] = "]style_type[label;font_size=*1;font=normal]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","See who's online")
-				fs[#fs + 1] = "]"
-				fsy = fsy + 1.225
-				fs[#fs + 1] = "style_type[label;font_size=*1;font=bold]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","Appearance")
-				fs[#fs + 1] = "]"
-				fsy = fsy + 0.4
-				fs[#fs + 1] = "]style_type[label;font_size=*1;font=normal]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","Personalize your avatar")
-				fs[#fs + 1] = "]"
-				fsy = fsy + 1.225
-				fs[#fs + 1] = "style_type[label;font_size=*1;font=bold]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","Help")
-				fs[#fs + 1] = "]"
-				fsy = fsy + 0.4
-				fs[#fs + 1] = "]style_type[label;font_size=*1;font=normal]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","Report an issue or player")
-				fs[#fs + 1] = "]"
-				return fs]]--
 			end,
-			["2"] = function() -- CLASSROOMS
-				local fsx, fsy, last_height
-				fsx = notebook_width/2+1
-				fsy = 0.85
-				local fs = {}
-				-- PAGE TWO
-				fs[#fs + 1] = "style_type[label;font_size=*1.2]label["
-				fs[#fs + 1] = tostring(notebook_width/2+3)
-				fs[#fs + 1] = ",0.4;"
-				fs[#fs + 1] = minetest.colorize("#000","Available Classrooms")
-				fs[#fs + 1] = "]textlist["
-				fs[#fs + 1] = tostring((notebook_width/2)+1)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = tostring((notebook_width/8)*3.5)
-				fs[#fs + 1] = ","
-				last_height = notebook_height/3
-				fs[#fs + 1] = tostring(last_height)
-				fs[#fs + 1] = ";classroomlist;"
+			[mc_student.TABS.CLASSROOMS] = function() -- CLASSROOMS + ONLINE PLAYERS
+				-- TODO: add area/realm owner information
+				local fs = {
+					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#acacac]",
+					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+					"tooltip[exit;Exit]",
+					"hypertext[0.55,0.1;7.1,1;;<style font=mono><center><b>Classrooms</b></center></style>]",
+					"hypertext[8.75,0.1;7.1,1;;<style font=mono><center><b>Online Players</b></center></style>]",
 
-				--[[ -- METHODS
-				Realm:TeleportPlayer(player)
-				Realm.GetRealmFromPlayer(player)
-				mc_worldManager.GetSpawnRealm()
-				Realm:getCategory() -- default, spawn, classroom
-				Realm.GetRealm(ID) ]]
+					"style_type[textarea;font=mono,bold;textcolor=#000000]",
+					"textarea[0.55,1;7.1,1;;;Available Classrooms]",
+					"textlist[0.6,1.5;7,7.2;classroomlist;", get_fs_classroom_list(player), ";", context.selected_realm or "1", ";false]",
+					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					"button[0.6,8.8;7,0.8;teleportrealm;Teleport]",
+				}
 
-				-- below is realm structure
-				--[[ local this = {
-					Name = name,
-					ID = Realm.realmCount + 1,
-					StartPos = { x = 0, y = 0, z = 0 },
-					EndPos = { x = 0, y = 0, z = 0 },
-					SpawnPoint = { x = 0, y = 0, z = 0 },
-					PlayerJoinTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
-					PlayerLeaveTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
-					RealmDeleteTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
-					Permissions = {},
-					MetaStorage = {}
-				} ]]
-				
-				-- return all realms
-				local counter = 0
-				local countRealms = mc_worldManager.storage:get_string("realmCount")
-				-- Quickly update where players are
-				Realm.ScanForPlayerRealms()
-				for _,thisRealm in pairs(Realm.realmDict) do
-					counter = counter + 1
-					-- check if the realm is something that should be shown to this player
-					if mc_core.checkPrivs(player,{teacher = true}) then
-						-- show all realms to teachers
-						fs[#fs + 1] = thisRealm.Name
-						fs[#fs + 1] = " ("
-						local playerCount = tonumber(thisRealm:GetPlayerCount())
-						fs[#fs + 1] = tostring(playerCount)
-						if playerCount == 1 then
-							fs[#fs + 1] = " Player)"
-						else
-							fs[#fs + 1] = " Players)"
-						end
-					else
-						-- check the category
-						local realmCategory = thisRealm:getCategory()
-						local joinable, reason = realmCategory.joinable(thisRealm, player)
-						if joinable then
-							fs[#fs + 1] = thisRealm.Name
-							fs[#fs + 1] = " ("
-							local playerCount = tonumber(thisRealm:GetPlayerCount())
-							fs[#fs + 1] = tostring(playerCount)
-							if playerCount == 1 then
-								fs[#fs + 1] = " Player)"
-							else
-								fs[#fs + 1] = " Players)"
-							end
-						end
+				local fsy = 1
+				local Y_SHIFT = 0.5
+				local player_lists = {
+					teacher = {},
+					student = {}
+				}
+				local label_height = {
+					teacher = 0.5,
+					student = 0.5
+				}
+
+				-- test teachers: {profpickell = true, anotherTeacher = true, a_lovely_ta = false, moderator1 = 1, teacher2 = 2, foobar = 3}
+				-- test ping: {avg_rtt = math.random() - 0.2}
+				for teacher,_ in pairs(mc_teacher.teachers) do
+					if teacher then
+						local pinfo = minetest.get_player_information(teacher)
+						local ping_texture = get_ping_texture(pinfo)
+						table.insert(player_lists.teacher, table.concat({
+							"image[0.6,", fsy - 0.05, ";0.5,0.4;", ping_texture, "]",
+							"textarea[1.2,", fsy, ";6.4,1;;;", teacher, "]"
+						}))
+						fsy = fsy + Y_SHIFT
 					end
-					if counter ~= countRealms then fs[#fs + 1] = "," end
 				end
-				if not selectedRealmID then selectedRealmID = mc_worldManager.spawnRealmID end
-				local realm = Realm.GetRealm(tonumber(selectedRealmID))
-				fs[#fs + 1] = ";1;false]button["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fsy = fsy + last_height + 0.2
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";1.7,"
-				last_height = 0.6
-				fs[#fs + 1] = tostring(last_height)
-				fs[#fs + 1] = ";teleportrealm;Teleport]"
-				--[[ fs[#fs + 1] = "style_type[label;font_size=*1,font=bold]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fsy = fsy + last_height + 0.2
-				last_height = 0.3
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","Classroom Name: ")
-				fs[#fs + 1] = minetest.colorize("#000",realm.Name)
-				fs[#fs + 1] = "]style_type[label;font_size=*1,font=bold]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fsy = fsy + last_height + 0.2
-				last_height = 0.3
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";" ]]
-				--[[ -- TODO: add area owner information
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","Classroom Owner: "..)
-				fs[#fs + 1] = "]style_type[label;font_size=*1,font=bold]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fsy = fsy + last_height + 0.2
-				last_height = 0.3
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";" ]]
-				--[[ local privs = ""
-				counter = 0
-				for priv,v in pairs(realm.Permissions) do
-					if v then privs = privs .. priv end
-					if counter ~= #realm.Permissions then privs = privs .. ", " end
+				if #player_lists.teacher > 0 then
+					fsy = fsy + 0.2
+					label_height.student = fsy
+					fsy = fsy + Y_SHIFT
 				end
-				fs[#fs + 1] = minetest.colorize("#000","Privileges: ")
-				fs[#fs + 1] = minetest.colorize("#000",privs)
-				fs[#fs + 1] = "]style_type[label;font_size=*1,font=bold]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fsy = fsy + last_height + 0.2
-				last_height = 0.3
-				fs[#fs + 1] = tostring(fsy)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","Status: You can join this classroom")
-				fs[#fs + 1] = "]" ]]
+
+				--test students: {fofo = true, jiji = false, baba = 3, keke = "yes", me = 1, nan = 2, west = 3, lala = 4, foo = 6, bar = 7, baz = 8, bat = 9}
+				--test ping: {avg_rtt = math.random() * 2}
+				for student,_ in pairs(mc_student.students) do
+					if student then
+						local pinfo = minetest.get_player_information(student)
+						local ping_texture = get_ping_texture(pinfo)
+						table.insert(player_lists.student, table.concat({
+							"image[0.6,", fsy - 0.05, ";0.5,0.4;", ping_texture, "]",
+							"textarea[1.2,", fsy, ";6.4,1;;;", student, "]"
+						}))
+						fsy = fsy + Y_SHIFT
+					end
+				end
+				if #player_lists.student > 0 then
+					fsy = fsy + Y_SHIFT
+				end
+
+				fsy = fsy - 0.05 -- image positioning adjustment
+
+				local Y_SIZE, FACTOR = 9.7, 0.05
+				table.insert(fs, table.concat({
+					fsy > Y_SIZE and table.concat({
+						"scrollbaroptions[min=0;max=", (fsy - Y_SIZE)/FACTOR, ";smallstep=", 0.8/FACTOR, ";largestep=", 4.8/FACTOR, ";thumbsize=", 1/FACTOR, "]",
+						"scrollbar[16.1,0.5;0.3,", Y_SIZE, ";vertical;playerscroll;", context.playerscroll or 0, "]"
+					}) or "",
+					"scroll_container[8.2,0.5;7.9,", Y_SIZE, ";playerscroll;vertical;", FACTOR, "]",
+
+					#player_lists.teacher > 0 and ("textarea[0.55,"..label_height.teacher..";7.1,1;;;Teachers]") or "",
+					#player_lists.student > 0 and ("textarea[0.55,"..label_height.student..";7.1,1;;;Students]") or "",
+					"style_type[textarea;font=mono]",
+				}))
+				for _,fs_teacher in pairs(player_lists.teacher) do
+					table.insert(fs, fs_teacher)
+				end
+				for _,fs_student in pairs(player_lists.student) do
+					table.insert(fs, fs_student)
+				end
+				table.insert(fs, "scroll_container_end[]")
+
 				return fs
 			end,
-			["3"] = function() -- MAP
+			[mc_student.TABS.MAP] = function() -- MAP
 				local fs = {}
 				local yaw
 				local rotate = 0
@@ -625,222 +446,13 @@ function mc_student.show_notebook_fs(player, tab)
 				end
 				return fs
 			end,
-			["4"] = function() -- PLAYERS ONLINE
-				local fs = {}
-				local fsy = 0.65
-				local fsx, ping_texture
-				local fscount = 0
-				local studentidx = 0
-				local teacheridx = 0
-				-- List Teachers first
-				for teacher,_ in pairs(mc_teacher.teachers) do
-					if teacher then
-						teacheridx = teacheridx + 1
-						local pinf = minetest.get_player_information(teacher)
-						if pinf then
-							local ping = pinf.avg_rtt / 2
-							ping = math.floor(ping * 1000)
-							if ping >= 0 and ping <= 49 then
-								ping_texture = "[combine:10x8:0,0=ping.png"
-							elseif ping >= 50 and ping <= 149 then
-								ping_texture = "[combine:10x8:0,-8=ping.png"
-							elseif ping >= 150 and ping <= 349 then
-								ping_texture = "[combine:10x8:0,-16=ping.png"
-							elseif ping >= 350 and ping <= 749 then
-								ping_texture = "[combine:10x8:0,-24=ping.png"
-							elseif ping >= 750 then
-								ping_texture = "[combine:10x8:0,-32=ping.png"
-							end
-						else
-							ping_texture = "[combine:10x8:0,-40=ping.png"
-						end
-						fscount = fscount + 1
-						if fscount < 15 then fsx = 1.1 end
-						if fscount == 1 then 
-							fs[#fs + 1] = "style_type[label;font_size=*1,font=bold]label["
-							fs[#fs + 1] = tostring(fsx)
-							fs[#fs + 1] = ","
-							fs[#fs + 1] = tostring(fsy)
-							fs[#fs + 1] = ";"
-							fs[#fs + 1] = minetest.colorize("#000","Teachers Online")
-							fs[#fs + 1] = "]"
-							fsy = fsy + 0.25
-							fscount = fscount + 1
-							teacheridx = teacheridx + 1
-						end
-						if fscount == 15 then
-							fsx = notebook_width/2 + 1.1
-							fsy = 0.9
-						end
-						if fscount < 28 then
-							fs[#fs + 1] = "image["
-							fs[#fs + 1] = tostring(fsx)
-							fs[#fs + 1] = ","
-							fs[#fs + 1] = tostring(fsy)
-							fs[#fs + 1] = ";0.454,0.568;"
-							fs[#fs + 1] = ping_texture
-							fs[#fs + 1] = "]style_type[label;font_size=*1,font=normal]label["
-							fs[#fs + 1] = tostring(fsx+0.55)
-							fs[#fs + 1] = ","
-							fs[#fs + 1] = tostring(fsy+0.35)
-							fs[#fs + 1] = ";"
-							fs[#fs + 1] = minetest.colorize("#000", pname)
-							fs[#fs + 1] = "]"
-							fsy = fsy + 0.65
-							teacheridx = teacheridx + 1
-						end -- TODO: add pages to show more than 28 connected players
-					end
-				end
-
---[[ 				-- Below for testing offline
-				local pingtable = {"0", "-8", "-16", "-24", "-32", "-40"}
-				for i=1, 4 do
-					teacheridx = teacheridx + 1
-					local ping_texture = "[combine:10x8:0,"..pingtable[math.random(#pingtable)].."=ping.png"
-					fscount = fscount + 1
-					if fscount < 15 then fsx = 1.1 end
-					if fscount == 15 then
-						fsx = notebook_width/2 + 1.1
-						fsy = 0.9
-					end
-					if fscount == 1 then
-						fsy = fsy + 0.4
-						fs[#fs + 1] = "label["
-						fs[#fs + 1] = tostring(fsx)
-						fs[#fs + 1] = ","
-						fs[#fs + 1] = tostring(fsy)
-						fs[#fs + 1] = ";"
-						fs[#fs + 1] = minetest.colorize("#000","Teachers Online")
-						fs[#fs + 1] = "]"
-						fsy = fsy + 0.25
-						fscount = fscount + 1
-						first_student = false
-					end
-					if fscount < 28 then
-						fs[#fs + 1] = "image["
-						fs[#fs + 1] = tostring(fsx)
-						fs[#fs + 1] = ","
-						fs[#fs + 1] = tostring(fsy)
-						fs[#fs + 1] = ";0.454,0.568;"
-						fs[#fs + 1] = ping_texture
-						fs[#fs + 1] = "]style_type[label;font=normal]label["
-						fs[#fs + 1] = tostring(fsx+0.55)
-						fs[#fs + 1] = ","
-						fs[#fs + 1] = tostring(fsy+0.35)
-						fs[#fs + 1] = ";"
-						fs[#fs + 1] = minetest.colorize("#000", "Teacher "..tostring(i))
-						fs[#fs + 1] = "]"
-						fsy = fsy + 0.65
-					end
-				end
-				for i=1, 28 do
-					local ping_texture = "[combine:10x8:0,"..pingtable[math.random(#pingtable)].."=ping.png"
-					fscount = fscount + 1
-					if fscount < 15 then fsx = 1.1 end
-					if fscount == 15 then
-						fsx = notebook_width/2 + 1.1
-						fsy = 0.9
-					end
-					if studentidx == 0 then
-						fsy = fsy + 0.4
-						fs[#fs + 1] = "style_type[label;font=bold]label["
-						fs[#fs + 1] = tostring(fsx)
-						fs[#fs + 1] = ","
-						fs[#fs + 1] = tostring(fsy)
-						fs[#fs + 1] = ";"
-						fs[#fs + 1] = minetest.colorize("#000","Students Online")
-						fs[#fs + 1] = "]"
-						fsy = fsy + 0.25
-						fscount = fscount + 1
-						studentidx = studentidx + 1
-					end
-					if fscount < 28 then
-						fs[#fs + 1] = "image["
-						fs[#fs + 1] = tostring(fsx)
-						fs[#fs + 1] = ","
-						fs[#fs + 1] = tostring(fsy)
-						fs[#fs + 1] = ";0.454,0.568;"
-						fs[#fs + 1] = ping_texture
-						fs[#fs + 1] = "]style_type[label;font=normal]label["
-						fs[#fs + 1] = tostring(fsx+0.55)
-						fs[#fs + 1] = ","
-						fs[#fs + 1] = tostring(fsy+0.35)
-						fs[#fs + 1] = ";"
-						fs[#fs + 1] = minetest.colorize("#000", "Student "..tostring(i))
-						fs[#fs + 1] = "]"
-						fsy = fsy + 0.65
-						studentidx = studentidx + 1
-					end
-				end ]]
-
-				-- List Students second
-				for student,_ in pairs(mc_student.students) do
-					if student then
-						local pinf = minetest.get_player_information(student)
-						if pinf then
-							local ping = pinf.avg_rtt / 2
-							ping = math.floor(ping * 1000)
-							if ping >= 0 and ping <= 49 then
-								ping_texture = "[combine:10x8:0,0=ping.png"
-							elseif ping >= 50 and ping <= 149 then
-								ping_texture = "[combine:10x8:0,-8=ping.png"
-							elseif ping >= 150 and ping <= 349 then
-								ping_texture = "[combine:10x8:0,-16=ping.png"
-							elseif ping >= 350 and ping <= 749 then
-								ping_texture = "[combine:10x8:0,-24=ping.png"
-							elseif ping >= 750 then
-								ping_texture = "[combine:10x8:0,-32=ping.png"
-							end
-						else
-							ping_texture = "[combine:10x8:0,-40=ping.png"
-						end
-						fscount = fscount + 1
-						if fscount < 15 then fsx = 1.1 end
-						if fscount == 15 then
-							fsx = notebook_width/2 + 1.1
-							fsy = 0.9
-						end
-						if studentidx == 0 then
-							fsy = fsy + 0.4
-							fs[#fs + 1] = "style_type[label;font_size=*1,font=bold]label["
-							fs[#fs + 1] = tostring(fsx)
-							fs[#fs + 1] = ","
-							fs[#fs + 1] = tostring(fsy)
-							fs[#fs + 1] = ";"
-							fs[#fs + 1] = minetest.colorize("#000","Students Online")
-							fs[#fs + 1] = "]"
-							fsy = fsy + 0.25
-							fscount = fscount + 1
-							studentidx = studentidx + 1
-						end
-						if fscount < 28 then
-							fs[#fs + 1] = "image["
-							fs[#fs + 1] = tostring(fsx)
-							fs[#fs + 1] = ","
-							fs[#fs + 1] = tostring(fsy)
-							fs[#fs + 1] = ";0.454,0.568;"
-							fs[#fs + 1] = ping_texture
-							fs[#fs + 1] = "]style_type[label;font_size=*1,font=normal]label["
-							fs[#fs + 1] = tostring(fsx+0.55)
-							fs[#fs + 1] = ","
-							fs[#fs + 1] = tostring(fsy+0.35)
-							fs[#fs + 1] = ";"
-							fs[#fs + 1] = minetest.colorize("#000", student)
-							fs[#fs + 1] = "]"
-							fsy = fsy + 0.65
-							studentidx = studentidx + 1
-						end -- TODO: add pages to show more than 28 connected players
-					end
-				end
-				return fs
-			end,
-			["5"] = function() -- APPEARANCE
+			[mc_student.TABS.APPEARANCE] = function() -- APPEARANCE
 				local fs = {}
 				fs[#fs + 1] = "style_type[textarea;font=mono,bold;textcolor=black]"
 				fs[#fs + 1] = "textarea[0.55,0.5;7.1,1;;;Coming Soon]"
 				return fs
 			end,
-			["6"] = function() -- RULES AND HELP
+			[mc_student.TABS.HELP] = function() -- HELP + REPORTS
 				local fs, mapar, fsx, fsy
 				local fs = {}
 				fsy = 1
@@ -894,8 +506,20 @@ function mc_student.show_notebook_fs(player, tab)
 		}
 		
 		local bookmarked_tab = pmeta:get_string("default_student_tab")
-		local selected_tab = tab or pmeta:get_string("default_student_tab") or mc_student.fs_context.tab or "1"
-		table.insert(student_formtable, table.concat(tab_map[selected_tab](), ""))
+		if not tab_map[bookmarked_tab] then
+			bookmarked_tab = nil
+			pmeta:set_string("default_student_tab", nil)
+		end
+		local selected_tab = (tab_map[tab] and tab) or bookmarked_tab or (tab_map[context.tab] and context.tab) or "1"
+
+		local student_formtable = {
+			"formspec_version[6]",
+			"size[", tostring(notebook_width), ",", tostring(notebook_height), "]",
+			mc_core.draw_book_fs(notebook_width, notebook_height, {divider = "#d9d9d9"}),
+			"style[tabheader;noclip=true]",
+			"tabheader[0,-0.25;16,0.55;record_nav;Overview,Classrooms,Map,Appearance,Help;", tab or bookmarked_tab or context.tab or "1", ";true;false]",
+			table.concat(tab_map[selected_tab](), "")
+		}
 
 		if bookmarked_tab == selected_tab then
 			table.insert(student_formtable, table.concat{
@@ -923,7 +547,7 @@ TAB GROUPING:
 [2] CLASSROOMS + ONLINE PLAYERS (classrooms)
 [3] MAP + COORDINATES (map)
 [4] APPEARANCE (appearance)
-[5] HELP + REPORT (help)
+[5] HELP + REPORTS (help)
 
 OVERVIEW + RULES TAB:
 formspec_version[6]
@@ -946,4 +570,25 @@ textarea[10.6,3.05;5.25,1.6;;;Map\nrecord and share locations]
 textarea[10.6,4.8;5.25,1.6;;;Appearance\npersonalize your avatar]
 textarea[10.6,6.55;5.25,1.6;;;Help\nReport a player or server issue]
 image[15.8,-0.25;0.5,0.8;mc_student_bookmark.png]
+
+CLASSROOMS + ONLINE PLAYERS TAB:
+formspec_version[6]
+size[16.4,10.2]
+box[0,0;16.4,0.5;#acacac]
+box[8.195,0;0.05,10.2;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0;7.1,1;;;Classrooms]
+textarea[8.75,0;7.1,1;;;Online Players]
+textarea[0.55,1;7.1,1;;;Available Classrooms]
+textlist[0.6,1.5;7,7.2;classroomlist;;1;false]
+button[0.6,8.8;7,0.8;teleportrealm;Teleport]
+textarea[8.75,1;7.1,1;;;Teachers]
+image[8.8,1.5;0.5,0.4;]
+textarea[9.4,1.45;6.4,1;;;teacher1]
+image[8.8,2;0.5,0.4;]
+textarea[9.4,1.95;6.4,1;;;teacher2]
+textarea[8.75,2.5;7.1,1;;;Students]
+image[8.8,3;0.5,0.4;]
+textarea[9.4,2.95;6.4,1;;;student]
+box[16.1,0.5;0.3,9.7;#ffffff]
 ]]

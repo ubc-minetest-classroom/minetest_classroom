@@ -103,6 +103,7 @@ end)
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	local pmeta = player:get_meta()
+	local context = mc_student.get_fs_context(player)
 
 	if string.sub(formname, 1, 10) ~= "mc_student" then
 		return false
@@ -131,9 +132,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 		if fields.record and fields.note ~= "" then
 			mc_student.record_coordinates(player,fields.note)
-			mc_student.show_notebook_fs(player,"3")
+			mc_student.show_notebook_fs(player, mc_student.TABS.MAP)
 		elseif fields.mark then
-			if not selectedCoord then selectedCoord = 1 end
+			if not context.selected_coord then context.selected_coord = 1 end
 			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
 			local realm = Realm.GetRealmFromPlayer(player)
 			local ids, coords, notes = {}, {}, {}
@@ -143,12 +144,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					table.insert(notes,pdata.notes[i])
 				end
 			end
-			mc_student.queue_marker(player, notes[selectedCoord], coords[selectedCoord])
+			mc_student.queue_marker(player, notes[context.selected_coord], coords[context.selected_coord])
 			return
 		elseif fields.coordlist then
 			local event = minetest.explode_textlist_event(fields.coordlist)
 			if event.type == "CHG" then
-				selectedCoord = event.index
+				context.selected_coord = event.index
 			end
 		elseif fields.classroomlist then
 			local event = minetest.explode_textlist_event(fields.classroomlist)
@@ -160,7 +161,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					if mc_core.checkPrivs(player,{teacher = true}) then
 						counter = counter + 1
 						if counter == tonumber(event.index) then
-							selectedRealmID = thisRealm.ID
+							context.selected_realm = thisRealm.ID
 						end
 					else
 						counter = counter + 1
@@ -169,49 +170,49 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 						local joinable, reason = realmCategory.joinable(thisRealm, player)
 						if joinable then
 							if counter == tonumber(event.index) then
-								selectedRealmID = thisRealm.ID
+								context.selected_realm = thisRealm.ID
 							end
 						end
 					end
 				end
-				mc_student.show_notebook_fs(player,"2")
+				mc_student.show_notebook_fs(player, mc_student.TABS.CLASSROOMS)
 			end
 		elseif fields.teleportrealm then
 			-- Still a remote possibility that the realm is deleted in the time that the callback is executed
 			-- So always check that the requested realm exists and the realm category allows the player to join
 			-- Check that the player selected something from the textlist, otherwise default to spawn realm
-			if not selectedRealmID then selectedRealmID = mc_worldManager.spawnRealmID end
-			local realm = Realm.GetRealm(tonumber(selectedRealmID))
+			if not context.selected_realm then context.selected_realm = mc_worldManager.spawnRealmID end
+			local realm = Realm.GetRealm(tonumber(context.selected_realm))
 			if realm then
 				realm:TeleportPlayer(player)
-				selectedRealmID = nil
+				context.selected_realm = nil
 			else
 				minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
 			end
-			mc_student.show_notebook_fs(player,"2")
+			mc_student.show_notebook_fs(player, mc_student.TABS.CLASSROOMS)
 		elseif fields.go then
-			if not selectedCoord then selectedCoord = 1 end
+			if not context.selected_coord then context.selected_coord = 1 end
 			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-			local realm = Realm.GetRealm(pdata.realms[selectedCoord])
+			local realm = Realm.GetRealm(pdata.realms[context.selected_coord])
 			if realm then
 				if realm:getCategory().joinable(realm,player) then
 					realm:TeleportPlayer(player)
-					player:set_pos(pdata.coords[selectedCoord])
+					player:set_pos(pdata.coords[context.selected_coord])
 				else
 					minetest.chat_send_player(player:get_player_name(), minetest.colorize("#FF00FF","[Minetest Classroom] You no longer have access to this classroom."))
 				end
 			else
 				minetest.chat_send_player(player:get_player_name(), minetest.colorize("#FF00FF","[Minetest Classroom] This classroom no longer exists."))
 			end
-			mc_student.show_notebook_fs(player,"3")
+			mc_student.show_notebook_fs(player, mc_student.TABS.MAP)
 		elseif fields.delete then
-			if not selectedCoord then selectedCoord = 1 end
+			if not context.selected_coord then context.selected_coord = 1 end
 			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
 			if pdata then
 				local newData, newCoords, newNotes, newRealms = {}, {}, {}, {}	
 				if #(pdata.coords) > 1 then
 					for i,coord in ipairs(pdata.coords) do
-						if i ~= selectedCoord then
+						if i ~= context.selected_coord then
 							table.insert(newCoords, coord)
 							table.insert(newNotes, pdata.notes[i])
 							table.insert(newRealms, pdata.realms[i])
@@ -223,7 +224,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				end
 				pmeta:set_string("coordinates", minetest.serialize(newData))
 			end
-			mc_student.show_notebook_fs(player,"3")
+			mc_student.show_notebook_fs(player, mc_student.TABS.MAP)
 		elseif fields.clear then
 			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
 			if pdata then
@@ -249,7 +250,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					pmeta:set_string("coordinates", minetest.serialize(newData))
 				end
 			end
-			mc_student.show_notebook_fs(player,"3")
+			mc_student.show_notebook_fs(player, mc_student.TABS.MAP)
 		elseif fields.share then
 			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
 			local realm = Realm.GetRealmFromPlayer(player)
@@ -260,15 +261,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					table.insert(notes,pdata.notes[i])
 				end
 			end
-			if not selectedCoord or selectedCoord > #coords then selectedCoord = 1 end 
+			if not context.selected_coord or context.selected_coord > #coords then context.selected_coord = 1 end 
 			for _,connplayer in pairs(minetest.get_connected_players()) do 
 				local connRealm = Realm.GetRealmFromPlayer(connplayer)
 				if connRealm.ID == realm.ID then
-					local pos = coords[selectedCoord]
-					minetest.chat_send_player(connplayer:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] "..player:get_player_name().." shared location {x="..tostring(math.round(pos.x-realm.StartPos.x))..", y="..tostring(math.round(pos.y-realm.StartPos.y))..", z="..tostring(math.round(pos.z-realm.StartPos.z)).."} with the note: "..notes[selectedCoord]))
+					local pos = coords[context.selected_coord]
+					minetest.chat_send_player(connplayer:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] "..player:get_player_name().." shared location {x="..tostring(math.round(pos.x-realm.StartPos.x))..", y="..tostring(math.round(pos.y-realm.StartPos.y))..", z="..tostring(math.round(pos.z-realm.StartPos.z)).."} with the note: "..notes[context.selected_coord]))
 				end
 			end
-			mc_student.show_notebook_fs(player,"3")
+			mc_student.show_notebook_fs(player, mc_student.TABS.MAP)
 		elseif fields.submitreport then
 			if not fields.report or fields.report == "" then
 				minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] Please add a message to your report."))
@@ -308,17 +309,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			mc_student.meta:set_string("reports", minetest.serialize(reports))
 			chatlog.write_log(pname,"[REPORT] " .. clean_report)
 			minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] Your report has been received."))
-			mc_student.show_notebook_fs(player,"6")
+			mc_student.show_notebook_fs(player, mc_student.TABS.HELP)
 		elseif fields.classrooms then
-			mc_student.show_notebook_fs(player,"2")
+			mc_student.show_notebook_fs(player, mc_student.TABS.CLASSROOMS)
 		elseif fields.map then
-			mc_student.show_notebook_fs(player,"3")
-		elseif fields.playersonline then
-			mc_student.show_notebook_fs(player,"4")
+			mc_student.show_notebook_fs(player, mc_student.TABS.MAP)
 		elseif fields.appearance then
-			mc_student.show_notebook_fs(player,"5")
+			mc_student.show_notebook_fs(player, mc_student.TABS.APPEARANCE)
 		elseif fields.help then
-			mc_student.show_notebook_fs(player,"6")
+			mc_student.show_notebook_fs(player, mc_student.TABS.HELP)
 		elseif fields.utmcoords then
             local pmeta = player:get_meta()
             pmeta:set_string("positionHudMode", "utm")
