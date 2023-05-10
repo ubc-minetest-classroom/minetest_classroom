@@ -34,7 +34,7 @@ end
 function mc_mapper.map_handler(player, raw_bounds)
 	local realm = Realm.GetRealmFromPlayer(player)
 	local pos = player:get_pos()
-	pos.x, pos.y, pos.z = math.floor(pos.x), math.floor(pos.y), math.floor(pos.z)
+	pos.x, pos.y, pos.z = math.round(pos.x), math.round(pos.y), math.round(pos.z)
 	local ceiling = realm.EndPos.y-1
 	local player_name = player:get_player_name()
 	local mapar = {}

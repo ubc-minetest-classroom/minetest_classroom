@@ -172,6 +172,8 @@ function mc_student.show_notebook_fs(player, tab)
 				return fs
 			end,
 			[mc_student.TABS.MAP] = function() -- MAP
+				local map_x = 0.65
+				local map_y = 1.55
 				local fs = {
 					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#acacac]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
@@ -180,51 +182,14 @@ function mc_student.show_notebook_fs(player, tab)
 					"hypertext[8.75,0.1;7.1,1;;<style font=mono><center><b>Coordinates</b></center></style>]",
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
 					"textarea[0.55,1;7.1,1;;;Surrounding Area]",
-					"image[0.6,1.5;7,6.4;mc_pixel.png^[multiply:#000000]",
-					"image[0.65,1.55;6.9,6.3;mc_pixel.png^[multiply:#808080]",
+					"image[", map_x - 0.05, ",", map_y - 0.05, ";7,6.55;mc_pixel.png^[multiply:#000000]",
+					"image[", map_x, ",", map_y, ";6.9,6.45;mc_pixel.png^[multiply:#808080]",
 				}
-
-				local yaw = player:get_look_yaw()
-				local rotate = 0
-				if yaw ~= nil then
-					-- Find rotation and texture based on yaw.
-					yaw = math.fmod(math.deg(yaw), 360)
-					while yaw <= 0 do
-						yaw = yaw + 360
-					end
-					while yaw > 360 do
-						yaw = yaw - 360
-					end
-        
-					if yaw < 90 then
-						rotate = 90
-					elseif yaw < 180 then
-						rotate = 180
-					elseif yaw < 270 then
-						rotate = 270
-					else
-						rotate = 0
-					end
-					yaw = math.floor(math.fmod(yaw, 90) / 10) * 10   
-				end
-
-				local mapar, fsx, fsy
-				fsy = 1
-				fsx = (((notebook_width/8)*3.5)-(0.15*32))/2+1
-				-- TODO: update mc_mapper to use custom map coordinates (or -17,17 by default)
-				-- TODO: insert map generation code
-
-				--mapar = mc_mapper.map_handler(player)
-				--[[fs[#fs + 1] = "box["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ",1.1;"
-				fs[#fs + 1] = tostring(0.15*(32))
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(0.15*(32))
-				fs[#fs + 1] = ";#000000]"
-
-				for i=1,32,1 do
-					for j=1,32,1 do
+				
+				local bounds = {xmin = -24, xmax = 23, zmin = -22, zmax = 22}
+				local mapar = mc_mapper.map_handler(player, bounds)
+				for i = 1, bounds.xmax - bounds.xmin - 1, 1 do
+					for j = 1, bounds.zmax - bounds.zmin - 1, 1 do
 						if mapar[i][j].im ~= nil then
 							-- The following for colorbrewer integration
 							if mapar[i][j].pa then
@@ -236,19 +201,38 @@ function mc_student.show_notebook_fs(player, tab)
 							if mapar[i][j].y ~= mapar[i][j-1].y then mapar[i][j].im = mapar[i][j].im .. "^1black_blockb.png" end
 							if mapar[i][j].y ~= mapar[i-1][j].y then mapar[i][j].im = mapar[i][j].im .. "^1black_blockl.png" end
 							if mapar[i][j].y ~= mapar[i+1][j].y then mapar[i][j].im = mapar[i][j].im .. "^1black_blockr.png" end
-							fs[#fs + 1] = "image["
-							fs[#fs + 1] = tostring(fsx+0.15*(i-1))
-							fs[#fs + 1] = ","
-							fs[#fs + 1] = tostring(fsy+0.15*(32-j)+0.1)
-							fs[#fs + 1] = ";0.2,0.2;"
-							fs[#fs + 1] = mapar[i][j].im
-							fs[#fs + 1] = "]"
+							table.insert(fs, table.concat({
+								"image[", map_x + 0.15*(i - 1), ",", map_y + 0.15*(bounds.zmax - bounds.zmin - j - 1),
+								";0.15,0.15;", mapar[i][j].im, "]";
+							}))
 						end
 					end
-				end]]
-			
+				end
+
+				local yaw = player:get_look_yaw()
+				local rotate = 0
+				if yaw ~= nil then
+					-- Find rotation and texture based on yaw.
+					minetest.log(yaw)
+					yaw = math.fmod(math.round(math.deg(yaw)/10) * 10, 360)
+					minetest.log(yaw)
+					if yaw < 90 then
+						rotate = 90
+					elseif yaw < 180 then
+						rotate = 180
+					elseif yaw < 270 then
+						rotate = 270
+					else
+						rotate = 0
+					end
+					yaw = math.fmod(yaw, 90)
+				end
+				local pos = player:get_pos()
+				local round_px, round_pz = math.round(pos.x), math.round(pos.z)
+
 				table.insert(fs, table.concat({
-					"image[3.9,4.5;0.4,0.4;mc_student_d", yaw, ".png^[transformFY", rotate ~= 0 and ("R"..rotate) or "", "]",
+					"image[", 3.975 + (pos.x - round_px)*0.15, ",", 4.625 - (pos.z - round_pz)*0.15,
+					";0.4,0.4;mc_student_d", yaw, ".png^[transformFY", rotate ~= 0 and ("R"..rotate) or "", "]",
 					"textarea[0.55,8.3;7.1,1;;;Coordinate and Elevation Display]",
 					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
 					"button[0.6,8.8;1.675,0.8;utmcoords;UTM]",
@@ -256,7 +240,11 @@ function mc_student.show_notebook_fs(player, tab)
 					"button[4.15,8.8;1.675,0.8;classroomcoords;Local]",
 					"button[5.925,8.8;1.675,0.8;coordsoff;Off]",
 					"textarea[8.75,1;7.1,1;;;Saved Coordinates]",
-					"textlist[8.8,1.5;7,3.9;coordlist;", "", ";", "", ";false]",
+				}))
+				-- TODO: re-implement saved coordinates
+				--"textlist[8.8,1.5;7,3.9;coordlist;", "", ";", "1", ";false]",
+				
+				table.insert(fs, table.concat({
 					"image_button[14.6,1;1.2,0.5;blank.png;clear;Clear;false;false]",
 					"button[8.8,5.5;3.45,0.8;go;Teleport]",
 					"button[12.35,5.5;3.45,0.8;delete;Delete]",
@@ -275,58 +263,7 @@ function mc_student.show_notebook_fs(player, tab)
 
 				return fs
 
-				--[[fsx = ((notebook_width/2)-(((notebook_width/8)*3)))/2
-				fs[#fs + 1] = "style_type[label;font_size=*1.2]label[2.9,0.4;"
-				fs[#fs + 1] = minetest.colorize("#000","Map of Surroundings")
-				fs[#fs + 1] = "]style[note;textcolor=#000]"
-				fs[#fs + 1] = "style_type[label;font_size=*1]label["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(32*0.15+fsy+0.6)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","Display Coordinates and Elevation")
-				fs[#fs + 1] = "]"
-				fs[#fs + 1] = "button["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(32*0.15+fsy+0.9)
-				fs[#fs + 1] = ";1,0.6;utmcoords;UTM]"
-				fs[#fs + 1] = "button["
-				fs[#fs + 1] = tostring(fsx+1.2)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(32*0.15+fsy+0.9)
-				fs[#fs + 1] = ";1.7,0.6;latloncoords;Lat/Long]"
-				fs[#fs + 1] = "button["
-				fs[#fs + 1] = tostring(fsx+1.2+1.9)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(32*0.15+fsy+0.9)
-				fs[#fs + 1] = ";1.7,0.6;classroomcoords;Classroom]"
-				fs[#fs + 1] = "button["
-				fs[#fs + 1] = tostring(fsx+1.2+1.9+1.9)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(32*0.15+fsy+0.9)
-				fs[#fs + 1] = ";1,0.6;coordsoff;Off]"
-				fs[#fs + 1] = "textarea["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(32*0.15+fsy+0.9+1.3)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = tostring((notebook_width/8)*3.5)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring((notebook_height/4)-1.3)
-				fs[#fs + 1] = ";note;"
-				fs[#fs + 1] = minetest.colorize("#000","Add a note at your current location")
-				fs[#fs + 1] = ";]button["
-				fs[#fs + 1] = tostring(fsx)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(32*0.15+fsy+(notebook_height/4)+0.9)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = tostring(((notebook_width/2)-(fsx*2))/2)
-				fs[#fs + 1] = ",0.6;record;Record]style_type[label;font_size=*1.2]label["
-				fs[#fs + 1] = tostring(notebook_width/2+1.6)
-				fs[#fs + 1] = ",0.4;"
-				fs[#fs + 1] = minetest.colorize("#000","Coordinates Stored in this Classroom")
-				fs[#fs + 1] = "]textlist["
+				--[[fs[#fs + 1] = "]textlist["
 				fs[#fs + 1] = tostring(fsx+(notebook_width/2))
 				fs[#fs + 1] = ",1.1;"
 				fs[#fs + 1] = tostring((notebook_width/8)*3.5)
