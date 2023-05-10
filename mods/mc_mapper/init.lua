@@ -146,7 +146,9 @@ function mc_mapper.map_handler(player)
 					mapar[i+17] = {}
 					for j = -17,17,1 do
 						mapar[i+17][j+17] = {}
-						def = registered_nodes[minetest.get_name_from_content_id(realmMapCache.id[pos.x+i][pos.z+j])]
+						if realmMapCache.id[pos.x+i][pos.z+j] then
+							def = registered_nodes[minetest.get_name_from_content_id(realmMapCache.id[pos.x+i][pos.z+j])]
+						end
 						k = realmMapCache.y[pos.x+i][pos.z+j]
 						p2 = realmMapCache.param2[pos.x+i][pos.z+j]
 						if def then 
