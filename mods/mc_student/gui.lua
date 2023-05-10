@@ -172,16 +172,30 @@ function mc_student.show_notebook_fs(player, tab)
 				return fs
 			end,
 			[mc_student.TABS.MAP] = function() -- MAP
-				local fs = {}
-				local yaw
+				local fs = {
+					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#acacac]",
+					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+					"tooltip[exit;Exit]",
+					"hypertext[0.55,0.1;7.1,1;;<style font=mono><center><b>Map</b></center></style>]",
+					"hypertext[8.75,0.1;7.1,1;;<style font=mono><center><b>Coordinates</b></center></style>]",
+					"style_type[textarea;font=mono,bold;textcolor=#000000]",
+					"textarea[0.55,1;7.1,1;;;Surrounding Area]",
+					"image[0.6,1.5;7,6.4;mc_pixel.png^[multiply:#000000]",
+					"image[0.65,1.55;6.9,6.3;mc_pixel.png^[multiply:#808080]",
+				}
+
+				local yaw = player:get_look_yaw()
 				local rotate = 0
-				yaw = player:get_look_yaw()
 				if yaw ~= nil then
 					-- Find rotation and texture based on yaw.
-					yaw = math.deg(yaw)
-					yaw = math.fmod (yaw, 360)
-					if yaw<0 then yaw = 360 + yaw end
-					if yaw>360 then yaw = yaw - 360 end           
+					yaw = math.fmod(math.deg(yaw), 360)
+					while yaw <= 0 do
+						yaw = yaw + 360
+					end
+					while yaw > 360 do
+						yaw = yaw - 360
+					end
+        
 					if yaw < 90 then
 						rotate = 90
 					elseif yaw < 180 then
@@ -191,15 +205,17 @@ function mc_student.show_notebook_fs(player, tab)
 					else
 						rotate = 0
 					end
-					yaw = math.fmod(yaw, 90)
-					yaw = math.floor(yaw / 10) * 10   
+					yaw = math.floor(math.fmod(yaw, 90) / 10) * 10   
 				end
 
 				local mapar, fsx, fsy
 				fsy = 1
 				fsx = (((notebook_width/8)*3.5)-(0.15*32))/2+1
-				mapar = mc_mapper.map_handler(player)
-				fs[#fs + 1] = "box["
+				-- TODO: update mc_mapper to use custom map coordinates (or -17,17 by default)
+				-- TODO: insert map generation code
+
+				--mapar = mc_mapper.map_handler(player)
+				--[[fs[#fs + 1] = "box["
 				fs[#fs + 1] = tostring(fsx)
 				fs[#fs + 1] = ",1.1;"
 				fs[#fs + 1] = tostring(0.15*(32))
@@ -229,29 +245,37 @@ function mc_student.show_notebook_fs(player, tab)
 							fs[#fs + 1] = "]"
 						end
 					end
-				end
+				end]]
 			
-				if rotate ~= 0 then
-					fs[#fs + 1] = "image["
-					fs[#fs + 1] = tostring(fsx+0.15*(16)+0.075)
-					fs[#fs + 1] = ","
-					fs[#fs + 1] = tostring(fsy+0.15*(16)-0.085)
-					fs[#fs + 1] = ";0.4,0.4;d"
-					fs[#fs + 1] = tostring(yaw)
-					fs[#fs + 1] = ".png^[transformFYR"
-					fs[#fs + 1] = tostring(rotate)
-					fs[#fs + 1] = "]"
-				else
-					fs[#fs + 1] = "image["
-					fs[#fs + 1] = tostring(fsx+0.15*(16)+0.075)
-					fs[#fs + 1] = ","
-					fs[#fs + 1] = tostring(fsy+0.15*(16)-0.085)
-					fs[#fs + 1] = ";0.4,0.4;d"
-					fs[#fs + 1] = tostring(yaw) 
-					fs[#fs + 1] = ".png^[transformFY]"
-				end
+				table.insert(fs, table.concat({
+					"image[3.9,4.5;0.4,0.4;mc_student_d", yaw, ".png^[transformFY", rotate ~= 0 and ("R"..rotate) or "", "]",
+					"textarea[0.55,8.3;7.1,1;;;Coordinate and Elevation Display]",
+					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					"button[0.6,8.8;1.675,0.8;utmcoords;UTM]",
+					"button[2.375,8.8;1.675,0.8;latloncoords;Lat/Lon]",
+					"button[4.15,8.8;1.675,0.8;classroomcoords;Local]",
+					"button[5.925,8.8;1.675,0.8;coordsoff;Off]",
+					"textarea[8.75,1;7.1,1;;;Saved Coordinates]",
+					"textlist[8.8,1.5;7,3.9;coordlist;", "", ";", "", ";false]",
+					"image_button[14.6,1;1.2,0.5;blank.png;clear;Clear;false;false]",
+					"button[8.8,5.5;3.45,0.8;go;Teleport]",
+					"button[12.35,5.5;3.45,0.8;delete;Delete]",
+					"button[8.8,6.4;3.45,0.8;share;Share in Chat]",
+					"button[12.35,6.4;3.45,0.8;mark;Place a Marker]",
+					"textarea[8.75,7.55;7.1,1;;;Save current coordinates]",
+					"style_type[textarea;font=mono]",
+					"textarea[8.8,8;6.1,1.6;note;;]",
+					"image_button[14.9,8;0.9,1.6;blank.png;record;Save;false;false]",
+					"tooltip[utmcoords;Displays real-world UTM coordinates]",
+					"tooltip[latloncoords;Displays real-world latitude and longitude]",
+					"tooltip[classroomcoords;Displays in-game coordinates, relative to the classroom]",
+					"tooltip[coordsoff;Disables coordinate display]",
+					"tooltip[note;Add a note here!]",
+				}))
 
-				fsx = ((notebook_width/2)-(((notebook_width/8)*3)))/2
+				return fs
+
+				--[[fsx = ((notebook_width/2)-(((notebook_width/8)*3)))/2
 				fs[#fs + 1] = "style_type[label;font_size=*1.2]label[2.9,0.4;"
 				fs[#fs + 1] = minetest.colorize("#000","Map of Surroundings")
 				fs[#fs + 1] = "]style[note;textcolor=#000]"
@@ -308,10 +332,10 @@ function mc_student.show_notebook_fs(player, tab)
 				fs[#fs + 1] = tostring((notebook_width/8)*3.5)
 				fs[#fs + 1] = ","
 				fs[#fs + 1] = tostring(notebook_height/3)
-				fs[#fs + 1] = ";coordlist;"
+				fs[#fs + 1] = ";coordlist;"]]
 
 				-- Get the stored coordinates for the player
-				local pmeta = player:get_meta()
+				--[[local pmeta = player:get_meta()
 				local realm = Realm.GetRealmFromPlayer(player)
 				local pdata
 				pdata = minetest.deserialize(pmeta:get_string("coordinates"))
@@ -408,7 +432,7 @@ function mc_student.show_notebook_fs(player, tab)
 										fs[#fs + 1] = tostring(((notebook_width/2)-(fsx*2))/3)
 										fs[#fs + 1] = ",0.6;mark;Place Marker]"
 									end
---[[ 									fs[#fs + 1] = "style_type[label;font_size=16]label["
+ 									fs[#fs + 1] = "style_type[label;font_size=16]label["
 									fs[#fs + 1] = tostring(fsx+(notebook_width/2))
 									fs[#fs + 1] = ","
 									fs[#fs + 1] = tostring((notebook_height/3)+2.5)
@@ -428,7 +452,7 @@ function mc_student.show_notebook_fs(player, tab)
 									fs[#fs + 1] = tostring((notebook_height/3)+2.4+0.7+0.7)
 									fs[#fs + 1] = ";"
 									fs[#fs + 1] = minetest.colorize("#000","Local Position {x, y, z}")
-									fs[#fs + 1] = "]" ]]
+									fs[#fs + 1] = "]" 
 								end
 								-- Below deletes any coordinates stored in player metadata for which a realm no longer exists
 								table.insert(newCoords, pdata.coords[i])
@@ -443,8 +467,7 @@ function mc_student.show_notebook_fs(player, tab)
 						end
 						pmeta:set_string("coordinates", minetest.serialize(newData))
 					end
-				end
-				return fs
+				end]]
 			end,
 			[mc_student.TABS.APPEARANCE] = function() -- APPEARANCE
 				local fs = {}
@@ -591,4 +614,32 @@ textarea[8.75,2.5;7.1,1;;;Students]
 image[8.8,3;0.5,0.4;]
 textarea[9.4,2.95;6.4,1;;;student]
 box[16.1,0.5;0.3,9.7;#ffffff]
+
+MAP + COORDINATES
+formspec_version[6]
+size[16.4,10.2]
+box[0,0;16.4,0.5;#acacac]
+box[8.195,0;0.05,10.2;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0;7.1,1;;;Map]
+textarea[8.75,0;7.1,1;;;Coordinates]
+textarea[0.55,1;7.1,1;;;Surrounding Area]
+box[0.6,1.5;7,6.4;#000000]
+box[0.65,1.55;6.9,6.3;#808080]
+image[3.9,4.5;0.4,0.4;]
+textarea[0.55,8.3;7.1,1;;;Coordinate and Elevation Display]
+button[0.6,8.8;1.675,0.8;utmcoords;UTM]
+button[2.375,8.8;1.675,0.8;latloncoords;Lat/Long]
+button[4.15,8.8;1.675,0.8;classroomcoords;Local]
+button[5.925,8.8;1.675,0.8;coordsoff;Off]
+textarea[8.75,1;7.1,1;;;Saved Coordinates]
+textlist[8.8,1.5;7,3.9;coordlist;;8;false]
+image_button[14.6,1;1.2,0.5;blank.png;clear;Clear;false;false]
+button[8.8,5.5;3.45,0.8;go;Teleport]
+button[12.35,5.5;3.45,0.8;delete;Delete]
+button[8.8,6.4;3.45,0.8;share;Share in Chat]
+button[12.35,6.4;3.45,0.8;mark;Place a Marker]
+textarea[8.75,7.55;7.1,1;;;Save current coordinates]
+textarea[8.8,8;6.1,1.6;note;;]
+image_button[14.9,8;0.9,1.6;blank.png;;Save;false;false]
 ]]
