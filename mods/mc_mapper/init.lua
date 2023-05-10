@@ -146,12 +146,13 @@ function mc_mapper.map_handler(player)
 					mapar[i+17] = {}
 					for j = -17,17,1 do
 						mapar[i+17][j+17] = {}
-						if realmMapCache.id[pos.x+i][pos.z+j] then
+						if realmMapCache.id[pos.x+i] and realmMapCache.id[pos.x+i][pos.z+j] then
 							def = registered_nodes[minetest.get_name_from_content_id(realmMapCache.id[pos.x+i][pos.z+j])]
 						end
-						k = realmMapCache.y[pos.x+i][pos.z+j]
-						p2 = realmMapCache.param2[pos.x+i][pos.z+j]
 						if def and pos.x+i <= realm.EndPos.x and pos.x+i >= realm.StartPos.x and pos.z+j <= realm.EndPos.z and pos.z+j >= realm.StartPos.z then
+							k = realmMapCache.y[pos.x+i] and realmMapCache.y[pos.x+i][pos.z+j]
+							p2 = realmMapCache.param2[pos.x+i] and realmMapCache.param2[pos.x+i][pos.z+j]
+							
 							tiles = def["tiles"]
 							if tiles ~= nil then
 								tile = tiles[1]
