@@ -115,7 +115,7 @@ function mc_mapper.map_handler(player)
 							realmMapCache.param2[pos.x+i][pos.z+j] = p2
 						end
 						local tiles
-						if def then 
+						if def and pos.x+i <= realm.EndPos.x and pos.x+i >= realm.StartPos.x and pos.z+j <= realm.EndPos.z and pos.z+j >= realm.StartPos.z then 
 							tiles = def["tiles"]
 							if tiles ~= nil then
 								tile = tiles[1]
@@ -213,7 +213,7 @@ function mc_mapper.map_handler(player)
 					realmMapCache.param2[pos.x+i][pos.z+j] = p2
 					def = registered_nodes[minetest.get_name_from_content_id(c_no)]
 					local tiles
-					if def then 
+					if def and pos.x+i <= realm.EndPos.x and pos.x+i >= realm.StartPos.x and pos.z+j <= realm.EndPos.z and pos.z+j >= realm.StartPos.z then
 						tiles = def["tiles"]
 						if tiles ~= nil then
 							tile = tiles[1]
@@ -276,7 +276,7 @@ function mc_mapper.map_handler(player)
 				realmMapCache.param2[pos.x+i][pos.z+j] = p2
 				def = registered_nodes[minetest.get_name_from_content_id(c_no)]
 				local tiles
-				if def then 
+				if def and pos.x+i <= realm.EndPos.x and pos.x+i >= realm.StartPos.x and pos.z+j <= realm.EndPos.z and pos.z+j >= realm.StartPos.z then 
 					tiles = def["tiles"]
 					if tiles ~= nil then
 						tile = tiles[1]
