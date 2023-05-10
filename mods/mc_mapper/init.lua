@@ -57,7 +57,7 @@ function mc_mapper.map_handler(player)
 			if xx and zz then
 				-- The cache is missing some tiles so return the smallest possible LVM area
 				local minxx = realm.EndPos.x
-				local maxxx = realm.StartPos.z
+				local maxxx = realm.StartPos.x
 				local minzz = realm.EndPos.z
 				local maxzz = realm.StartPos.z
 				if #xx > 1 then
@@ -151,7 +151,7 @@ function mc_mapper.map_handler(player)
 						end
 						k = realmMapCache.y[pos.x+i][pos.z+j]
 						p2 = realmMapCache.param2[pos.x+i][pos.z+j]
-						if def then 
+						if def and pos.x+i <= realm.EndPos.x and pos.x+i >= realm.StartPos.x and pos.z+j <= realm.EndPos.z and pos.z+j >= realm.StartPos.z then
 							tiles = def["tiles"]
 							if tiles ~= nil then
 								tile = tiles[1]
