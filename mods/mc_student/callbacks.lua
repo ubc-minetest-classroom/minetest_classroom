@@ -228,13 +228,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		elseif fields.clear then
 			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
 			if pdata then
-				local prealms = pdata.realms
-				local pcoords = pdata.coords
-				local pnotes = pdata.notes
-				if prealms then
+				if pdata.realms then
 					local newData, newCoords, newNotes, newRealms = {}, {}, {}, {}	
-					for i in pairs(prealms) do
-						local coordrealm = Realm.GetRealm(prealms[i])
+					for i,_ in pairs(pdata.realms) do
+						local coordrealm = Realm.GetRealm(pdata.realms[i])
 						local realm = Realm.GetRealmFromPlayer(player)
 						if realm and coordrealm and coordrealm.ID ~= realm.ID then
 							table.insert(newCoords, pdata.coords[i])

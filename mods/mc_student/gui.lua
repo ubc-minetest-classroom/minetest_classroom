@@ -1,11 +1,13 @@
 local marker_expiry = mc_student.marker_expiry
 
+--- Returns true if the given player can join the given realm, false otherwise
 local function player_can_join_realm(player, realm)
 	local realmCategory = realm:getCategory()
 	local joinable, reason = realmCategory.joinable(realm, player)
 	return joinable
 end
 
+--- Returns a list of classrooms that the given player can join
 local function get_fs_classroom_list(player)
 	local list = {}
 	Realm.ScanForPlayerRealms()
@@ -22,6 +24,7 @@ local function get_fs_classroom_list(player)
 	return table.concat(list, ",")
 end
 
+--- Returns a ping indicator texture for the given player
 local function get_ping_texture(pinfo)
 	local tile = 5
 	if pinfo then
@@ -39,6 +42,59 @@ local function get_ping_texture(pinfo)
 		end	
 	end
 	return "mc_student_ping.png^[sheet:1x6:0,"..tile
+end
+
+--- Returns a list containing the names of the given player's saved coordinates
+local function get_saved_coords(player)
+	local pmeta = player:get_meta()
+	local realm = Realm.GetRealmFromPlayer(player)
+	local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+	local coord_list = {}
+
+	if pdata == nil or pdata == {} then
+		return coord_list
+	elseif pdata.realms then
+		local newData, newCoords, newNotes, newRealms = {}, {}, {}, {}	
+		for i,_ in pairs(pdata.realms) do
+			local coordrealm = Realm.GetRealm(pdata.realms[i])
+			if realm and coordrealm then
+				-- Remove coordinates saved in other realms
+				if coordrealm.ID == realm.ID and pdata.notes[i] ~= "" then
+					table.insert(coord_list, pdata.notes[i])
+				end
+				-- Remove coordinates saved in realms that no longer exist
+				table.insert(newCoords, pdata.coords[i])
+				table.insert(newNotes, pdata.notes[i])
+				table.insert(newRealms, pdata.realms[i])
+			end
+		end
+
+		if #newCoords > 0 then
+			newData = {coords = newCoords, notes = newNotes, realms = newRealms}
+		else
+			newData = nil
+		end
+
+		pmeta:set_string("coordinates", minetest.serialize(newData))
+		return coord_list
+	end
+end
+
+--- Rounds a yaw measurement to the nearest multiple which a texture exists for
+local function round_to_texture_multiple(yaw)
+	local adjust = math.floor(yaw / 90)
+	local yaw_ref = math.fmod(yaw, 90)
+	local angle_table = {10, 20, 30, 40, 45, 50, 60, 70, 80, 90}
+	local best = {angle = 0, diff = math.abs(yaw_ref)}
+
+	for _,angle in pairs(angle_table) do
+		local diff = math.abs(yaw_ref - angle)
+		if diff < best.diff then
+			best.diff = diff
+			best.angle = angle
+		end
+	end
+	return best.angle + (adjust * 90)
 end
 
 function mc_student.show_notebook_fs(player, tab)
@@ -213,9 +269,7 @@ function mc_student.show_notebook_fs(player, tab)
 				local rotate = 0
 				if yaw ~= nil then
 					-- Find rotation and texture based on yaw.
-					minetest.log(yaw)
-					yaw = math.fmod(math.round(math.deg(yaw)/10) * 10, 360)
-					minetest.log(yaw)
+					yaw = math.fmod(round_to_texture_multiple(math.deg(yaw)), 360)
 					if yaw < 90 then
 						rotate = 90
 					elseif yaw < 180 then
@@ -241,19 +295,21 @@ function mc_student.show_notebook_fs(player, tab)
 					"button[5.925,8.8;1.675,0.8;coordsoff;Off]",
 					"textarea[8.75,1;7.1,1;;;Saved Coordinates]",
 				}))
-				-- TODO: re-implement saved coordinates
-				--"textlist[8.8,1.5;7,3.9;coordlist;", "", ";", "1", ";false]",
-				
+
+				local coord_list = get_saved_coords(player)
 				table.insert(fs, table.concat({
-					"image_button[14.6,1;1.2,0.5;blank.png;clear;Clear;false;false]",
-					"button[8.8,5.5;3.45,0.8;go;Teleport]",
-					"button[12.35,5.5;3.45,0.8;delete;Delete]",
-					"button[8.8,6.4;3.45,0.8;share;Share in Chat]",
-					"button[12.35,6.4;3.45,0.8;mark;Place a Marker]",
+					"textlist[8.8,1.5;7,3.9;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
+					"image_button[14.6,1;1.2,0.5;mc_student_clear.png;clear;Clear;false;false]",
+					coord_list and #coord_list > 0 and "" or "style_type[button;bgimg=mc_pixel.png^[multiply:#acacac]",
+					"button[8.8,5.5;3.45,0.8;", coord_list and #coord_list > 0 and "go" or "blocked_go", ";Teleport]",
+					"button[12.35,5.5;3.45,0.8;", coord_list and #coord_list > 0 and "delete" or "blocked_delete", ";Delete]",
+					"button[8.8,6.4;3.45,0.8;", coord_list and #coord_list > 0 and "share" or "blocked_share", ";Share in Chat]",
+					"button[12.35,6.4;3.45,0.8;", coord_list and #coord_list > 0 and "mark" or "blocked_mark", ";Place a Marker]",
+					coord_list and #coord_list > 0 and "" or "style_type[button;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
 					"textarea[8.75,7.55;7.1,1;;;Save current coordinates]",
 					"style_type[textarea;font=mono]",
 					"textarea[8.8,8;6.1,1.6;note;;]",
-					"image_button[14.9,8;0.9,1.6;blank.png;record;Save;false;false]",
+					"image_button[14.9,8;0.9,1.6;mc_student_save.png;record;Save;false;false]",
 					"tooltip[utmcoords;Displays real-world UTM coordinates]",
 					"tooltip[latloncoords;Displays real-world latitude and longitude]",
 					"tooltip[classroomcoords;Displays in-game coordinates, relative to the classroom]",
@@ -262,149 +318,6 @@ function mc_student.show_notebook_fs(player, tab)
 				}))
 
 				return fs
-
-				--[[fs[#fs + 1] = "]textlist["
-				fs[#fs + 1] = tostring(fsx+(notebook_width/2))
-				fs[#fs + 1] = ",1.1;"
-				fs[#fs + 1] = tostring((notebook_width/8)*3.5)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(notebook_height/3)
-				fs[#fs + 1] = ";coordlist;"]]
-
-				-- Get the stored coordinates for the player
-				--[[local pmeta = player:get_meta()
-				local realm = Realm.GetRealmFromPlayer(player)
-				local pdata
-				pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-				if pdata == nil then
-					fs[#fs + 1] = "No Coordinates Stored"
-				else
-					local prealms = pdata.realms
-					local pcoords = pdata.coords
-					local pnotes = pdata.notes
-					local newData, newCoords, newNotes, newRealms = {}, {}, {}, {}	
-					if prealms then
-						local coordcount = 0
-						for i in pairs(prealms) do
-							local coordrealm = Realm.GetRealm(prealms[i])
-							-- Make sure the realm still exists
-							if coordrealm then
-								-- Not all coordinates stored in player metadata are for the current realm
-								if realm and coordrealm and coordrealm.ID == realm.ID then
-									coordcount = coordcount + 1
-									local pos = pcoords[i]
-									if pnotes[i] ~= "" then 
-										-- Truncate (...) long entries
-										if #pnotes[i] > 35 then
-											fs[#fs + 1] = string.sub(pnotes[i], 1, 35)
-											fs[#fs + 1] = "..."
-										else
-											fs[#fs + 1] = pnotes[i] 
-										end
-									end
-									if i ~= #pcoords then fs[#fs + 1] = "," end
-								end
-								-- Below deletes any coordinates stored in player meta for which a realm no longer exists
-								table.insert(newCoords, pdata.coords[i])
-								table.insert(newNotes, pdata.notes[i])
-								table.insert(newRealms, pdata.realms[i])
-								
-							end
-						end
-						if newCoords then
-							newData = {coords = newCoords, notes = newNotes, realms = newRealms}
-						else
-							newData = nil
-						end
-						pmeta:set_string("coordinates", minetest.serialize(newData))
-						if coordcount == 0 then fs[#fs + 1] = "No Coordinates Stored" end
-					end
-				end
-				fs[#fs + 1] = ";1;false]"
-				
-				-- Check if any coordinates are available, otherwise suppress buttons
-				local pmeta = player:get_meta()
-				local pdata
-				pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-				if pdata then
-					local prealms = pdata.realms
-					local pcoords = pdata.coords
-					local pnotes = pdata.notes
-					local newData, newCoords, newNotes, newRealms = {}, {}, {}, {}
-					if prealms then
-						for i in pairs(prealms) do
-							local coordrealm = Realm.GetRealm(prealms[i])
-							-- Make sure the realm still exists
-							if coordrealm then
-								local realm = Realm.GetRealmFromPlayer(player)
-								-- Not all coordinates stored in player metadata are for the current realm
-								if realm and coordrealm and coordrealm.ID == realm.ID then
-									fs[#fs + 1] = "button["
-									fs[#fs + 1] = tostring(fsx+(notebook_width/2))
-									fs[#fs + 1] = ","
-									fs[#fs + 1] = tostring(32*0.15+fsy+(notebook_height/4)+0.9)
-									fs[#fs + 1] = ";"
-									fs[#fs + 1] = tostring(((notebook_width/2)-(fsx*2))/3)
-									fs[#fs + 1] = ",0.6;go;Go]button["
-									fs[#fs + 1] = tostring(fsx+(notebook_width/2))
-									fs[#fs + 1] = ","
-									fs[#fs + 1] = tostring((notebook_height/3)+1.1)
-									fs[#fs + 1] = ";1.7,0.6;delete;Delete]button["
-									fs[#fs + 1] = tostring(notebook_width/2+1.1+1.7+0.2)
-									fs[#fs + 1] = ","
-									fs[#fs + 1] = tostring((notebook_height/3)+1.1)
-									fs[#fs + 1] = ";1.7,0.6;clear;Clear All]"
-									if mc_core.checkPrivs(player, {shout = true}) then
-										fs[#fs + 1] = "button["
-										fs[#fs + 1] = tostring(fsx+(notebook_width/2)+(((notebook_width/2)-(fsx*2))/3)+0.2)
-										fs[#fs + 1] = ","
-										fs[#fs + 1] = tostring(32*0.15+fsy+(notebook_height/4)+0.9)
-										fs[#fs + 1] = ";"
-										fs[#fs + 1] = tostring(((notebook_width/2)-(fsx*2))/3)
-										fs[#fs + 1] = ",0.6;share;Share in Chat]button["
-										fs[#fs + 1] = tostring(fsx+(notebook_width/2)+(((notebook_width/2)-(fsx*2))/3)+0.2+(((notebook_width/2)-(fsx*2))/3)+0.2)
-										fs[#fs + 1] = ","
-										fs[#fs + 1] = tostring(32*0.15+fsy+(notebook_height/4)+0.9)
-										fs[#fs + 1] = ";"
-										fs[#fs + 1] = tostring(((notebook_width/2)-(fsx*2))/3)
-										fs[#fs + 1] = ",0.6;mark;Place Marker]"
-									end
- 									fs[#fs + 1] = "style_type[label;font_size=16]label["
-									fs[#fs + 1] = tostring(fsx+(notebook_width/2))
-									fs[#fs + 1] = ","
-									fs[#fs + 1] = tostring((notebook_height/3)+2.5)
-									fs[#fs + 1] = ";"
-									fs[#fs + 1] = minetest.colorize("#000","Selected Coordinate:")
-									fs[#fs + 1] = "]"
-									fs[#fs + 1] = "style_type[label;font_size=16]label["
-									fs[#fs + 1] = tostring(fsx+(notebook_width/2))
-									fs[#fs + 1] = ","
-									fs[#fs + 1] = tostring((notebook_height/3)+2.4+0.7)
-									fs[#fs + 1] = ";"
-									fs[#fs + 1] = minetest.colorize("#000","Latitude and Longitude")
-									fs[#fs + 1] = "]"
-									fs[#fs + 1] = "style_type[label;font_size=16]label["
-									fs[#fs + 1] = tostring(fsx+(notebook_width/2))
-									fs[#fs + 1] = ","
-									fs[#fs + 1] = tostring((notebook_height/3)+2.4+0.7+0.7)
-									fs[#fs + 1] = ";"
-									fs[#fs + 1] = minetest.colorize("#000","Local Position {x, y, z}")
-									fs[#fs + 1] = "]" 
-								end
-								-- Below deletes any coordinates stored in player metadata for which a realm no longer exists
-								table.insert(newCoords, pdata.coords[i])
-								table.insert(newNotes, pdata.notes[i])
-								table.insert(newRealms, pdata.realms[i])
-							end
-						end
-						if newCoords and #newCoords > 0 then
-							newData = {coords = newCoords, notes = newNotes, realms = newRealms}
-						else
-							netData = nil
-						end
-						pmeta:set_string("coordinates", minetest.serialize(newData))
-					end
-				end]]
 			end,
 			[mc_student.TABS.APPEARANCE] = function() -- APPEARANCE
 				local fs = {}
