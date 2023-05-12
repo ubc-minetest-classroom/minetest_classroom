@@ -14,6 +14,13 @@ mc_student = {
 		MAP = "3",
 		APPEARANCE = "4",
 		HELP = "5"
+	},
+	REPORT_TYPE = {
+		"Server Issue",
+		"Misbehaving Player",
+		"Question",
+		"Suggestion",
+		"Other"
 	}
 }
 

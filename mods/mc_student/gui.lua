@@ -97,6 +97,11 @@ local function round_to_texture_multiple(yaw)
 	return best.angle + (adjust * 90)
 end
 
+-- Removes KEY_ from the front of key names
+local function clean_key(key)
+    return string.match(tostring(key), "K?E?Y?_?KEY_(.-)$") or key
+end
+
 function mc_student.show_notebook_fs(player, tab)
 	local notebook_width = 16.4
 	local notebook_height = 10.2
@@ -115,7 +120,7 @@ function mc_student.show_notebook_fs(player, tab)
 				end
 
 				local fs = {
-					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#acacac]",
+					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
 					"tooltip[exit;Exit]",
 					"hypertext[0.55,0.1;7.1,1;;<style font=mono><center><b>Overview</b></center></style>]",
@@ -124,8 +129,8 @@ function mc_student.show_notebook_fs(player, tab)
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
 					"textarea[0.55,1;7.1,1;;;Welcome to Minetest Classroom!]",
 					"textarea[0.55,4.4;7.1,1;;;Server Rules]",
-					"style_type[textarea;font=normal]",
-					"textarea[0.55,1.5;7.1,2.8;;;", minetest.formspec_escape("This is the Student Notebook, your tool for accessing classrooms and other features."),
+					"style_type[textarea;font=mono]",
+					"textarea[0.55,1.5;7.1,2.6;;;", minetest.formspec_escape("This is the Student Notebook, your tool for accessing classrooms and other features."),
 					"\n", minetest.formspec_escape("You cannot drop or delete the Student Notebook, so you will never lose it. However, you can move it out of your hotbar and into your inventory or the toolbox."), "]",
 					"textarea[0.55,4.9;7.1,4.7;;;", minetest.formspec_escape(rules), "]",
 
@@ -143,7 +148,7 @@ function mc_student.show_notebook_fs(player, tab)
 			[mc_student.TABS.CLASSROOMS] = function() -- CLASSROOMS + ONLINE PLAYERS
 				-- TODO: add area/realm owner information
 				local fs = {
-					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#acacac]",
+					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
 					"tooltip[exit;Exit]",
 					"hypertext[0.55,0.1;7.1,1;;<style font=mono><center><b>Classrooms</b></center></style>]",
@@ -231,7 +236,7 @@ function mc_student.show_notebook_fs(player, tab)
 				local map_x = 0.65
 				local map_y = 1.55
 				local fs = {
-					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#acacac]",
+					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
 					"tooltip[exit;Exit]",
 					"hypertext[0.55,0.1;7.1,1;;<style font=mono><center><b>Map</b></center></style>]",
@@ -320,62 +325,74 @@ function mc_student.show_notebook_fs(player, tab)
 				return fs
 			end,
 			[mc_student.TABS.APPEARANCE] = function() -- APPEARANCE
-				local fs = {}
-				fs[#fs + 1] = "style_type[textarea;font=mono,bold;textcolor=black]"
-				fs[#fs + 1] = "textarea[0.55,0.5;7.1,1;;;Coming Soon]"
+				local fs = {
+					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#737373]",
+					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+					"tooltip[exit;Exit]",
+					"hypertext[0.55,0.1;7.1,1;;<style font=mono><center><b>Appearance</b></center></style>]",
+					"hypertext[8.75,0.1;7.1,1;;<style font=mono><center><b>Appearance</b></center></style>]",
+					"style_type[textarea;font=mono,bold;textcolor=#000000]",
+					"textarea[0.55,1;7.1,1;;;Coming soon!]"
+				}
 				return fs
 			end,
 			[mc_student.TABS.HELP] = function() -- HELP + REPORTS
-				local fs, mapar, fsx, fsy
-				local fs = {}
-				fsy = 1
-				fsx = ((notebook_width/2)-(0.15*32))/2
-				fs[#fs + 1] = "style_type[label;font_size=*1.2]label[3.3,0.4;"
-				fs[#fs + 1] = minetest.colorize("#000", "Server Rules")
-				fs[#fs + 1] = "]style[rulesmsg;textcolor=#000;border=false]textarea[1,0.85;"
-				fs[#fs + 1] = tostring((notebook_width/8)*3.5)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(notebook_height-1.7)
-				fs[#fs + 1] = ";rulesmsg;;"
-				local rules_text = mc_rules.meta:get_string("rules")
-				if rules_text and rules_text ~= "" then
-					fs[#fs + 1] = rules_text
-				else
-					fs[#fs + 1] = "Rules have not yet been set for this server. Please contact a Teacher for more information."
-				end
-				fs[#fs + 1] = "]style_type[label;font_size=*1.2]label["
-				fs[#fs + 1] = tostring(notebook_width/2+3.3)
-				fs[#fs + 1] = ",0.4;"
-				fs[#fs + 1] = minetest.colorize("#000","Report a Problem")
-				fs[#fs + 1] = "]style[instructions;textcolor=#000;border=false]textarea["
-				fs[#fs + 1] = tostring(notebook_width/2+1)
-				fs[#fs + 1] = ",1.1;"
-				fs[#fs + 1] = tostring((notebook_width/8)*3.5)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(notebook_height/3)
-				fs[#fs + 1] = ";instructions;"
-				fs[#fs + 1] = minetest.colorize("#000","Instructions")
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = minetest.colorize("#000","Found a bug? Need to report a problem with a player? You can submit a message below that will be sent to all Teachers on this server. Your message is private and will only notify any Teachers online, but do not share personal information. If no Teacher is online right now, then your report will be shown to the first Teacher who joins the server.")
-				fs[#fs + 1] = "]style[report;textcolor=#A0A0A0]textarea["
-				fs[#fs + 1] = tostring(notebook_width/2+1)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring((notebook_height/3)+2.5)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = tostring((notebook_width/8)*3.5)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring((notebook_height/3)+0.1)
-				fs[#fs + 1] = ";report;"
-				fs[#fs + 1] = minetest.colorize("#000","What are you reporting?")
-				fs[#fs + 1] = ";The server automatically logs the current date and time along with your current position and classroom information, so you do not need to include this information in your report.]button["
-				fs[#fs + 1] = tostring((notebook_width/2)+((notebook_width/2)-(((notebook_width/8)*3)))/2)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(32*0.15+fsy+(notebook_height/4)+1.1)
-				fs[#fs + 1] = ";"
-				fs[#fs + 1] = tostring(((notebook_width/2)-(fsx*2))/2)
-				fs[#fs + 1] = ",0.6;submitreport;Report]"
+				local set = minetest.settings
+				local fs = {
+					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#737373]",
+					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+					"tooltip[exit;Exit]",
+					"hypertext[0.55,0.1;7.1,1;;<style font=mono><center><b>Help</b></center></style>]",
+					"hypertext[8.75,0.1;7.1,1;;<style font=mono><center><b>Reports</b></center></style>]",
+					"style_type[textarea;font=mono,bold;textcolor=#000000]",
+					"textarea[0.55,1;7.1,1;;;Game controls]",
+					"textarea[8.75,1;7.1,1;;;Need to report an issue?]",
+					"textarea[8.75,6.2;7.1,1;;;Report message]",
+					"textarea[8.75,4.8;7.1,1;;;Report type]",
+					"style_type[textarea;font=mono]",
+					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+
+					-- Controls + keybinds
+					"textarea[0.55,1.5;7.1,8.1;;;",
+					"Move forwards: ", clean_key(set:get("keymap_forward") or "KEY_KEY_W"), "\n",
+					"Move backwards: ", clean_key(set:get("keymap_backward") or "KEY_KEY_S"), "\n",
+					"Move left: ", clean_key(set:get("keymap_left") or "KEY_KEY_A"), "\n",
+					"Move right: ", clean_key(set:get("keymap_right") or "KEY_KEY_D"), "\n",
+					"Jump/climb up: ", clean_key(set:get("keymap_jump") or "KEY_SPACE"), "\n",
+					"Sneak", set:get("aux1_descends") == "true" and "" or "/climb down", ": ", clean_key(set:get("keymap_sneak") or "KEY_LSHIFT"), "\n",
+					"Sprint", set:get("aux1_descends") == "true" and "/climb down" or "", ": ", clean_key(set:get("keymap_aux1") or "KEY_KEY_E"), "\n",
+					"Zoom: ", clean_key(set:get("keymap_zoom") or "KEY_KEY_Z"), "\n",
+					"\n",
+					"Dig block/use tool: ", set:get("keymap_dig") and clean_key(set:get("keymap_dig")) or "LEFT CLICK", "\n",
+					"Place block: ", set:get("keymap_dig") and clean_key(set:get("keymap_dig")) or "RIGHT CLICK", "\n",
+					"Select hotbar item: SCROLL WHEEL or SLOT NUMBER (1-8)\n",
+					"Select next hotbar item: ", clean_key(set:get("keymap_hotbar_next") or "KEY_KEY_N"), "\n",
+					"Select previous hotbar item: ", clean_key(set:get("keymap_hotbar_previous") or "KEY_KEY_B"), "\n",
+					"Drop item: ", clean_key(set:get("keymap_drop") or "KEY_KEY_Q"), "\n",
+					"\n",
+					"Open inventory: ", clean_key(set:get("keymap_inventory") or "KEY_KEY_I"), "\n",
+					"Open chat: ", clean_key(set:get("keymap_chat") or "KEY_KEY_T"), "\n",
+					"View minimap: ", clean_key(set:get("keymap_minimap") or "KEY_KEY_V"), "\n",
+					"Take a screenshot: ", clean_key(set:get("keymap_screenshot") or "KEY_F12"), "\n",
+					"Change camera perspective: ", clean_key(set:get("keymap_camera_mode") or "KEY_KEY_C"), "\n",
+					"\n",
+					"Enable/disable sprint: ", clean_key(set:get("keymap_fastmove") or "KEY_KEY_J"), "\n",
+					"Enable/disable fly mode: ", clean_key(set:get("keymap_freemove") or "KEY_KEY_K"), "\n",
+					"Enable/disable noclip mode: ", clean_key(set:get("keymap_noclip") or "KEY_KEY_H"), "\n",
+					"Show/hide HUD (display): ", clean_key(set:get("keymap_toggle_hud") or "KEY_F1"), "\n",
+					"Show/hide chat: ", clean_key(set:get("keymap_toggle_chat") or "KEY_F2"), "\n",
+					"Show/hide world fog: ", clean_key(set:get("keymap_toggle_force_fog_off") or "KEY_F3"),
+					"]",
+					"textarea[8.75,1.5;7.1,3;;;", minetest.formspec_escape("If you need to report a server issue or player, you can write a message in the box below that will be privately sent to "), 
+					pairs(mc_teacher.teachers) ~= nil and "all teachers that are currently online" or "the first teacher that joins the server", ".\n",
+					minetest.formspec_escape("Your report message will be logged and visible to all teachers, so don't include any personal information in it. The server will also automatically log the current date and time, your classroom, and your world position in the report, so you don't need to include that information in your report message."), "]",
+					"dropdown[8.8,5.3;7,0.7;reporttype;", table.concat(mc_student.REPORT_TYPE, ","), ";1;false]",
+					"textarea[8.8,6.7;7,2;report;;]",
+					"button[8.8,8.8;7,0.8;submitreport;Submit Report]",
+				}
+
 				return fs
-			end,
+			end
 		}
 		
 		local bookmarked_tab = pmeta:get_string("default_student_tab")
@@ -388,7 +405,7 @@ function mc_student.show_notebook_fs(player, tab)
 		local student_formtable = {
 			"formspec_version[6]",
 			"size[", tostring(notebook_width), ",", tostring(notebook_height), "]",
-			mc_core.draw_book_fs(notebook_width, notebook_height, {divider = "#d9d9d9"}),
+			mc_core.draw_book_fs(notebook_width, notebook_height, {divider = "#969696"}),
 			"style[tabheader;noclip=true]",
 			"tabheader[0,-0.25;16,0.55;record_nav;Overview,Classrooms,Map,Appearance,Help;", tab or bookmarked_tab or context.tab or "1", ";true;false]",
 			table.concat(tab_map[selected_tab](), "")
@@ -422,14 +439,14 @@ TAB GROUPING:
 [4] APPEARANCE (appearance)
 [5] HELP + REPORTS (help)
 
-OVERVIEW + RULES TAB:
+OVERVIEW + RULES:
 formspec_version[6]
 size[16.4,10.2]
-box[0,0;16.4,0.5;#acacac]
+box[0,0;16.4,0.5;#737373]
 box[8.195,0;0.05,10.2;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
-textarea[0.55,0;7.1,1;;;Overview]
-textarea[8.75,0;7.1,1;;;Dashboard]
+textarea[0.55,0.1;7.1,1;;;Overview]
+textarea[8.75,0.1;7.1,1;;;Dashboard]
 textarea[0.55,1;7.1,1;;;Welcome to Minetest Classroom!]
 textarea[0.55,1.5;7.1,2.8;;;This is the Student Notebook\, your tool for accessing classrooms and other features. You cannot drop or delete the Student Notebook\, so you will never lose it\, but you can move it out of your hotbar and into your inventory or the toolbox.]
 textarea[0.55,4.4;7.1,1;;;Server Rules]
@@ -444,14 +461,14 @@ textarea[10.6,4.8;5.25,1.6;;;Appearance\npersonalize your avatar]
 textarea[10.6,6.55;5.25,1.6;;;Help\nReport a player or server issue]
 image[15.8,-0.25;0.5,0.8;mc_student_bookmark.png]
 
-CLASSROOMS + ONLINE PLAYERS TAB:
+CLASSROOMS + ONLINE PLAYERS:
 formspec_version[6]
 size[16.4,10.2]
-box[0,0;16.4,0.5;#acacac]
+box[0,0;16.4,0.5;#737373]
 box[8.195,0;0.05,10.2;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
-textarea[0.55,0;7.1,1;;;Classrooms]
-textarea[8.75,0;7.1,1;;;Online Players]
+textarea[0.55,0.1;7.1,1;;;Classrooms]
+textarea[8.75,0.1;7.1,1;;;Online Players]
 textarea[0.55,1;7.1,1;;;Available Classrooms]
 textlist[0.6,1.5;7,7.2;classroomlist;;1;false]
 button[0.6,8.8;7,0.8;teleportrealm;Teleport]
@@ -465,14 +482,14 @@ image[8.8,3;0.5,0.4;]
 textarea[9.4,2.95;6.4,1;;;student]
 box[16.1,0.5;0.3,9.7;#ffffff]
 
-MAP + COORDINATES
+MAP + COORDINATES:
 formspec_version[6]
 size[16.4,10.2]
-box[0,0;16.4,0.5;#acacac]
+box[0,0;16.4,0.5;#737373]
 box[8.195,0;0.05,10.2;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
-textarea[0.55,0;7.1,1;;;Map]
-textarea[8.75,0;7.1,1;;;Coordinates]
+textarea[0.55,0.1;7.1,1;;;Map]
+textarea[8.75,0.1;7.1,1;;;Coordinates]
 textarea[0.55,1;7.1,1;;;Surrounding Area]
 box[0.6,1.5;7,6.4;#000000]
 box[0.65,1.55;6.9,6.3;#808080]
@@ -492,4 +509,32 @@ button[12.35,6.4;3.45,0.8;mark;Place a Marker]
 textarea[8.75,7.55;7.1,1;;;Save current coordinates]
 textarea[8.8,8;6.1,1.6;note;;]
 image_button[14.9,8;0.9,1.6;blank.png;;Save;false;false]
+
+APPEARANCE:
+formspec_version[6]
+size[16.4,10.2]
+box[0,0;16.4,0.5;#737373]
+box[8.195,0;0.05,10.2;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0.1;7.1,1;;;Appearance]
+textarea[8.75,0.1;7.1,1;;;Appearance]
+textarea[0.55,1;7.1,1;;;Coming soon!]
+
+HELP + REPORTS:
+formspec_version[6]
+size[16.4,10.2]
+box[0,0;16.4,0.5;#737373]
+box[8.195,0;0.05,10.2;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0.1;7.1,1;;;Help]
+textarea[8.75,0.1;7.1,1;;;Reports]
+textarea[0.55,1;7.1,1;;;Controls]
+textarea[8.75,1;7.1,1;;;Need to report an issue?]
+textarea[8.75,6.1;7.1,1;;;Report message]
+textarea[8.75,4.8;7.1,1;;;Report type]
+textarea[0.55,1.5;7.1,8.1;;;Add controls here!]
+textarea[8.75,1.5;7.1,3;a;;Add report info here!]
+dropdown[8.8,5.3;7,0.7;reporttype;Server Issue,Misbehaving Player,Question,Suggestion,Other;1;false]
+textarea[8.8,6.6;7,2.1;report;;]
+button[8.8,8.8;7,0.8;submitreport;Submit Report]
 ]]
