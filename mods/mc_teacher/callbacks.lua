@@ -45,6 +45,7 @@ end)
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	local pmeta = player:get_meta()
+    local context = mc_teacher.get_fs_context(player)
 
 	if string.sub(formname, 1, 10) ~= "mc_teacher" then
 		return false
@@ -55,24 +56,24 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 	if formname == "mc_teacher:controller_fs" then
 		if fields.record_nav then
-            mc_teacher.fs_context.tab = fields.record_nav
-            mc_teacher.show_controller_fs(player,mc_teacher.fs_context.tab)
+            context.tab = fields.record_nav
+            mc_teacher.show_controller_fs(player, context.tab)
 		end
         if fields.default_tab then
-			pmeta:set_string("default_teacher_tab",mc_teacher.fs_context.tab)
-			mc_teacher.show_controller_fs(player,mc_teacher.fs_context.tab)
+			pmeta:set_string("default_teacher_tab", context.tab)
+			mc_teacher.show_controller_fs(player, context.tab)
 		end
         if fields.playerlist then
 			local event = minetest.explode_textlist_event(fields.playerlist)
 			if event.type == "CHG" then
-				mc_teacher.fs_context.chat_player_index = event.index
-                mc_teacher.show_controller_fs(player,"4")
+				context.chat_player_index = event.index
+                mc_teacher.show_controller_fs(player, mc_teacher.TABS.PLAYERS)
 			end
         end
         if fields.playerchatlist then
 			local event = minetest.explode_textlist_event(fields.playerchatlist)
 			if event.type == "CHG" then
-				mc_teacher.fs_context.chat_index = event.index
+				context.chat_index = event.index
                 mc_teacher.show_controller_fs(player,"4")
 			end
         end
@@ -81,31 +82,31 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         -- MANAGE CLASSROOMS
         ---------------------------------
         if fields.mode then
-            if fields.realmname then mc_teacher.fs_context.realmname = minetest.formspec_escape(fields.realmname) end
-            if fields.mode ~= "1" then
-                mc_teacher.fs_context.selectedMode = fields.mode
-                mc_teacher.show_controller_fs(player,"2")
+            if fields.realmname then context.realmname = minetest.formspec_escape(fields.realmname) end
+            if fields.mode ~= mc_teacher.MODES.NONE then
+                context.selectedMode = fields.mode
+                mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
             else
-                mc_teacher.fs_context.selectedMode = "1"
-                mc_teacher.show_controller_fs(player,"2")
+                context.selectedMode = mc_teacher.MODES.NONE
+                mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
             end
         elseif fields.schematic then
-            if fields.realmname then mc_teacher.fs_context.realmname = minetest.formspec_escape(fields.realmname) end
-            mc_teacher.fs_context.selectedMode = "3"
-            mc_teacher.fs_context.selectedSchematicIndex = fields.schematic
-            mc_teacher.show_controller_fs(player,"2")
+            if fields.realmname then context.realmname = minetest.formspec_escape(fields.realmname) end
+            context.selectedMode = mc_teacher.MODES.SCHEMATIC
+            context.selectedSchematicIndex = fields.schematic
+            mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
         elseif fields.realterrain then
-            if fields.realmname then mc_teacher.fs_context.realmname = minetest.formspec_escape(fields.realmname) end
-            mc_teacher.fs_context.selectedMode = "4"
-            mc_teacher.fs_context.selectedDEMIndex = fields.realterrain
-            mc_teacher.show_controller_fs(player,"2")
+            if fields.realmname then context.realmname = minetest.formspec_escape(fields.realmname) end
+            context.selectedMode = mc_teacher.MODES.TWIN
+            context.selectedDEMIndex = fields.realterrain
+            mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
         end
 
         if fields.requestrealm then
             if mc_core.checkPrivs(player,{teacher = true}) then
                 local realmName, realmSizeX, realmSizeZ, realmSizeY
                 if fields.realmname == "" or fields.realmname == nil then realmName = "Unnamed Classroom" else realmName = fields.realmname end
-                if mc_teacher.fs_context.selectedMode == "2" then
+                if context.selectedMode == mc_teacher.MODES.SIZE then
                     -- Sanitize input
                     if mc_core.checkPrivs(player,{server = true}) then
                         if tonumber(fields.realmxsize) and tonumber(fields.realmxsize) >= 80 then
@@ -147,27 +148,27 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         newRealm:set_data("owner", player:get_player_name())
                         minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] Your requested classroom was successfully created."))
                     end
-                    mc_teacher.show_controller_fs(player,"2")
-                elseif mc_teacher.fs_context.selectedMode == "3" and mc_teacher.fs_context.selectedSchematicIndex then
+                    mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
+                elseif context.selectedMode == mc_teacher.MODES.SCHEMATIC and context.selectedSchematicIndex then
                     local counter = 1
                     for schematicKey,_ in pairs(schematicManager.schematics) do
                         counter = counter + 1
-                        if tonumber(mc_teacher.fs_context.selectedSchematicIndex) == counter then 
+                        if tonumber(context.selectedSchematicIndex) == counter then 
                             local newRealm = Realm:NewFromSchematic(realmName, schematicKey)
                         end 
                     end
                     minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] Your requested classroom was successfully created."))
-                    mc_teacher.show_controller_fs(player,"2")
-                elseif mc_teacher.fs_context.selectedMode == "4" and mc_teacher.fs_context.selectedDEMIndex then
+                    mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
+                elseif context.selectedMode == mc_teacher.MODES.TWIN and context.selectedDEMIndex then
                     local counter = 1
                     for DEMKey,_ in pairs(realterrainManager.dems) do 
                         counter = counter + 1
-                        if tonumber(mc_teacher.fs_context.selectedDEMIndex) == counter then 
+                        if tonumber(context.selectedDEMIndex) == counter then 
                             local newRealm = Realm:NewFromDEM(realmName, DEMKey)
                         end 
                     end
                     minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] Your requested classroom was successfully created."))
-                    mc_teacher.show_controller_fs(player,"2")
+                    mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
                 else
                     -- missing information to process the request
                 end
@@ -188,7 +189,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         end
                     end
                 end
-                mc_teacher.show_controller_fs(player,"2")
+                mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
             end
         elseif fields.teleportrealm then
 			-- Still a remote possibility that the realm is deleted in the time that the callback is executed
@@ -202,15 +203,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			else
 				minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
 			end
-			mc_teacher.show_controller_fs(player,"2")
+			mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
         elseif fields.deleterealm then
             local realm = Realm.GetRealm(tonumber(selectedRealmID))
             if realm and tonumber(selectedRealmID) ~= mc_worldManager.spawnRealmID then realm:Delete() end
-            mc_teacher.show_controller_fs(player,"2")
+            mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
         end
 
         if fields.music then
-            mc_teacher.fs_context.selectedMusic = fields.music
+            context.selectedMusic = fields.music
             -- local background_sound = 
             -- play music as sample
             minetest.sound_play(backgroundSound, {
@@ -218,7 +219,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 gain = 1,
                 object = player,
                 loop = false })
-            mc_teacher.show_controller_fs(player,"2")
+            mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
         end
 
         ---------------------------------
@@ -227,7 +228,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		if fields.clearlog then
             local chatmessages = minetest.deserialize(mc_student.meta:get_string("chat_messages"))
             local directmessages = minetest.deserialize(mc_student.meta:get_string("direct_messages"))
-            local pname = mc_teacher.fs_context.indexed_chat_players[tonumber(mc_teacher.fs_context.chat_player_index)]
+            local pname = context.indexed_chat_players[tonumber(context.chat_player_index)]
             if directmessages then
                 local player_dm_log = directmessages[pname]
                 if player_dm_log then
@@ -256,16 +257,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
             mc_student.meta:set_string("chat_messages", minetest.serialize(chatmessages))
             mc_student.meta:set_string("direct_messages", minetest.serialize(directmessages))
-            mc_teacher.show_controller_fs(player,"4")
+            mc_teacher.show_controller_fs(player, mc_teacher.TABS.MODERATION)
         elseif fields.deletemessage then
             -- TODO: delete a specific message
-            mc_teacher.show_controller_fs(player,"4")
+            mc_teacher.show_controller_fs(player, mc_teacher.TABS.MODERATION)
         end
 
         -- MANAGE SERVER
         if fields.submitmessage then
             minetest.chat_send_all(minetest.colorize("#FF00FF","[Minetest Classroom] "..fields.servermessage))
-			mc_teacher.show_controller_fs(player,"5")
+			mc_teacher.show_controller_fs(player, mc_teacher.TABS.SERVER)
         elseif fields.submitsched then
             if mc_teacher.restart_scheduled.timer then mc_teacher.restart_scheduled.timer:cancel() end
             local sched = {
@@ -291,7 +292,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     networking.modify_ipv4(player,fields.ipstart,fields.ipend,true)
                 end
             end
-            mc_teacher.show_controller_fs(player,"5")
+            mc_teacher.show_controller_fs(player, mc_teacher.TABS.SERVER)
         elseif fields.removeip then
             if fields.ipstart then
                 if not fields.ipend or fields.ipend == "Optional" or fields.ipend == "" then
@@ -300,10 +301,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     networking.modify_ipv4(player,fields.ipstart,fields.ipend,nil)
                 end
             end
-            mc_teacher.show_controller_fs(player,"5")
+            mc_teacher.show_controller_fs(player, mc_teacher.TABS.SERVER)
         elseif fields.toggleon or fields.toggleoff then
             networking.toggle_whitelist(player)
-            mc_teacher.show_controller_fs(player,"5")
+            mc_teacher.show_controller_fs(player, mc_teacher.TABS.SERVER)
         elseif fields.modifyrules then
             minetest.show_formspec(player:get_player_name(), "mc_rules:edit", mc_rules.show_edit_formspec(nil))
         else

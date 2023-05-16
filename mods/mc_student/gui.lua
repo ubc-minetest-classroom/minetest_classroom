@@ -109,7 +109,7 @@ function mc_student.show_notebook_fs(player, tab)
 	local pmeta = player:get_meta()
 	local context = mc_student.get_fs_context(player)
 
-	if mc_core.checkPrivs(player,{interact = true}) then
+	if mc_core.checkPrivs(player, {interact = true}) then
 		local tab_map = {
 			[mc_student.TABS.OVERVIEW] = function() -- OVERVIEW + RULES
 				local button_width = 1.7
@@ -404,7 +404,7 @@ function mc_student.show_notebook_fs(player, tab)
 
 		local student_formtable = {
 			"formspec_version[6]",
-			"size[", tostring(notebook_width), ",", tostring(notebook_height), "]",
+			"size[", notebook_width, ",", notebook_height, "]",
 			mc_core.draw_book_fs(notebook_width, notebook_height, {divider = "#969696"}),
 			"style[tabheader;noclip=true]",
 			"tabheader[0,-0.25;16,0.55;record_nav;Overview,Classrooms,Map,Appearance,Help;", tab or bookmarked_tab or context.tab or "1", ";true;false]",

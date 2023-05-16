@@ -6,56 +6,17 @@ function mc_teacher.show_controller_fs(player,tab)
     local page_width = (controller_width/8)*3.5
     local pname = player:get_player_name()
 	local pmeta = player:get_meta()
+	local context = mc_teacher.get_fs_context(player)
+
 	if mc_core.checkPrivs(player) then
-		local teacher_formtable = {
-			"formspec_version[6]",
-			"size[",
-			tostring(controller_width),
-			",",
-			tostring(controller_height),
-			"]",
-			mc_core.draw_book_fs(controller_width, controller_height, {bg = "#63406a", shadow = "#3e2b45", binding = "#5d345e", divider = "#d9d9d9"}),
-			"style[tabheader;noclip=true]",
-		}
-        if mc_core.checkPrivs(player,{server = true}) then
-            teacher_formtable[#teacher_formtable + 1] = "tabheader[0,-0.25;16,0.55;record_nav;Overview,Manage Classrooms,Manage Players,Moderator,Manage Server;" 
-            teacher_formtable[#teacher_formtable + 1] = tab or pmeta:get_string("default_teacher_tab") or mc_teacher.fs_context.tab or "1"
-            teacher_formtable[#teacher_formtable + 1] = ";true;false]"
-        else
-            teacher_formtable[#teacher_formtable + 1] = "tabheader[0,-0.25;16,0.55;record_nav;Overview,Manage Classrooms,Manage Players,Moderator;" 
-            teacher_formtable[#teacher_formtable + 1] = tab or pmeta:get_string("default_teacher_tab") or mc_teacher.fs_context.tab or "1"
-            teacher_formtable[#teacher_formtable + 1] = ";true;false]"
-        end
 		local tab_map = {
 			["1"] = function() -- OVERVIEW
 				local fs = {}
-				if pmeta:get_string("default_teacher_tab") == "1" then
-					fs[#fs + 1] = "style_type[label;font_size=*0.8;textcolor=#000]label[0.2,"
-					fs[#fs + 1] = tostring(controller_height-0.2)
-					fs[#fs + 1] = ";This tab is the default]"
-				else
-					fs[#fs + 1] = "checkbox[0.2,"
-					fs[#fs + 1] = tostring(controller_height-0.2)
-					fs[#fs + 1] = ";default_tab;"
-					fs[#fs + 1] = minetest.colorize("#000","Bookmark?")
-					fs[#fs + 1] = ";false]"
-				end
 				return fs
 			end,
 			["2"] = function() -- CLASSROOMS
 				local fsx, fsy, last_height, last_width
                 local fs = {}
-				if pmeta:get_string("default_teacher_tab") == "2" then
-					fs[#fs + 1] = "style_type[label;font_size=*0.8;textcolor=#000]label[0.2,"
-					fs[#fs + 1] = tostring(controller_height-0.2)
-					fs[#fs + 1] = ";This tab is the default]"
-				else
-					fs[#fs + 1] = "checkbox[0.2,"
-					fs[#fs + 1] = tostring(controller_height-0.2)
-					fs[#fs + 1] = ";default_tab;"
-					fs[#fs + 1] = minetest.colorize("#000","Bookmark?")
-					fs[#fs + 1] = ";false]"
-                end
                 --PAGE ONE
                 fsx = 1
                 fsy = 0.85
@@ -181,7 +142,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 fs[#fs + 1] = ";realmname;"
                 fs[#fs + 1] = minetest.colorize("#000","Name")
                 fs[#fs + 1] = ";"
-                if mc_teacher.fs_context.realmname then fs[#fs + 1] = mc_teacher.fs_context.realmname end
+                if context.realmname then fs[#fs + 1] = context.realmname end
                 fs[#fs + 1] = "]"
 
                 fs[#fs + 1] = "dropdown["
@@ -194,11 +155,11 @@ function mc_teacher.show_controller_fs(player,tab)
                 fs[#fs + 1] = ","
                 fs[#fs + 1] = tostring(last_height)
                 fs[#fs + 1] = ";mode;Select Mode,Size,Schematic,Digital Twin;"
-                if not mc_teacher.fs_context.selectedMode then mc_teacher.fs_context.selectedMode = "1" end
-                fs[#fs + 1] = tostring(mc_teacher.fs_context.selectedMode)
+                if not context.selectedMode then context.selectedMode = "1" end
+                fs[#fs + 1] = tostring(context.selectedMode)
                 fs[#fs + 1] = ";true]"
 
-                if mc_teacher.fs_context.selectedMode == "2" then
+                if context.selectedMode == "2" then
                     -- SIZE
                     fs[#fs + 1] = "field["
                     fsx = 1
@@ -214,8 +175,8 @@ function mc_teacher.show_controller_fs(player,tab)
                     fs[#fs + 1] = ";realmxsize;"
                     fs[#fs + 1] = minetest.colorize("#000","Width")
                     fs[#fs + 1] = ";"
-                    if mc_teacher.fs_context.requested_realmxsize then
-                        fs[#fs + 1] = tostring(mc_teacher.fs_context.requested_realmxsize)
+                    if context.requested_realmxsize then
+                        fs[#fs + 1] = tostring(context.requested_realmxsize)
                     end
                     fs[#fs + 1] = "]field["
                     fsx = fsx + last_width + 0.2
@@ -230,8 +191,8 @@ function mc_teacher.show_controller_fs(player,tab)
                     fs[#fs + 1] = ";realmzsize;"
                     fs[#fs + 1] = minetest.colorize("#000","Height")
                     fs[#fs + 1] = ";"
-                    if mc_teacher.fs_context.requested_realmzsize then
-                        fs[#fs + 1] = tostring(mc_teacher.fs_context.requested_realmzsize)
+                    if context.requested_realmzsize then
+                        fs[#fs + 1] = tostring(context.requested_realmzsize)
                     end
                     fs[#fs + 1] = "]field["
                     fsx = fsx + last_width + 0.2
@@ -246,8 +207,8 @@ function mc_teacher.show_controller_fs(player,tab)
                     fs[#fs + 1] = ";realmysize;"
                     fs[#fs + 1] = minetest.colorize("#000","Length")
                     fs[#fs + 1] = ";"
-                    if mc_teacher.fs_context.requested_realmysize then
-                        fs[#fs + 1] = tostring(mc_teacher.fs_context.requested_realmysize)
+                    if context.requested_realmysize then
+                        fs[#fs + 1] = tostring(context.requested_realmysize)
                     end
                     fs[#fs + 1] = "]button["
                     fsx = 1
@@ -262,7 +223,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     last_height = 0.6
                     fs[#fs + 1] = tostring(last_height)
                     fs[#fs + 1] = ";requestrealm;Create]"
-                elseif mc_teacher.fs_context.selectedMode == "3" then
+                elseif context.selectedMode == "3" then
                     -- SCHEMATIC
                     fs[#fs + 1] = "dropdown["
                     fsx = 1
@@ -285,7 +246,7 @@ function mc_teacher.show_controller_fs(player,tab)
                         if counter ~= count then fs[#fs + 1] = "," end
                     end
                     fs[#fs + 1] = ";"
-                    if mc_teacher.fs_context.selectedSchematicIndex then fs[#fs + 1] = mc_teacher.fs_context.selectedSchematicIndex end
+                    if context.selectedSchematicIndex then fs[#fs + 1] = context.selectedSchematicIndex end
                     fs[#fs + 1] = ";true]button["
                     fsx = 1
                     fs[#fs + 1] = tostring(fsx)
@@ -299,7 +260,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     last_height = 0.6
                     fs[#fs + 1] = tostring(last_height)
                     fs[#fs + 1] = ";requestrealm;Create]"
-                elseif mc_teacher.fs_context.selectedMode == "4" then
+                elseif context.selectedMode == "4" then
                     -- REALTERRAIN
                     fs[#fs + 1] = "dropdown["
                     fsx = 1
@@ -322,7 +283,7 @@ function mc_teacher.show_controller_fs(player,tab)
                         if counter ~= count then fs[#fs + 1] = "," end
                     end
                     fs[#fs + 1] = ";"
-                    if mc_teacher.fs_context.selectedDEMIndex then fs[#fs + 1] = mc_teacher.fs_context.selectedDEMIndex end
+                    if context.selectedDEMIndex then fs[#fs + 1] = context.selectedDEMIndex end
                     fs[#fs + 1] = ";true]button["
                     fsx = 1
                     fs[#fs + 1] = tostring(fsx)
@@ -360,7 +321,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 last_height = 0.6
                 fs[#fs + 1] = tostring(last_height)
                 fs[#fs + 1] = ";realmcategory;Default,Spawn,Classroom,Instanced;"
-                if mc_teacher.fs_context.selectedCategory then fs[#fs + 1] = mc_teacher.fs_context.selectedCategory end
+                if context.selectedCategory then fs[#fs + 1] = context.selectedCategory end
                 fs[#fs + 1] = ";true]"
 
                 -- Privileges
@@ -453,243 +414,220 @@ function mc_teacher.show_controller_fs(player,tab)
 			end,
 			["3"] = function() -- PLAYERS
                 local fs = {}
-				if pmeta:get_string("default_teacher_tab") == "3" then
-					fs[#fs + 1] = "style_type[label;font_size=*0.8;textcolor=#000]label[0.2,"
-					fs[#fs + 1] = tostring(controller_height-0.2)
-					fs[#fs + 1] = ";This tab is the default]"
-				else
-					fs[#fs + 1] = "checkbox[0.2,"
-					fs[#fs + 1] = tostring(controller_height-0.2)
-					fs[#fs + 1] = ";default_tab;"
-					fs[#fs + 1] = minetest.colorize("#000","Bookmark?")
-					fs[#fs + 1] = ";false]"
-				end
 				return fs
 			end,
 			["4"] = function() -- MODERATOR
                 local fs = {}
                 local fsx, fsy
                 fsx = ((controller_width/2)-(((controller_width/8)*3)))/2
-				if pmeta:get_string("default_teacher_tab") == "4" then
-					fs[#fs + 1] = "style_type[label;font_size=*0.8;textcolor=#000]label[0.2,"
-					fs[#fs + 1] = tostring(controller_height-0.2)
-					fs[#fs + 1] = ";This tab is the default]"
-				else
-					fs[#fs + 1] = "checkbox[0.2,"
-					fs[#fs + 1] = tostring(controller_height-0.2)
-					fs[#fs + 1] = ";default_tab;"
-					fs[#fs + 1] = minetest.colorize("#000","Bookmark?")
-					fs[#fs + 1] = ";false]label["
+                fs[#fs + 1] = "label["
+                fs[#fs + 1] = tostring(fsx+(controller_width/2))
+                fs[#fs + 1] = ",0.55;"
+                fs[#fs + 1] = minetest.colorize("#000","Select a Player to View Messages")
+                fs[#fs + 1] = "]textlist["
+                fs[#fs + 1] = tostring(fsx+(controller_width/2))
+                fs[#fs + 1] = ",0.85;"
+                fs[#fs + 1] = tostring(page_width)
+                fs[#fs + 1] = ","
+                fs[#fs + 1] = tostring(controller_height/4)
+                fs[#fs + 1] = ";playerlist;"
+                local chatmessages, directmessages
+                chatmessages = minetest.deserialize(mc_student.meta:get_string("chat_messages"))
+                directmessages = minetest.deserialize(mc_student.meta:get_string("direct_messages"))
+                local countchat = 0
+                local countdm = 0
+                local counter = 0
+                if chatmessages then for _ in pairs(chatmessages) do countchat = countchat + 1 end end
+                local indexed_chat_players = {}
+                if directmessages then 
+                    for pname,_ in pairs(directmessages) do
+                        table.insert(indexed_chat_players,pname)
+                        local player_messages = directmessages[pname]
+                        for to_player,_ in pairs(player_messages) do
+                            local to_player_messages = player_messages[to_player]
+                            for _ in pairs(to_player_messages) do
+                                countdm = countdm + 1 
+                            end
+                        end
+                    end 
+                end
+                local unique_chat_players = {}
+                if directmessages then
+                    for pnamed,_ in pairs(directmessages) do
+                        table.insert(unique_chat_players,pnamed)
+                        table.insert(indexed_chat_players,pnamed)
+                    end
+                end
+
+                if chatmessages then
+                    for pnamec,_ in pairs(chatmessages) do
+                        for pnamec,_ in pairs(unique_chat_players) do
+                            if pnamed ~= pnamec then
+                                table.insert(unique_chat_players,pnamed)
+                                table.insert(indexed_chat_players,pnamed)
+                            end
+                        end
+                    end
+                end
+                -- Send indexed_chat_players to mod storage so that we can use it later for delete/clear callbacks
+                context.indexed_chat_players = indexed_chat_players
+                if unique_chat_players then
+                    for _,pname in pairs(unique_chat_players) do
+                        counter = counter + 1
+                        fs[#fs + 1] = pname
+                        if counter ~= #unique_chat_players then fs[#fs + 1] = "," end
+                    end
+                else
+                    fs[#fs + 1] = "No chat messages logged"
+                end
+                fs[#fs + 1] = ";1;false]"
+                if #unique_chat_players > 0 then
+                    -- Add another textlist below with the messages from the selected player
+                    if not tonumber(context.chat_player_index) then context.chat_player_index = 1 end
+                    fs[#fs + 1] = "label["
                     fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                    fs[#fs + 1] = ",0.55;"
-                    fs[#fs + 1] = minetest.colorize("#000","Select a Player to View Messages")
+                    fs[#fs + 1] = ","
+                    fs[#fs + 1] = tostring(controller_height/4+0.85+0.4)
+                    fs[#fs + 1] = ";"
+                    fs[#fs + 1] = minetest.colorize("#000","Select a Message")
                     fs[#fs + 1] = "]textlist["
                     fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                    fs[#fs + 1] = ",0.85;"
+                    fs[#fs + 1] = ","
+                    fs[#fs + 1] = tostring(controller_height/4+0.85+0.7)
+                    fs[#fs + 1] = ";"
                     fs[#fs + 1] = tostring(page_width)
                     fs[#fs + 1] = ","
                     fs[#fs + 1] = tostring(controller_height/4)
-                    fs[#fs + 1] = ";playerlist;"
-                    local chatmessages, directmessages
-                    chatmessages = minetest.deserialize(mc_student.meta:get_string("chat_messages"))
-                    directmessages = minetest.deserialize(mc_student.meta:get_string("direct_messages"))
-                    local countchat = 0
-                    local countdm = 0
-                    local counter = 0
-                    if chatmessages then for _ in pairs(chatmessages) do countchat = countchat + 1 end end
-                    local indexed_chat_players = {}
+                    fs[#fs + 1] = ";playerchatlist;"
+                    local pname = indexed_chat_players[tonumber(context.chat_player_index)]
+                    local player_chat_log, player_dm_log
+                    if chatmessages then player_chat_log = chatmessages[pname] end
+                    local to_player_names = {}
                     if directmessages then 
-                        for pname,_ in pairs(directmessages) do
-                            table.insert(indexed_chat_players,pname)
-                            local player_messages = directmessages[pname]
-                            for to_player,_ in pairs(player_messages) do
-                                local to_player_messages = player_messages[to_player]
-                                for _ in pairs(to_player_messages) do
-                                    countdm = countdm + 1 
-                                end
-                            end
-                        end 
-                    end
-                    local unique_chat_players = {}
-                    if directmessages then
-                        for pnamed,_ in pairs(directmessages) do
-                            table.insert(unique_chat_players,pnamed)
-                            table.insert(indexed_chat_players,pnamed)
-                        end
-                    end
-
-                    if chatmessages then
-                        for pnamec,_ in pairs(chatmessages) do
-                            for pnamec,_ in pairs(unique_chat_players) do
-                                if pnamed ~= pnamec then
-                                    table.insert(unique_chat_players,pnamed)
-                                    table.insert(indexed_chat_players,pnamed)
-                                end
-                            end
-                        end
-                    end
-                    -- Send indexed_chat_players to mod storage so that we can use it later for delete/clear callbacks
-                    mc_teacher.fs_context.indexed_chat_players = indexed_chat_players
-                    if unique_chat_players then
-                        for _,pname in pairs(unique_chat_players) do
-                            counter = counter + 1
-                            fs[#fs + 1] = pname
-                            if counter ~= #unique_chat_players then fs[#fs + 1] = "," end
-                        end
-                    else
-                        fs[#fs + 1] = "No chat messages logged"
-                    end
-                    fs[#fs + 1] = ";1;false]"
-                    if #unique_chat_players > 0 then
-                        -- Add another textlist below with the messages from the selected player
-                        if not tonumber(mc_teacher.fs_context.chat_player_index) then mc_teacher.fs_context.chat_player_index = 1 end
-                        fs[#fs + 1] = "label["
-                        fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                        fs[#fs + 1] = ","
-                        fs[#fs + 1] = tostring(controller_height/4+0.85+0.4)
-                        fs[#fs + 1] = ";"
-                        fs[#fs + 1] = minetest.colorize("#000","Select a Message")
-                        fs[#fs + 1] = "]textlist["
-                        fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                        fs[#fs + 1] = ","
-                        fs[#fs + 1] = tostring(controller_height/4+0.85+0.7)
-                        fs[#fs + 1] = ";"
-                        fs[#fs + 1] = tostring(page_width)
-                        fs[#fs + 1] = ","
-                        fs[#fs + 1] = tostring(controller_height/4)
-                        fs[#fs + 1] = ";playerchatlist;"
-                        local pname = indexed_chat_players[tonumber(mc_teacher.fs_context.chat_player_index)]
-                        local player_chat_log, player_dm_log
-                        if chatmessages then player_chat_log = chatmessages[pname] end
-                        local to_player_names = {}
-                        if directmessages then 
-                            player_dm_log = directmessages[pname]
-                            -- Parse the textlist index to the to_player_names
-                            if player_dm_log then
-                                for to_pname,_ in pairs(player_dm_log) do
-                                    local to_player_messages = player_dm_log[to_pname]
-                                    -- Repeat the to_player_name for as many DMs logged to create the indexed array
-                                    for _ in pairs(to_player_messages) do
-                                        table.insert(to_player_names,to_pname) 
-                                    end
-                                end
-                            end
-                        end
-                        -- Direct messages first
+                        player_dm_log = directmessages[pname]
+                        -- Parse the textlist index to the to_player_names
                         if player_dm_log then
-                            for to_player,_ in pairs(player_dm_log) do
-                                counter = 0
-                                for key,message in pairs(player_dm_log[to_player]) do
-                                    counter = counter + 1
-                                    fs[#fs + 1] = key
-                                    fs[#fs + 1] = " DM to "
-                                    fs[#fs + 1] = to_player
-                                    fs[#fs + 1] = ": "
-                                    fs[#fs + 1] = message
-                                    if (counter ~= #player_dm_log[to_player]) or (counter == #player_dm_log[to_player] and player_chat_log and #player_chat_log > 0) then 
-                                        fs[#fs + 1] = "," 
-                                    end
+                            for to_pname,_ in pairs(player_dm_log) do
+                                local to_player_messages = player_dm_log[to_pname]
+                                -- Repeat the to_player_name for as many DMs logged to create the indexed array
+                                for _ in pairs(to_player_messages) do
+                                    table.insert(to_player_names,to_pname) 
                                 end
                             end
                         end
-                        -- General chat messages second
-                        if player_chat_log then
+                    end
+                    -- Direct messages first
+                    if player_dm_log then
+                        for to_player,_ in pairs(player_dm_log) do
                             counter = 0
-                            for key,message in pairs(player_chat_log) do
+                            for key,message in pairs(player_dm_log[to_player]) do
                                 counter = counter + 1
                                 fs[#fs + 1] = key
+                                fs[#fs + 1] = " DM to "
+                                fs[#fs + 1] = to_player
                                 fs[#fs + 1] = ": "
                                 fs[#fs + 1] = message
-                                if counter ~= #player_chat_log then fs[#fs + 1] = "," end
-                            end
-                        end
-                        fs[#fs + 1] = ";"
-                        local chat_index = tonumber(mc_teacher.fs_context.chat_index) or 1
-                        fs[#fs + 1] = tostring(chat_index)
-                        fs[#fs + 1] = ";false]"
-                        if countchat > 0 or countdm > 0 then
-                            if countdm > 0 and chat_index <= countdm then
-                                local selected_to_player = to_player_names[chat_index]
-                                local selected_to_player_log = player_dm_log[selected_to_player]
-                                -- Get the message
-                                counter = 0
-                                for key,message in pairs(selected_to_player_log) do
-                                    counter = counter + 1
-                                    -- There may be many DMs with the selected_to_player_log, so get the correct message based on the chat_index
-                                    if counter == chat_index then
-                                        fs[#fs + 1] = "label["
-                                        fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                                        fs[#fs + 1] = ","
-                                        fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.2)
-                                        fs[#fs + 1] = ";"
-                                        fs[#fs + 1] = minetest.colorize("#000","Direct message to "..selected_to_player)
-                                        fs[#fs + 1] = "]style[message;textcolor=#000]textarea["
-                                        fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                                        fs[#fs + 1] = ","
-                                        fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.5)
-                                        fs[#fs + 1] = ";"
-                                        fs[#fs + 1] = tostring(page_width)
-                                        fs[#fs + 1] = ","
-                                        fs[#fs + 1] = "1"
-                                        fs[#fs + 1] = ";message;;"
-                                        fs[#fs + 1] = message
-                                        fs[#fs + 1] = "]"
-                                    end
-                                end
-                            else
-                                counter = countdm
-                                for key,message in pairs(player_chat_log) do
-                                    counter = counter + 1
-                                    if counter == chat_index then
-                                        fs[#fs + 1] = "label["
-                                        fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                                        fs[#fs + 1] = ","
-                                        fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.2)
-                                        fs[#fs + 1] = ";"
-                                        fs[#fs + 1] = minetest.colorize("#000","Message to all players")
-                                        fs[#fs + 1] = "]style[message;textcolor=#000]textarea["
-                                        fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                                        fs[#fs + 1] = ","
-                                        fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.5)
-                                        fs[#fs + 1] = ";"
-                                        fs[#fs + 1] = tostring(page_width)
-                                        fs[#fs + 1] = ","
-                                        fs[#fs + 1] = "1"
-                                        fs[#fs + 1] = ";message;;"
-                                        fs[#fs + 1] = message
-                                        fs[#fs + 1] = "]"
-                                    end
+                                if (counter ~= #player_dm_log[to_player]) or (counter == #player_dm_log[to_player] and player_chat_log and #player_chat_log > 0) then 
+                                    fs[#fs + 1] = "," 
                                 end
                             end
-                            -- There are chat messages, so add buttons
-                            fs[#fs + 1] = "button["
-                            fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                            fs[#fs + 1] = ","
-                            fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.5+1+0.2)
-                            fs[#fs + 1] = ";2.8,0.6;deletemessage;Delete Selected]button["
-                            fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                            fs[#fs + 1] = ","
-                            fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.5+1+0.2+0.6+0.2)
-                            fs[#fs + 1] = ";3,0.6;clearlog;Clear Player's Log]"
                         end
+                    end
+                    -- General chat messages second
+                    if player_chat_log then
+                        counter = 0
+                        for key,message in pairs(player_chat_log) do
+                            counter = counter + 1
+                            fs[#fs + 1] = key
+                            fs[#fs + 1] = ": "
+                            fs[#fs + 1] = message
+                            if counter ~= #player_chat_log then fs[#fs + 1] = "," end
+                        end
+                    end
+                    fs[#fs + 1] = ";"
+                    local chat_index = tonumber(context.chat_index) or 1
+                    fs[#fs + 1] = tostring(chat_index)
+                    fs[#fs + 1] = ";false]"
+                    if countchat > 0 or countdm > 0 then
+                        if countdm > 0 and chat_index <= countdm then
+                            local selected_to_player = to_player_names[chat_index]
+                            local selected_to_player_log = player_dm_log[selected_to_player]
+                            -- Get the message
+                            counter = 0
+                            for key,message in pairs(selected_to_player_log) do
+                                counter = counter + 1
+                                -- There may be many DMs with the selected_to_player_log, so get the correct message based on the chat_index
+                                if counter == chat_index then
+                                    fs[#fs + 1] = "label["
+                                    fs[#fs + 1] = tostring(fsx+(controller_width/2))
+                                    fs[#fs + 1] = ","
+                                    fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.2)
+                                    fs[#fs + 1] = ";"
+                                    fs[#fs + 1] = minetest.colorize("#000","Direct message to "..selected_to_player)
+                                    fs[#fs + 1] = "]style[message;textcolor=#000]textarea["
+                                    fs[#fs + 1] = tostring(fsx+(controller_width/2))
+                                    fs[#fs + 1] = ","
+                                    fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.5)
+                                    fs[#fs + 1] = ";"
+                                    fs[#fs + 1] = tostring(page_width)
+                                    fs[#fs + 1] = ","
+                                    fs[#fs + 1] = "1"
+                                    fs[#fs + 1] = ";message;;"
+                                    fs[#fs + 1] = message
+                                    fs[#fs + 1] = "]"
+                                end
+                            end
+                        else
+                            counter = countdm
+                            for key,message in pairs(player_chat_log) do
+                                counter = counter + 1
+                                if counter == chat_index then
+                                    fs[#fs + 1] = "label["
+                                    fs[#fs + 1] = tostring(fsx+(controller_width/2))
+                                    fs[#fs + 1] = ","
+                                    fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.2)
+                                    fs[#fs + 1] = ";"
+                                    fs[#fs + 1] = minetest.colorize("#000","Message to all players")
+                                    fs[#fs + 1] = "]style[message;textcolor=#000]textarea["
+                                    fs[#fs + 1] = tostring(fsx+(controller_width/2))
+                                    fs[#fs + 1] = ","
+                                    fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.5)
+                                    fs[#fs + 1] = ";"
+                                    fs[#fs + 1] = tostring(page_width)
+                                    fs[#fs + 1] = ","
+                                    fs[#fs + 1] = "1"
+                                    fs[#fs + 1] = ";message;;"
+                                    fs[#fs + 1] = message
+                                    fs[#fs + 1] = "]"
+                                end
+                            end
+                        end
+                        -- There are chat messages, so add buttons
+                        fs[#fs + 1] = "button["
+                        fs[#fs + 1] = tostring(fsx+(controller_width/2))
+                        fs[#fs + 1] = ","
+                        fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.5+1+0.2)
+                        fs[#fs + 1] = ";2.8,0.6;deletemessage;Delete Selected]button["
+                        fs[#fs + 1] = tostring(fsx+(controller_width/2))
+                        fs[#fs + 1] = ","
+                        fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.5+1+0.2+0.6+0.2)
+                        fs[#fs + 1] = ";3,0.6;clearlog;Clear Player's Log]"
                     end
                 end
 				return fs
 			end,
-			["5"] = function() -- SERVER
+            ["5"] = function()
+                return {}
+            end,
+            ["6"] = function()
+                return {}
+            end,
+            ["7"] = function()
+                return {}
+            end,
+            ["8"] = function() -- SERVER
                 local fsx, fsy
 				local fs = {}
-				if pmeta:get_string("default_teacher_tab") == "5" then
-					fs[#fs + 1] = "style_type[label;font_size=*0.8;textcolor=#000]label[0.2,"
-					fs[#fs + 1] = tostring(controller_height-0.2)
-					fs[#fs + 1] = ";This tab is the default]"
-				else
-					fs[#fs + 1] = "checkbox[0.2,"
-					fs[#fs + 1] = tostring(controller_height-0.2)
-					fs[#fs + 1] = ";default_tab;"
-					fs[#fs + 1] = minetest.colorize("#000","Bookmark?")
-					fs[#fs + 1] = ";false]"
-				end
                 fs[#fs + 1] = "field[1,0.85;"
                 fs[#fs + 1] = tostring((page_width)-1.6)
                 fs[#fs + 1] = ",0.8;servermessage;"
@@ -777,8 +715,52 @@ function mc_teacher.show_controller_fs(player,tab)
 				return fs
 			end,
 		}
-		table.insert(teacher_formtable, table.concat(tab_map[tab or pmeta:get_string("default_teacher_tab") or mc_teacher.fs_context.tab or "1"](), ""))
+
+        local bookmarked_tab = pmeta:get_string("default_teacher_tab")
+		if not tab_map[bookmarked_tab] then
+			bookmarked_tab = nil
+			pmeta:set_string("default_teacher_tab", nil)
+		end
+		local selected_tab = (tab_map[tab] and tab) or bookmarked_tab or (tab_map[context.tab] and context.tab) or "1"
+
+		local teacher_formtable = {
+			"formspec_version[6]",
+			"size[", controller_width, ",", controller_height, "]",
+			mc_core.draw_book_fs(controller_width, controller_height, {bg = "#404040", shadow = "#303030", binding = "#333333", divider = "#969696"}),
+			"style[tabheader;noclip=true]",
+			"tabheader[0,-0.25;16,0.55;record_nav;Overview,Classrooms,Map,Players,Moderation,Reports,Help",
+            mc_core.checkPrivs(player,{server = true}) and ",Server" or "", ";", tab or bookmarked_tab or context.tab or "1", ";true;false]",
+			table.concat(tab_map[selected_tab](), "")
+		}
+
+		if bookmarked_tab == selected_tab then
+			table.insert(teacher_formtable, table.concat{
+				"style_type[image;noclip=true]",
+				"image[15.8,-0.25;0.5,0.7;mc_teacher_bookmark_filled.png]",
+				"tooltip[15.8,-0.25;0.5,0.8;This tab is currently bookmarked]",
+			})
+		else
+			table.insert(teacher_formtable, table.concat{
+				"image_button[15.8,-0.25;0.5,0.5;mc_teacher_bookmark_hollow.png^[colorize:#FFFFFF:127;default_tab;;true;false]",
+				"tooltip[default_tab;Bookmark this tab?]",
+			})
+		end
+
 		minetest.show_formspec(pname, "mc_teacher:controller_fs", table.concat(teacher_formtable, ""))
 		return true
 	end
 end
+
+--[[
+NEW FORMSPEC CLEAN COPIES
+
+TAB GROUPING:
+[1] OVERVIEW + RULES
+[2] CLASSROOM MANAGEMENT
+[3] MAP + COORDINATES
+[4] PLAYER MANAGEMENT
+[5] MODERATION
+[6] HELP
+[7] REPORT LOG
+[8] SERVER MANAGEMENT (extra)
+]]
