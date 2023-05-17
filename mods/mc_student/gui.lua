@@ -41,7 +41,7 @@ local function get_ping_texture(pinfo)
 			tile = 0
 		end	
 	end
-	return "mc_student_ping.png^[sheet:1x6:0,"..tile
+	return "mc_teacher_ping.png^[sheet:1x6:0,"..tile
 end
 
 --- Returns a list containing the names of the given player's saved coordinates
@@ -134,10 +134,10 @@ function mc_student.show_notebook_fs(player, tab)
 					"\n", minetest.formspec_escape("You cannot drop or delete the Student Notebook, so you will never lose it. However, you can move it out of your hotbar and into your inventory or the toolbox."), "]",
 					"textarea[0.55,4.9;7.1,4.7;;;", minetest.formspec_escape(rules), "]",
 
-					"image_button[8.8,1.0;", button_width, ",", button_height, ";mc_student_classrooms.png;classrooms;;false;false]",
-					"image_button[8.8,2.75;", button_width, ",", button_height, ";mc_student_map.png;map;;false;false]",
-					"image_button[8.8,4.5;", button_width, ",", button_height, ";mc_student_appearance.png;appearance;;false;false]",
-					"image_button[8.8,6.25;", button_width, ",", button_height, ";mc_student_help.png;help;;false;false]",
+					"image_button[8.8,1.0;", button_width, ",", button_height, ";mc_teacher_classrooms.png;classrooms;;false;false]",
+					"image_button[8.8,2.75;", button_width, ",", button_height, ";mc_teacher_map.png;map;;false;false]",
+					"image_button[8.8,4.5;", button_width, ",", button_height, ";mc_teacher_appearance.png;appearance;;false;false]",
+					"image_button[8.8,6.25;", button_width, ",", button_height, ";mc_teacher_help.png;help;;false;false]",
 					"hypertext[10.6,1.3;5.25,1.6;;<style color=#000000><b>Classrooms</b>\n", minetest.formspec_escape("Find classrooms or players"), "</style>]",
 					"hypertext[10.6,3.05;5.25,1.6;;<style color=#000000><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "</style>]",
 					"hypertext[10.6,4.8;5.25,1.6;;<style color=#000000><b>Appearance</b>\n", minetest.formspec_escape("Personalize your avatar"), "</style>]",
@@ -451,10 +451,10 @@ textarea[0.55,1;7.1,1;;;Welcome to Minetest Classroom!]
 textarea[0.55,1.5;7.1,2.8;;;This is the Student Notebook\, your tool for accessing classrooms and other features. You cannot drop or delete the Student Notebook\, so you will never lose it\, but you can move it out of your hotbar and into your inventory or the toolbox.]
 textarea[0.55,4.4;7.1,1;;;Server Rules]
 textarea[0.55,4.9;7.1,4.7;;;These are the server rules!]
-image_button[8.8,1;1.7,1.6;mc_student_classrooms.png;classrooms;;false;true]
-image_button[8.8,2.75;1.7,1.6;mc_student_map.png;map;;false;true]
-image_button[8.8,4.5;1.7,1.6;mc_student_appearance.png;appearance;;false;true]
-image_button[8.8,6.25;1.7,1.6;mc_student_help.png;help;;false;true]
+image_button[8.8,1;1.7,1.6;mc_teacher_classrooms.png;classrooms;;false;true]
+image_button[8.8,2.75;1.7,1.6;mc_teacher_map.png;map;;false;true]
+image_button[8.8,4.5;1.7,1.6;mc_teacher_appearance.png;appearance;;false;true]
+image_button[8.8,6.25;1.7,1.6;mc_teacher_help.png;help;;false;true]
 textarea[10.6,1.3;5.25,1.6;;;Classrooms\nfind classrooms or players]
 textarea[10.6,3.05;5.25,1.6;;;Map\nrecord and share locations]
 textarea[10.6,4.8;5.25,1.6;;;Appearance\npersonalize your avatar]

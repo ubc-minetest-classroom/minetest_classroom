@@ -74,7 +74,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			local event = minetest.explode_textlist_event(fields.playerchatlist)
 			if event.type == "CHG" then
 				context.chat_index = event.index
-                mc_teacher.show_controller_fs(player,"4")
+                mc_teacher.show_controller_fs(player, mc_teacher.TABS.MODERATION)
 			end
         end
 

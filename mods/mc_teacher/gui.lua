@@ -11,7 +11,43 @@ function mc_teacher.show_controller_fs(player,tab)
 	if mc_core.checkPrivs(player) then
 		local tab_map = {
 			["1"] = function() -- OVERVIEW
-				local fs = {}
+                local button_width = 1.7
+				local button_height = 1.6
+				local rules = mc_rules.meta:get_string("rules")
+				if not rules or rules == "" then
+					rules = "Rules have not yet been set for this server."
+				end
+
+				local fs = {
+					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#737373]",
+					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+					"tooltip[exit;Exit]",
+					"hypertext[0.55,0.1;7.1,1;;<style font=mono><center><b>Overview</b></center></style>]",
+					"hypertext[8.75,0.1;7.1,1;;<style font=mono><center><b>Dashboard</b></center></style>]",
+
+					"style_type[textarea;font=mono,bold;textcolor=#000000]",
+					"textarea[0.55,1;7.1,1;;;Welcome to Minetest Classroom!]",
+					"textarea[0.55,4.4;7.1,1;;;Server Rules]",
+					"style_type[textarea;font=mono]",
+					"textarea[0.55,1.5;7.1,2.6;;;", minetest.formspec_escape("This is the Teacher Controller, your tool for managing classrooms, player privileges, and server settings."),
+					"\n", minetest.formspec_escape("You cannot drop this tool, so you will never lose it. However, you can move it out of your hotbar and into your inventory or the toolbox."), "]",
+					"textarea[0.55,4.9;7.1,4.7;;;", minetest.formspec_escape(rules), "]",
+
+					"image_button[8.8,1.0;", button_width, ",", button_height, ";mc_teacher_classrooms.png;classrooms;;false;false]",
+					"image_button[8.8,2.75;", button_width, ",", button_height, ";mc_teacher_map.png;map;;false;false]",
+					"image_button[8.8,4.5;", button_width, ",", button_height, ";mc_teacher_players.png;players;;false;false]",
+					"image_button[8.8,6.25;", button_width, ",", button_height, ";mc_teacher_isometric.png;moderation;;false;false]",
+                    "image_button[8.8,8;", button_width, ",", button_height, ";mc_teacher_isometric.png;reports;;false;false]",
+                    "image_button[8.8,9.75;", button_width, ",", button_height, ";mc_teacher_help.png;help;;false;false]",
+                    "image_button[8.8,11.5;", button_width, ",", button_height, ";mc_teacher_isometric.png;server;;false;false]",
+					"hypertext[10.6,1.3;5.25,1.6;;<style color=#000000><b>Classrooms</b>\n", minetest.formspec_escape("Create and manage classrooms"), "</style>]",
+					"hypertext[10.6,3.05;5.25,1.6;;<style color=#000000><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "</style>]",
+					"hypertext[10.6,4.8;5.25,1.6;;<style color=#000000><b>Players</b>\n", minetest.formspec_escape("Manage player privileges"), "</style>]",
+                    "hypertext[10.6,6.55;5.25,1.6;;<style color=#000000><b>Moderation</b>\n", minetest.formspec_escape("View player chat logs"), "</style>]",
+					"hypertext[10.6,8.3;5.25,1.6;;<style color=#000000><b>Reports</b>\n", minetest.formspec_escape("View and resolve player reports"), "</style>]",
+                    "hypertext[10.6,10.05;5.25,1.6;;<style color=#000000><b>Help</b>\n", minetest.formspec_escape("View guides and resources"), "</style>]",
+                    "hypertext[10.6,11.8;5.25,1.6;;<style color=#000000><b>Server</b>\n", minetest.formspec_escape("Manage server settings"), "</style>]",
+                }
 				return fs
 			end,
 			["2"] = function() -- CLASSROOMS
@@ -763,4 +799,29 @@ TAB GROUPING:
 [6] HELP
 [7] REPORT LOG
 [8] SERVER MANAGEMENT (extra)
+
+OVERVIEW + RULES:
+formspec_version[6]
+size[16.4,10.2]
+box[0,0;16.4,0.5;#737373]
+box[8.195,0;0.05,10.2;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0.1;7.1,1;;;Overview]
+textarea[8.75,0.1;7.1,1;;;Dashboard]
+textarea[0.55,1;7.1,1;;;Welcome to Minetest Classroom!]
+textarea[0.55,1.5;7.1,2.8;;;This is the Teacher Controller\, your tool for managing classrooms\, player privileges\, and server settings. You cannot drop or delete this tool\, so you will never lose it\, but you can move it out of your hotbar and into your inventory or the toolbox.]
+textarea[0.55,4.4;7.1,1;;;Server Rules]
+textarea[0.55,4.9;7.1,3.8;;;These are the server rules!]
+button[0.6,8.8;7,0.8;edit_rules;Edit Server Rules]
+image_button[8.8,1;1.7,1.6;mc_teacher_classrooms.png;classrooms;;false;false]
+image_button[8.8,2.75;1.7,1.6;mc_teacher_map.png;map;;false;false]
+image_button[8.8,4.5;1.7,1.6;mc_teacher_players.png;players;;false;false]
+image_button[8.8,6.25;1.7,1.6;mc_teacher_isometric.png;help;;false;false]
+image_button[8.8,8;1.7,1.6;mc_teacher_isometric.png;help;;false;false]
+textarea[10.6,1.3;5.25,1.6;;;ClassroomsnFind classrooms or players]
+textarea[10.6,3.05;5.25,1.6;;;MapnRecord and share locations]
+textarea[10.6,4.8;5.25,1.6;;;PlayersnManage player privileges]
+textarea[10.6,6.55;5.25,1.6;;;ModerationnView player chat logs]
+textarea[10.6,8.3;5.25,1.6;;;ReportsnView player reports]
+image[15.8,-0.25;0.5,0.8;mc_teacher_bookmark.png]
 ]]
