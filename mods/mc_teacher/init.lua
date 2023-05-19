@@ -16,10 +16,9 @@ mc_teacher = {
         SERVER = "8" -- TODO: make dynamic for easier modification of notebook
     },
     MODES = {
-        NONE = "1",
-        SIZE = "2",
-        SCHEMATIC = "3",
-        TWIN = "4"
+        EMPTY = "1",
+        SCHEMATIC = "2",
+        TWIN = "3"
     }
 }
 

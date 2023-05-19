@@ -117,19 +117,20 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         ---------------------------------
         -- MANAGE CLASSROOMS
         ---------------------------------
-        if fields.mode and fields.mode ~= context.selectedMode then
+        if fields.mode and fields.mode ~= context.selected_mode then
             if fields.realmname then context.realmname = minetest.formspec_escape(fields.realmname) end
-            context.selectedMode = fields.mode
+            context.selected_mode = fields.mode
             reload = true
-        elseif fields.schematic and fields.schematic ~= context.selectedSchematicIndex then
+        end
+        if fields.schematic and fields.schematic ~= context.selected_schematic_index then
             if fields.realmname then context.realmname = minetest.formspec_escape(fields.realmname) end
-            context.selectedMode = mc_teacher.MODES.SCHEMATIC
-            context.selectedSchematicIndex = fields.schematic
+            context.selected_mode = mc_teacher.MODES.SCHEMATIC
+            context.selected_schematic_index = fields.schematic
             reload = true
-        elseif fields.realterrain and context.selectedDEMIndex ~= fields.realterrainthen then
+        elseif fields.realterrain and context.selected_dem_index ~= fields.realterrainthen then
             if fields.realmname then context.realmname = minetest.formspec_escape(fields.realmname) end
-            context.selectedMode = mc_teacher.MODES.TWIN
-            context.selectedDEMIndex = fields.realterrain
+            context.selected_mode = mc_teacher.MODES.TWIN
+            context.selected_dem_index = fields.realterrain
             reload = true
         end
 
@@ -137,7 +138,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if mc_core.checkPrivs(player,{teacher = true}) then
                 local realmName, realmSizeX, realmSizeZ, realmSizeY
                 if fields.realmname == "" or fields.realmname == nil then realmName = "Unnamed Classroom" else realmName = fields.realmname end
-                if context.selectedMode == mc_teacher.MODES.SIZE then
+                if context.selected_mode == mc_teacher.MODES.EMPTY then
                     -- Sanitize input
                     if mc_core.checkPrivs(player,{server = true}) then
                         if tonumber(fields.realmxsize) and tonumber(fields.realmxsize) >= 80 then
@@ -180,21 +181,21 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] Your requested classroom was successfully created."))
                     end
                     mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
-                elseif context.selectedMode == mc_teacher.MODES.SCHEMATIC and context.selectedSchematicIndex then
+                elseif context.selected_mode == mc_teacher.MODES.SCHEMATIC and context.selected_schematic_index then
                     local counter = 1
                     for schematicKey,_ in pairs(schematicManager.schematics) do
                         counter = counter + 1
-                        if tonumber(context.selectedSchematicIndex) == counter then 
+                        if tonumber(context.selected_schematic_index) == counter then 
                             local newRealm = Realm:NewFromSchematic(realmName, schematicKey)
                         end 
                     end
                     minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] Your requested classroom was successfully created."))
                     mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
-                elseif context.selectedMode == mc_teacher.MODES.TWIN and context.selectedDEMIndex then
+                elseif context.selected_mode == mc_teacher.MODES.TWIN and context.selected_dem_index then
                     local counter = 1
                     for DEMKey,_ in pairs(realterrainManager.dems) do 
                         counter = counter + 1
-                        if tonumber(context.selectedDEMIndex) == counter then 
+                        if tonumber(context.selected_dem_index) == counter then 
                             local newRealm = Realm:NewFromDEM(realmName, DEMKey)
                         end 
                     end
@@ -215,7 +216,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 for _,thisRealm in pairs(Realm.realmDict) do
                     counter = counter + 1
                     if counter == tonumber(event.index) then
-                        context.selectedRealmID = thisRealm.ID
+                        context.selected_realm_id = thisRealm.ID
                     end
                 end
                 reload = true
@@ -224,23 +225,23 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			-- Still a remote possibility that the realm is deleted in the time that the callback is executed
 			-- So always check that the requested realm exists and the realm category allows the player to join
 			-- Check that the player selected something from the textlist, otherwise default to spawn realm
-			if not context.selectedRealmID then context.selectedRealmID = mc_worldManager.spawnRealmID end
-			local realm = Realm.GetRealm(tonumber(context.selectedRealmID))
+			if not context.selected_realm_id then context.selected_realm_id = mc_worldManager.spawnRealmID end
+			local realm = Realm.GetRealm(tonumber(context.selected_realm_id))
 			if realm then
 				realm:TeleportPlayer(player)
-				context.selectedRealmID = nil
+				context.selected_realm_id = nil
 			else
 				minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
 			end
 			reload = true
         elseif fields.deleterealm then
-            local realm = Realm.GetRealm(tonumber(context.selectedRealmID))
-            if realm and tonumber(context.selectedRealmID) ~= mc_worldManager.spawnRealmID then realm:Delete() end
+            local realm = Realm.GetRealm(tonumber(context.selected_realm_id))
+            if realm and tonumber(context.selected_realm_id) ~= mc_worldManager.spawnRealmID then realm:Delete() end
             reload = true
         end
 
         if fields.music then
-            context.selectedMusic = fields.music
+            context.selected_music = fields.music
             -- local background_sound = 
             -- play music as sample
             minetest.sound_play(backgroundSound, {
@@ -343,6 +344,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
 
         if reload then
+            -- save
+            if fields.realmname then context.realmname = fields.realmname end
+            if fields.realm_x_size then context.realm_x = fields.realm_x_size end
+            if fields.realm_y_size then context.realm_y = fields.realm_y_size end
+            if fields.realm_z_size then context.realm_z = fields.realm_z_size end
+            -- reload
             mc_teacher.show_controller_fs(player, context.tab)
         end
     end

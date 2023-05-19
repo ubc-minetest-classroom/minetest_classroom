@@ -1,4 +1,16 @@
-local selectedRealmID = nil
+--- Returns a list of classrooms that the given player can join
+local function get_fs_classroom_list(player)
+	local list = {}
+	Realm.ScanForPlayerRealms()
+
+	for _,realm in pairs(Realm.realmDict) do
+        local playerCount = tonumber(realm:GetPlayerCount())
+        table.insert(list, table.concat({
+            realm.Name, " (", playerCount, " player", playerCount == 1 and "" or "s", ")"
+        }))
+	end
+	return table.concat(list, ",")
+end
 
 function mc_teacher.show_controller_fs(player,tab)
 	local controller_width = 16.4
@@ -65,264 +77,91 @@ function mc_teacher.show_controller_fs(player,tab)
 				return fs
 			end,
 			["2"] = function() -- CLASSROOMS
-				local fsx, fsy, last_height, last_width
-                local fs = {}
-                --PAGE ONE
-                fsx = 1
-                fsy = 0.85
-                fs[#fs + 1] = "style[intro;textcolor=#000;border=false]textarea["
-                fs[#fs + 1] = tostring(fsx)
-                fs[#fs + 1] = ","
-                fs[#fs + 1] = tostring(fsy)
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = tostring(page_width)
-                fs[#fs + 1] = ","
-                last_height = controller_height/5
-                fs[#fs + 1] = tostring(last_height)
-                fs[#fs + 1] = ";intro;"
-                fs[#fs + 1] = minetest.colorize("#000","Instructions")
-                fs[#fs + 1] = ";View classrooms to edit or create a new classroom below. Once the classroom has been created, it will appear in the list. The classroom highlighted in the list will expose more edit options for that classroom. You can hover over most elements to learn what a button or field does.]"
-                
-                fs[#fs + 1] = "style_type[label;font_size=*1]label["
-                fs[#fs + 1] = tostring(fsx+2)
-                fs[#fs + 1] = ","
-                fsy = fsy + last_height + 0.4
-                last_height = 0.3
-                fs[#fs + 1] = tostring(fsy)
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = minetest.colorize("#000","Available Classrooms")
-                fs[#fs + 1] = "]textlist["
-                fs[#fs + 1] = tostring(fsx)
-                fs[#fs + 1] = ","
-                fsy = fsy + last_height
-                fs[#fs + 1] = tostring(fsy)
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = tostring(page_width)
-                fs[#fs + 1] = ","
-                last_height = controller_height/5
-                fs[#fs + 1] = tostring(last_height)
-                fs[#fs + 1] = ";classroomlist;"
+                local fs = {
+                    "image[0,0;16.4,0.5;mc_pixel.png^[multiply:#737373]",
+					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+					"tooltip[exit;Exit]",
+					"hypertext[0.55,0.1;7.1,1;;<style font=mono><center><b>Classrooms</b></center></style>]",
+					"hypertext[8.75,0.1;7.1,1;;<style font=mono><center><b>Build a Classroom</b></center></style>]",
 
-                local counter = 0
-                local countRealms = mc_worldManager.storage:get_string("realmCount")-1
-                Realm.ScanForPlayerRealms()
-                for _,thisRealm in pairs(Realm.realmDict) do
-                    counter = counter + 1
-                    if mc_core.checkPrivs(player,{teacher = true}) then
-                        fs[#fs + 1] = thisRealm.Name
-                        fs[#fs + 1] = " ("
-                        local playerCount = tonumber(thisRealm:GetPlayerCount())
-                        fs[#fs + 1] = tostring(playerCount)
-                        if playerCount == 1 then
-                            fs[#fs + 1] = " Player)"
-                        else
-                            fs[#fs + 1] = " Players)"
-                        end
-                    end
-                    if counter ~= countRealms then fs[#fs + 1] = "," end
+                    "style_type[textarea;font=mono,bold;textcolor=#000000]",
+                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+                    "textarea[0.55,1;7.1,1;;;Available Classrooms]",
+                    "textlist[0.6,1.5;7,7.2;classroomlist;", get_fs_classroom_list(player), ";", context.selected_realm_id or 1, ";false]",
+                    "button[0.6,8.8;1.675,0.8;teleportrealm;Go]",
+                    "button[4.15,8.8;1.675,0.8;deleterealm;Delete]",
+                    "button[2.375,8.8;1.675,0.8;editrealm;Edit]",
+                    "button[5.925,8.8;1.7,0.8;resetrealm;Reset]",
+
+                    "style_type[field;font=mono;textcolor=#000000]",
+                    "textarea[8.75,1;7.1,1;;;Name]",
+                    "field[8.8,1.45;7,0.7;realmname;;]",
+                    "textarea[8.75,2.2;3.5,1;;;Type]",
+                    "dropdown[8.8,2.65;3.45,0.7;realmcategory;Default,Spawn,Classroom,Instanced;", context.selected_realm_type or 1, ";true]",
+                    "textarea[12.3,2.2;3.5,1;;;Generation]",
+                    "dropdown[12.35,2.65;3.45,0.7;mode;Empty World,Schematic,Digital Twin;", context.selected_mode or 1, ";true]",
+                }
+
+                if context.selected_mode == mc_teacher.MODES.EMPTY then
+                    table.insert(fs, table.concat({
+                        "textarea[8.75,3.4;7.1,1;;;Classroom Size]",
+                        "textarea[8.75,4;1,1;;;X =]",
+                        "textarea[11.15,4;1,1;;;Y =]",
+                        "textarea[13.55,4;1,1;;;Z =]",
+                        "field[9.6,3.85;1.4,0.7;realm_x_size;;25]",
+                        "field[12,3.85;1.4,0.7;realm_y_size;;25]",
+                        "field[14.4,3.85;1.4,0.7;realm_z_size;;25]",
+                    }))
+                elseif context.selected_mode == mc_teacher.MODES.SCHEMATIC then
+                    table.insert(fs, table.concat({
+                        "textarea[8.75,3.4;7.1,1;;;Schematic]",
+                        "dropdown[8.8,3.85;7,0.7;schematic;;", context.selected_schematic_index or 1, ";true]",
+                    }))
+                elseif context.selected_mode == mc_teacher.MODES.TWIN then
+                    table.insert(fs, table.concat({
+                        "textarea[8.75,3.4;7.1,1;;;Digital Twin World]",
+                        "dropdown[8.8,3.85;7,0.7;realterrain;;", context.selected_dem_index or 1, ";true]",
+                    }))
+                else
+                    table.insert(fs, table.concat({
+                        "textarea[8.75,3.4;7.1,1.2;;;Select a generation mode for more options!]",
+                    }))
                 end
-                if not selectedRealmID then selectedRealmID = mc_worldManager.spawnRealmID end
-                fs[#fs + 1] = ";1;false]"
+                    
+                table.insert(fs, table.concat({
+                    "textarea[8.75,4.7;7.1,1;;;Default Privileges]",
+                    "style_type[textarea;font=mono]",
+                    "textarea[9.25,5.15;1.8,1;;;interact]",
+                    "textarea[9.25,5.55;1.8,1;;;shout]",
+                    "textarea[11.65,5.15;1.8,1;;;fast]",
+                    "textarea[11.65,5.55;1.8,1;;;fly]",
+                    "textarea[14.05,5.15;1.8,1;;;noclip]",
+                    "textarea[14.05,5.55;1.8,1;;;give]",
+                    "checkbox[8.8,5.35;priv_interact;;false]",
+                    "checkbox[8.8,5.75;priv_shout;;false]",
+                    "checkbox[11.2,5.35;priv_fast;;false]",
+                    "checkbox[11.2,5.75;priv_fly;;false]",
+                    "checkbox[13.6,5.35;priv_noclip;;false]",
+                    "checkbox[13.6,5.75;priv_give;;false]",
+                    "style_type[textarea;font=mono,bold]",
+                    "textarea[8.75,6;7.1,1;;;Background Music]",
+                    "dropdown[8.8,6.45;7,0.7;bgmusic;;1;false]",
+                    "textarea[8.75,7.2;7.1,1;;;Skybox]",
+                    "dropdown[8.8,7.65;7,0.7;;;1;false]",
+                    "button[8.8,8.8;7,0.8;requestrealm;Generate Classroom]",
+                }))
 
-                -- Teleport button
-                fs[#fs + 1] = "button["
-                fs[#fs + 1] = tostring(fsx)
-                fs[#fs + 1] = ","
-                fsy = fsy + last_height + 0.2
-                fs[#fs + 1] = tostring(fsy)
-                last_width = 1.7
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = tostring(last_width)
-                fs[#fs + 1] = ","
-                last_height = 0.6
-                fs[#fs + 1] = tostring(last_height)
-                fs[#fs + 1] = ";teleportrealm;Teleport]"
+                return fs
 
-                -- Delete button
-                fs[#fs + 1] = "button["
-                fsx = fsx + last_width + 0.2
-                fs[#fs + 1] = tostring(fsx)
-                fs[#fs + 1] = ","
-                fs[#fs + 1] = tostring(fsy)
-                last_width = 1.5
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = tostring(last_width)
-                fs[#fs + 1] = ","
-                last_height = 0.6
-                fs[#fs + 1] = tostring(last_height)
-                fs[#fs + 1] = ";deleterealm;Delete]"
+				--[[ SAVED POPULATION CODE FROM OLD FORMSPEC
 
-                -- Reset button
-                fs[#fs + 1] = "button["
-                fsx = fsx + last_width + 0.2
-                fs[#fs + 1] = tostring(fsx)
-                fs[#fs + 1] = ","
-                fs[#fs + 1] = tostring(fsy)
-                last_width = 1.4
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = tostring(last_width)
-                fs[#fs + 1] = ","
-                last_height = 0.6
-                fs[#fs + 1] = tostring(last_height)
-                fs[#fs + 1] = ";resetrealm;Reset]"
-
-                fs[#fs + 1] = "style_type[label;font_size=*1]label["
-                fsx = 1
-                fs[#fs + 1] = tostring(fsx+2)
-                fs[#fs + 1] = ","
-                fsy = fsy + last_height + 0.4
-                last_height = 0.3
-                fs[#fs + 1] = tostring(fsy)
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = minetest.colorize("#000","Create a New Classroom")
-                fs[#fs + 1] = "]"
-
-                fs[#fs + 1] = "field["
-                fs[#fs + 1] = tostring(fsx)
-                fs[#fs + 1] = ","
-                fsy = fsy + last_height + 0.2
-                last_height = 0.3
-                fs[#fs + 1] = tostring(fsy)
-                fs[#fs + 1] = ";"
-                last_width = (page_width/2)-0.1
-                fs[#fs + 1] = tostring(last_width)
-                fs[#fs + 1] = ","
-                last_height = 0.6
-                fs[#fs + 1] = tostring(last_height)
-                fs[#fs + 1] = ";realmname;"
-                fs[#fs + 1] = minetest.colorize("#000","Name")
-                fs[#fs + 1] = ";"
-                if context.realmname then fs[#fs + 1] = context.realmname end
-                fs[#fs + 1] = "]"
-
-                fs[#fs + 1] = "dropdown["
-                fsx = fsx + last_width + 0.2
-                fs[#fs + 1] = tostring(fsx)
-                fs[#fs + 1] = ","
-                fs[#fs + 1] = tostring(fsy)
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = tostring(last_width)
-                fs[#fs + 1] = ","
-                fs[#fs + 1] = tostring(last_height)
-                fs[#fs + 1] = ";mode;Select Mode,Size,Schematic,Digital Twin;"
-                if not context.selectedMode then context.selectedMode = "1" end
-                fs[#fs + 1] = tostring(context.selectedMode)
-                fs[#fs + 1] = ";true]"
-
-                if context.selectedMode == "2" then
-                    -- SIZE
-                    fs[#fs + 1] = "field["
-                    fsx = 1
-                    fs[#fs + 1] = tostring(fsx)
-                    fs[#fs + 1] = ","
-                    fsy = fsy + last_height + 0.4
-                    fs[#fs + 1] = tostring(fsy)
-                    fs[#fs + 1] = ";"
-                    last_width = (page_width/3)-0.1333
-                    fs[#fs + 1] = tostring(last_width)
-                    fs[#fs + 1] = ","
-                    fs[#fs + 1] = tostring(last_height)
-                    fs[#fs + 1] = ";realmxsize;"
-                    fs[#fs + 1] = minetest.colorize("#000","Width")
-                    fs[#fs + 1] = ";"
-                    if context.requested_realmxsize then
-                        fs[#fs + 1] = tostring(context.requested_realmxsize)
-                    end
-                    fs[#fs + 1] = "]field["
-                    fsx = fsx + last_width + 0.2
-                    fs[#fs + 1] = tostring(fsx)
-                    fs[#fs + 1] = ","
-                    fs[#fs + 1] = tostring(fsy)
-                    fs[#fs + 1] = ";"
-                    last_width = (page_width/3)-0.1333
-                    fs[#fs + 1] = tostring(last_width)
-                    fs[#fs + 1] = ","
-                    fs[#fs + 1] = tostring(last_height)
-                    fs[#fs + 1] = ";realmzsize;"
-                    fs[#fs + 1] = minetest.colorize("#000","Height")
-                    fs[#fs + 1] = ";"
-                    if context.requested_realmzsize then
-                        fs[#fs + 1] = tostring(context.requested_realmzsize)
-                    end
-                    fs[#fs + 1] = "]field["
-                    fsx = fsx + last_width + 0.2
-                    fs[#fs + 1] = tostring(fsx)
-                    fs[#fs + 1] = ","
-                    fs[#fs + 1] = tostring(fsy)
-                    fs[#fs + 1] = ";"
-                    last_width = (page_width/3)-0.1333
-                    fs[#fs + 1] = tostring(last_width)
-                    fs[#fs + 1] = ","
-                    fs[#fs + 1] = tostring(last_height)
-                    fs[#fs + 1] = ";realmysize;"
-                    fs[#fs + 1] = minetest.colorize("#000","Length")
-                    fs[#fs + 1] = ";"
-                    if context.requested_realmysize then
-                        fs[#fs + 1] = tostring(context.requested_realmysize)
-                    end
-                    fs[#fs + 1] = "]button["
-                    fsx = 1
-                    fs[#fs + 1] = tostring(fsx)
-                    fs[#fs + 1] = ","
-                    fsy = fsy + last_height + 0.2
-                    fs[#fs + 1] = tostring(fsy)
-                    last_width = 1.4
-                    fs[#fs + 1] = ";"
-                    fs[#fs + 1] = tostring(last_width)
-                    fs[#fs + 1] = ","
-                    last_height = 0.6
-                    fs[#fs + 1] = tostring(last_height)
-                    fs[#fs + 1] = ";requestrealm;Create]"
-                elseif context.selectedMode == "3" then
-                    -- SCHEMATIC
-                    fs[#fs + 1] = "dropdown["
-                    fsx = 1
-                    fs[#fs + 1] = tostring(fsx)
-                    fs[#fs + 1] = ","
-                    fsy = fsy + last_height + 0.4
-                    fs[#fs + 1] = tostring(fsy)
-                    fs[#fs + 1] = ";"
-                    last_width = page_width
-                    fs[#fs + 1] = tostring(last_width)
-                    fs[#fs + 1] = ","
-                    fs[#fs + 1] = tostring(last_height)
-                    fs[#fs + 1] = ";schematic;Select a Schematic,"
-                    -- iterate through registered schematics
-                    local count, counter = 0, 0
                     for _ in pairs(schematicManager.schematics) do count = count + 1 end
                     for name, path in pairs(schematicManager.schematics) do
                         counter = counter + 1
                         fs[#fs + 1] = name
                         if counter ~= count then fs[#fs + 1] = "," end
                     end
-                    fs[#fs + 1] = ";"
-                    if context.selectedSchematicIndex then fs[#fs + 1] = context.selectedSchematicIndex end
-                    fs[#fs + 1] = ";true]button["
-                    fsx = 1
-                    fs[#fs + 1] = tostring(fsx)
-                    fs[#fs + 1] = ","
-                    fsy = fsy + last_height + 0.2
-                    fs[#fs + 1] = tostring(fsy)
-                    last_width = 1.4
-                    fs[#fs + 1] = ";"
-                    fs[#fs + 1] = tostring(last_width)
-                    fs[#fs + 1] = ","
-                    last_height = 0.6
-                    fs[#fs + 1] = tostring(last_height)
-                    fs[#fs + 1] = ";requestrealm;Create]"
-                elseif context.selectedMode == "4" then
-                    -- REALTERRAIN
-                    fs[#fs + 1] = "dropdown["
-                    fsx = 1
-                    fs[#fs + 1] = tostring(fsx)
-                    fs[#fs + 1] = ","
-                    fsy = fsy + last_height + 0.4
-                    fs[#fs + 1] = tostring(fsy)
-                    fs[#fs + 1] = ";"
-                    last_width = page_width
-                    fs[#fs + 1] = tostring(last_width)
-                    fs[#fs + 1] = ","
-                    fs[#fs + 1] = tostring(last_height)
+
                     fs[#fs + 1] = ";realterrain;Select a Digital Twin,"
                     -- iterate through registered DEMs
                     local count, counter = 0, 0
@@ -333,97 +172,6 @@ function mc_teacher.show_controller_fs(player,tab)
                         if counter ~= count then fs[#fs + 1] = "," end
                     end
                     fs[#fs + 1] = ";"
-                    if context.selectedDEMIndex then fs[#fs + 1] = context.selectedDEMIndex end
-                    fs[#fs + 1] = ";true]button["
-                    fsx = 1
-                    fs[#fs + 1] = tostring(fsx)
-                    fs[#fs + 1] = ","
-                    fsy = fsy + last_height + 0.2
-                    fs[#fs + 1] = tostring(fsy)
-                    last_width = 1.4
-                    fs[#fs + 1] = ";"
-                    fs[#fs + 1] = tostring(last_width)
-                    fs[#fs + 1] = ","
-                    last_height = 0.6
-                    fs[#fs + 1] = tostring(last_height)
-                    fs[#fs + 1] = ";requestrealm;Create]"
-                else
-                end
-
-                --PAGE TWO
-                fsx = (controller_width/2)+1
-                fsy = 0.85
-                fs[#fs + 1] = "style_type[label;font_size=*1.2]label["
-				fs[#fs + 1] = tostring(controller_width/2+3)
-				fs[#fs + 1] = ",0.4;"
-				fs[#fs + 1] = minetest.colorize("#000","Classroom Options")
-				fs[#fs + 1] = "]"
-                
-                -- Category
-                fs[#fs + 1] = "dropdown["
-                fs[#fs + 1] = tostring(fsx)
-                fs[#fs + 1] = ","
-                fs[#fs + 1] = tostring(fsy)
-                fs[#fs + 1] = ";"
-                last_width = (page_width/2)-0.1
-                fs[#fs + 1] = tostring(last_width)
-                fs[#fs + 1] = ","
-                last_height = 0.6
-                fs[#fs + 1] = tostring(last_height)
-                fs[#fs + 1] = ";realmcategory;Default,Spawn,Classroom,Instanced;"
-                if context.selectedCategory then fs[#fs + 1] = context.selectedCategory end
-                fs[#fs + 1] = ";true]"
-
-                -- Privileges
-                fs[#fs + 1] = "checkbox["
-                fsx = fsx + last_width + 0.4
-                fsy = 1
-                fs[#fs + 1] = tostring(fsx)
-                fs[#fs + 1] = ","
-                fs[#fs + 1] = tostring(fsy)
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = "setPrivInteract"
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = minetest.colorize("#000","Interact")
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = "true]"
-
-                fs[#fs + 1] = "checkbox["
-                fsy = fsy + 0.4
-                fs[#fs + 1] = tostring(fsx)
-                fs[#fs + 1] = ","
-                fs[#fs + 1] = tostring(fsy)
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = "setPrivShout"
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = minetest.colorize("#000","Shout")
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = "true]"
-
-                fs[#fs + 1] = "checkbox["
-                fsx = fsx + 1.7
-                fsy = 1
-                fs[#fs + 1] = tostring(fsx)
-                fs[#fs + 1] = ","
-                fs[#fs + 1] = tostring(fsy)
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = "setPrivFly"
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = minetest.colorize("#000","Fly")
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = "true]"
-
-                fs[#fs + 1] = "checkbox["
-                fsy = fsy + 0.4
-                fs[#fs + 1] = tostring(fsx)
-                fs[#fs + 1] = ","
-                fs[#fs + 1] = tostring(fsy)
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = "setPrivFast"
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = minetest.colorize("#000","Fast")
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = "true]"
                 
                 -- World Gen
 
@@ -444,23 +192,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 -- iterate registered music
                 mc_worldManager.path
                 fs[#fs + 1] = ";music;None,this song,another song,third song;"
-                fs[#fs + 1] = ";true]" ]]
-
-                fs[#fs + 1] = "]button["
-                fsx = (controller_width/2)+1
-                fs[#fs + 1] = tostring(fsx)
-                fs[#fs + 1] = ","
-                fsy = 0.85 + last_height + 0.2
-                fs[#fs + 1] = tostring(fsy)
-                last_width = 1.4
-                fs[#fs + 1] = ";"
-                fs[#fs + 1] = tostring(last_width)
-                fs[#fs + 1] = ","
-                last_height = 0.6
-                fs[#fs + 1] = tostring(last_height)
-                fs[#fs + 1] = ";saverealm;Save]"
-
-				return fs
+                fs[#fs + 1] = ";true]"]]
 			end,
 			["3"] = function() -- MAP
 				return {}
@@ -837,4 +569,51 @@ textarea[10.6,4.8;5.25,1.6;;;PlayersnManage player privileges]
 textarea[10.6,6.55;5.25,1.6;;;ModerationnView player chat logs]
 textarea[10.6,8.3;5.25,1.6;;;ReportsnView player reports]
 image[15.8,-0.25;0.5,0.8;mc_teacher_bookmark.png]
+
+CLASSROOMS:
+formspec_version[6]
+size[16.4,10.2]
+box[0,0;16.4,0.5;#737373]
+box[8.195,0;0.05,10.2;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0.1;7.1,1;;;Classrooms]
+textarea[8.75,0.1;7.1,1;;;Build a Classroom]
+textarea[0.55,1;7.1,1;;;Available Classrooms]
+textlist[0.6,1.5;7,7.2;classroomlist;;1;false]
+button[0.6,8.8;1.675,0.8;teleportrealm;Go]
+button[4.15,8.8;1.675,0.8;deleterealm;Delete]
+button[2.375,8.8;1.675,0.8;editrealm;Edit]
+button[5.925,8.8;1.7,0.8;resetrealm;Reset]
+textarea[8.75,1;7.1,1;;;Name]
+field[8.8,1.45;7,0.7;realmname;;]
+textarea[8.75,2.2;3.5,1;;;Type]
+dropdown[8.8,2.65;3.45,0.7;realmcategory;Default,Spawn,Classroom,Instanced;1;true]
+textarea[12.3,2.2;3.5,1;;;Generation]
+dropdown[12.35,2.65;3.45,0.7;mode;Empty World,Schematic,Digital Twin;1;true]
+textarea[8.75,3.4;7.1,1;;;OPTIONS]
+dropdown[8.8,3.85;7,0.7;;;1;true]
+textarea[8.75,4.7;7.1,1;;;Default Privileges]
+textarea[9.25,5.15;1.8,1;;;interact]
+textarea[9.25,5.55;1.8,1;;;shout]
+textarea[11.65,5.15;1.8,1;;;fast]
+textarea[11.65,5.55;1.8,1;;;fly]
+textarea[14.05,5.15;1.8,1;;;noclip]
+textarea[14.05,5.55;1.8,1;;;give]
+checkbox[8.8,5.35;priv_interact;;false]
+checkbox[8.8,5.75;priv_shout;;false]
+checkbox[11.2,5.35;priv_fast;;false]
+checkbox[11.2,5.75;priv_fly;;false]
+checkbox[13.6,5.35;priv_noclip;;false]
+checkbox[13.6,5.75;priv_give;;false]
+textarea[8.75,6;7.1,1;;;Background Music]
+dropdown[8.8,6.45;7,0.7;bgmusic;;1;true]
+textarea[8.75,7.2;7.1,1;;;Skybox]
+dropdown[8.8,7.65;7,0.7;;;1;true]
+button[8.8,8.8;7,0.8;requestrealm;Generate Classroom]
+textarea[9.25,5.1;1.8,1;;;interact]
+textarea[9.25,5.5;1.8,1;;;shout]
+textarea[11.65,5.1;1.8,1;;;fast]
+textarea[11.65,5.5;1.8,1;;;fly]
+textarea[14.05,5.1;1.8,1;;;noclip]
+textarea[14.05,5.5;1.8,1;;;give]
 ]]
