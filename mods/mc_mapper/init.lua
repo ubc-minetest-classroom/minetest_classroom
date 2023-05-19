@@ -57,7 +57,7 @@ function mc_mapper.map_handler(player)
 			if xx and zz then
 				-- The cache is missing some tiles so return the smallest possible LVM area
 				local minxx = realm.EndPos.x
-				local maxxx = realm.StartPos.z
+				local maxxx = realm.StartPos.x
 				local minzz = realm.EndPos.z
 				local maxzz = realm.StartPos.z
 				if #xx > 1 then
@@ -115,11 +115,11 @@ function mc_mapper.map_handler(player)
 							realmMapCache.param2[pos.x+i][pos.z+j] = p2
 						end
 						local tiles
-						if def then 
+						if def and pos.x+i <= realm.EndPos.x and pos.x+i >= realm.StartPos.x and pos.z+j <= realm.EndPos.z and pos.z+j >= realm.StartPos.z then 
 							tiles = def["tiles"]
 							if tiles ~= nil then
 								tile = tiles[1]
-								local palette = mc_helpers.split(def["name"], ":")
+								local palette = mc_core.split(def["name"], ":")
 								if type(tile) == "table" then
 									tile = tile["name"]
 								end
@@ -146,14 +146,17 @@ function mc_mapper.map_handler(player)
 					mapar[i+17] = {}
 					for j = -17,17,1 do
 						mapar[i+17][j+17] = {}
-						def = registered_nodes[minetest.get_name_from_content_id(realmMapCache.id[pos.x+i][pos.z+j])]
-						k = realmMapCache.y[pos.x+i][pos.z+j]
-						p2 = realmMapCache.param2[pos.x+i][pos.z+j]
-						if def then 
+						if realmMapCache.id[pos.x+i] and realmMapCache.id[pos.x+i][pos.z+j] then
+							def = registered_nodes[minetest.get_name_from_content_id(realmMapCache.id[pos.x+i][pos.z+j])]
+						end
+						if def and pos.x+i <= realm.EndPos.x and pos.x+i >= realm.StartPos.x and pos.z+j <= realm.EndPos.z and pos.z+j >= realm.StartPos.z then
+							k = realmMapCache.y[pos.x+i] and realmMapCache.y[pos.x+i][pos.z+j]
+							p2 = realmMapCache.param2[pos.x+i] and realmMapCache.param2[pos.x+i][pos.z+j]
+							
 							tiles = def["tiles"]
 							if tiles ~= nil then
 								tile = tiles[1]
-								palette = mc_helpers.split(def["name"], ":")
+								palette = mc_core.split(def["name"], ":")
 								if type(tile) == "table" then
 									tile = tile["name"]
 								end
@@ -211,11 +214,11 @@ function mc_mapper.map_handler(player)
 					realmMapCache.param2[pos.x+i][pos.z+j] = p2
 					def = registered_nodes[minetest.get_name_from_content_id(c_no)]
 					local tiles
-					if def then 
+					if def and pos.x+i <= realm.EndPos.x and pos.x+i >= realm.StartPos.x and pos.z+j <= realm.EndPos.z and pos.z+j >= realm.StartPos.z then
 						tiles = def["tiles"]
 						if tiles ~= nil then
 							tile = tiles[1]
-							local palette = mc_helpers.split(def["name"], ":")
+							local palette = mc_core.split(def["name"], ":")
 							if type(tile) == "table" then
 								tile = tile["name"]
 							end
@@ -274,11 +277,11 @@ function mc_mapper.map_handler(player)
 				realmMapCache.param2[pos.x+i][pos.z+j] = p2
 				def = registered_nodes[minetest.get_name_from_content_id(c_no)]
 				local tiles
-				if def then 
+				if def and pos.x+i <= realm.EndPos.x and pos.x+i >= realm.StartPos.x and pos.z+j <= realm.EndPos.z and pos.z+j >= realm.StartPos.z then 
 					tiles = def["tiles"]
 					if tiles ~= nil then
 						tile = tiles[1]
-						local palette = mc_helpers.split(def["name"], ":")
+						local palette = mc_core.split(def["name"], ":")
 						if type(tile) == "table" then
 							tile = tile["name"]
 						end

@@ -6,7 +6,7 @@ function mc_teacher.show_controller_fs(player,tab)
     local page_width = (controller_width/8)*3.5
     local pname = player:get_player_name()
 	local pmeta = player:get_meta()
-	if mc_helpers.checkPrivs(player) then
+	if mc_core.checkPrivs(player) then
 		local teacher_formtable = {
 			"formspec_version[6]",
 			"size[",
@@ -17,7 +17,7 @@ function mc_teacher.show_controller_fs(player,tab)
 			mc_core.draw_book_fs(controller_width, controller_height, {bg = "#63406a", shadow = "#3e2b45", binding = "#5d345e", divider = "#d9d9d9"}),
 			"style[tabheader;noclip=true]",
 		}
-        if mc_helpers.checkPrivs(player,{server = true}) then
+        if mc_core.checkPrivs(player,{server = true}) then
             teacher_formtable[#teacher_formtable + 1] = "tabheader[0,-0.25;16,0.55;record_nav;Overview,Manage Classrooms,Manage Players,Moderator,Manage Server;" 
             teacher_formtable[#teacher_formtable + 1] = tab or pmeta:get_string("default_teacher_tab") or mc_teacher.fs_context.tab or "1"
             teacher_formtable[#teacher_formtable + 1] = ";true;false]"
@@ -97,7 +97,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 Realm.ScanForPlayerRealms()
                 for _,thisRealm in pairs(Realm.realmDict) do
                     counter = counter + 1
-                    if mc_helpers.checkPrivs(player,{teacher = true}) then
+                    if mc_core.checkPrivs(player,{teacher = true}) then
                         fs[#fs + 1] = thisRealm.Name
                         fs[#fs + 1] = " ("
                         local playerCount = tonumber(thisRealm:GetPlayerCount())

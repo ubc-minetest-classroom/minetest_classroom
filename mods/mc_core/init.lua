@@ -4,6 +4,8 @@ mc_core = {
     path = minetest.get_modpath("mc_core"),
     meta = minetest.get_mod_storage()
 }
+-- for compatibility with older mods
+mc_helpers = mc_core
 
 -- Required MT version
 assert(minetest.features.formspec_version_element, "Minetest 5.1 or later is required")
