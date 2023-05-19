@@ -400,28 +400,28 @@ function mc_student.show_notebook_fs(player, tab)
 			bookmarked_tab = nil
 			pmeta:set_string("default_student_tab", nil)
 		end
-		local selected_tab = (tab_map[tab] and tab) or bookmarked_tab or (tab_map[context.tab] and context.tab) or "1"
+		local selected_tab = (tab_map[tab] and tab) or (tab_map[context.tab] and context.tab) or bookmarked_tab or "1"
 
 		local student_formtable = {
 			"formspec_version[6]",
 			"size[", notebook_width, ",", notebook_height, "]",
 			mc_core.draw_book_fs(notebook_width, notebook_height, {divider = "#969696"}),
 			"style[tabheader;noclip=true]",
-			"tabheader[0,-0.25;16,0.55;record_nav;Overview,Classrooms,Map,Appearance,Help;", tab or bookmarked_tab or context.tab or "1", ";true;false]",
+			"tabheader[0,-0.25;16,0.55;record_nav;Overview,Classrooms,Map,Appearance,Help;", selected_tab, ";true;false]",
 			table.concat(tab_map[selected_tab](), "")
 		}
 
 		if bookmarked_tab == selected_tab then
-			table.insert(student_formtable, table.concat{
+			table.insert(student_formtable, table.concat({
 				"style_type[image;noclip=true]",
 				"image[15.8,-0.25;0.5,0.7;mc_student_bookmark_filled.png]",
 				"tooltip[15.8,-0.25;0.5,0.8;This tab is currently bookmarked]",
-			})
+			}))
 		else
-			table.insert(student_formtable, table.concat{
+			table.insert(student_formtable, table.concat({
 				"image_button[15.8,-0.25;0.5,0.5;mc_student_bookmark_hollow.png^[colorize:#FFFFFF:127;default_tab;;true;false]",
 				"tooltip[default_tab;Bookmark this tab?]",
-			})
+			}))
 		end
 
 		minetest.show_formspec(pname, "mc_student:notebook_fs", table.concat(student_formtable, ""))

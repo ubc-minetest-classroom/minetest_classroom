@@ -9,6 +9,7 @@ function mc_teacher.show_controller_fs(player,tab)
 	local context = mc_teacher.get_fs_context(player)
 
 	if mc_core.checkPrivs(player) then
+        local has_server_privs = mc_core.checkPrivs(player, {server = true})
 		local tab_map = {
 			["1"] = function() -- OVERVIEW
                 local button_width = 1.7
@@ -18,6 +19,7 @@ function mc_teacher.show_controller_fs(player,tab)
 					rules = "Rules have not yet been set for this server."
 				end
 
+                local Y_SIZE, FACTOR = 9.7, 0.05
 				local fs = {
 					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
@@ -31,23 +33,35 @@ function mc_teacher.show_controller_fs(player,tab)
 					"style_type[textarea;font=mono]",
 					"textarea[0.55,1.5;7.1,2.6;;;", minetest.formspec_escape("This is the Teacher Controller, your tool for managing classrooms, player privileges, and server settings."),
 					"\n", minetest.formspec_escape("You cannot drop this tool, so you will never lose it. However, you can move it out of your hotbar and into your inventory or the toolbox."), "]",
-					"textarea[0.55,4.9;7.1,4.7;;;", minetest.formspec_escape(rules), "]",
+					"textarea[0.55,4.9;7.1,", has_server_privs and 3.8 or 4.7, ";;;", minetest.formspec_escape(rules), "]",
+                    has_server_privs and "button[0.6,8.8;7,0.8;modifyrules;Edit Server Rules]" or "",
 
-					"image_button[8.8,1.0;", button_width, ",", button_height, ";mc_teacher_classrooms.png;classrooms;;false;false]",
-					"image_button[8.8,2.75;", button_width, ",", button_height, ";mc_teacher_map.png;map;;false;false]",
-					"image_button[8.8,4.5;", button_width, ",", button_height, ";mc_teacher_players.png;players;;false;false]",
-					"image_button[8.8,6.25;", button_width, ",", button_height, ";mc_teacher_isometric.png;moderation;;false;false]",
-                    "image_button[8.8,8;", button_width, ",", button_height, ";mc_teacher_isometric.png;reports;;false;false]",
-                    "image_button[8.8,9.75;", button_width, ",", button_height, ";mc_teacher_help.png;help;;false;false]",
-                    "image_button[8.8,11.5;", button_width, ",", button_height, ";mc_teacher_isometric.png;server;;false;false]",
-					"hypertext[10.6,1.3;5.25,1.6;;<style color=#000000><b>Classrooms</b>\n", minetest.formspec_escape("Create and manage classrooms"), "</style>]",
-					"hypertext[10.6,3.05;5.25,1.6;;<style color=#000000><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "</style>]",
-					"hypertext[10.6,4.8;5.25,1.6;;<style color=#000000><b>Players</b>\n", minetest.formspec_escape("Manage player privileges"), "</style>]",
-                    "hypertext[10.6,6.55;5.25,1.6;;<style color=#000000><b>Moderation</b>\n", minetest.formspec_escape("View player chat logs"), "</style>]",
-					"hypertext[10.6,8.3;5.25,1.6;;<style color=#000000><b>Reports</b>\n", minetest.formspec_escape("View and resolve player reports"), "</style>]",
-                    "hypertext[10.6,10.05;5.25,1.6;;<style color=#000000><b>Help</b>\n", minetest.formspec_escape("View guides and resources"), "</style>]",
-                    "hypertext[10.6,11.8;5.25,1.6;;<style color=#000000><b>Server</b>\n", minetest.formspec_escape("Manage server settings"), "</style>]",
+                    "scrollbaroptions[min=0;max=", (11.45 + (has_server_privs and 1.65 or 0) - Y_SIZE)/FACTOR, ";smallstep=", 0.8/FACTOR, ";largestep=", 4.8/FACTOR, ";thumbsize=", 1/FACTOR, "]",
+                    "scrollbar[16.1,0.5;0.3,", Y_SIZE, ";vertical;overviewscroll;", context.overviewscroll or 0, "]",
+                    "scroll_container[8.2,0.5;7.9,", Y_SIZE, ";overviewscroll;vertical;", FACTOR, "]",
+
+					"image_button[0.6,0.5;", button_width, ",", button_height, ";mc_teacher_classrooms.png;classrooms;;false;false]",
+                    "hypertext[2.4,0.8;5.25,1.6;;<style color=#000000><b>Classrooms</b>\n", minetest.formspec_escape("Create and manage classrooms"), "</style>]",
+					"image_button[0.6,2.25;", button_width, ",", button_height, ";mc_teacher_map.png;map;;false;false]",
+					"hypertext[2.4,2.55;5.25,1.6;;<style color=#000000><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "</style>]",
+                    "image_button[0.6,4;", button_width, ",", button_height, ";mc_teacher_players.png;players;;false;false]",
+                    "hypertext[2.4,4.3;5.25,1.6;;<style color=#000000><b>Players</b>\n", minetest.formspec_escape("Manage player privileges"), "</style>]",
+					"image_button[0.6,5.75;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;moderation;;false;false]",
+                    "hypertext[2.4,6.05;5.25,1.6;;<style color=#000000><b>Moderation</b>\n", minetest.formspec_escape("View player chat logs"), "</style>]",
+                    "image_button[0.6,7.5;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;reports;;false;false]",
+					"hypertext[2.4,7.8;5.25,1.6;;<style color=#000000><b>Reports</b>\n", minetest.formspec_escape("View and resolve player reports"), "</style>]",
+                    "image_button[0.6,9.25;", button_width, ",", button_height, ";mc_teacher_help.png;help;;false;false]",
+                    "hypertext[2.4,9.55;5.25,1.6;;<style color=#000000><b>Help</b>\n", minetest.formspec_escape("View guides and resources"), "</style>]",
                 }
+
+                if has_server_privs then
+                    table.insert(fs, table.concat({
+                        "image_button[0.6,11;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;server;;false;false]",
+                        "hypertext[2.4,11.3;5.25,1.6;;<style color=#000000><b>Server</b>\n", minetest.formspec_escape("Manage server settings"), "</style>]",
+                    }))
+                end
+                table.insert(fs, "scroll_container_end[]")
+
 				return fs
 			end,
 			["2"] = function() -- CLASSROOMS
@@ -448,11 +462,13 @@ function mc_teacher.show_controller_fs(player,tab)
 
 				return fs
 			end,
-			["3"] = function() -- PLAYERS
-                local fs = {}
-				return fs
+			["3"] = function() -- MAP
+				return {}
 			end,
-			["4"] = function() -- MODERATOR
+            ["4"] = function() -- PLAYERS
+                return {}
+            end,
+			["5"] = function() -- MODERATION
                 local fs = {}
                 local fsx, fsy
                 fsx = ((controller_width/2)-(((controller_width/8)*3)))/2
@@ -519,7 +535,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 fs[#fs + 1] = ";1;false]"
                 if #unique_chat_players > 0 then
                     -- Add another textlist below with the messages from the selected player
-                    if not tonumber(context.chat_player_index) then context.chat_player_index = 1 end
+                    if not tonumber(context.player_chat_index) then context.player_chat_index = 1 end
                     fs[#fs + 1] = "label["
                     fs[#fs + 1] = tostring(fsx+(controller_width/2))
                     fs[#fs + 1] = ","
@@ -535,7 +551,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     fs[#fs + 1] = ","
                     fs[#fs + 1] = tostring(controller_height/4)
                     fs[#fs + 1] = ";playerchatlist;"
-                    local pname = indexed_chat_players[tonumber(context.chat_player_index)]
+                    local pname = indexed_chat_players[tonumber(context.player_chat_index)]
                     local player_chat_log, player_dm_log
                     if chatmessages then player_chat_log = chatmessages[pname] end
                     local to_player_names = {}
@@ -581,7 +597,7 @@ function mc_teacher.show_controller_fs(player,tab)
                         end
                     end
                     fs[#fs + 1] = ";"
-                    local chat_index = tonumber(context.chat_index) or 1
+                    local chat_index = tonumber(context.mod_chat_index) or 1
                     fs[#fs + 1] = tostring(chat_index)
                     fs[#fs + 1] = ";false]"
                     if countchat > 0 or countdm > 0 then
@@ -652,13 +668,10 @@ function mc_teacher.show_controller_fs(player,tab)
                 end
 				return fs
 			end,
-            ["5"] = function()
+            ["6"] = function() -- REPORTS
                 return {}
             end,
-            ["6"] = function()
-                return {}
-            end,
-            ["7"] = function()
+            ["7"] = function() -- HELP
                 return {}
             end,
             ["8"] = function() -- SERVER
@@ -757,7 +770,7 @@ function mc_teacher.show_controller_fs(player,tab)
 			bookmarked_tab = nil
 			pmeta:set_string("default_teacher_tab", nil)
 		end
-		local selected_tab = (tab_map[tab] and tab) or bookmarked_tab or (tab_map[context.tab] and context.tab) or "1"
+		local selected_tab = (tab_map[tab] and tab) or (tab_map[context.tab] and context.tab) or bookmarked_tab or "1"
 
 		local teacher_formtable = {
 			"formspec_version[6]",
@@ -765,21 +778,21 @@ function mc_teacher.show_controller_fs(player,tab)
 			mc_core.draw_book_fs(controller_width, controller_height, {bg = "#404040", shadow = "#303030", binding = "#333333", divider = "#969696"}),
 			"style[tabheader;noclip=true]",
 			"tabheader[0,-0.25;16,0.55;record_nav;Overview,Classrooms,Map,Players,Moderation,Reports,Help",
-            mc_core.checkPrivs(player,{server = true}) and ",Server" or "", ";", tab or bookmarked_tab or context.tab or "1", ";true;false]",
+            has_server_privs and ",Server" or "", ";", selected_tab, ";true;false]",
 			table.concat(tab_map[selected_tab](), "")
 		}
 
 		if bookmarked_tab == selected_tab then
-			table.insert(teacher_formtable, table.concat{
+			table.insert(teacher_formtable, table.concat({
 				"style_type[image;noclip=true]",
 				"image[15.8,-0.25;0.5,0.7;mc_teacher_bookmark_filled.png]",
 				"tooltip[15.8,-0.25;0.5,0.8;This tab is currently bookmarked]",
-			})
+			}))
 		else
-			table.insert(teacher_formtable, table.concat{
+			table.insert(teacher_formtable, table.concat({
 				"image_button[15.8,-0.25;0.5,0.5;mc_teacher_bookmark_hollow.png^[colorize:#FFFFFF:127;default_tab;;true;false]",
 				"tooltip[default_tab;Bookmark this tab?]",
-			})
+			}))
 		end
 
 		minetest.show_formspec(pname, "mc_teacher:controller_fs", table.concat(teacher_formtable, ""))
@@ -812,7 +825,7 @@ textarea[0.55,1;7.1,1;;;Welcome to Minetest Classroom!]
 textarea[0.55,1.5;7.1,2.8;;;This is the Teacher Controller\, your tool for managing classrooms\, player privileges\, and server settings. You cannot drop or delete this tool\, so you will never lose it\, but you can move it out of your hotbar and into your inventory or the toolbox.]
 textarea[0.55,4.4;7.1,1;;;Server Rules]
 textarea[0.55,4.9;7.1,3.8;;;These are the server rules!]
-button[0.6,8.8;7,0.8;edit_rules;Edit Server Rules]
+button[0.6,8.8;7,0.8;modifyrules;Edit Server Rules]
 image_button[8.8,1;1.7,1.6;mc_teacher_classrooms.png;classrooms;;false;false]
 image_button[8.8,2.75;1.7,1.6;mc_teacher_map.png;map;;false;false]
 image_button[8.8,4.5;1.7,1.6;mc_teacher_players.png;players;;false;false]

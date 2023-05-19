@@ -11,8 +11,8 @@ mc_teacher = {
         MAP = "3",
         PLAYERS = "4",
         MODERATION = "5",
-        HELP = "6",
-        REPORTS = "7",
+        REPORTS = "6",
+        HELP = "7",
         SERVER = "8" -- TODO: make dynamic for easier modification of notebook
     },
     MODES = {
