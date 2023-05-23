@@ -13,7 +13,7 @@ minetest.register_on_joinplayer(function(player)
             end
             count = count + 1
         end
-        if count > 0 then minetest.chat_send_player(pname, minetest.colorize("#FF00FF", "[Minetest Classroom] Teachers currently online: "..teachers)) end
+        if count > 0 then minetest.chat_send_player(pname, minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Teachers currently online: "..teachers)) end
     end
 end)
 
@@ -187,7 +187,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				realm:TeleportPlayer(player)
 				context.selected_realm = nil
 			else
-				minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
+				minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.log_colour, "[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
 			end
 			mc_student.show_notebook_fs(player, mc_student.TABS.CLASSROOMS)
 		elseif fields.go then
@@ -199,10 +199,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					realm:TeleportPlayer(player)
 					player:set_pos(pdata.coords[context.selected_coord])
 				else
-					minetest.chat_send_player(player:get_player_name(), minetest.colorize("#FF00FF","[Minetest Classroom] You no longer have access to this classroom."))
+					minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] You no longer have access to this classroom."))
 				end
 			else
-				minetest.chat_send_player(player:get_player_name(), minetest.colorize("#FF00FF","[Minetest Classroom] This classroom no longer exists."))
+				minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] This classroom no longer exists."))
 			end
 			mc_student.show_notebook_fs(player, mc_student.TABS.MAP)
 		elseif fields.delete then
@@ -263,13 +263,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				local connRealm = Realm.GetRealmFromPlayer(connplayer)
 				if connRealm.ID == realm.ID then
 					local pos = coords[context.selected_coord]
-					minetest.chat_send_player(connplayer:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] "..player:get_player_name().." shared location {x="..tostring(math.round(pos.x-realm.StartPos.x))..", y="..tostring(math.round(pos.y-realm.StartPos.y))..", z="..tostring(math.round(pos.z-realm.StartPos.z)).."} with the note: "..notes[context.selected_coord]))
+					minetest.chat_send_player(connplayer:get_player_name(),minetest.colorize(mc_core.log_colour, "[Minetest Classroom] "..player:get_player_name().." shared location {x="..tostring(math.round(pos.x-realm.StartPos.x))..", y="..tostring(math.round(pos.y-realm.StartPos.y))..", z="..tostring(math.round(pos.z-realm.StartPos.z)).."} with the note: "..notes[context.selected_coord]))
 				end
 			end
 			mc_student.show_notebook_fs(player, mc_student.TABS.MAP)
 		elseif fields.submitreport then
 			if not fields.report or fields.report == "" then
-				minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] Please add a message to your report."))
+				minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Please add a message to your report."))
 				return
 			end
 			local pname = player:get_player_name()
@@ -291,7 +291,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				local msg = "[Minetest Classroom] " .. msg .. " (teachers online: " .. teachers .. ")"
 				-- Send report to any teacher currently connected
 				for teacher in pairs(mc_teacher.teachers) do
-					minetest.chat_send_player(teacher, minetest.colorize("#FF00FF", msg.. " [Details:" .. tostring(os.date("%d-%m-%Y %H:%M:%S")) .. " {x="..tostring(pos.x)..", y="..tostring(pos.y)..", z="..tostring(pos.z).."} realmID="..tostring(realm.ID).."]"))
+					minetest.chat_send_player(teacher, minetest.colorize(mc_core.log_colour, msg.. " [Details:" .. tostring(os.date("%d-%m-%Y %H:%M:%S")) .. " {x="..tostring(pos.x)..", y="..tostring(pos.y)..", z="..tostring(pos.z).."} realmID="..tostring(realm.ID).."]"))
 				end
 			end
 			local key = pname .. " " .. tostring(os.date("%d-%m-%Y %H:%M:%S")) .. " {x="..tostring(pos.x)..", y="..tostring(pos.y)..", z="..tostring(pos.z).."} realmID="..tostring(realm.ID)
@@ -305,7 +305,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 			mc_student.meta:set_string("reports", minetest.serialize(reports))
 			chatlog.write_log(pname,"[REPORT] " .. clean_report)
-			minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] Your report has been received."))
+			minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Your report has been received."))
 			mc_student.show_notebook_fs(player, mc_student.TABS.HELP)
 		elseif fields.classrooms then
 			mc_student.show_notebook_fs(player, mc_student.TABS.CLASSROOMS)

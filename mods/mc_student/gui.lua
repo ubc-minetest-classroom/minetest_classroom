@@ -17,7 +17,7 @@ local function get_fs_classroom_list(player)
 		if mc_core.checkPrivs(player, {teacher = true}) or player_can_join_realm(player, realm) then
 			local playerCount = tonumber(realm:GetPlayerCount())
 			table.insert(list, table.concat({
-				realm.Name, " (", playerCount, " player", playerCount == 1 and "" or "s", ")"
+				minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"
 			}))
 		end
 	end
@@ -401,6 +401,7 @@ function mc_student.show_notebook_fs(player, tab)
 			pmeta:set_string("default_student_tab", nil)
 		end
 		local selected_tab = (tab_map[tab] and tab) or (tab_map[context.tab] and context.tab) or bookmarked_tab or "1"
+		context.tab = selected_tab
 
 		local student_formtable = {
 			"formspec_version[6]",

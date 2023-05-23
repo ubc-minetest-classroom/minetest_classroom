@@ -30,7 +30,7 @@ minetest.register_on_joinplayer(function(player)
             end
             count = count + 1
         end
-        if count > 0 then minetest.chat_send_player(pname, minetest.colorize("#FF00FF", "[Minetest Classroom] Teachers currently online: "..teachers)) end
+        if count > 0 then minetest.chat_send_player(pname, minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Teachers currently online: "..teachers)) end
     end
 end)
 
@@ -56,6 +56,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	while os.clock() - wait < 0.05 do end --popups don't work without this
 
 	if formname == "mc_teacher:controller_fs" then
+        local has_server_privs = mc_core.checkPrivs(player, {server = true})
+
         -------------
         -- GENERAL --
         -------------
@@ -118,91 +120,97 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         -- MANAGE CLASSROOMS
         ---------------------------------
         if fields.mode and fields.mode ~= context.selected_mode then
-            if fields.realmname then context.realmname = minetest.formspec_escape(fields.realmname) end
             context.selected_mode = fields.mode
             reload = true
         end
-        if fields.schematic and fields.schematic ~= context.selected_schematic_index then
-            if fields.realmname then context.realmname = minetest.formspec_escape(fields.realmname) end
+        if fields.schematic and fields.schematic ~= context.selected_schematic then
             context.selected_mode = mc_teacher.MODES.SCHEMATIC
-            context.selected_schematic_index = fields.schematic
+            context.selected_schematic = fields.schematic
             reload = true
-        elseif fields.realterrain and context.selected_dem_index ~= fields.realterrainthen then
-            if fields.realmname then context.realmname = minetest.formspec_escape(fields.realmname) end
+        elseif fields.realterrain and context.selected_dem ~= fields.realterrain then
             context.selected_mode = mc_teacher.MODES.TWIN
-            context.selected_dem_index = fields.realterrain
+            context.selected_dem = fields.realterrain
             reload = true
         end
 
         if fields.requestrealm then
             if mc_core.checkPrivs(player,{teacher = true}) then
-                local realmName, realmSizeX, realmSizeZ, realmSizeY
-                if fields.realmname == "" or fields.realmname == nil then realmName = "Unnamed Classroom" else realmName = fields.realmname end
+                local new_realm_name = fields.realmname or ""
+                local errors = {}
+
+                if new_realm_name == "" then
+                    table.insert(errors, "Classrooms must have a non-empty name field.")
+                end
+                reload = true
+
+                --local realmName, realmSizeX, realmSizeZ, realmSizeY
+                --if fields.realmname == "" or fields.realmname == nil then realmName = "Unnamed Classroom" else realmName = fields.realmname end
                 if context.selected_mode == mc_teacher.MODES.EMPTY then
-                    -- Sanitize input
-                    if mc_core.checkPrivs(player,{server = true}) then
-                        if tonumber(fields.realmxsize) and tonumber(fields.realmxsize) >= 80 then
-                            realmSizeX = tonumber(fields.realmxsize)
-                        else
-                            minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] You may only request classrooms with a width of at least 80 nodes. Check your input and try again."))
-                        end
-                        if tonumber(fields.realmzsize) and tonumber(fields.realmzsize) >= 80 then
-                            realmSizeZ = tonumber(fields.realmzsize)
-                        else
-                            minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] You may only request classrooms with a height of at least 80 nodes. Check your input and try again."))
-                        end
-                        if tonumber(fields.realmysize) and tonumber(fields.realmysize) >= 80 then
-                            realmSizeY = tonumber(fields.realmysize)
-                        else
-                            minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] You may only request classrooms with a length of at least 80 nodes. Check your input and try again."))
-                        end
-                    else
-                        if tonumber(fields.realmxsize) and tonumber(fields.realmxsize) >= 80 and tonumber(fields.realmxsize) <= 240 then
-                            realmSizeX = tonumber(fields.realmxsize)
-                        else
-                            minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] You may only request classrooms with a width between 80 and 240 nodes. Check your input and try again."))
-                        end
-                        if tonumber(fields.realmzsize) and tonumber(fields.realmzsize) >= 80 and tonumber(fields.realmzsize) <= 240 then
-                            realmSizeZ = tonumber(fields.realmzsize)
-                        else
-                            minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] You may only request classrooms with a height between 80 and 240 nodes. Check your input and try again."))
-                        end
-                        if tonumber(fields.realmysize) and tonumber(fields.realmysize) >= 80 and tonumber(fields.realmysize) <= 240 then
-                            realmSizeY = tonumber(fields.realmysize)
-                        else
-                            minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] You may only request classrooms with a length between 80 and 240 nodes. Check your input and try again."))
-                        end
+                    -- Sanitize + check input
+                    local new_realm_info = {
+                        x_size = tonumber(fields.realm_x_size),
+                        y_size = tonumber(fields.realm_y_size),
+                        z_size = tonumber(fields.realm_z_size)
+                    }
+
+                    if new_realm_info.x_size < 80 or (new_realm_info.x_size > 240 and not has_server_privs) then
+                        table.insert(errors, "Classrooms must have a width "..(has_server_privs and "of at least 80 nodes." or "between 80 and 240 nodes."))
                     end
-                    if realmName and realmSizeX and realmSizeZ and realmSizeY then
-                        local newRealm = Realm:New(realmName, { x = realmSizeX, y = realmSizeY, z = realmSizeZ })
-                        newRealm:CreateGround()
-                        newRealm:CreateBarriersFast()
-                        newRealm:set_data("owner", player:get_player_name())
-                        minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] Your requested classroom was successfully created."))
+                    if new_realm_info.y_size < 80 or (new_realm_info.y_size > 240 and not has_server_privs) then
+                        table.insert(errors, "Classrooms must have a height "..(has_server_privs and "of at least 80 nodes." or "between 80 and 240 nodes."))
                     end
-                    mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
-                elseif context.selected_mode == mc_teacher.MODES.SCHEMATIC and context.selected_schematic_index then
-                    local counter = 1
-                    for schematicKey,_ in pairs(schematicManager.schematics) do
-                        counter = counter + 1
-                        if tonumber(context.selected_schematic_index) == counter then 
-                            local newRealm = Realm:NewFromSchematic(realmName, schematicKey)
-                        end 
+                    if new_realm_info.z_size < 80 or (new_realm_info.z_size > 240 and not has_server_privs) then
+                        table.insert(errors, "Classrooms must have a length "..(has_server_privs and "of at least 80 nodes." or "between 80 and 240 nodes."))
                     end
-                    minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] Your requested classroom was successfully created."))
-                    mc_teacher.show_controller_fs(player, mc_teacher.TABS.CLASSROOMS)
-                elseif context.selected_mode == mc_teacher.MODES.TWIN and context.selected_dem_index then
-                    local counter = 1
-                    for DEMKey,_ in pairs(realterrainManager.dems) do 
-                        counter = counter + 1
-                        if tonumber(context.selected_dem_index) == counter then 
-                            local newRealm = Realm:NewFromDEM(realmName, DEMKey)
-                        end 
+
+                    if #errors ~= 0 then
+                        for _,err in pairs(errors) do
+                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] "..err))
+                        end
+                        return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Please check your inputs and try again."))
                     end
-                    minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] Your requested classroom was successfully created."))
+
+                    local new_realm = Realm:New(new_realm_name, new_realm_info)
+                    new_realm:CreateGround()
+                    new_realm:CreateBarriersFast()
+                    new_realm:set_data("owner", player:get_player_name())
+                    minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Your requested classroom was successfully created."))
+                elseif context.selected_mode == mc_teacher.MODES.SCHEMATIC then
+                    if not context.selected_schematic then
+                        table.insert(errors, "No schematic selected.")
+                    elseif not schematicManager.schematics[context.selected_schematic] then
+                        table.insert(errors, "Selected schematic not found.")
+                    end
+
+                    if #errors ~= 0 then
+                        for _,err in pairs(errors) do
+                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] "..err))
+                        end
+                        return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Please check your inputs and try again."))
+                    end
+
+                    local new_realm = Realm:NewFromSchematic(new_realm_name, context.selected_schematic)
+                    new_realm:set_data("owner", player:get_player_name())
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Your requested classroom was successfully created."))
                     reload = true
-                else
-                    -- missing information to process the request
+                elseif context.selected_mode == mc_teacher.MODES.TWIN then
+                    if not context.selected_dem then
+                        table.insert(errors, "No digital twin world selected.")
+                    elseif not realterrainManager.dems[context.selected_dem] then
+                        table.insert(errors, "Selected digital twin world not found.")
+                    end
+                    
+                    if #errors ~= 0 then
+                        for _,err in pairs(errors) do
+                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] "..err))
+                        end
+                        return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Please check your inputs and try again."))
+                    end
+                    
+                    local new_realm = Realm:NewFromDEM(new_realm_name, context.selected_dem)
+                    new_realm:set_data("owner", player:get_player_name())
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Your requested classroom was successfully created."))
+                    reload = true
                 end
             end
         end
@@ -231,7 +239,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				realm:TeleportPlayer(player)
 				context.selected_realm_id = nil
 			else
-				minetest.chat_send_player(player:get_player_name(),minetest.colorize("#FF00FF","[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
+				minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.log_colour, "[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
 			end
 			reload = true
         elseif fields.deleterealm then
@@ -296,7 +304,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
         -- MANAGE SERVER
         if fields.submitmessage then
-            minetest.chat_send_all(minetest.colorize("#FF00FF","[Minetest Classroom] "..fields.servermessage))
+            minetest.chat_send_all(minetest.colorize(mc_core.log_colour, "[Minetest Classroom] "..fields.servermessage))
 			reload = true
         elseif fields.submitsched then
             if mc_teacher.restart_scheduled.timer then mc_teacher.restart_scheduled.timer:cancel() end
@@ -345,7 +353,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
         if reload then
             -- save
-            if fields.realmname then context.realmname = fields.realmname end
+            if fields.realmname then context.realmname = minetest.formspec_escape(fields.realmname) end
             if fields.realm_x_size then context.realm_x = fields.realm_x_size end
             if fields.realm_y_size then context.realm_y = fields.realm_y_size end
             if fields.realm_z_size then context.realm_z = fields.realm_z_size end

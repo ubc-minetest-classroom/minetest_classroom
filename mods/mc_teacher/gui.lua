@@ -6,7 +6,7 @@ local function get_fs_classroom_list(player)
 	for _,realm in pairs(Realm.realmDict) do
         local playerCount = tonumber(realm:GetPlayerCount())
         table.insert(list, table.concat({
-            realm.Name, " (", playerCount, " player", playerCount == 1 and "" or "s", ")"
+            minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"
         }))
 	end
 	return table.concat(list, ",")
@@ -40,6 +40,7 @@ function mc_teacher.show_controller_fs(player,tab)
 					"hypertext[8.75,0.1;7.1,1;;<style font=mono><center><b>Dashboard</b></center></style>]",
 
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
+                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
 					"textarea[0.55,1;7.1,1;;;Welcome to Minetest Classroom!]",
 					"textarea[0.55,4.4;7.1,1;;;Server Rules]",
 					"style_type[textarea;font=mono]",
@@ -93,9 +94,10 @@ function mc_teacher.show_controller_fs(player,tab)
                     "button[2.375,8.8;1.675,0.8;editrealm;Edit]",
                     "button[5.925,8.8;1.7,0.8;resetrealm;Reset]",
 
-                    "style_type[field;font=mono;textcolor=#000000]",
+                    "style_type[field;font=mono;textcolor=#ffffff]",
                     "textarea[8.75,1;7.1,1;;;Name]",
-                    "field[8.8,1.45;7,0.7;realmname;;]",
+                    "field[8.8,1.45;7,0.7;realmname;;", context.realmname or "", "]",
+                    "field_close_on_enter[realmname;false]",
                     "textarea[8.75,2.2;3.5,1;;;Type]",
                     "dropdown[8.8,2.65;3.45,0.7;realmcategory;Default,Spawn,Classroom,Instanced;", context.selected_realm_type or 1, ";true]",
                     "textarea[12.3,2.2;3.5,1;;;Generation]",
@@ -108,19 +110,46 @@ function mc_teacher.show_controller_fs(player,tab)
                         "textarea[8.75,4;1,1;;;X =]",
                         "textarea[11.15,4;1,1;;;Y =]",
                         "textarea[13.55,4;1,1;;;Z =]",
-                        "field[9.6,3.85;1.4,0.7;realm_x_size;;25]",
-                        "field[12,3.85;1.4,0.7;realm_y_size;;25]",
-                        "field[14.4,3.85;1.4,0.7;realm_z_size;;25]",
+                        "field[9.6,3.85;1.4,0.7;realm_x_size;;", context.realm_x or 80, "]",
+                        "field[12,3.85;1.4,0.7;realm_y_size;;", context.realm_y or 80, "]",
+                        "field[14.4,3.85;1.4,0.7;realm_z_size;;", context.realm_z or 80, "]",
+                        "field_close_on_enter[realm_x_size;false]",
+                        "field_close_on_enter[realm_y_size;false]",
+                        "field_close_on_enter[realm_z_size;false]",
                     }))
                 elseif context.selected_mode == mc_teacher.MODES.SCHEMATIC then
+                    local schematics = {}
+                    local name_to_i = {}
+                    local ctr = 1
+                    for name, path in pairs(schematicManager.schematics) do
+                        if ctr == 1 and not context.selected_schematic then
+                            context.selected_schematic = name
+                        end
+                        table.insert(schematics, name)
+                        name_to_i[name] = ctr
+                    end
+                    context.name_to_i = name_to_i
+
                     table.insert(fs, table.concat({
                         "textarea[8.75,3.4;7.1,1;;;Schematic]",
-                        "dropdown[8.8,3.85;7,0.7;schematic;;", context.selected_schematic_index or 1, ";true]",
+                        "dropdown[8.8,3.85;7,0.7;schematic;", table.concat(schematics, ","), ";", context.name_to_i[context.selected_schematic] or 1, ";false]",
                     }))
                 elseif context.selected_mode == mc_teacher.MODES.TWIN then
+                    local twins = {}
+                    local name_to_i = {}
+                    local ctr = 1
+                    for name, path in pairs(realterrainManager.dems) do
+                        if ctr == 1 and not context.selected_dem then
+                            context.selected_dem = name
+                        end
+                        table.insert(twins, name)
+                        name_to_i[name] = ctr
+                    end
+                    context.name_to_i = name_to_i
+
                     table.insert(fs, table.concat({
                         "textarea[8.75,3.4;7.1,1;;;Digital Twin World]",
-                        "dropdown[8.8,3.85;7,0.7;realterrain;;", context.selected_dem_index or 1, ";true]",
+                        "dropdown[8.8,3.85;7,0.7;realterrain;", table.concat(twins, ","), ";", context.name_to_i[context.selected_dem] or 1, ";false]",
                     }))
                 else
                     table.insert(fs, table.concat({
@@ -501,8 +530,9 @@ function mc_teacher.show_controller_fs(player,tab)
 		if not tab_map[bookmarked_tab] then
 			bookmarked_tab = nil
 			pmeta:set_string("default_teacher_tab", nil)
-		end
+        end
 		local selected_tab = (tab_map[tab] and tab) or (tab_map[context.tab] and context.tab) or bookmarked_tab or "1"
+        context.tab = selected_tab
 
 		local teacher_formtable = {
 			"formspec_version[6]",

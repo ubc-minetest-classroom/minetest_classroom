@@ -20,7 +20,7 @@ function mc_student.record_coordinates(player,message)
 			datanew = {realms = temp.realms, coords = temp.coords, notes = temp.notes, }
 		end
 		pmeta:set_string("coordinates", minetest.serialize(datanew))
-		minetest.chat_send_player(player:get_player_name(), minetest.colorize("#FF00FF","[Minetest Classroom] Your position was recorded in your notebook."))
+		minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Your position was recorded in your notebook."))
 	end
 end
 

@@ -2,7 +2,8 @@
 minetest_classroom = {}
 mc_core = {
     path = minetest.get_modpath("mc_core"),
-    meta = minetest.get_mod_storage()
+    meta = minetest.get_mod_storage(),
+    log_colour = "#FFC9FF"
 }
 -- for compatibility with older mods
 mc_helpers = mc_core
