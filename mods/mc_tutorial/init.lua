@@ -1065,6 +1065,12 @@ image_button[11.4,4.2;0.8,0.8;mc_tutorial_add_event.png;tool_import;;false;true]
 ]]
 
 function mc_tutorial.show_tutorials(player)
+    local book_width = 16.6
+    local book_height = 10.4
+    local panel_width = book_width/2
+    local spacer = 0.6
+    local text_spacer = 0.55
+
     local pname = player:get_player_name()
     local pmeta = player:get_meta()
     local pdata = minetest.deserialize(pmeta:get_string("mc_tutorial:tutorials"))
@@ -1072,12 +1078,12 @@ function mc_tutorial.show_tutorials(player)
     local tutorial_keys = mc_tutorial.get_storage_keys()
 
     local fs_core = { 
-        mc_core.draw_book_fs(15.8, 11, {bg = "#403e65", shadow = "#363349", binding = "#2f3054", divider = "#000000"}),
-        "image[0,0;7.875,0.5;mc_pixel.png^[multiply:#acacac]",       -- header
+        mc_core.draw_book_fs(book_width, book_height, {bg = "#403e65", shadow = "#363349", binding = "#2f3054", divider = "#969696"}),
+        "image[0,0;", book_width, ",0.5;mc_pixel.png^[multiply:#737373]",
         "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
         "tooltip[exit;Exit]",
-        "style_type[label;font=mono]",
-        "label[3.05,0.25;Tutorials]",
+        "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Tutorials</b></center></style>]",
+        "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Tutorial Summary</b></center></style>]",
     }
     local fs = {}
     
@@ -1116,63 +1122,55 @@ function mc_tutorial.show_tutorials(player)
 
         fs = {
             "style_type[textarea;font=mono,bold;textcolor=black]",
-            "textarea[0.55,1;6.8,1.1;;;Select a tutorial]",
+            "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1.1;;;Available Tutorials]",
             "style[tutoriallist;font=mono]",
-            "textlist[0.6,1.5;6.7,", has_recorder_privs and "7.8" or "8.9", ";tutoriallist;", table.concat(titles, ","), ";", context.tutorial_selected, ";false]",
+            "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",", has_recorder_privs and "7.5" or "8.4", ";tutoriallist;", table.concat(titles, ","), ";", context.tutorial_selected, ";false]",
             "style_type[textarea;font=mono,bold;textcolor=black;font_size=*1.5]",
-            "textarea[8.5,0.6;5.5,1.15;;;", selected_info and selected_info.title or "Untitled tutorial", "]",
-            "image[14.05,0.6;1.15,1.15;mc_tutorial_tutorialbook.png]",
+            "textarea[", panel_width + text_spacer, ",1;6,1.15;;;", selected_info and selected_info.title or "Untitled tutorial", "]",
+            "image[14.85,1;1.15,1.15;mc_tutorial_tutorialbook.png]",
             "style_type[textarea;font=mono;textcolor=black;font_size=*1]",
-            "textarea[8.5,1.8;6.7,7.3;;;", selected_info and selected_info.description.."\n\n"..get_tutorial_summary(selected_info) or "", "]",
+            "textarea[", panel_width + text_spacer, ",2.2;", panel_width - 2*text_spacer, ",6.7;;;", selected_info and selected_info.description.."\n\n"..get_tutorial_summary(selected_info) or "", "]",
         }
 
         if mc_tutorial.active[pname] then
             if context.tutorial_i_to_id[context.tutorial_selected] == mc_tutorial.active[pname] then
                 table.insert(fs, table.concat({
                     "style[stop;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#590c0c]",
-                    "button[8.5,9.5;6.7,0.9;stop;Stop tutorial]",
+                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;stop;Stop tutorial]",
                 }))
             else
                 table.insert(fs, table.concat({
                     "style[start;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", dep_check and "#6e5205" or "#acacac", "]",
-                    "button_exit[8.5,9.5;6.7,0.9;start;Start new tutorial]",
+                    "button_exit[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;start;Start new tutorial]",
                     "tooltip[start;This will stop the active tutorial]",
                 }))
             end
         else
             table.insert(fs, table.concat({
                 "style[start;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", dep_check and "#055c22" or "#acacac", "]",
-                "button_exit[8.5,9.5;6.7,0.9;start;Start tutorial]",
+                "button_exit[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;start;Start tutorial]",
             }))
         end
 
         -- Add edit/delete options for those privileged
         if has_recorder_privs then
-            if (not mc_tutorial.active[pname] or context.tutorial_i_to_id[context.tutorial_selected] ~= mc_tutorial.active[pname]) then
-                table.insert(fs, table.concat({
-                    "style_type[image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
-                    "image_button[0.6,9.5;2.1,0.9;blank.png;edit;Edit;false;true]",
-                    "image_button[2.9,9.5;2.1,0.9;blank.png;hide;Hide;false;true]",
-                    "image_button[5.2,9.5;2.1,0.9;blank.png;delete;Delete;false;true]",
-                }))
-            else
-                table.insert(fs, table.concat({
-                    "style_type[image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#acacac]",
-                    "image_button[0.6,9.5;2.1,0.9;blank.png;blocked;Edit;false;true]",
-                    "image_button[2.9,9.5;2.1,0.9;blank.png;blocked;Hide;false;true]",
-                    "image_button[5.2,9.5;2.1,0.9;blank.png;blocked;Delete;false;true]",
-                    "tooltip[blocked;Tutorials in progress can not be edited, hidden, or deleted]",
-                }))
-            end
+            local tutorial_inactive = not mc_tutorial.active[pname] or context.tutorial_i_to_id[context.tutorial_selected] ~= mc_tutorial.active[pname]
+            table.insert(fs, table.concat({
+                "style_type[image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", tutorial_inactive and "#1e1e1e" or "#acacac", "]",
+                "image_button[", spacer, ",9;2.3,0.8;blank.png;", tutorial_inactive and "edit" or "blocked", ";Edit;false;true]",
+                "image_button[", spacer + 2.4, ",9;2.3,0.8;blank.png;", tutorial_inactive and "hide" or "blocked", ";Hide;false;true]",
+                "image_button[", spacer + 4.8, ",9;2.3,0.8;blank.png;", tutorial_inactive and "delete" or "blocked", ";Delete;false;true]",
+                "tooltip[blocked;Tutorials in progress can not be edited, hidden, or deleted]",
+            }))
         end
     else
         fs = {
             "style_type[textarea;font=mono,bold;textcolor=black]",
-            "textarea[0.55,0.9;6.8,1.1;;;No tutorials found]",
-            "textlist[0.6,1.5;6.7,8.9;tutoriallist;;1;false]",
+            "textarea[", text_spacer, ",0.9;6.8,1.1;;;No tutorials found]",
+            "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",8.4;tutoriallist;;1;false]",
             "style_type[textarea;font=mono,bold;textcolor=black;font_size=*1.5]",
-            "textarea[8.5,0.6;5.5,1.15;;;No tutorial selected]",
-            "image[14.05,0.6;1.15,1.15;mc_tutorial_cancel.png^[multiply:#fd5959]",
+            "textarea[", panel_width + text_spacer, ",1;6,1.15;;;No tutorial selected]",
+            "image[14.85,1;1.15,1.15;mc_tutorial_cancel.png^[multiply:#fd5959]",
         }
     end
 
@@ -1184,20 +1182,20 @@ end
 TUTORIAL BOOK CLEAN COPY
 
 formspec_version[6]
-size[15.8,11]
-box[0,0;7.9,0.5;#acacac]
-box[7.875,0;0.05,11;#000000]
+size[16.6,10.4]
+box[0,0;16.6,0.5;#acacac]
+box[8.295,0;0.05,11;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 label[3,0.25;Tutorials]
-textarea[0.55,1;6.8,1.1;;;Select a tutorial]
-textlist[0.6,1.5;6.7,7.8;tutoriallist;;1;false]
-image_button[0.6,9.5;2.1,0.9;blank.png;edit;Edit;false;true]
-image_button[2.9,9.5;2.1,0.9;blank.png;hide;Hide;false;true]
-image_button[5.2,9.5;2.1,0.9;blank.png;delete;Delete;false;true]
-textarea[8.5,0.6;5.7,1.15;;;name]
-image[14.2,0.6;1,1;status.png]
-textarea[8.5,1.8;6.7,7.3;;;info]
-button[8.5,9.5;6.7,0.9;start;Start tutorial]
+textarea[0.55,1;7.2,1.1;;;Select a tutorial]
+textlist[0.6,1.4;7.1,7.5;tutoriallist;;1;false]
+image_button[0.6,9;2.3,0.8;blank.png;edit;Edit;false;true]
+image_button[3,9;2.3,0.8;blank.png;hide;Hide;false;true]
+image_button[5.4,9;2.3,0.8;blank.png;delete;Delete;false;true]
+textarea[8.85,1;6,1.2;;;name]
+image[14.85,1;1.15,1.15;status.png]
+textarea[8.85,2.2;7.2,6.7;;;info]
+button[8.9,9;7.1,0.8;start;Start tutorial]
 ]]
 
 function mc_tutorial.show_delete_confirm_popup(player)
