@@ -493,16 +493,21 @@ function mc_tutorial.show_record_fs(player)
         local tab_map = {
             ["1"] = function() -- OVERVIEW
                 return {
+                    "image[0,0;", book_width, ",0.5;mc_pixel.png^[multiply:#737373]",
+					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+					"tooltip[exit;Exit without saving;#63406a;#ffffff]",
+					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Basic Info</b></center></style>]",
+					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Summary</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=black]",
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Title]",
                     "textarea[", text_spacer, ",2.3;", panel_width - 2*text_spacer, ",1;;;Description]",
                     "textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",1;;;Completion message]",
                     "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Tutorial summary]",
                     "style_type[textarea;border=false;font=mono;textcolor=white]",
-                    "image[", spacer, ",1.5;", panel_width - 2*spacer, ",0.7;mc_pixel.png^[multiply:#1e1e1e]",
+                    "image[", spacer, ",1.4;", panel_width - 2*spacer, ",0.7;mc_pixel.png^[multiply:#1e1e1e]",
                     "image[", spacer, ",2.7;", panel_width - 2*spacer, ",2;mc_pixel.png^[multiply:#1e1e1e]",
                     "image[", spacer, ",5.3;", panel_width - 2*spacer, ",2;mc_pixel.png^[multiply:#1e1e1e]",
-                    "textarea[", spacer, ",1.5;", panel_width - 2*spacer, ",0.7;title;;", temp.title or "", "]",
+                    "textarea[", spacer, ",1.4;", panel_width - 2*spacer, ",0.7;title;;", temp.title or "", "]",
                     "textarea[", spacer, ",2.7;", panel_width - 2*spacer, ",2;description;;", temp.description or "", "]",
                     "textarea[", spacer, ",5.3;", panel_width - 2*spacer, ",2;message;;", temp.on_completion and temp.on_completion.message or "", "]",
                     "style_type[textarea;border=true;font=mono;textcolor=black]",
@@ -510,57 +515,42 @@ function mc_tutorial.show_record_fs(player)
                     "style_type[button_exit;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
                     "button_exit[", spacer, ",8.1;", panel_width - 2*spacer, ",0.8;finish;Finish and save]",
                     "button_exit[", spacer, ",9;", panel_width - 2*spacer, ",0.8;cancel;Exit without saving]",
-                    "tooltip[title;Title of tutorial, will be listed in the tutorial book]",
-                    "tooltip[message;Message sent to chat when the player completes the tutorial]",
-                    "tooltip[description;This description will be displayed in the tutorial book]",
+                    "tooltip[title;Title of tutorial, will be listed in the tutorial book;#63406a;#ffffff]",
+                    "tooltip[message;Message sent to chat when a player completes the tutorial;#63406a;#ffffff]",
+                    "tooltip[description;This description will be displayed in the tutorial book;#63406a;#ffffff]",
                 }
             end,
             ["2"] = function() -- EVENTS
                 return {
+                    "image[0,0;", book_width, ",0.5;mc_pixel.png^[multiply:#737373]",
+					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+					"tooltip[exit;Exit without saving;#63406a;#ffffff]",
+					"hypertext[", text_spacer, ",0.1;", book_width - 2*text_spacer, ",1;;<style font=mono><center><b>Manage Events</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=black]",
-                    "textarea[0.55,0.5;15.3,1;;;Recorded events]",
+                    "textarea[", text_spacer, ",1;", book_width - 2*text_spacer, ",1;;;Current event sequence]",
                     "style[eventlist;font=mono]",
-                    "textlist[0.6,0.9;15.2,7;eventlist;", table.concat(context.events, ","), ";", context.selected_event or 1, ";false]",
+                    "textlist[", spacer, ",1.4;", book_width - 2*spacer, ",6.85;eventlist;", table.concat(context.events, ","), ";", context.selected_event or 1, ";false]",
                     "style_type[image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
-                    "image_button[0.6,8.0;1.6,1.6;mc_tutorial_add_event.png;eventlist_add_event;;false;true]",
-                    "image_button[2.3,8.0;1.6,1.6;mc_tutorial_add_group.png;eventlist_add_group;;false;true]",
-                    "image_button[4.0,8.0;1.6,1.6;mc_tutorial_edit.png;eventlist_edit;;false;true]",
-                    "image_button[5.7,8.0;1.6,1.6;mc_tutorial_delete.png;eventlist_delete;;false;true]",
-                    "image_button[7.4,8.0;1.6,1.6;mc_tutorial_duplicate.png;eventlist_duplicate;;false;true]",
-                    "image_button[9.1,8.0;1.6,1.6;mc_tutorial_move_top.png;eventlist_move_top;;false;true]",
-                    "image_button[10.8,8.0;1.6,1.6;mc_tutorial_move_up.png;eventlist_move_up;;false;true]",
-                    "image_button[12.5,8.0;1.6,1.6;mc_tutorial_move_down.png;eventlist_move_down;;false;true]",
-                    "image_button[14.2,8.0;1.6,1.6;mc_tutorial_move_bottom.png;eventlist_move_bottom;;false;true]",
-                    "tooltip[eventlist_add_event;Add new event]",
-                    "tooltip[eventlist_add_group;Add new group]",
-                    "tooltip[eventlist_edit;Edit]",
-                    "tooltip[eventlist_delete;Delete]",
-                    "tooltip[eventlist_duplicate;Duplicate]",
-                    "tooltip[eventlist_move_top;Move to top]",
-                    "tooltip[eventlist_move_up;Move up 1]",
-                    "tooltip[eventlist_move_down;Move down 1]",
-                    "tooltip[eventlist_move_bottom;Move to bottom]",
+                    "image_button[", spacer, ",8.35;1.45,1.45;mc_tutorial_add_event.png;eventlist_add_event;;false;true]",
+                    "image_button[", spacer + 1.55, ",8.35;1.45,1.45;mc_tutorial_add_group.png;eventlist_add_group;;false;true]",
+                    "image_button[", spacer + 3.1, ",8.35;1.45,1.45;mc_tutorial_edit.png;eventlist_edit;;false;true]",
+                    "image_button[", spacer + 4.65, ",8.35;1.45,1.45;mc_tutorial_delete.png;eventlist_delete;;false;true]",
+                    "image_button[", spacer + 6.2, ",8.35;1.45,1.45;mc_tutorial_duplicate.png;eventlist_duplicate;;false;true]",
+                    "image_button[", spacer + 7.75, ",8.35;1.45,1.45;mc_tutorial_cancel.png;eventlist_unknown;;false;true]",
+                    "image_button[", spacer + 9.3, ",8.35;1.45,1.45;mc_tutorial_move_top.png;eventlist_move_top;;false;true]",
+                    "image_button[", spacer + 10.85, ",8.35;1.45,1.45;mc_tutorial_move_up.png;eventlist_move_up;;false;true]",
+                    "image_button[", spacer + 12.4, ",8.35;1.45,1.45;mc_tutorial_move_down.png;eventlist_move_down;;false;true]",
+                    "image_button[", spacer + 13.95, ",8.35;1.45,1.45;mc_tutorial_move_bottom.png;eventlist_move_bottom;;false;true]",
+                    "tooltip[eventlist_add_event;Add new event;#63406a;#ffffff]",
+                    "tooltip[eventlist_add_group;Add new group;#63406a;#ffffff]",
+                    "tooltip[eventlist_edit;Edit;#63406a;#ffffff]",
+                    "tooltip[eventlist_delete;Delete;#63406a;#ffffff]",
+                    "tooltip[eventlist_duplicate;Duplicate;#63406a;#ffffff]",
+                    "tooltip[eventlist_move_top;Move to top;#63406a;#ffffff]",
+                    "tooltip[eventlist_move_up;Move up 1;#63406a;#ffffff]",
+                    "tooltip[eventlist_move_down;Move down 1;#63406a;#ffffff]",
+                    "tooltip[eventlist_move_bottom;Move to bottom;#63406a;#ffffff]",
                 }
-
-                --[[
-                    formspec_version[6]
-                    size[16.6,10.4]
-                    box[0,0;16.6,0.5;#737373]
-                    box[8.295,0;0.05,10.4;#000000]
-                    image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
-                    textarea[0.55,0.1;15.5,1;;;Manage Events]
-                    textarea[0.55,1;15.5,1;;;Current event sequence]
-                    textlist[0.6,1.4;15.4,6.6875;eventlist;;1;false]
-                    image_button[0.6,8.1;1.7,1.7;blank.png;eventlist_add_event;;false;true]
-                    image_button[2.3125,8.1;1.7,1.7;blank.png;eventlist_add_group;;false;true]
-                    image_button[4.025,8.1;1.7,1.7;blank.png;eventlist_edit;;false;true]
-                    image_button[5.7375,8.1;1.7,1.7;blank.png;eventlist_delete;;false;true]
-                    image_button[7.45,8.1;1.7,1.7;blank.png;eventlist_duplicate;;false;true]
-                    image_button[9.1625,8.1;1.7,1.7;blank.png;eventlist_move_top;;false;true]
-                    image_button[10.875,8.1;1.7,1.7;blank.png;eventlist_move_up;;false;true]
-                    image_button[12.5875,8.1;1.7,1.7;blank.png;eventlist_move_down;;false;true]
-                    image_button[14.3,8.1;1.7,1.7;blank.png;eventlist_move_bottom;;false;true]
-                ]]
             end,
             ["3"] = function()
                 -- TODO: limit rewards to items tutorial creator has access to in order to limit abuse?
@@ -568,35 +558,39 @@ function mc_tutorial.show_record_fs(player)
                 local col, type_id, item = get_selected_reward_info(context, context.reward_selected["active"])
 
                 return { -- REWARDS
+                    "image[0,0;", book_width, ",0.5;mc_pixel.png^[multiply:#737373]",
+                    "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+                    "tooltip[exit;Exit without saving;#63406a;#ffffff]",
+                    "hypertext[", text_spacer, ",0.1;", book_width - 2*text_spacer, ",1;;<style font=mono><center><b>Manage Rewards</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=black]",
-                    "textarea[0.55,0.5;7.1,1;;;Available rewards]",
-                    "textarea[8.75,0.5;7.1,1;;;Selected rewards]",
+                    "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Available rewards]",
+                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Selected rewards]",
                     "style_type[textlist;font=mono]",
-                    "textlist[0.6,0.9;7,6;reward_list;", concat_col_field_list(context.rewards, ","), ";", context.reward_selected and context.reward_selected[1] or 1, ";false]",
-                    "textlist[8.8,0.9;7,6;reward_selection;", concat_col_field_list(context.selected_rewards, ","), ";", context.reward_selected and context.reward_selected[2] or 1, ";false]",
+                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",5.9;reward_list;", concat_col_field_list(context.rewards, ","), ";", context.reward_selected and context.reward_selected[1] or 1, ";false]",
+                    "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",5.9;reward_selection;", concat_col_field_list(context.selected_rewards, ","), ";", context.reward_selected and context.reward_selected[2] or 1, ";false]",
                     "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
                     "style_type[field;border=false;font=mono]",
-                    "image_button[7.8,0.9;0.8,2.9;mc_tutorial_reward_add.png;reward_add;;false;true]",
-                    "image_button[7.8,4;0.8,2.9;mc_tutorial_reward_delete.png;reward_delete;;false;true]",
-                    "textarea[8.75,7.1;7.1,1;;;Quantity (WIP)]",
-                    "textarea[8.75,8.4;7.1,1;;;Search for rewards (WIP)]",
-                    "image[8.8,7.5;7,0.8;mc_pixel.png^[multiply:#1e1e1e]",
-                    "field[8.8,7.5;7,0.8;reward_quantity;;1]",
+                    "image_button[7.9,1.4;0.8,2.85;mc_tutorial_reward_add.png;reward_add;;false;true]",
+                    "image_button[7.9,4.45;0.8,2.85;mc_tutorial_reward_delete.png;reward_delete;;false;true]",
+                    "textarea[", panel_width + text_spacer, ",7.4;", panel_width - 2*text_spacer, ",1;;;Quantity (WIP)]",
+                    "textarea[", panel_width + text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Search for rewards (WIP)]",
+                    "image[", panel_width + spacer, ",7.8;", panel_width - 2*spacer, ",0.8;mc_pixel.png^[multiply:#1e1e1e]",
+                    "field[", panel_width + spacer, ",7.8;", panel_width - 2*spacer, ",0.8;reward_quantity;;1]",
+                    --"button[14.1,7.8;1.9,0.8;reward_quantity_update;Update]",
+                    "image[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;mc_pixel.png^[multiply:#1e1e1e]",
+                    "field[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;reward_search;;]",
+                    --"image_button[14.4,9;0.8,0.8;mc_tutorial_search.png;reward_search_go;;false;false]",
+                    --"image_button[15.2,9;0.8,0.8;mc_tutorial_cancel.png;reward_search_x;;false;false]",
+                    "hypertext[", spacer, ",7.4;", panel_width - 2*spacer, ",0.8;reward_name;<style color=#000000 font=mono><b>", item, "</b></style>]",
+                    type_id and type_id ~= "P" and "item_" or "", "image[", spacer, ",7.9;1.9,1.9;", type_id and (type_id ~= "P" and item or "mc_tutorial_tutorialbook.png") or "mc_tutorial_cancel.png", "]",
+                    "hypertext[", spacer + 2, ",7.8;5.1,2;reward_desc;", get_reward_desc(type_id, item), "]",
+
                     "field_close_on_enter[reward_quantity;false]",
-                    --"button[13.9,7.5;1.9,0.8;reward_quantity_update;Update]",
-                    "image[8.8,8.8;7,0.8;mc_pixel.png^[multiply:#1e1e1e]",
-                    "field[8.8,8.8;7,0.8;reward_search;;]",
                     "field_close_on_enter[depend_search;false]",
-                    --"image_button[14.2,8.8;0.8,0.8;mc_tutorial_search.png;reward_search_go;;false;false]",
-                    --"image_button[15,8.8;0.8,0.8;mc_tutorial_cancel.png;reward_search_x;;false;false]",
-                    "hypertext[0.6,7.1;7,0.8;reward_name;<style color=#000000 font=mono><b>", item, "</b></style>]",
-                    type_id and type_id ~= "P" and "item_" or "", "image[0.6,7.7;1.9,1.9;", type_id and (type_id ~= "P" and item or "mc_tutorial_tutorialbook.png") or "mc_tutorial_cancel.png", "]",
-                    "hypertext[2.6,7.6;5,2;reward_desc;", get_reward_desc(type_id, item), "]",
-                     
-                    "tooltip[reward_add;Add reward]",
-                    "tooltip[reward_delete;Remove reward]",
-                    --"tooltip[reward_search_go;Search]",
-                    --"tooltip[reward_search_x;Clear search]",
+                    "tooltip[reward_add;Add reward;#63406a;#ffffff]",
+                    "tooltip[reward_delete;Remove reward;#63406a;#ffffff]",
+                    --"tooltip[reward_search_go;Search;#63406a;#ffffff]",
+                    --"tooltip[reward_search_x;Clear search;#63406a;#ffffff]",
                 }
             end,
             ["4"] = function()
@@ -605,30 +599,35 @@ function mc_tutorial.show_record_fs(player)
                 table.sort(context.tutorials.dep_nt.list, id_compare)
 
                 return { -- DEPENDENCIES
+                    "image[0,0;", book_width, ",0.5;mc_pixel.png^[multiply:#737373]",
+                    "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+                    "tooltip[exit;Exit without saving;#63406a;#ffffff]",
+                    "hypertext[", text_spacer, ",0.1;", book_width - 2*text_spacer, ",1;;<style font=mono><center><b>Manage Dependencies</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=black]",
-                    "textarea[0.55,0.5;7.1,1;;;Available tutorials]",
-                    "textarea[8.75,0.5;7.1,1;;;Dependencies]",
-                    "textarea[8.75,5.2;7.1,1;;;Dependents]",
+                    "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Available tutorials]",
+                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Dependencies]",
+                    "textarea[", panel_width + text_spacer, ",5.5;", panel_width - 2*text_spacer, ",1;;;Dependents]",
                     "style_type[textlist;font=mono]",
-                    "textlist[0.6,0.9;7,6.3;depend_tutorials;", table.concat(context.tutorials.main.list, ","), ";", context.tutorials.main.selected or 1, ";false]",
-                    "textlist[8.8,0.9;7,3.1;dependencies;", table.concat(context.tutorials.dep_cy.list, ","), ";", context.tutorials.dep_cy.selected or 1, ";false]",
-                    "textlist[8.8,5.6;7,3.1;dependents;", table.concat(context.tutorials.dep_nt.list, ","), ";", context.tutorials.dep_nt.selected or 1, ";false]",
+                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",6.1;depend_tutorials;", table.concat(context.tutorials.main.list, ","), ";", context.tutorials.main.selected or 1, ";false]",
+                    "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",3;dependencies;", table.concat(context.tutorials.dep_cy.list, ","), ";", context.tutorials.dep_cy.selected or 1, ";false]",
+                    "textlist[", panel_width + spacer, ",5.9;", panel_width - 2*spacer, ",3;dependents;", table.concat(context.tutorials.dep_nt.list, ","), ";", context.tutorials.dep_nt.selected or 1, ";false]",
                     "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
                     "style_type[field;border=false;font=mono]",
-                    "button[0.6,7.3;3.45,0.8;dependencies_add;Add dependency]",
-                    "button[8.8,4.1;7,0.8;dependencies_delete;Delete dependency]",
-                    "button[4.15,7.3;3.45,0.8;dependents_add;Add dependent]",
-                    "button[8.8,8.8;7,0.8;dependents_delete;Delete dependent]",
-                    "textarea[0.55,8.4;7.1,1;;;Search for tutorials (WIP)]",
-                    "image[0.6,8.8;7,0.8;mc_pixel.png^[multiply:#1e1e1e]",
-                    "field[0.6,8.8;7,0.8;depend_search;;]",
-                    "field_close_on_enter[depend_search;false]",
+                    "button[", spacer, ",7.6;3.5,0.8;dependencies_add;Add dependency]",
+                    "button[", spacer + 3.6, ",7.6;3.5,0.8;dependents_add;Add dependent]",
+                    "button[", panel_width + spacer, ",4.5;", panel_width - 2*spacer, ",0.8;dependencies_delete;Delete dependency]",
+                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;dependents_delete;Delete dependent]",
+                    "textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Search for tutorials (WIP)]",
+                    "image[", spacer, ",9;", panel_width - 2*spacer, ",0.8;mc_pixel.png^[multiply:#1e1e1e]",
+                    "field[", spacer, ",9;", panel_width - 2*spacer, ",0.8;depend_search;;]",
                     --"image_button[6,8.8;0.8,0.8;mc_tutorial_search.png;depend_search_go;;false;false]",
                     --"image_button[6.8,8.8;0.8,0.8;mc_tutorial_cancel.png;depend_search_x;;false;false]",
-                    --"tooltip[depend_search_go;Search]",
-                    --"tooltip[depend_search_x;Clear]",
-                    "tooltip[dependencies;List of tutorials that must be completed before this tutorial can be started]",
-                    "tooltip[dependents;List of tutorials which can only be started after this tutorial has been completed]",
+
+                    "field_close_on_enter[depend_search;false]",
+                    "tooltip[dependencies;List of tutorials that must be completed before this tutorial can be started;#63406a;#ffffff]",
+                    "tooltip[dependents;List of tutorials which can only be started after this tutorial has been completed;#63406a;#ffffff]",
+                    --"tooltip[depend_search_go;Search;#63406a;#ffffff]",
+                    --"tooltip[depend_search_x;Clear;#63406a;#ffffff]",
                 }
             end,
         }
@@ -668,16 +667,17 @@ box[8.295,0;0.05,10.4;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;15.5,1;;;Manage Events]
 textarea[0.55,1;15.5,1;;;Current event sequence]
-textlist[0.6,1.4;15.4,6.6875;eventlist;;1;false]
-image_button[0.6,8.1;1.7,1.7;blank.png;eventlist_add_event;;false;true]
-image_button[2.3125,8.1;1.7,1.7;blank.png;eventlist_add_group;;false;true]
-image_button[4.025,8.1;1.7,1.7;blank.png;eventlist_edit;;false;true]
-image_button[5.7375,8.1;1.7,1.7;blank.png;eventlist_delete;;false;true]
-image_button[7.45,8.1;1.7,1.7;blank.png;eventlist_duplicate;;false;true]
-image_button[9.1625,8.1;1.7,1.7;blank.png;eventlist_move_top;;false;true]
-image_button[10.875,8.1;1.7,1.7;blank.png;eventlist_move_up;;false;true]
-image_button[12.5875,8.1;1.7,1.7;blank.png;eventlist_move_down;;false;true]
-image_button[14.3,8.1;1.7,1.7;blank.png;eventlist_move_bottom;;false;true]
+textlist[0.6,1.4;15.4,6.85;eventlist;;1;false]
+image_button[0.6,8.35;1.45,1.45;blank.png;eventlist_add_event;;false;true]
+image_button[2.15,8.35;1.45,1.45;blank.png;eventlist_add_group;;false;true]
+image_button[3.7,8.35;1.45,1.45;blank.png;eventlist_edit;;false;true]
+image_button[5.25,8.35;1.45,1.45;blank.png;eventlist_delete;;false;true]
+image_button[6.8,8.35;1.45,1.45;blank.png;eventlist_duplicate;;false;true]
+image_button[8.35,8.35;1.45,1.45;blank.png;eventlist_unknown;?;false;true]
+image_button[9.9,8.35;1.45,1.45;blank.png;eventlist_move_top;;false;true]
+image_button[11.45,8.35;1.45,1.45;blank.png;eventlist_move_up;;false;true]
+image_button[13,8.35;1.45,1.45;blank.png;eventlist_move_down;;false;true]
+image_button[14.55,8.35;1.45,1.45;blank.png;eventlist_move_bottom;;false;true]
 
 REWARDS TAB:
 formspec_version[6]
@@ -717,8 +717,8 @@ textlist[0.6,1.4;7.1,6.1;depend_tutorials;;1;false]
 textlist[8.9,1.4;7.1,3;dependencies;;1;false]
 textlist[8.9,5.9;7.1,3;dependents;;1;false]
 button[0.6,7.6;3.5,0.8;dependencies_add;Add dependency]
-button[8.9,4.5;7.1,0.8;dependencies_delete;Delete selected dependency]
 button[4.2,7.6;3.5,0.8;dependents_add;Add dependent]
+button[8.9,4.5;7.1,0.8;dependencies_delete;Delete selected dependency]
 button[8.9,9;7.1,0.8;dependents_delete;Delete selected dependent]
 textarea[0.55,8.6;7.1,1;;;Search for tutorials]
 field[0.6,9;7.1,0.8;depend_search;;]
@@ -1120,9 +1120,9 @@ function mc_tutorial.show_tutorials(player)
         mc_core.draw_book_fs(book_width, book_height, {bg = "#403e65", shadow = "#363349", binding = "#2f3054", divider = "#969696"}),
         "image[0,0;", book_width, ",0.5;mc_pixel.png^[multiply:#737373]",
         "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
-        "tooltip[exit;Exit]",
+        "tooltip[exit;Exit;#403e65;#ffffff]",
         "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Tutorials</b></center></style>]",
-        "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Tutorial Summary</b></center></style>]",
+        "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Summary</b></center></style>]",
     }
     local fs = {}
     
@@ -1174,20 +1174,22 @@ function mc_tutorial.show_tutorials(player)
         if mc_tutorial.active[pname] then
             if context.tutorial_i_to_id[context.tutorial_selected] == mc_tutorial.active[pname] then
                 table.insert(fs, table.concat({
-                    "style[stop;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#590c0c]",
+                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#590c0c]",
                     "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;stop;Stop tutorial]",
                 }))
             else
                 table.insert(fs, table.concat({
-                    "style[start;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", dep_check and "#6e5205" or "#acacac", "]",
-                    "button_exit[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;start;Start new tutorial]",
-                    "tooltip[start;This will stop the active tutorial]",
+                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", dep_check and "#6e5205" or "#acacac", "]",
+                    "button_exit[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;", dep_check and "start" or "start_blocked", ";Start new tutorial]",
+                    "tooltip[start;This will stop the active tutorial;#403e65;#ffffff]",
+                    "tooltip[start_blocked;Not all prerequisite tutorials have been completed;#403e65;#ffffff]",
                 }))
             end
         else
             table.insert(fs, table.concat({
-                "style[start;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", dep_check and "#055c22" or "#acacac", "]",
-                "button_exit[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;start;Start tutorial]",
+                "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", dep_check and "#055c22" or "#acacac", "]",
+                "button_exit[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;", dep_check and "start" or "start_blocked", ";Start tutorial]",
+                "tooltip[start_blocked;Not all prerequisite tutorials have been completed;#403e65;#ffffff]",
             }))
         end
 
@@ -1199,7 +1201,7 @@ function mc_tutorial.show_tutorials(player)
                 "image_button[", spacer, ",9;2.3,0.8;blank.png;", tutorial_inactive and "edit" or "blocked", ";Edit;false;true]",
                 "image_button[", spacer + 2.4, ",9;2.3,0.8;blank.png;", tutorial_inactive and "hide" or "blocked", ";Hide;false;true]",
                 "image_button[", spacer + 4.8, ",9;2.3,0.8;blank.png;", tutorial_inactive and "delete" or "blocked", ";Delete;false;true]",
-                "tooltip[blocked;Tutorials in progress can not be edited, hidden, or deleted]",
+                "tooltip[blocked;Tutorials in progress can not be edited, hidden, or deleted;#403e65;#ffffff]",
             }))
         end
     else
