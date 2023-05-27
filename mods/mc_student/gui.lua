@@ -148,29 +148,6 @@ function mc_student.show_notebook_fs(player, tab)
 					"hypertext[", panel_width + spacer + 1.8, ",6.7;5.35,1.6;;<style color=#000000><b>Help</b>\n", minetest.formspec_escape("Report a player or server issue"), "</style>]",
 				}
 				return fs
-
-				--[[
-					CLASSROOMS + ONLINE PLAYERS:
-					formspec_version[6]
-					size[16.6,10.4]
-					box[0,0;16.6,0.5;#737373]
-					box[8.295,0;0.05,10.4;#000000]
-					image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
-					textarea[0.55,0.1;7.2,1;;;Classrooms]
-					textarea[8.75,0.1;7.2,1;;;Online Players]
-					textarea[0.55,1;7.2,1;;;Available Classrooms]
-					textlist[0.6,1.4;7.1,7.5;classroomlist;;1;false]
-					button[0.6,9;7.1,0.8;teleportrealm;Teleport]
-					textarea[8.85,1;7.2,1;;;Teachers]
-					image[8.9,1.5;0.5,0.4;]
-					textarea[9.5,1.45;6.4,1;;;teacher1]
-					image[8.9,2;0.5,0.4;]
-					textarea[9.5,1.95;6.4,1;;;teacher2]
-					textarea[8.85,2.5;7.2,1;;;Students]
-					image[8.9,3;0.5,0.4;]
-					textarea[9.5,2.95;6.4,1;;;student]
-					box[16.3,0.5;0.3,9.7;#ffffff]
-				]]
 			end,
 			[mc_student.TABS.CLASSROOMS] = function() -- CLASSROOMS + ONLINE PLAYERS
 				-- TODO: add area/realm owner information
@@ -317,35 +294,41 @@ function mc_student.show_notebook_fs(player, tab)
 				local round_px, round_pz = math.round(pos.x), math.round(pos.z)
 
 				table.insert(fs, table.concat({
-					"image[", 3.975 + (pos.x - round_px)*0.15, ",", 4.625 - (pos.z - round_pz)*0.15,
+					"image[", 3.95 + (pos.x - round_px)*0.15, ",", 4.75 - (pos.z - round_pz)*0.15,
 					";0.4,0.4;mc_student_d", yaw, ".png^[transformFY", rotate ~= 0 and ("R"..rotate) or "", "]",
-					"textarea[0.55,8.3;7.1,1;;;Coordinate and Elevation Display]",
+					"textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Coordinate and Elevation Display]",
 					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
-					"button[0.6,8.8;1.675,0.8;utmcoords;UTM]",
-					"button[2.375,8.8;1.675,0.8;latloncoords;Lat/Lon]",
-					"button[4.15,8.8;1.675,0.8;classroomcoords;Local]",
-					"button[5.925,8.8;1.675,0.8;coordsoff;Off]",
-					"textarea[8.75,1;7.1,1;;;Saved Coordinates]",
+					"button[", spacer, ",9;1.7,0.8;utmcoords;UTM]",
+					"button[", spacer + 1.8, ",9;1.7,0.8;latloncoords;Lat/Lon]",
+					"button[", spacer + 3.6, ",9;1.7,0.8;classroomcoords;Local]",
+					"button[", spacer + 5.4, ",9;1.7,0.8;coordsoff;Off]",
+					"textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Saved Coordinates]",
 				}))
 
 				local coord_list = get_saved_coords(player)
 				table.insert(fs, table.concat({
-					"textlist[8.8,1.5;7,3.9;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
-					"image_button[14.6,1;1.2,0.5;mc_student_clear.png;clear;Clear;false;false]",
+					"textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.1;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
+					"image_button[14.8,1;1.2,0.4;mc_student_clear.png;clear;Clear;false;false]",
 					coord_list and #coord_list > 0 and "" or "style_type[button;bgimg=mc_pixel.png^[multiply:#acacac]",
-					"button[8.8,5.5;3.45,0.8;", coord_list and #coord_list > 0 and "go" or "blocked_go", ";Teleport]",
-					"button[12.35,5.5;3.45,0.8;", coord_list and #coord_list > 0 and "delete" or "blocked_delete", ";Delete]",
-					"button[8.8,6.4;3.45,0.8;", coord_list and #coord_list > 0 and "share" or "blocked_share", ";Share in Chat]",
-					"button[12.35,6.4;3.45,0.8;", coord_list and #coord_list > 0 and "mark" or "blocked_mark", ";Place a Marker]",
+					"button[", panel_width + spacer, ",5.6;1.7,0.8;", coord_list and #coord_list > 0 and "" or "blocked_", "go;Go]",
+					"button[", panel_width + spacer + 1.8, ",5.6;1.7,0.8;", coord_list and #coord_list > 0 and "" or "blocked_", "delete;Delete]",
+					"button[", panel_width + spacer + 3.6, ",5.6;1.7,0.8;", coord_list and #coord_list > 0 and "" or "blocked_", "share;Share]",
+					"button[", panel_width + spacer + 5.4, ",5.6;1.7,0.8;", coord_list and #coord_list > 0 and "" or "blocked_", "mark;Mark]",
 					coord_list and #coord_list > 0 and "" or "style_type[button;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
-					"textarea[8.75,7.55;7.1,1;;;Save current coordinates]",
+					"textarea[", panel_width + text_spacer, ",6.6;", panel_width - 2*text_spacer, ",1.7;;;SELECTED\nLocal: (X, Y, Z)\n???\n???]",
+					"textarea[", panel_width + text_spacer, ",8.5;", panel_width - 2*text_spacer, ",1;;;Save current coordinates]",
 					"style_type[textarea;font=mono]",
-					"textarea[8.8,8;6.1,1.6;note;;]",
-					"image_button[14.9,8;0.9,1.6;mc_student_save.png;record;Save;false;false]",
+					"textarea[", panel_width + spacer, ",8.9;6.2,0.9;note;;]",
+					"image_button[15.1,8.9;0.9,0.9;mc_student_save.png;record;Save;false;false]",
+					"tooltip[clear;Clear all saved coordinates]",
 					"tooltip[utmcoords;Displays real-world UTM coordinates]",
 					"tooltip[latloncoords;Displays real-world latitude and longitude]",
 					"tooltip[classroomcoords;Displays in-game coordinates, relative to the classroom]",
 					"tooltip[coordsoff;Disables coordinate display]",
+					"tooltip[go;Teleport to selected location]",
+					"tooltip[share;Share selected location's coordinates in chat]",
+					"tooltip[mark;Place marker in world at selected location]",
+					"tooltip[delete;Delete selected coordinate]",
 					"tooltip[note;Add a note here!]",
 				}))
 
@@ -353,34 +336,34 @@ function mc_student.show_notebook_fs(player, tab)
 			end,
 			[mc_student.TABS.APPEARANCE] = function() -- APPEARANCE
 				local fs = {
-					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#737373]",
+					"image[0,0;", notebook_width, ",0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
 					"tooltip[exit;Exit]",
-					"hypertext[0.55,0.1;7.1,1;;<style font=mono><center><b>Appearance</b></center></style>]",
-					"hypertext[8.75,0.1;7.1,1;;<style font=mono><center><b>Appearance</b></center></style>]",
+					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Appearance</b></center></style>]",
+					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Appearance</b></center></style>]",
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
-					"textarea[0.55,1;7.1,1;;;Coming soon!]"
+					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Coming soon!]"
 				}
 				return fs
 			end,
 			[mc_student.TABS.HELP] = function() -- HELP + REPORTS
 				local set = minetest.settings
 				local fs = {
-					"image[0,0;16.4,0.5;mc_pixel.png^[multiply:#737373]",
+					"image[0,0;", notebook_width, ",0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
 					"tooltip[exit;Exit]",
-					"hypertext[0.55,0.1;7.1,1;;<style font=mono><center><b>Help</b></center></style>]",
-					"hypertext[8.75,0.1;7.1,1;;<style font=mono><center><b>Reports</b></center></style>]",
+					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Help</b></center></style>]",
+					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Reports</b></center></style>]",
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
-					"textarea[0.55,1;7.1,1;;;Game controls]",
-					"textarea[8.75,1;7.1,1;;;Need to report an issue?]",
-					"textarea[8.75,6.2;7.1,1;;;Report message]",
-					"textarea[8.75,4.8;7.1,1;;;Report type]",
+					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Game controls]",
+					"textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Need to report an issue?]",
+					"textarea[", panel_width + text_spacer, ",6.1;", panel_width - 2*text_spacer, ",1;;;Report message]",
+					"textarea[", panel_width + text_spacer, ",4.8;", panel_width - 2*text_spacer, ",1;;;Report type]",
 					"style_type[textarea;font=mono]",
 					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
 
 					-- Controls + keybinds
-					"textarea[0.55,1.5;7.1,8.1;;;",
+					"textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;",
 					"Move forwards: ", clean_key(set:get("keymap_forward") or "KEY_KEY_W"), "\n",
 					"Move backwards: ", clean_key(set:get("keymap_backward") or "KEY_KEY_S"), "\n",
 					"Move left: ", clean_key(set:get("keymap_left") or "KEY_KEY_A"), "\n",
@@ -410,12 +393,13 @@ function mc_student.show_notebook_fs(player, tab)
 					"Show/hide chat: ", clean_key(set:get("keymap_toggle_chat") or "KEY_F2"), "\n",
 					"Show/hide world fog: ", clean_key(set:get("keymap_toggle_force_fog_off") or "KEY_F3"),
 					"]",
-					"textarea[8.75,1.5;7.1,3;;;", minetest.formspec_escape("If you need to report a server issue or player, you can write a message in the box below that will be privately sent to "), 
+
+					"textarea[", panel_width + text_spacer, ",1.5;", panel_width - 2*text_spacer, ",3;;;", minetest.formspec_escape("If you need to report a server issue or player, you can write a message in the box below that will be privately sent to "), 
 					pairs(mc_teacher.teachers) ~= nil and "all teachers that are currently online" or "the first teacher that joins the server", ".\n",
 					minetest.formspec_escape("Your report message will be logged and visible to all teachers, so don't include any personal information in it. The server will also automatically log the current date and time, your classroom, and your world position in the report, so you don't need to include that information in your report message."), "]",
-					"dropdown[8.8,5.3;7,0.7;reporttype;", table.concat(mc_student.REPORT_TYPE, ","), ";1;false]",
-					"textarea[8.8,6.7;7,2;report;;]",
-					"button[8.8,8.8;7,0.8;submitreport;Submit Report]",
+					"dropdown[", panel_width + spacer, ",5.2;", panel_width - 2*spacer, ",0.7;reporttype;", table.concat(mc_student.REPORT_TYPE, ","), ";1;false]",
+					"textarea[", panel_width + spacer, ",6.5;", panel_width - 2*spacer, ",2.4;report;;]",
+					"button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;submitreport;Submit Report]",
 				}
 
 				return fs
@@ -435,19 +419,19 @@ function mc_student.show_notebook_fs(player, tab)
 			"size[", notebook_width, ",", notebook_height, "]",
 			mc_core.draw_book_fs(notebook_width, notebook_height, {divider = "#969696"}),
 			"style[tabheader;noclip=true]",
-			"tabheader[0,-0.25;16,0.55;record_nav;Overview,Classrooms,Map,Appearance,Help;", selected_tab, ";true;false]",
+			"tabheader[0,-0.25;", notebook_width, ",0.55;record_nav;Overview,Classrooms,Map,Appearance,Help;", selected_tab, ";true;false]",
 			table.concat(tab_map[selected_tab](), "")
 		}
 
 		if bookmarked_tab == selected_tab then
 			table.insert(student_formtable, table.concat({
 				"style_type[image;noclip=true]",
-				"image[15.8,-0.25;0.5,0.7;mc_student_bookmark_filled.png]",
-				"tooltip[15.8,-0.25;0.5,0.8;This tab is currently bookmarked]",
+				"image[", notebook_width - 0.6, ",-0.25;0.5,0.7;mc_student_bookmark_filled.png]",
+				"tooltip[", notebook_width - 0.6, ",-0.25;0.5,0.8;This tab is currently bookmarked]",
 			}))
 		else
 			table.insert(student_formtable, table.concat({
-				"image_button[15.8,-0.25;0.5,0.5;mc_student_bookmark_hollow.png^[colorize:#FFFFFF:127;default_tab;;true;false]",
+				"image_button[", notebook_width - 0.6, ",-0.25;0.5,0.5;mc_student_bookmark_hollow.png^[colorize:#FFFFFF:127;default_tab;;true;false]",
 				"tooltip[default_tab;Bookmark this tab?]",
 			}))
 		end
@@ -519,24 +503,25 @@ image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.1,1;;;Map]
 textarea[8.85,0.1;7.1,1;;;Coordinates]
 textarea[0.55,1;7.1,1;;;Surrounding Area]
-box[0.6,1.5;7,6.4;#000000]
-box[0.65,1.55;6.9,6.3;#808080]
-image[3.9,4.5;0.4,0.4;]
-textarea[0.55,8.3;7.1,1;;;Coordinate and Elevation Display]
-button[0.6,8.8;1.675,0.8;utmcoords;UTM]
-button[2.375,8.8;1.675,0.8;latloncoords;Lat/Long]
-button[4.15,8.8;1.675,0.8;classroomcoords;Local]
-button[5.925,8.8;1.675,0.8;coordsoff;Off]
+box[0.6,1.4;7.1,7.1;#000000]
+box[0.625,1.425;7.05,7.05;#808080]
+image[4,4.8;0.3,0.3;]
+textarea[0.55,8.6;7.1,1;;;Coordinate and Elevation Display]
+button[0.6,9;1.7,0.8;utmcoords;UTM]
+button[2.4,9;1.7,0.8;latloncoords;Lat/Long]
+button[4.2,9;1.7,0.8;classroomcoords;Local]
+button[6,9;1.7,0.8;coordsoff;Off]
 textarea[8.85,1;7.1,1;;;Saved Coordinates]
-textlist[8.8,1.5;7,3.9;coordlist;;8;false]
-image_button[14.6,1;1.2,0.5;blank.png;clear;Clear;false;false]
-button[8.8,5.5;3.45,0.8;go;Teleport]
-button[12.35,5.5;3.45,0.8;delete;Delete]
-button[8.8,6.4;3.45,0.8;share;Share in Chat]
-button[12.35,6.4;3.45,0.8;mark;Place a Marker]
-textarea[8.85,7.55;7.1,1;;;Save current coordinates]
-textarea[8.8,8;6.1,1.6;note;;]
-image_button[14.9,8;0.9,1.6;blank.png;;Save;false;false]
+textlist[8.9,1.4;7.1,4.1;coordlist;;8;false]
+image_button[14.7,0.9;1.3,0.5;blank.png;clear;Clear;false;true]
+button[8.9,5.6;1.7,0.8;go;Teleport]
+button[14.3,5.6;1.7,0.8;delete;Delete]
+button[10.7,5.6;1.7,0.8;share;Share]
+button[12.5,5.6;1.7,0.8;mark;Mark]
+textarea[8.85,8.5;7.1,1;;;Save current coordinates]
+image_button[15.1,8.9;0.9,0.9;blank.png;;Save;false;true]
+textarea[8.9,8.9;6.2,0.9;note;;]
+textarea[8.85,6.6;7.2,1.7;;;(coordinate name) (coords) (realm)]
 
 APPEARANCE:
 formspec_version[6]
@@ -546,7 +531,7 @@ box[8.295,0;0.05,10.4;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.1,1;;;Appearance]
 textarea[8.85,0.1;7.1,1;;;Appearance]
-textarea[0.55,1;7.1,1;;;Coming soon!]
+textarea[0.55,1;7.2,1;;;Coming soon!]
 
 HELP + REPORTS:
 formspec_version[6]
@@ -556,13 +541,13 @@ box[8.295,0;0.05,10.4;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.1,1;;;Help]
 textarea[8.85,0.1;7.1,1;;;Reports]
-textarea[0.55,1;7.1,1;;;Controls]
-textarea[8.85,1;7.1,1;;;Need to report an issue?]
-textarea[8.85,6.1;7.1,1;;;Report message]
-textarea[8.85,4.8;7.1,1;;;Report type]
-textarea[0.55,1.5;7.1,8.1;;;Add controls here!]
-textarea[8.85,1.5;7.1,3;a;;Add report info here!]
-dropdown[8.8,5.3;7,0.7;reporttype;Server Issue,Misbehaving Player,Question,Suggestion,Other;1;false]
-textarea[8.8,6.6;7,2.1;report;;]
-button[8.8,8.8;7,0.8;submitreport;Submit Report]
+textarea[0.55,1;7.2,1;;;Controls]
+textarea[8.85,1;7.2,1;;;Need to report an issue?]
+textarea[8.85,6.1;7.2,1;;;Report message]
+textarea[8.85,4.8;7.2,1;;;Report type]
+textarea[0.55,1.5;7.2,8.3;;;Add controls here!]
+textarea[8.9,1.5;7.1,3;a;;Add info about reporting here!]
+dropdown[8.9,5.2;7.1,0.8;reporttype;Server Issue,Misbehaving Player,Question,Suggestion,Other;1;false]
+textarea[8.9,6.5;7.1,2.4;report;;]
+button[8.9,9;7.1,0.8;submitreport;Submit Report]
 ]]
