@@ -477,33 +477,39 @@ function mc_tutorial.show_record_fs(player)
             end
         end
 
+        local book_width = 16.6
+        local book_height = 10.4
+        local panel_width = 8.3
+        local spacer = 0.6
+        local text_spacer = 0.55
+
         local record_formtable = {
             "formspec_version[6]",
-            "size[16.4,10.2]",
-            mc_core.draw_book_fs(16.4, 10.2, {bg = "#63406a", shadow = "#3e2b45", binding = "#5d345e", divider = "#d9d9d9"}),
+            "size[", book_width, ",", book_height, "]",
+            mc_core.draw_book_fs(book_width, book_height, {bg = "#63406a", shadow = "#3e2b45", binding = "#5d345e", divider = "#d9d9d9"}),
             "style[tabheader;noclip=true]",
-            "tabheader[0,-0.25;16,0.55;record_nav;Overview,Events,Rewards", mc_tutorial.tutorials_exist() and ",Dependencies" or "", ";", context.tab or "1", ";true;false]"
+            "tabheader[0,-0.25;", book_width, ",0.55;record_nav;Overview,Events,Rewards", mc_tutorial.tutorials_exist() and ",Dependencies" or "", ";", context.tab or "1", ";true;false]"
         }
         local tab_map = {
             ["1"] = function() -- OVERVIEW
                 return {
                     "style_type[textarea;font=mono,bold;textcolor=black]",
-                    "textarea[0.55,0.5;7.1,1;;;Title]",
-                    "textarea[0.55,1.8;7.1,1;;;Description]",
-                    "textarea[0.55,4.4;7.1,1;;;Completion message]",
-                    "textarea[8.75,0.5;7.1,1;;;Tutorial summary]",
+                    "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Title]",
+                    "textarea[", text_spacer, ",2.3;", panel_width - 2*text_spacer, ",1;;;Description]",
+                    "textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",1;;;Completion message]",
+                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Tutorial summary]",
                     "style_type[textarea;border=false;font=mono;textcolor=white]",
-                    "image[0.6,0.9;7,0.7;mc_pixel.png^[multiply:#1e1e1e]",
-                    "image[0.6,2.2;7,2;mc_pixel.png^[multiply:#1e1e1e]",
-                    "image[0.6,4.8;7,2;mc_pixel.png^[multiply:#1e1e1e]",
-                    "textarea[0.6,0.9;7,0.7;title;;", temp.title or "", "]",
-                    "textarea[0.6,2.2;7,2;description;;", temp.description or "", "]",
-                    "textarea[0.6,4.8;7,2;message;;", temp.on_completion and temp.on_completion.message or "", "]",
+                    "image[", spacer, ",1.5;", panel_width - 2*spacer, ",0.7;mc_pixel.png^[multiply:#1e1e1e]",
+                    "image[", spacer, ",2.7;", panel_width - 2*spacer, ",2;mc_pixel.png^[multiply:#1e1e1e]",
+                    "image[", spacer, ",5.3;", panel_width - 2*spacer, ",2;mc_pixel.png^[multiply:#1e1e1e]",
+                    "textarea[", spacer, ",1.5;", panel_width - 2*spacer, ",0.7;title;;", temp.title or "", "]",
+                    "textarea[", spacer, ",2.7;", panel_width - 2*spacer, ",2;description;;", temp.description or "", "]",
+                    "textarea[", spacer, ",5.3;", panel_width - 2*spacer, ",2;message;;", temp.on_completion and temp.on_completion.message or "", "]",
                     "style_type[textarea;border=true;font=mono;textcolor=black]",
-                    "textarea[8.8,0.9;7,8.7;;;", minetest.formspec_escape(get_tutorial_summary(temp)), "]",
+                    "textarea[", panel_width + spacer, ",1.5;", panel_width - 2*spacer, ",8.7;;;", minetest.formspec_escape(get_tutorial_summary(temp)), "]",
                     "style_type[button_exit;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
-                    "button_exit[0.6,7.9;7,0.8;finish;Finish and save]",
-                    "button_exit[0.6,8.8;7,0.8;cancel;Exit without saving]",
+                    "button_exit[", spacer, ",8.1;", panel_width - 2*spacer, ",0.8;finish;Finish and save]",
+                    "button_exit[", spacer, ",9;", panel_width - 2*spacer, ",0.8;cancel;Exit without saving]",
                     "tooltip[title;Title of tutorial, will be listed in the tutorial book]",
                     "tooltip[message;Message sent to chat when the player completes the tutorial]",
                     "tooltip[description;This description will be displayed in the tutorial book]",
@@ -535,6 +541,26 @@ function mc_tutorial.show_record_fs(player)
                     "tooltip[eventlist_move_down;Move down 1]",
                     "tooltip[eventlist_move_bottom;Move to bottom]",
                 }
+
+                --[[
+                    formspec_version[6]
+                    size[16.6,10.4]
+                    box[0,0;16.6,0.5;#737373]
+                    box[8.295,0;0.05,10.4;#000000]
+                    image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+                    textarea[0.55,0.1;15.5,1;;;Manage Events]
+                    textarea[0.55,1;15.5,1;;;Current event sequence]
+                    textlist[0.6,1.4;15.4,6.6875;eventlist;;1;false]
+                    image_button[0.6,8.1;1.7,1.7;blank.png;eventlist_add_event;;false;true]
+                    image_button[2.3125,8.1;1.7,1.7;blank.png;eventlist_add_group;;false;true]
+                    image_button[4.025,8.1;1.7,1.7;blank.png;eventlist_edit;;false;true]
+                    image_button[5.7375,8.1;1.7,1.7;blank.png;eventlist_delete;;false;true]
+                    image_button[7.45,8.1;1.7,1.7;blank.png;eventlist_duplicate;;false;true]
+                    image_button[9.1625,8.1;1.7,1.7;blank.png;eventlist_move_top;;false;true]
+                    image_button[10.875,8.1;1.7,1.7;blank.png;eventlist_move_up;;false;true]
+                    image_button[12.5875,8.1;1.7,1.7;blank.png;eventlist_move_down;;false;true]
+                    image_button[14.3,8.1;1.7,1.7;blank.png;eventlist_move_bottom;;false;true]
+                ]]
             end,
             ["3"] = function()
                 -- TODO: limit rewards to items tutorial creator has access to in order to limit abuse?
@@ -617,74 +643,87 @@ NEW FORMSPEC CLEAN COPIES
 
 OVERVIEW TAB:
 formspec_version[6]
-size[16.4,10.2]
-box[8.195,0;0.05,10.2;#000000]
-textarea[0.55,0.5;7.1,1;;;Title]
-textarea[0.55,1.8;7.1,1;;;Description]
-textarea[0.55,4.4;7.1,1;;;Completion message]
-textarea[8.75,0.5;7.1,1;;;Tutorial summary]
-textarea[0.6,0.9;7,0.7;title;;]
-textarea[0.6,2.2;7,2;description;;]
-textarea[0.6,4.8;7,2;message;;]
-textarea[8.8,0.9;7,8.7;;;]
-button_exit[0.6,7.9;7,0.8;finish;Finish and save]
-button_exit[0.6,8.8;7,0.8;cancel;Exit without saving]
+size[16.6,10.4]
+box[0,0;16.6,0.5;#737373]
+box[8.295,0;0.05,10.4;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0.1;7.2,1;;;Basic Info]
+textarea[8.85,0.1;7.2,1;;;Summary]
+textarea[0.55,1;7.2,1;;;Title]
+textarea[0.55,2.3;7.2,1;;;Description]
+textarea[0.55,4.9;7.2,1;;;Completion message]
+textarea[8.85,1;7.2,1;;;Tutorial summary]
+textarea[0.6,1.4;7.1,0.7;title;;]
+textarea[0.6,2.7;7.1,2;description;;]
+textarea[0.6,5.3;7.1,2;message;;]
+textarea[8.9,1.5;7.1,8.3;;;]
+button_exit[0.6,8.1;7.1,0.8;finish;Finish and save]
+button_exit[0.6,9;7.1,0.8;cancel;Exit without saving]
 
 EVENTS TAB:
 formspec_version[6]
-size[16.4,10.2]
-box[8.195,0;0.05,10.2;#000000]
-textarea[0.55,0.5;15.3,1;;;Recorded events]
-textlist[0.6,0.9;15.2,7;eventlist;;1;false]
-image_button[0.6,8;1.6,1.6;blank.png;eventlist_add_event;;false;true]
-image_button[2.3,8;1.6,1.6;blank.png;eventlist_add_group;;false;true]
-image_button[4,8;1.6,1.6;blank.png;eventlist_edit;;false;true]
-image_button[5.7,8;1.6,1.6;blank.png;eventlist_delete;;false;true]
-image_button[7.4,8;1.6,1.6;blank.png;eventlist_duplicate;;false;true]
-image_button[9.1,8;1.6,1.6;blank.png;eventlist_move_top;;false;true]
-image_button[10.8,8;1.6,1.6;blank.png;eventlist_move_up;;false;true]
-image_button[12.5,8;1.6,1.6;blank.png;eventlist_move_down;;false;true]
-image_button[14.2,8;1.6,1.6;blank.png;eventlist_move_bottom;;false;true]
+size[16.6,10.4]
+box[0,0;16.6,0.5;#737373]
+box[8.295,0;0.05,10.4;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0.1;15.5,1;;;Manage Events]
+textarea[0.55,1;15.5,1;;;Current event sequence]
+textlist[0.6,1.4;15.4,6.6875;eventlist;;1;false]
+image_button[0.6,8.1;1.7,1.7;blank.png;eventlist_add_event;;false;true]
+image_button[2.3125,8.1;1.7,1.7;blank.png;eventlist_add_group;;false;true]
+image_button[4.025,8.1;1.7,1.7;blank.png;eventlist_edit;;false;true]
+image_button[5.7375,8.1;1.7,1.7;blank.png;eventlist_delete;;false;true]
+image_button[7.45,8.1;1.7,1.7;blank.png;eventlist_duplicate;;false;true]
+image_button[9.1625,8.1;1.7,1.7;blank.png;eventlist_move_top;;false;true]
+image_button[10.875,8.1;1.7,1.7;blank.png;eventlist_move_up;;false;true]
+image_button[12.5875,8.1;1.7,1.7;blank.png;eventlist_move_down;;false;true]
+image_button[14.3,8.1;1.7,1.7;blank.png;eventlist_move_bottom;;false;true]
 
 REWARDS TAB:
 formspec_version[6]
-size[16.4,10.2]
-box[8.195,0;0.05,10.2;#000000]
-textarea[0.55,0.5;7.1,1;;;Available rewards]
-textarea[8.75,0.5;7.1,1;;;Selected rewards]
-textlist[0.6,0.9;7,6;reward_list;;1;false]
-textlist[8.8,0.9;7,6;reward_selection;;1;false]
-image_button[7.8,0.9;0.8,2.9;blank.png;reward_add;-->;false;true]
-image_button[7.8,4;0.8,2.9;blank.png;button_delete;<--;false;true]
-textarea[8.75,7.1;7.1,1;;;Quantity]
-textarea[8.75,8.4;7.1,1;;;Search for rewards]
-field[8.8,7.5;7,0.8;reward_quantity;;1]
-button[13.9,7.5;1.9,0.8;reward_quantity_update;Update]
-field[8.8,8.8;7,0.8;reward_search;;]
-image_button[14.2,8.8;0.8,0.8;blank.png;reward_search_go;Go!;false;true]
-image_button[15,8.8;0.8,0.8;blank.png;reward_search_x;X;false;true]
-textarea[0.6,7.1;7,0.8;;;Selected item]
-image[0.6,7.7;1.9,1.9;blank.png]
-textarea[2.6,7.6;5,2;;;This is the info text! Lorem ipsum dolor\, sit amet.]
+size[16.6,10.4]
+box[0,0;16.6,0.5;#737373]
+box[8.295,0;0.05,10.4;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0.1;15.5,1;;;Manage Rewards]
+textarea[0.55,1;7.1,1;;;Available rewards]
+textarea[8.85,1;7.2,1;;;Selected rewards]
+textlist[0.6,1.4;7.1,5.9;reward_list;;1;false]
+textlist[8.9,1.4;7.1,5.9;reward_selection;;1;false]
+image_button[7.9,1.4;0.8,2.9;blank.png;reward_add;-->;false;true]
+image_button[7.9,4.4;0.8,2.9;blank.png;button_delete;<--;false;true]
+textarea[8.85,7.4;7.2,1;;;Quantity]
+textarea[8.85,8.6;7.2,1;;;Search for rewards]
+field[8.9,7.8;7.1,0.8;reward_quantity;;1]
+button[14.1,7.8;1.9,0.8;reward_quantity_update;Update]
+field[8.9,9;7.1,0.8;reward_search;;]
+image_button[14.4,9;0.8,0.8;blank.png;reward_search_go;Go!;false;true]
+image_button[15.2,9;0.8,0.8;blank.png;reward_search_x;X;false;true]
+textarea[0.55,7.4;7.2,0.8;;;Selected item]
+image[0.6,7.9;1.9,1.9;blank.png]
+textarea[2.6,7.8;5.1,2;;;This is the info text! Lorem ipsum dolor\, sit amet.]
 
 DEPENDENCIES TAB:
 formspec_version[6]
-size[16.4,10.2]
-box[8.195,0;0.05,10.2;#000000]
-textarea[0.55,0.5;7.1,1;;;Available tutorials]
-textarea[8.75,0.5;7.1,1;;;Dependencies]
-textarea[8.75,5.2;7.1,1;;;Dependents]
-textlist[0.6,0.9;7,6.3;depend_tutorials;;1;false]
-textlist[8.8,0.9;7,3.1;dependencies;;1;false]
-textlist[8.8,5.6;7,3.1;dependents;;1;false]
-button[0.6,7.3;3.45,0.8;dependencies_add;Add dependency]
-button[8.8,4.1;7,0.8;dependencies_delete;Delete selected dependency]
-button[4.15,7.3;3.45,0.8;dependents_add;Add dependent]
-button[8.8,8.8;7,0.8;dependents_delete;Delete selected dependent]
-textarea[0.55,8.4;7.1,1;;;Search for tutorials]
-field[0.6,8.8;7,0.8;depend_search;;]
-image_button[6,8.8;0.8,0.8;blank.png;depend_search_go;Go!;false;true]
-image_button[6.8,8.8;0.8,0.8;blank.png;depend_search_x;X;false;true]
+size[16.6,10.4]
+box[0,0;16.6,0.5;#737373]
+box[8.295,0;0.05,10.4;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0.1;15.5,1;;;Manage Dependencies]
+textarea[0.55,1;7.2,1;;;Available tutorials]
+textarea[8.85,1;7.2,1;;;Dependencies]
+textarea[8.85,5.5;7.1,1;;;Dependents]
+textlist[0.6,1.4;7.1,6.1;depend_tutorials;;1;false]
+textlist[8.9,1.4;7.1,3;dependencies;;1;false]
+textlist[8.9,5.9;7.1,3;dependents;;1;false]
+button[0.6,7.6;3.5,0.8;dependencies_add;Add dependency]
+button[8.9,4.5;7.1,0.8;dependencies_delete;Delete selected dependency]
+button[4.2,7.6;3.5,0.8;dependents_add;Add dependent]
+button[8.9,9;7.1,0.8;dependents_delete;Delete selected dependent]
+textarea[0.55,8.6;7.1,1;;;Search for tutorials]
+field[0.6,9;7.1,0.8;depend_search;;]
+image_button[6.1,9;0.8,0.8;blank.png;depend_search_go;Go!;false;true]
+image_button[6.9,9;0.8,0.8;blank.png;depend_search_x;X;false;true]
 ]]
 
 function mc_tutorial.show_record_options_fs(player)
