@@ -1,5 +1,3 @@
-local marker_expiry = mc_student.marker_expiry
-
 --- Returns true if the given player can join the given realm, false otherwise
 local function player_can_join_realm(player, realm)
 	local realmCategory = realm:getCategory()
@@ -49,52 +47,34 @@ local function get_saved_coords(player)
 	local pmeta = player:get_meta()
 	local realm = Realm.GetRealmFromPlayer(player)
 	local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+	local context = mc_student.get_fs_context(player)
 	local coord_list = {}
 
 	if pdata == nil or pdata == {} then
+		context.coord_i_to_note = {}
 		return coord_list
 	elseif pdata.realms then
-		local newData, newCoords, newNotes, newRealms = {}, {}, {}, {}	
-		for i,_ in pairs(pdata.realms) do
+		local new_note_map, new_coords, new_realms = {}, {}, {}
+		context.coord_i_to_note = {}
+
+		for note,i in pairs(pdata.note_map) do
 			local coordrealm = Realm.GetRealm(pdata.realms[i])
-			if realm and coordrealm then
-				-- Remove coordinates saved in other realms
-				if coordrealm.ID == realm.ID and pdata.notes[i] ~= "" then
-					table.insert(coord_list, pdata.notes[i])
+			if coordrealm then
+				-- Do not include coordinates saved in other realms in output
+				if realm and coordrealm.ID == realm.ID and note ~= "" then
+					table.insert(coord_list, note)
+					context.coord_i_to_note[#coord_list] = note
 				end
-				-- Remove coordinates saved in realms that no longer exist
-				table.insert(newCoords, pdata.coords[i])
-				table.insert(newNotes, pdata.notes[i])
-				table.insert(newRealms, pdata.realms[i])
+				-- Remove coordinates saved in realms that no longer exist from database
+				table.insert(new_coords, pdata.coords[i])
+				table.insert(new_realms, pdata.realms[i])
+				new_note_map[note] = #new_coords
 			end
 		end
 
-		if #newCoords > 0 then
-			newData = {coords = newCoords, notes = newNotes, realms = newRealms}
-		else
-			newData = nil
-		end
-
-		pmeta:set_string("coordinates", minetest.serialize(newData))
+		pmeta:set_string("coordinates", minetest.serialize({note_map = new_note_map, coords = new_coords, realms = new_realms, format = 2}))
 		return coord_list
 	end
-end
-
---- Rounds a yaw measurement to the nearest multiple which a texture exists for
-local function round_to_texture_multiple(yaw)
-	local adjust = math.floor(yaw / 90)
-	local yaw_ref = math.fmod(yaw, 90)
-	local angle_table = {10, 20, 30, 40, 45, 50, 60, 70, 80, 90}
-	local best = {angle = 0, diff = math.abs(yaw_ref)}
-
-	for _,angle in pairs(angle_table) do
-		local diff = math.abs(yaw_ref - angle)
-		if diff < best.diff then
-			best.diff = diff
-			best.angle = angle
-		end
-	end
-	return best.angle + (adjust * 90)
 end
 
 -- Removes KEY_ from the front of key names
@@ -262,10 +242,10 @@ function mc_student.show_notebook_fs(player, tab)
 								local x_im = mapar[i][j].p2-((y_im-1)*16)
 								mapar[i][j].im = mapar[i][j].pa.."_palette.png\\^[sheet\\:16x16:"..tostring(x_im).."\\,"..tostring(y_im) -- double backslash required to first escape lua and then escape the API
 							end
-							if mapar[i][j].y ~= mapar[i][j+1].y then mapar[i][j].im = mapar[i][j].im .. "^1black_blockt.png" end
-							if mapar[i][j].y ~= mapar[i][j-1].y then mapar[i][j].im = mapar[i][j].im .. "^1black_blockb.png" end
-							if mapar[i][j].y ~= mapar[i-1][j].y then mapar[i][j].im = mapar[i][j].im .. "^1black_blockl.png" end
-							if mapar[i][j].y ~= mapar[i+1][j].y then mapar[i][j].im = mapar[i][j].im .. "^1black_blockr.png" end
+							if mapar[i][j].y ~= mapar[i][j+1].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png^[transformR180)" end
+							if mapar[i][j].y ~= mapar[i][j-1].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png)" end
+							if mapar[i][j].y ~= mapar[i-1][j].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png^[transformR270)" end
+							if mapar[i][j].y ~= mapar[i+1][j].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png^[transformR90)" end
 							table.insert(fs, table.concat({
 								"image[", map_x + 0.15*(i - 1), ",", map_y + 0.15*(bounds.zmax - bounds.zmin - j - 1),
 								";0.15,0.15;", mapar[i][j].im, "]";
@@ -278,7 +258,7 @@ function mc_student.show_notebook_fs(player, tab)
 				local rotate = 0
 				if yaw ~= nil then
 					-- Find rotation and texture based on yaw.
-					yaw = math.fmod(round_to_texture_multiple(math.deg(yaw)), 360)
+					yaw = math.fmod(mc_mapper.round_to_texture_multiple(math.deg(yaw)), 360)
 					if yaw < 90 then
 						rotate = 90
 					elseif yaw < 180 then
@@ -295,7 +275,7 @@ function mc_student.show_notebook_fs(player, tab)
 
 				table.insert(fs, table.concat({
 					"image[", 3.95 + (pos.x - round_px)*0.15, ",", 4.75 - (pos.z - round_pz)*0.15,
-					";0.4,0.4;mc_student_d", yaw, ".png^[transformFY", rotate ~= 0 and ("R"..rotate) or "", "]",
+					";0.4,0.4;mc_mapper_d", yaw, ".png^[transformFY", rotate ~= 0 and ("R"..rotate) or "", "]",
 					"textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Coordinate and Elevation Display]",
 					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
 					"button[", spacer, ",9;1.7,0.8;utmcoords;UTM]",

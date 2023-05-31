@@ -3,6 +3,7 @@ mc_teacher = {
     students = {},
     meta = minetest.get_mod_storage(),
     path = minetest.get_modpath("mc_teacher"),
+    marker_expiry = 120,
     fs_context = {},
     restart_scheduled = {},
     TABS = {

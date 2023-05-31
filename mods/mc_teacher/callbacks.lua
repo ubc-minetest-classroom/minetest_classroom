@@ -30,7 +30,7 @@ minetest.register_on_joinplayer(function(player)
             end
             count = count + 1
         end
-        if count > 0 then minetest.chat_send_player(pname, minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Teachers currently online: "..teachers)) end
+        if count > 0 then minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Teachers currently online: "..teachers)) end
     end
 end)
 
@@ -165,16 +165,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
                     if #errors ~= 0 then
                         for _,err in pairs(errors) do
-                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] "..err))
+                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..err))
                         end
-                        return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Please check your inputs and try again."))
+                        return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
                     end
 
                     local new_realm = Realm:New(new_realm_name, new_realm_info)
                     new_realm:CreateGround()
                     new_realm:CreateBarriersFast()
                     new_realm:set_data("owner", player:get_player_name())
-                    minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Your requested classroom was successfully created."))
+                    minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your requested classroom was successfully created."))
                 elseif context.selected_mode == mc_teacher.MODES.SCHEMATIC then
                     if not context.selected_schematic then
                         table.insert(errors, "No schematic selected.")
@@ -184,14 +184,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
                     if #errors ~= 0 then
                         for _,err in pairs(errors) do
-                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] "..err))
+                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..err))
                         end
-                        return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Please check your inputs and try again."))
+                        return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
                     end
 
                     local new_realm = Realm:NewFromSchematic(new_realm_name, context.selected_schematic)
                     new_realm:set_data("owner", player:get_player_name())
-                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Your requested classroom was successfully created."))
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your requested classroom was successfully created."))
                     reload = true
                 elseif context.selected_mode == mc_teacher.MODES.TWIN then
                     if not context.selected_dem then
@@ -202,14 +202,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     
                     if #errors ~= 0 then
                         for _,err in pairs(errors) do
-                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] "..err))
+                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..err))
                         end
-                        return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Please check your inputs and try again."))
+                        return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
                     end
                     
                     local new_realm = Realm:NewFromDEM(new_realm_name, context.selected_dem)
                     new_realm:set_data("owner", player:get_player_name())
-                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.log_colour, "[Minetest Classroom] Your requested classroom was successfully created."))
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your requested classroom was successfully created."))
                     reload = true
                 end
             end
@@ -239,7 +239,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				realm:TeleportPlayer(player)
 				context.selected_realm_id = nil
 			else
-				minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.log_colour, "[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
+				minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
 			end
 			reload = true
         elseif fields.deleterealm then
@@ -304,7 +304,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
         -- MANAGE SERVER
         if fields.submitmessage then
-            minetest.chat_send_all(minetest.colorize(mc_core.log_colour, "[Minetest Classroom] "..fields.servermessage))
+            minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..fields.servermessage))
 			reload = true
         elseif fields.submitsched then
             if mc_teacher.restart_scheduled.timer then mc_teacher.restart_scheduled.timer:cancel() end

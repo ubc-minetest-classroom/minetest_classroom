@@ -12,6 +12,41 @@ local function get_fs_classroom_list(player)
 	return table.concat(list, ",")
 end
 
+--- Returns a list containing the names of the given player's saved coordinates
+local function get_saved_coords(player)
+	local pmeta = player:get_meta()
+	local realm = Realm.GetRealmFromPlayer(player)
+	local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+	local context = mc_teacher.get_fs_context(player)
+	local coord_list = {}
+
+	if pdata == nil or pdata == {} then
+		context.coord_i_to_note = {}
+		return coord_list
+	elseif pdata.realms then
+		local new_note_map, new_coords, new_realms = {}, {}, {}
+		context.coord_i_to_note = {}
+
+		for note,i in pairs(pdata.note_map) do
+			local coordrealm = Realm.GetRealm(pdata.realms[i])
+			if coordrealm then
+				-- Do not include coordinates saved in other realms in output
+				if realm and coordrealm.ID == realm.ID and note ~= "" then
+					table.insert(coord_list, note)
+					context.coord_i_to_note[#coord_list] = note
+				end
+				-- Remove coordinates saved in realms that no longer exist from database
+				table.insert(new_coords, pdata.coords[i])
+				table.insert(new_realms, pdata.realms[i])
+				new_note_map[note] = #new_coords
+			end
+		end
+
+		pmeta:set_string("coordinates", minetest.serialize({note_map = new_note_map, coords = new_coords, realms = new_realms, format = 2}))
+		return coord_list
+	end
+end
+
 function mc_teacher.show_controller_fs(player,tab)
 	local controller_width = 16.6
 	local controller_height = 10.4
@@ -41,7 +76,7 @@ function mc_teacher.show_controller_fs(player,tab)
 				local fs = {
 					"image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
-					"tooltip[exit;Exit]",
+					"tooltip[exit;Exit;#404040;#ffffff]",
 					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Overview</b></center></style>]",
 					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Dashboard</b></center></style>]",
 
@@ -87,7 +122,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
-					"tooltip[exit;Exit]",
+					"tooltip[exit;Exit;#404040;#ffffff]",
 					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Classrooms</b></center></style>]",
 					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Build a Classroom</b></center></style>]",
 
@@ -180,38 +215,13 @@ function mc_teacher.show_controller_fs(player,tab)
 
                     "style_type[textarea;font=mono,bold]",
                     "textarea[", panel_width + text_spacer, ",6.2;", panel_width - 2*text_spacer, ",1;;;Background Music]",
-                    "dropdown[", panel_width + spacer, ",6.6;", panel_width - 2*spacer, ",0.8;bgmusic;;1;false]",
+                    "dropdown[", panel_width + spacer, ",6.6;", panel_width - 2*spacer, ",0.8;bgmusic;None;1;false]",
                     "textarea[", panel_width + text_spacer, ",7.5;", panel_width - 2*text_spacer, ",1;;;Skybox]",
-                    "dropdown[", panel_width + spacer, ",7.9;", panel_width - 2*spacer, ",0.8;;;1;false]",
+                    "dropdown[", panel_width + spacer, ",7.9;", panel_width - 2*spacer, ",0.8;skybox;Default;1;false]",
                     "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;requestrealm;Generate Classroom]",
                 }))
 
                 return fs
-
-				--[[ SAVED POPULATION CODE FROM OLD FORMSPEC
-
-                    for _ in pairs(schematicManager.schematics) do count = count + 1 end
-                    for name, path in pairs(schematicManager.schematics) do
-                        counter = counter + 1
-                        fs[#fs + 1] = name
-                        if counter ~= count then fs[#fs + 1] = "," end
-                    end
-
-                    fs[#fs + 1] = ";realterrain;Select a Digital Twin,"
-                    -- iterate through registered DEMs
-                    local count, counter = 0, 0
-                    for _ in pairs(realterrainManager.dems) do count = count + 1 end
-                    for name, path in pairs(realterrainManager.dems) do
-                        counter = counter + 1
-                        fs[#fs + 1] = name
-                        if counter ~= count then fs[#fs + 1] = "," end
-                    end
-                    fs[#fs + 1] = ";"
-                
-                -- World Gen
-
-                -- Colorbrewer an symbology options
-
                 --[[ -- Background Music
                 -- method: local backgroundSound = realm:get_data("background_sound")
                 fs[#fs + 1] = "dropdown["
@@ -230,7 +240,106 @@ function mc_teacher.show_controller_fs(player,tab)
                 fs[#fs + 1] = ";true]"]]
 			end,
 			["3"] = function() -- MAP
-				return {}
+                local map_x = spacer + 0.025
+				local map_y = 1.425
+				local fs = {
+					"image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
+					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+					"tooltip[exit;Exit;#404040;#ffffff]",
+					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Map</b></center></style>]",
+					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Coordinates</b></center></style>]",
+					"style_type[textarea;font=mono,bold;textcolor=#000000]",
+					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Surrounding Area]",
+					"image[", map_x - 0.025, ",", map_y - 0.025, ";7.1,7.1;mc_pixel.png^[multiply:#000000]",
+					"image[", map_x, ",", map_y, ";7.05,7.05;mc_pixel.png^[multiply:#808080]",
+				}
+				
+				local bounds = {xmin = -24, xmax = 24, zmin = -24, zmax = 24}
+				local mapar = mc_mapper.map_handler(player, bounds)
+				for i = 1, bounds.xmax - bounds.xmin - 1, 1 do
+					for j = 1, bounds.zmax - bounds.zmin - 1, 1 do
+						if mapar[i][j].im ~= nil then
+							-- The following for colorbrewer integration
+							if mapar[i][j].pa then
+								local y_im = math.ceil(mapar[i][j].p2/16)
+								local x_im = mapar[i][j].p2-((y_im-1)*16)
+								mapar[i][j].im = mapar[i][j].pa.."_palette.png\\^[sheet\\:16x16:"..tostring(x_im).."\\,"..tostring(y_im) -- double backslash required to first escape lua and then escape the API
+							end
+							if mapar[i][j].y ~= mapar[i][j+1].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png^[transformR180)" end
+							if mapar[i][j].y ~= mapar[i][j-1].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png)" end
+							if mapar[i][j].y ~= mapar[i-1][j].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png^[transformR270)" end
+							if mapar[i][j].y ~= mapar[i+1][j].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png^[transformR90)" end
+							table.insert(fs, table.concat({
+								"image[", map_x + 0.15*(i - 1), ",", map_y + 0.15*(bounds.zmax - bounds.zmin - j - 1),
+								";0.15,0.15;", mapar[i][j].im, "]";
+							}))
+						end
+					end
+				end
+
+				local yaw = player:get_look_yaw()
+				local rotate = 0
+				if yaw ~= nil then
+					-- Find rotation and texture based on yaw.
+					yaw = math.fmod(mc_mapper.round_to_texture_multiple(math.deg(yaw)), 360)
+					if yaw < 90 then
+						rotate = 90
+					elseif yaw < 180 then
+						rotate = 180
+					elseif yaw < 270 then
+						rotate = 270
+					else
+						rotate = 0
+					end
+					yaw = math.fmod(yaw, 90)
+				end
+				local pos = player:get_pos()
+				local round_px, round_pz = math.round(pos.x), math.round(pos.z)
+
+				table.insert(fs, table.concat({
+					"image[", 3.95 + (pos.x - round_px)*0.15, ",", 4.75 - (pos.z - round_pz)*0.15,
+					";0.4,0.4;mc_mapper_d", yaw, ".png^[transformFY", rotate ~= 0 and ("R"..rotate) or "", "]",
+					"textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Coordinate and Elevation Display]",
+					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					"button[", spacer, ",9;1.7,0.8;utmcoords;UTM]",
+					"button[", spacer + 1.8, ",9;1.7,0.8;latloncoords;Lat/Lon]",
+					"button[", spacer + 3.6, ",9;1.7,0.8;classroomcoords;Local]",
+					"button[", spacer + 5.4, ",9;1.7,0.8;coordsoff;Off]",
+					"textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Saved Coordinates]",
+				}))
+
+				local coord_list = get_saved_coords(player)
+				table.insert(fs, table.concat({
+					"textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",3.8;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
+					"image_button[14.8,1;1.2,0.4;mc_student_clear.png;clear;Clear;false;false]",
+					coord_list and #coord_list > 0 and "" or "style_type[image_button;bgimg=mc_pixel.png^[multiply:#acacac]",
+					"image_button[", panel_width + spacer, ",5.3;1.1,1.1;mc_teacher_teleport.png;", coord_list and #coord_list > 0 and "go" or "blocked", ";TP]",
+					"image_button[", panel_width + spacer + 1.2, ",5.3;1.1,1.1;mc_teacher_teleport_all.png;", coord_list and #coord_list > 0 and "go_all" or "blocked", ";TP_A]",
+					"image_button[", panel_width + spacer + 2.4, ",5.3;1.1,1.1;mc_teacher_share.png;", coord_list and #coord_list > 0 and "share" or "blocked", ";SH]",
+					"image_button[", panel_width + spacer + 3.6, ",5.3;1.1,1.1;mc_teacher_mark.png;", coord_list and #coord_list > 0 and "mark" or "blocked", ";MK]",
+					"image_button[", panel_width + spacer + 4.8, ",5.3;1.1,1.1;mc_teacher_mark_all.png;", coord_list and #coord_list > 0 and "mark_all" or "blocked", ";MK_A]",
+                    "image_button[", panel_width + spacer + 6.0, ",5.3;1.1,1.1;mc_teacher_delete.png;", coord_list and #coord_list > 0 and "delete" or "blocked", ";DL]",
+                    coord_list and #coord_list > 0 and "" or "style_type[button;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					"textarea[", panel_width + text_spacer, ",6.6;", panel_width - 2*text_spacer, ",1.7;;;SELECTED\nLocal: (X, Y, Z)\n???\n???]",
+					"textarea[", panel_width + text_spacer, ",8.5;", panel_width - 2*text_spacer, ",1;;;Save current coordinates]",
+					"style_type[textarea;font=mono]",
+					"textarea[", panel_width + spacer, ",8.9;6.2,0.9;note;;]",
+					"image_button[15.1,8.9;0.9,0.9;mc_student_save.png;record;Save;false;false]",
+					"tooltip[clear;Clear all saved coordinates;#404040;#ffffff]",
+					"tooltip[utmcoords;Displays real-world UTM coordinates;#404040;#ffffff]",
+					"tooltip[latloncoords;Displays real-world latitude and longitude;#404040;#ffffff]",
+					"tooltip[classroomcoords;Displays in-game coordinates, relative to the classroom;#404040;#ffffff]",
+					"tooltip[coordsoff;Disables coordinate display;#404040;#ffffff]",
+					"tooltip[go;Teleport to location;#404040;#ffffff]",
+                    "tooltip[go_all;Teleport all players to location;#404040;#ffffff]",
+					"tooltip[share;Share location coordinates in chat;#404040;#ffffff]",
+					"tooltip[mark;Place marker in world (only visible to you);#404040;#ffffff]",
+                    "tooltip[mark_all;Place global marker in world;#404040;#ffffff]",
+					"tooltip[delete;Delete selected coordinates;#404040;#ffffff]",
+					"tooltip[note;Add a note here!;#404040;#ffffff]",
+				}))
+
+				return fs
 			end,
             ["4"] = function() -- PLAYERS
                 return {}
@@ -554,12 +663,12 @@ function mc_teacher.show_controller_fs(player,tab)
 			table.insert(teacher_formtable, table.concat({
 				"style_type[image;noclip=true]",
 				"image[", controller_width - 0.6, ",-0.25;0.5,0.7;mc_teacher_bookmark_filled.png]",
-				"tooltip[", controller_width - 0.6, ",-0.25;0.5,0.8;This tab is currently bookmarked]",
+				"tooltip[", controller_width - 0.6, ",-0.25;0.5,0.8;This tab is currently bookmarked;#404040;#ffffff]",
 			}))
 		else
 			table.insert(teacher_formtable, table.concat({
 				"image_button[", controller_width - 0.6, ",-0.25;0.5,0.5;mc_teacher_bookmark_hollow.png^[colorize:#FFFFFF:127;default_tab;;true;false]",
-				"tooltip[default_tab;Bookmark this tab?]",
+				"tooltip[default_tab;Bookmark this tab?;#404040;#ffffff]",
 			}))
 		end
 
@@ -645,4 +754,35 @@ dropdown[8.9,6.6;7.1,0.8;bgmusic;;1;true]
 textarea[8.85,7.5;7.2,1;;;Skybox]
 dropdown[8.9,7.9;7.1,0.8;;;1;true]
 button[8.9,9;7.1,0.8;requestrealm;Generate Classroom]
+
+MAP + COORDINATES:
+formspec_version[6]
+size[16.6,10.4]
+box[0,0;16.6,0.5;#737373]
+box[8.295,0;0.05,10.4;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0.1;7.1,1;;;Map]
+textarea[8.85,0.1;7.1,1;;;Coordinates]
+textarea[0.55,1;7.1,1;;;Surrounding Area]
+box[0.6,1.4;7.1,7.1;#000000]
+box[0.625,1.425;7.05,7.05;#808080]
+image[4,4.8;0.3,0.3;]
+textarea[0.55,8.6;7.1,1;;;Coordinate and Elevation Display]
+button[0.6,9;1.7,0.8;utmcoords;UTM]
+button[2.4,9;1.7,0.8;latloncoords;Lat/Long]
+button[4.2,9;1.7,0.8;classroomcoords;Local]
+button[6,9;1.7,0.8;coordsoff;Off]
+textarea[8.85,1;7.1,1;;;Saved Coordinates]
+textlist[8.9,1.4;7.1,3.8;coordlist;;8;false]
+image_button[14.7,0.9;1.3,0.5;blank.png;clear;Clear;false;true]
+textarea[8.85,8.5;7.1,1;;;Save current coordinates]
+image_button[15.1,8.9;0.9,0.9;blank.png;;Save;false;true]
+textarea[8.9,8.9;6.2,0.9;note;;]
+textarea[8.85,6.6;7.2,1.7;;;(coordinate name) (coords) (realm)]
+image_button[8.9,5.3;1.1,1.1;blank.png;go;TP;false;true]
+image_button[10.1,5.3;1.1,1.1;blank.png;go_all;TP all;false;true]
+image_button[14.9,5.3;1.1,1.1;blank.png;delete;X;false;true]
+image_button[13.7,5.3;1.1,1.1;blank.png;mark_all;M all;false;true]
+image_button[12.5,5.3;1.1,1.1;blank.png;mark;Mark;false;true]
+image_button[11.3,5.3;1.1,1.1;blank.png;share;Share;false;true]
 ]]

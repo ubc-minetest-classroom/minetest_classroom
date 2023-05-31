@@ -5,14 +5,22 @@ mc_mapper = {}
 local c_air = minetest.CONTENT_AIR
 local registered_nodes = minetest.registered_nodes
 
---[[ -- TODO: remove tool registration and intgrate with student notebook
-minetest.register_tool("mc_mapper:map", {
-	description = "map",
-	inventory_image = "map_block.png",
-	on_use = function(itemstack, user, pointed_thing)
-	mc_mapper.map_handler(itemstack,user,pointed_thing)
-	end,
-}) ]]
+--- Rounds a yaw measurement to the nearest multiple which a texture exists for
+function mc_mapper.round_to_texture_multiple(yaw)
+	local adjust = math.floor(yaw / 90)
+	local yaw_ref = math.fmod(yaw, 90)
+	local angle_table = {10, 20, 30, 40, 45, 50, 60, 70, 80, 90}
+	local best = {angle = 0, diff = math.abs(yaw_ref)}
+
+	for _,angle in pairs(angle_table) do
+		local diff = math.abs(yaw_ref - angle)
+		if diff < best.diff then
+			best.diff = diff
+			best.angle = angle
+		end
+	end
+	return best.angle + (adjust * 90)
+end
 
 local function save_tile(def, mapar, x, z, k, p2)
 	local tiles = def["tiles"]
@@ -264,5 +272,4 @@ function mc_mapper.map_handler(player, raw_bounds)
 	end
 
 	return mapar
-	--minetest.show_formspec(player_name, "mc_mapper:map", map)
 end

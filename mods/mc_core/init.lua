@@ -3,7 +3,13 @@ minetest_classroom = {}
 mc_core = {
     path = minetest.get_modpath("mc_core"),
     meta = minetest.get_mod_storage(),
-    log_colour = "#FFC9FF"
+    log_colour = "#FFC9FF",
+    hud = mhud.init(),
+    markers = {},
+    col = {
+        log = "#FFC9FF",
+        marker = "#DFA4F5"
+    }
 }
 -- for compatibility with older mods
 mc_helpers = mc_core
@@ -35,6 +41,7 @@ dofile(mc_core.path.."/lualzw.lua")
 dofile(mc_core.path.."/PointTable.lua")
 dofile(mc_core.path.."/Hooks.lua")
 dofile(mc_core.path.."/gui.lua")
+dofile(mc_core.path.."/coordinates.lua")
 
 ---@public
 ---checkPrivs
@@ -211,4 +218,12 @@ end
 
 function mc_core.round(x, n)
     return tonumber(string.format("%." .. n .. "f", x))
+end
+
+function mc_core.hex_string_to_num(hex)
+    if string.sub(hex, 1, 1) == "#" then
+        return tonumber(string.sub(hex, 2), 16)
+    else
+        return tonumber(hex, 16)
+    end
 end
