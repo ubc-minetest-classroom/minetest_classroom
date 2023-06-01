@@ -238,11 +238,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			mc_core.record_coordinates(player, fields.note)
 			reload = true
 		elseif fields.mark then
-			if not context.selected_coord then context.selected_coord = 1 end
 			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-			local realm = Realm.GetRealmFromPlayer(player)
-			local note_to_mark = context.coord_i_to_note[context.selected_coord]
 			if pdata and pdata.note_map then
+				local realm = Realm.GetRealmFromPlayer(player)
+				if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
+					context.selected_coord = 1
+				end
+				local note_to_mark = context.coord_i_to_note[context.selected_coord]
 				mc_core.queue_marker(player, note_to_mark, pdata.coords[pdata.note_map[note_to_mark]],
 					formname == "mc_teacher:controller_fs" and mc_teacher.marker_expiry or mc_student.marker_expiry)
 			else
@@ -254,25 +256,35 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				context.selected_coord = event.index
 			end
 		elseif fields.go then
-			if not context.selected_coord then context.selected_coord = 1 end
 			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-			local realm = Realm.GetRealm(pdata.realms[context.selected_coord])
-			if realm then
-				if realm:getCategory().joinable(realm,player) then
-					realm:TeleportPlayer(player)
-					player:set_pos(pdata.coords[context.selected_coord])
+			if pdata and pdata.note_map then
+				if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
+					context.selected_coord = 1
+				end
+				local note_name = context.coord_i_to_note[context.selected_coord]
+				local note_i = pdata.note_map[note_name]
+				local realm = Realm.GetRealm(pdata.realms[note_i])
+				if realm then
+					if realm:getCategory().joinable(realm, player) then
+						realm:TeleportPlayer(player)
+						player:set_pos(pdata.coords[note_i])
+					else
+						minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You no longer have access to this classroom."))
+					end
 				else
-					minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You no longer have access to this classroom."))
+					minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom no longer exists."))
 				end
 			else
-				minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom no longer exists."))
+				minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport to location."))
 			end
 			reload = true
 		elseif fields.delete then
-			if not context.selected_coord then context.selected_coord = 1 end
 			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
 			if pdata and pdata.note_map then
 				local new_note_map, new_coords, new_realms = {}, {}, {}
+				if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
+					context.selected_coord = 1
+				end
 				local note_to_delete = context.coord_i_to_note[context.selected_coord]
 				if note_to_delete then
 					for note,i in pairs(pdata.note_map) do
@@ -312,13 +324,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			reload = true
 		elseif fields.share then
 			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-			local realm = Realm.GetRealmFromPlayer(player)
-			if not context.selected_coord or context.selected_coord > #coords then context.selected_coord = 1 end 
 			if pdata and pdata.note_map then
+				local realm = Realm.GetRealmFromPlayer(player)
+				if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
+					context.selected_coord = 1
+				end
 				local note_to_share = context.coord_i_to_note[context.selected_coord]
 				local realmID = pdata.realms[pdata.note_map[note_to_share]]
 				local pos = pdata.coords[pdata.note_map[note_to_share]]
-
 				for _,connplayer in pairs(minetest.get_connected_players()) do 
 					local connRealm = Realm.GetRealmFromPlayer(connplayer)
 					if connRealm.ID == realmID then
