@@ -29,7 +29,7 @@ function mc_core.queue_marker(player, message, pos, expiry)
 		if not message then 
 			message = "m" 
 		else
-			message = "m "..message
+			message = "m: "..message
 		end
 
 		if mc_core.markers[pname] then
@@ -49,12 +49,14 @@ function mc_core.show_marker(pname, message, pos)
 			world_pos = pos,
 			precision = 1,
 			number = mc_core.hex_string_to_num(mc_core.col.marker),
-			text = message
+			text = (message or "m"), --.."\n(marked by "..pname..")",
+			alignment = {x = 0, y = 0},
+			z_order = -300,
 		})
 	else
 		mc_core.hud:change(pname, pname.."_marker", {
 			world_pos = pos,
-			text = message
+			text = message,
 		})
 	end
 end

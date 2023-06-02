@@ -106,7 +106,7 @@ function mc_student.show_notebook_fs(player, tab)
 				local fs = {
 					"image[0,0;", notebook_width, ",0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
-					"tooltip[exit;Exit]",
+					"tooltip[exit;Exit;#325140;#ffffff]",
 					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Overview</b></center></style>]",
 					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Dashboard</b></center></style>]",
 
@@ -134,7 +134,7 @@ function mc_student.show_notebook_fs(player, tab)
 				local fs = {
 					"image[0,0;", notebook_width, ",0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
-					"tooltip[exit;Exit]",
+					"tooltip[exit;Exit;#325140;#ffffff]",
 					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Classrooms</b></center></style>]",
 					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Online Players</b></center></style>]",
 
@@ -222,7 +222,7 @@ function mc_student.show_notebook_fs(player, tab)
 				local fs = {
 					"image[0,0;", notebook_width, ",0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
-					"tooltip[exit;Exit]",
+					"tooltip[exit;Exit;#325140;#ffffff]",
 					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Map</b></center></style>]",
 					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Coordinates</b></center></style>]",
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
@@ -287,29 +287,31 @@ function mc_student.show_notebook_fs(player, tab)
 
 				local coord_list = get_saved_coords(player)
 				table.insert(fs, table.concat({
-					"textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.1;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
-					"image_button[14.8,1;1.2,0.4;mc_student_clear.png;clear;Clear;false;false]",
+					"textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.8;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
 					coord_list and #coord_list > 0 and "" or "style_type[button;bgimg=mc_pixel.png^[multiply:#acacac]",
-					"button[", panel_width + spacer, ",5.6;1.7,0.8;", coord_list and #coord_list > 0 and "go" or "blocked", ";Go]",
-					"button[", panel_width + spacer + 1.8, ",5.6;1.7,0.8;", coord_list and #coord_list > 0 and "delete" or "blocked", ";Delete]",
-					"button[", panel_width + spacer + 3.6, ",5.6;1.7,0.8;", coord_list and #coord_list > 0 and "share" or "blocked", ";Share]",
-					"button[", panel_width + spacer + 5.4, ",5.6;1.7,0.8;", coord_list and #coord_list > 0 and "mark" or "blocked", ";Mark]",
+					"image_button[", panel_width + spacer, ",6.3;1.34,1.1;mc_teacher_teleport.png;", coord_list and #coord_list > 0 and "go" or "blocked", ";TP]",
+					"image_button[", panel_width + spacer + 1.44, ",6.3;1.34,1.1;mc_teacher_share.png;", coord_list and #coord_list > 0 and "share" or "blocked", ";SH]",
+					"image_button[", panel_width + spacer + 2.88, ",6.3;1.34,1.1;mc_teacher_mark.png;", coord_list and #coord_list > 0 and "mark" or "blocked", ";MK]",
+					"image_button[", panel_width + spacer + 4.32, ",6.3;1.34,1.1;mc_teacher_delete.png;", coord_list and #coord_list > 0 and "delete" or "blocked", ";DL]",
+					"image_button[", panel_width + spacer + 5.76, ",6.3;1.34,1.1;mc_teacher_clear.png;", coord_list and #coord_list > 0 and "clear" or "blocked", ";DL_A]",
+
 					coord_list and #coord_list > 0 and "" or "style_type[button;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
-					"textarea[", panel_width + text_spacer, ",6.6;", panel_width - 2*text_spacer, ",1.7;;;SELECTED\nLocal: (X, Y, Z)\n???\n???]",
 					"textarea[", panel_width + text_spacer, ",8.5;", panel_width - 2*text_spacer, ",1;;;Save current coordinates]",
 					"style_type[textarea;font=mono]",
+					"textarea[", panel_width + text_spacer, ",7.6;", panel_width - 2*text_spacer, ",1;;;SELECTED\nLocal: (X, Y, Z)]",
 					"textarea[", panel_width + spacer, ",8.9;6.2,0.9;note;;]",
-					"image_button[15.1,8.9;0.9,0.9;mc_student_save.png;record;Save;false;false]",
-					"tooltip[clear;Clear all saved coordinates]",
-					"tooltip[utmcoords;Displays real-world UTM coordinates]",
-					"tooltip[latloncoords;Displays real-world latitude and longitude]",
-					"tooltip[classroomcoords;Displays in-game coordinates, relative to the classroom]",
-					"tooltip[coordsoff;Disables coordinate display]",
-					"tooltip[go;Teleport to selected location]",
-					"tooltip[share;Share selected location's coordinates in chat]",
-					"tooltip[mark;Place marker in world at selected location]",
-					"tooltip[delete;Delete selected coordinate]",
-					"tooltip[note;Add a note here!]",
+					"image_button[15.1,8.9;0.9,0.9;mc_teacher_save.png;record;Save;false;false]",
+					
+					"tooltip[utmcoords;Displays real-world UTM coordinates;#325140;#ffffff]",
+					"tooltip[latloncoords;Displays real-world latitude and longitude;#325140;#ffffff]",
+					"tooltip[classroomcoords;Displays in-game coordinates, relative to the classroom;#325140;#ffffff]",
+					"tooltip[coordsoff;Disables coordinate display;#325140;#ffffff]",
+					"tooltip[go;Teleport to location;#325140;#ffffff]",
+					"tooltip[share;Share location in chat;#325140;#ffffff]",
+					"tooltip[mark;Place marker in world;#325140;#ffffff]",
+					"tooltip[delete;Delete location;#325140;#ffffff]",
+                    "tooltip[clear;Clear all saved locations;#325140;#ffffff]",
+					"tooltip[note;Add a note here!;#325140;#ffffff]",
 				}))
 
 				return fs
@@ -318,7 +320,7 @@ function mc_student.show_notebook_fs(player, tab)
 				local fs = {
 					"image[0,0;", notebook_width, ",0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
-					"tooltip[exit;Exit]",
+					"tooltip[exit;Exit;#325140;#ffffff]",
 					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Appearance</b></center></style>]",
 					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Appearance</b></center></style>]",
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
@@ -331,7 +333,7 @@ function mc_student.show_notebook_fs(player, tab)
 				local fs = {
 					"image[0,0;", notebook_width, ",0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
-					"tooltip[exit;Exit]",
+					"tooltip[exit;Exit;#325140;#ffffff]",
 					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Help</b></center></style>]",
 					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Reports</b></center></style>]",
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
@@ -407,12 +409,12 @@ function mc_student.show_notebook_fs(player, tab)
 			table.insert(student_formtable, table.concat({
 				"style_type[image;noclip=true]",
 				"image[", notebook_width - 0.6, ",-0.25;0.5,0.7;mc_student_bookmark_filled.png]",
-				"tooltip[", notebook_width - 0.6, ",-0.25;0.5,0.8;This tab is currently bookmarked]",
+				"tooltip[", notebook_width - 0.6, ",-0.25;0.5,0.8;This tab is currently bookmarked;#325140;#ffffff]",
 			}))
 		else
 			table.insert(student_formtable, table.concat({
 				"image_button[", notebook_width - 0.6, ",-0.25;0.5,0.5;mc_student_bookmark_hollow.png^[colorize:#FFFFFF:127;default_tab;;true;false]",
-				"tooltip[default_tab;Bookmark this tab?]",
+				"tooltip[default_tab;Bookmark this tab?;#325140;#ffffff]",
 			}))
 		end
 
@@ -492,16 +494,16 @@ button[2.4,9;1.7,0.8;latloncoords;Lat/Long]
 button[4.2,9;1.7,0.8;classroomcoords;Local]
 button[6,9;1.7,0.8;coordsoff;Off]
 textarea[8.85,1;7.1,1;;;Saved Coordinates]
-textlist[8.9,1.4;7.1,4.1;coordlist;;8;false]
-image_button[14.7,0.9;1.3,0.5;blank.png;clear;Clear;false;true]
-button[8.9,5.6;1.7,0.8;go;Teleport]
-button[14.3,5.6;1.7,0.8;delete;Delete]
-button[10.7,5.6;1.7,0.8;share;Share]
-button[12.5,5.6;1.7,0.8;mark;Mark]
+textlist[8.9,1.4;7.1,4.4;coordlist;;8;false]
 textarea[8.85,8.5;7.1,1;;;Save current coordinates]
 image_button[15.1,8.9;0.9,0.9;blank.png;;Save;false;true]
 textarea[8.9,8.9;6.2,0.9;note;;]
-textarea[8.85,6.6;7.2,1.7;;;(coordinate name) (coords) (realm)]
+textarea[8.85,7.2;7.2,1.1;;;(coordinate name) (coords) (realm)]
+image_button[8.9,5.9;1.34,1.1;blank.png;go;TP;false;true]
+image_button[11.78,5.9;1.34,1.1;blank.png;mark;MK;false;true]
+image_button[10.34,5.9;1.34,1.1;blank.png;share;SH;false;true]
+image_button[13.22,5.9;1.34,1.1;blank.png;delete;DL;false;true]
+image_button[14.66,5.9;1.34,1.1;blank.png;clear;DL_A;false;true]
 
 APPEARANCE:
 formspec_version[6]

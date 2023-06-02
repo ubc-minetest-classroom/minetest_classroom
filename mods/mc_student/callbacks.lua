@@ -237,6 +237,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		if fields.record and fields.note ~= "" then
 			mc_core.record_coordinates(player, fields.note)
 			reload = true
+		elseif fields.coordlist then
+			local event = minetest.explode_textlist_event(fields.coordlist)
+			if event.type == "CHG" then
+				context.selected_coord = event.index
+			end
 		elseif fields.mark then
 			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
 			if pdata and pdata.note_map then
@@ -249,11 +254,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					formname == "mc_teacher:controller_fs" and mc_teacher.marker_expiry or mc_student.marker_expiry)
 			else
 				minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected coordinate could not be marked."))
-			end
-		elseif fields.coordlist then
-			local event = minetest.explode_textlist_event(fields.coordlist)
-			if event.type == "CHG" then
-				context.selected_coord = event.index
 			end
 		elseif fields.go then
 			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))

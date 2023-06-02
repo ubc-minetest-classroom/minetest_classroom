@@ -310,32 +310,32 @@ function mc_teacher.show_controller_fs(player,tab)
 
 				local coord_list = get_saved_coords(player)
 				table.insert(fs, table.concat({
-					"textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",3.8;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
-					"image_button[14.8,1;1.2,0.4;mc_student_clear.png;clear;Clear;false;false]",
+					"textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.8;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
 					coord_list and #coord_list > 0 and "" or "style_type[image_button;bgimg=mc_pixel.png^[multiply:#acacac]",
-					"image_button[", panel_width + spacer, ",5.3;1.1,1.1;mc_teacher_teleport.png;", coord_list and #coord_list > 0 and "go" or "blocked", ";TP]",
-					"image_button[", panel_width + spacer + 1.2, ",5.3;1.1,1.1;mc_teacher_teleport_all.png;", coord_list and #coord_list > 0 and "go_all" or "blocked", ";TP_A]",
-					"image_button[", panel_width + spacer + 2.4, ",5.3;1.1,1.1;mc_teacher_share.png;", coord_list and #coord_list > 0 and "share" or "blocked", ";SH]",
-					"image_button[", panel_width + spacer + 3.6, ",5.3;1.1,1.1;mc_teacher_mark.png;", coord_list and #coord_list > 0 and "mark" or "blocked", ";MK]",
-					"image_button[", panel_width + spacer + 4.8, ",5.3;1.1,1.1;mc_teacher_mark_all.png;", coord_list and #coord_list > 0 and "mark_all" or "blocked", ";MK_A]",
-                    "image_button[", panel_width + spacer + 6.0, ",5.3;1.1,1.1;mc_teacher_delete.png;", coord_list and #coord_list > 0 and "delete" or "blocked", ";DL]",
+					"image_button[", panel_width + spacer, ",6.3;1.1,1.1;mc_teacher_teleport.png;", coord_list and #coord_list > 0 and "go" or "blocked", ";TP]",
+					"image_button[", panel_width + spacer + 1.2, ",6.3;1.1,1.1;mc_teacher_teleport_all.png;", coord_list and #coord_list > 0 and "go_all" or "blocked", ";TP_A]",
+					"image_button[", panel_width + spacer + 2.4, ",6.3;1.1,1.1;mc_teacher_share.png;", coord_list and #coord_list > 0 and "share" or "blocked", ";SH]",
+					"image_button[", panel_width + spacer + 3.6, ",6.3;1.1,1.1;mc_teacher_mark.png;", coord_list and #coord_list > 0 and "mark" or "blocked", ";MK]",
+					"image_button[", panel_width + spacer + 4.8, ",6.3;1.1,1.1;mc_teacher_delete.png;", coord_list and #coord_list > 0 and "delete" or "blocked", ";DL]",
+                    "image_button[", panel_width + spacer + 6.0, ",6.3;1.1,1.1;mc_teacher_clear.png;", coord_list and #coord_list > 0 and "clear" or "blocked", ";DL_A]",
+                    
                     coord_list and #coord_list > 0 and "" or "style_type[button;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
-					"textarea[", panel_width + text_spacer, ",6.6;", panel_width - 2*text_spacer, ",1.7;;;SELECTED\nLocal: (X, Y, Z)\n???\n???]",
 					"textarea[", panel_width + text_spacer, ",8.5;", panel_width - 2*text_spacer, ",1;;;Save current coordinates]",
 					"style_type[textarea;font=mono]",
+					"textarea[", panel_width + text_spacer, ",7.6;", panel_width - 2*text_spacer, ",1;;;SELECTED\nLocal: (X, Y, Z)]",
 					"textarea[", panel_width + spacer, ",8.9;6.2,0.9;note;;]",
-					"image_button[15.1,8.9;0.9,0.9;mc_student_save.png;record;Save;false;false]",
-					"tooltip[clear;Clear all saved coordinates;#404040;#ffffff]",
+					"image_button[15.1,8.9;0.9,0.9;mc_teacher_save.png;record;Save;false;false]",
+					
 					"tooltip[utmcoords;Displays real-world UTM coordinates;#404040;#ffffff]",
 					"tooltip[latloncoords;Displays real-world latitude and longitude;#404040;#ffffff]",
 					"tooltip[classroomcoords;Displays in-game coordinates, relative to the classroom;#404040;#ffffff]",
 					"tooltip[coordsoff;Disables coordinate display;#404040;#ffffff]",
 					"tooltip[go;Teleport to location;#404040;#ffffff]",
                     "tooltip[go_all;Teleport all players to location;#404040;#ffffff]",
-					"tooltip[share;Share location coordinates in chat;#404040;#ffffff]",
-					"tooltip[mark;Place marker in world (only visible to you);#404040;#ffffff]",
-                    "tooltip[mark_all;Place global marker in world;#404040;#ffffff]",
-					"tooltip[delete;Delete selected coordinates;#404040;#ffffff]",
+					"tooltip[share;Share location in chat;#404040;#ffffff]",
+					"tooltip[mark;Place marker in world;#404040;#ffffff]",
+					"tooltip[delete;Delete location;#404040;#ffffff]",
+                    "tooltip[clear;Clear all saved locations;#404040;#ffffff]",
 					"tooltip[note;Add a note here!;#404040;#ffffff]",
 				}))
 
@@ -773,16 +773,15 @@ button[2.4,9;1.7,0.8;latloncoords;Lat/Long]
 button[4.2,9;1.7,0.8;classroomcoords;Local]
 button[6,9;1.7,0.8;coordsoff;Off]
 textarea[8.85,1;7.1,1;;;Saved Coordinates]
-textlist[8.9,1.4;7.1,3.8;coordlist;;8;false]
-image_button[14.7,0.9;1.3,0.5;blank.png;clear;Clear;false;true]
+textlist[8.9,1.4;7.1,4.4;coordlist;;8;false]
 textarea[8.85,8.5;7.1,1;;;Save current coordinates]
 image_button[15.1,8.9;0.9,0.9;blank.png;;Save;false;true]
 textarea[8.9,8.9;6.2,0.9;note;;]
-textarea[8.85,6.6;7.2,1.7;;;(coordinate name) (coords) (realm)]
-image_button[8.9,5.3;1.1,1.1;blank.png;go;TP;false;true]
-image_button[10.1,5.3;1.1,1.1;blank.png;go_all;TP all;false;true]
-image_button[14.9,5.3;1.1,1.1;blank.png;delete;X;false;true]
-image_button[13.7,5.3;1.1,1.1;blank.png;mark_all;M all;false;true]
-image_button[12.5,5.3;1.1,1.1;blank.png;mark;Mark;false;true]
-image_button[11.3,5.3;1.1,1.1;blank.png;share;Share;false;true]
+textarea[8.85,7.2;7.2,1.1;;;(coordinate name) (coords) (realm)]
+image_button[8.9,5.9;1.1,1.1;blank.png;go;TP;false;true]
+image_button[10.1,5.9;1.1,1.1;blank.png;go_all;TP_A;false;true]
+image_button[12.5,5.9;1.1,1.1;blank.png;mark;MK;false;true]
+image_button[11.3,5.9;1.1,1.1;blank.png;share;SH;false;true]
+image_button[13.7,5.9;1.1,1.1;blank.png;delete;DL;false;true]
+image_button[14.9,5.9;1.1,1.1;blank.png;clear;DL_A;false;true]
 ]]
