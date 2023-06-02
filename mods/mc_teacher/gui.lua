@@ -88,7 +88,7 @@ function mc_teacher.show_controller_fs(player,tab)
 					"textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",2.6;;;", minetest.formspec_escape("This is the Teacher Controller, your tool for managing classrooms, player privileges, and server settings."),
 					"\n", minetest.formspec_escape("You cannot drop this tool, so you will never lose it. However, you can move it out of your hotbar and into your inventory or the toolbox."), "]",
 					"textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",", has_server_privs and 4 or 4.9, ";;;", minetest.formspec_escape(rules), "]",
-                    has_server_privs and "button[0.6,8.8;7,0.8;modifyrules;Edit Server Rules]" or "",
+                    has_server_privs and "button[0.6,9;7,0.8;modifyrules;Edit Server Rules]" or "",
 
                     "scrollbaroptions[min=0;max=", (11.6 + (has_server_privs and 1.7 or 0) - Y_SIZE)/FACTOR, ";smallstep=", 0.8/FACTOR, ";largestep=", 4.8/FACTOR, ";thumbsize=", 1/FACTOR, "]",
                     "scrollbar[", controller_width - 0.3, ",0.5;0.3,", Y_SIZE, ";vertical;overviewscroll;", context.overviewscroll or 0, "]",
