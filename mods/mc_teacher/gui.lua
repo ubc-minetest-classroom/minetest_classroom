@@ -344,7 +344,74 @@ function mc_teacher.show_controller_fs(player,tab)
 				return fs
 			end,
             ["4"] = function() -- PLAYERS
-                return {}
+                local fs = {
+                    "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
+					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+					"tooltip[exit;Exit;#404040;#ffffff]",
+					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Players</b></center></style>]",
+					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Manage Players</b></center></style>]",
+					"style_type[textarea;font=mono,bold;textcolor=#000000]",
+                }
+
+                table.insert(fs, table.concat({
+                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+                    "tabheader[", spacer, ",1.4;", panel_width - 2*spacer - 0.35, ",0.5;group_header;Students,Teachers,Group A,Group B,Group C;1;false;true]",
+                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;group_list;;1;false]",
+                    "button[", panel_width - spacer - 0.45, ",0.95;0.45,0.45;p_group_new;+]",
+                    "button[", spacer, ",9;3.5,0.8;p_group_edit;Edit Group]",
+                    "button[", spacer + 3.6, ",9;3.5,0.8;p_group_delete;Delete Group]",
+
+                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Action Mode]",
+                    "button[", panel_width + spacer, ",1.4;2.3,0.8;;Selected]",
+                    "button[", panel_width + spacer + 2.4, ",1.4;2.3,0.8;;Group]",
+                    "button[", panel_width + spacer + 4.8, ",1.4;2.3,0.8;;All]",
+                    "textarea[", panel_width + text_spacer, ",2.45;", panel_width - 2*text_spacer, ",1;;;Classroom Privileges]",
+                    "style_type[textarea;font=mono]",
+                    "textarea[", panel_width + text_spacer + 0.5, ",2.85;1.8,1;;;interact]",
+                    "textarea[", panel_width + text_spacer + 0.5, ",3.25;1.8,1;;;shout]",
+                    "textarea[", panel_width + text_spacer + 2.9, ",2.85;1.8,1;;;fast]",
+                    "textarea[", panel_width + text_spacer + 2.9, ",3.25;1.8,1;;;fly]",
+                    "textarea[", panel_width + text_spacer + 5.3, ",2.85;1.8,1;;;noclip]",
+                    "textarea[", panel_width + text_spacer + 5.3, ",3.25;1.8,1;;;give]",
+                    "style_type[textarea;font=mono,bold]",
+                    "checkbox[", panel_width + spacer, ",3.05;priv_interact;;true]",
+                    "checkbox[", panel_width + spacer, ",3.45;priv_shout;;true]",
+                    "checkbox[", panel_width + spacer + 2.4, ",3.05;priv_fast;;true]",
+                    "checkbox[", panel_width + spacer + 2.4, ",3.45;priv_fly;;false]",
+                    "checkbox[", panel_width + spacer + 4.8, ",3.05;priv_noclip;;false]",
+                    "checkbox[", panel_width + spacer + 4.8, ",3.45;priv_give;;false]",
+                    "button[", panel_width + spacer, ",3.75;3.5,0.8;;Update privs]",
+                    "button[", panel_width + spacer + 3.6, ",3.75;3.5,0.8;;Reset privs]",
+
+                    "textarea[", panel_width + text_spacer, ",4.8;", panel_width - 2*text_spacer, ",1;;;Actions]",
+                    "button[", panel_width + spacer, ",5.2;2.3,0.8;;Teleport]",
+                    "button[", panel_width + spacer + 2.4, ",5.2;2.3,0.8;;Bring]",
+                    "button[", panel_width + spacer + 4.8, ",5.2;2.3,0.8;;Audience]",
+                    "button[", panel_width + spacer, ",6.1;2.3,0.8;;Kick]",
+                    "button[", panel_width + spacer + 2.4, ",6.1;2.3,0.8;;Ban]",
+                    "button[", panel_width + spacer + 4.8, ",6.1;2.3,0.8;;Freeze]",
+                    "textarea[", panel_width + text_spacer, ",7.15;", panel_width - 2*text_spacer, ",1;;;Groups]",
+                    "dropdown[", panel_width + spacer, ",7.55;3.5,0.8;;;1;false]",
+                    "button[", panel_width + spacer + 3.6, ",7.55;1.7,0.8;;Add]",
+                    "button[", panel_width + spacer + 5.4, ",7.55;1.7,0.8;;Remove]",
+                    "textarea[", panel_width + text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Server Role]",
+                }))
+
+                if has_server_privs then
+                    table.insert(fs, table.concat({
+                        "button[", panel_width + spacer, ",9;2.3,0.8;;Student]",
+                        "button[", panel_width + spacer + 2.4, ",9;2.3,0.8;;Teacher]",
+                        "button[", panel_width + spacer + 4.8, ",9;2.3,0.8;;Admin]",
+                    }))
+                else
+                    table.insert(fs, table.concat({
+                        "style_type[textarea;font=mono]",
+                        "textarea[", panel_width + text_spacer, ",9.2;", panel_width - 2*text_spacer, ",1;;;(role text)]",
+                        "style_type[textarea;font=mono,bold]",
+                    }))
+                end
+
+                return fs
             end,
 			["5"] = function() -- MODERATION
                 local fs = {}
@@ -696,7 +763,7 @@ OVERVIEW + RULES:
 formspec_version[6]
 size[16.6,10.4]
 box[0,0;16.6,0.5;#737373]
-box[8.295,0;0.05,10.4;#000000]
+box[8.275,0;0.05,10.4;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.2,1;;;Overview]
 textarea[8.85,0.1;7.2,1;;;Dashboard]
@@ -721,7 +788,7 @@ CLASSROOMS:
 formspec_version[6]
 size[16.6,10.4]
 box[0,0;16.6,0.5;#737373]
-box[8.295,0;0.05,10.4;#000000]
+box[8.275,0;0.05,10.4;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.2,1;;;Classrooms]
 textarea[8.85,0.1;7.2,1;;;Build a Classroom]
@@ -761,7 +828,7 @@ MAP + COORDINATES:
 formspec_version[6]
 size[16.6,10.4]
 box[0,0;16.6,0.5;#737373]
-box[8.295,0;0.05,10.4;#000000]
+box[8.275,0;0.05,10.4;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.1,1;;;Map]
 textarea[8.85,0.1;7.1,1;;;Coordinates]
@@ -786,4 +853,99 @@ image_button[12.5,5.9;1.1,1.1;blank.png;mark;MK;false;true]
 image_button[11.3,5.9;1.1,1.1;blank.png;share;SH;false;true]
 image_button[13.7,5.9;1.1,1.1;blank.png;delete;DL;false;true]
 image_button[14.9,5.9;1.1,1.1;blank.png;clear;DL_A;false;true]
+
+PLAYERS:
+formspec_version[6]
+size[16.6,10.4]
+box[0,0;16.6,0.5;#737373]
+box[8.275,0;0.05,10.4;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0.1;7.2,1;;;Online Players]
+textarea[8.85,0.1;7.2,1;;;Manage Players]
+textarea[0.55,1;6.7,1;;;Students]
+textlist[0.6,1.4;7.1,7.5;student_list;;1;false]
+button[7.25,0.95;0.45,0.45;p_group_new;+]
+button[0.6,9;3.5,0.8;p_group_edit;Edit Group]
+button[4.2,9;3.5,0.8;p_group_delete;Delete Group]
+image[4.25,1.45;0.4,0.4;]
+image[4.75,1.45;0.4,0.4;]
+image[5.25,1.45;0.4,0.4;]
+image[5.75,1.45;0.4,0.4;]
+image[6.25,1.45;0.4,0.4;]
+image[6.75,1.45;0.4,0.4;]
+image[7.25,1.45;0.4,0.4;]
+textarea[8.85,1;7.2,1;;;Action Mode]
+button[8.9,1.4;2.3,0.8;;Selected]
+button[11.3,1.4;2.3,0.8;;Group]
+button[13.7,1.4;2.3,0.8;;All]
+textarea[8.85,2.45;7.2,1;;;Classroom Privileges]
+textarea[9.35,2.85;1.8,1;;;interact]
+textarea[9.35,3.25;1.8,1;;;shout]
+textarea[11.75,2.85;1.8,1;;;fast]
+textarea[11.75,3.25;1.8,1;;;fly]
+textarea[14.15,2.85;1.8,1;;;noclip]
+textarea[14.15,3.25;1.8,1;;;give]
+checkbox[8.9,3.05;priv_interact;;true]
+checkbox[8.9,3.45;priv_shout;;true]
+checkbox[11.3,3.05;priv_fast;;true]
+checkbox[11.3,3.45;priv_fly;;false]
+checkbox[13.7,3.05;priv_noclip;;false]
+checkbox[13.7,3.45;priv_give;;false]
+button[8.9,3.75;3.5,0.8;;Update privileges]
+button[12.5,3.75;3.5,0.8;;Reset to default]
+textarea[8.85,4.8;7.2,1;;;Actions]
+button[8.9,5.2;2.3,0.8;;Teleport]
+button[11.3,5.2;2.3,0.8;;Bring]
+button[13.7,5.2;2.3,0.8;;Audience]
+button[8.9,6.1;2.3,0.8;;Kick]
+button[11.3,6.1;2.3,0.8;;Ban]
+button[13.7,6.1;2.3,0.8;;Freeze]
+textarea[8.85,7.15;7.2,1;;;Groups]
+dropdown[8.9,7.55;3.5,0.8;;;1;false]
+button[12.5,7.55;1.7,0.8;;Add]
+button[14.3,7.55;1.7,0.8;;Remove]
+textarea[8.85,8.6;7.2,1;;;Server Role]
+button[11.3,9;2.3,0.8;;Teacher]
+button[8.9,9;2.3,0.8;;Student]
+button[13.7,9;2.3,0.8;;Admin]
+
+MODERATION:
+formspec_version[6]
+size[16.6,10.4]
+box[0,0;16.6,0.5;#737373]
+box[8.275,0;0.05,10.4;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0.1;7.1,1;;;Moderation]
+textarea[8.85,0.1;7.1,1;;;Moderation]
+textarea[0.55,1;7.2,1;;;Coming soon!]
+
+REPORTS:
+formspec_version[6]
+size[16.6,10.4]
+box[0,0;16.6,0.5;#737373]
+box[8.275,0;0.05,10.4;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0.1;7.1,1;;;Reports]
+textarea[8.85,0.1;7.1,1;;;Reports]
+textarea[0.55,1;7.2,1;;;Coming soon!]
+
+HELP:
+formspec_version[6]
+size[16.6,10.4]
+box[0,0;16.6,0.5;#737373]
+box[8.275,0;0.05,10.4;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0.1;7.1,1;;;Help]
+textarea[8.85,0.1;7.1,1;;;Help]
+textarea[0.55,1;7.2,1;;;Coming soon!]
+
+SERVER:
+formspec_version[6]
+size[16.6,10.4]
+box[0,0;16.6,0.5;#737373]
+box[8.275,0;0.05,10.4;#000000]
+image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
+textarea[0.55,0.1;7.1,1;;;Server]
+textarea[8.85,0.1;7.1,1;;;Server]
+textarea[0.55,1;7.2,1;;;Coming soon!]
 ]]
