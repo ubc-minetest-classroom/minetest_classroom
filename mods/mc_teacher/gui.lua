@@ -300,7 +300,7 @@ function mc_teacher.show_controller_fs(player,tab)
 					"image[", 3.95 + (pos.x - round_px)*0.15, ",", 4.75 - (pos.z - round_pz)*0.15,
 					";0.4,0.4;mc_mapper_d", yaw, ".png^[transformFY", rotate ~= 0 and ("R"..rotate) or "", "]",
 					"textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Coordinate and Elevation Display]",
-					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					"style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
 					"button[", spacer, ",9;1.7,0.8;utmcoords;UTM]",
 					"button[", spacer + 1.8, ",9;1.7,0.8;latloncoords;Lat/Lon]",
 					"button[", spacer + 3.6, ",9;1.7,0.8;classroomcoords;Local]",
@@ -312,18 +312,19 @@ function mc_teacher.show_controller_fs(player,tab)
 				table.insert(fs, table.concat({
 					"textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.8;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
 					coord_list and #coord_list > 0 and "" or "style_type[image_button;bgimg=mc_pixel.png^[multiply:#acacac]",
-					"image_button[", panel_width + spacer, ",6.3;1.1,1.1;mc_teacher_teleport.png;", coord_list and #coord_list > 0 and "go" or "blocked", ";TP]",
-					"image_button[", panel_width + spacer + 1.2, ",6.3;1.1,1.1;mc_teacher_teleport_all.png;", coord_list and #coord_list > 0 and "go_all" or "blocked", ";TP_A]",
-					"image_button[", panel_width + spacer + 2.4, ",6.3;1.1,1.1;mc_teacher_share.png;", coord_list and #coord_list > 0 and "share" or "blocked", ";SH]",
-					"image_button[", panel_width + spacer + 3.6, ",6.3;1.1,1.1;mc_teacher_mark.png;", coord_list and #coord_list > 0 and "mark" or "blocked", ";MK]",
-					"image_button[", panel_width + spacer + 4.8, ",6.3;1.1,1.1;mc_teacher_delete.png;", coord_list and #coord_list > 0 and "delete" or "blocked", ";DL]",
-                    "image_button[", panel_width + spacer + 6.0, ",6.3;1.1,1.1;mc_teacher_clear.png;", coord_list and #coord_list > 0 and "clear" or "blocked", ";DL_A]",
+					"image_button[", panel_width + spacer, ",6.3;1.1,1.1;mc_teacher_teleport.png;", coord_list and #coord_list > 0 and "go" or "blocked", ";;false;false]",
+					"image_button[", panel_width + spacer + 1.2, ",6.3;1.1,1.1;mc_teacher_teleport_all.png;", coord_list and #coord_list > 0 and "go_all" or "blocked", ";;false;false]",
+					"image_button[", panel_width + spacer + 2.4, ",6.3;1.1,1.1;mc_teacher_share.png;", coord_list and #coord_list > 0 and "share" or "blocked", ";;false;false]",
+					"image_button[", panel_width + spacer + 3.6, ",6.3;1.1,1.1;mc_teacher_mark.png;", coord_list and #coord_list > 0 and "mark" or "blocked", ";;false;false]",
+					"image_button[", panel_width + spacer + 4.8, ",6.3;1.1,1.1;mc_teacher_delete.png;", coord_list and #coord_list > 0 and "delete" or "blocked", ";;false;false]",
+                    "image_button[", panel_width + spacer + 6.0, ",6.3;1.1,1.1;mc_teacher_clear.png;", coord_list and #coord_list > 0 and "clear" or "blocked", ";;false;false]",
                     
                     coord_list and #coord_list > 0 and "" or "style_type[button;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
 					"textarea[", panel_width + text_spacer, ",8.5;", panel_width - 2*text_spacer, ",1;;;Save current coordinates]",
 					"style_type[textarea;font=mono]",
 					"textarea[", panel_width + text_spacer, ",7.6;", panel_width - 2*text_spacer, ",1;;;SELECTED\nLocal: (X, Y, Z)]",
 					"textarea[", panel_width + spacer, ",8.9;6.2,0.9;note;;]",
+                    "style_type[image_button;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
 					"image_button[15.1,8.9;0.9,0.9;mc_teacher_save.png;record;Save;false;false]",
 					
 					"tooltip[utmcoords;Displays real-world UTM coordinates;#404040;#ffffff]",
@@ -337,6 +338,7 @@ function mc_teacher.show_controller_fs(player,tab)
 					"tooltip[delete;Delete location;#404040;#ffffff]",
                     "tooltip[clear;Clear all saved locations;#404040;#ffffff]",
 					"tooltip[note;Add a note here!;#404040;#ffffff]",
+                    "style_type[image_button;bgimg=blank.png]",
 				}))
 
 				return fs
