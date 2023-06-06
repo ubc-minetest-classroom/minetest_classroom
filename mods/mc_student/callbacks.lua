@@ -22,79 +22,6 @@ minetest.register_on_leaveplayer(function(player)
 	end
 end)
 
--- Log all direct messages
-minetest.register_on_chatcommand(function(name, command, params)
-	if command == "msg" then
-		-- For some reason, the params in this callback is a string rather than a table; need to parse the player name
-		local params_table = mc_core.split(params, " ")
-		local to_player = params_table[1]
-		if minetest.get_player_by_name(to_player) then
-			local message = string.sub(params, #to_player+2, #params)
-			local key = tostring(os.date("%d-%m-%Y %H:%M:%S"))
-			local directmessages = minetest.deserialize(mc_student.meta:get_string("direct_messages"))
-			if directmessages then
-				local playermessages = directmessages[name]
-				if playermessages then
-					local toplayermessages = playermessages[to_player]
-					if toplayermessages then
-						toplayermessages[key] = message
-						playermessages[to_player] = toplayermessages
-						directmessages[name] = playermessages
-					else
-						local newtoplayer = {
-							[key] = message
-						}
-						playermessages[to_player] = newtoplayer
-						directmessages[name] = playermessages
-					end
-				else
-					directmessages[name] = {
-						[to_player] = {
-							[key] = message
-						}
-					}
-				end
-			else
-				directmessages = {
-					[name] = {
-						[to_player] = {
-							[key] = message
-						}
-					}
-				}
-			end
-			mc_student.meta:set_string("direct_messages", minetest.serialize(directmessages))
-		else
-			-- Submitted name is not a player, probably a typo, do not log
-			return
-		end
-	end
-end)
-
--- Log all chat messages
-minetest.register_on_chat_message(function(name, message)
-	local key = tostring(os.date("%d-%m-%Y %H:%M:%S"))
-	local chatmessages = minetest.deserialize(mc_student.meta:get_string("chat_messages"))
-	if chatmessages then
-		local playermessages = chatmessages[name]
-		if playermessages then
-			playermessages[key] = message
-			chatmessages[name] = playermessages
-		else
-			chatmessages[name] = {
-				[key] = message
-			}
-		end
-	else
-		chatmessages = {
-			[name] = {
-				[key] = message
-			}
-		}
-	end
-	mc_student.meta:set_string("chat_messages", minetest.serialize(chatmessages))
-end)
-
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	local pmeta = player:get_meta()
 	local context = mc_student.get_fs_context(player)
@@ -364,5 +291,52 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				mc_teacher.show_controller_fs(player, mc_teacher.TABS.MAP)
 			end
 		end
+	end
+end)
+
+-- message log converter
+local function reformat_chat_key(key)
+	local month, day, year, hour, min, sec = string.match(key, "(%d+)%-(%d+)%-(%d+) (%d+):(%d+):(%d+)")
+    return month and table.concat({year, "-", month, "-", day, " ", hour, ":", min, ":", sec}) or key
+end
+
+minetest.register_on_mods_loaded(function()
+	local chatmessages = minetest.deserialize(mc_student.meta:get_string("chat_messages"))
+	local directmessages = minetest.deserialize(mc_student.meta:get_string("direct_messages"))
+
+	if chatmessages then
+		local new_chatlog = minetest.deserialize(mc_teacher.meta:get_string("chat_log")) or {}
+		for pname, log in pairs(chatmessages) do 
+			new_chatlog[pname] = new_chatlog[pname] or {}
+			for key, message in pairs(log) do
+				table.insert(new_chatlog[pname], {
+					timestamp = reformat_chat_key(key),
+					message = message,
+				})
+			end
+		end
+
+		mc_teacher.meta:set_string("chat_log", minetest.serialize(new_chatlog))
+		mc_teacher.meta:set_int("chat_log_format", 2)
+		mc_student.meta:set_string("chat_messages", nil)
+	end
+	if directmessages then
+		local new_dmlog = minetest.deserialize(mc_teacher.meta:get_string("dm_log")) or {}
+		for pname, log in pairs(directmessages) do 
+			new_dmlog[pname] = new_dmlog[pname] or {}
+			for recipient, msg_table in pairs(log) do
+				for key, message in pairs(msg_table) do
+					table.insert(new_dmlog[pname], {
+						timestamp = reformat_chat_key(key),
+						recipient = recipient,
+						message = message,
+					})
+				end
+			end
+		end
+
+		mc_teacher.meta:set_string("dm_log", minetest.serialize(new_dmlog))
+		mc_teacher.meta:set_int("dm_log_format", 2)
+		mc_student.meta:set_string("direct_messages", nil)
 	end
 end)

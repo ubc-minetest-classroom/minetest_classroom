@@ -43,6 +43,39 @@ minetest.register_on_leaveplayer(function(player)
 	end
 end)
 
+-- Log all direct messages
+minetest.register_on_chatcommand(function(name, command, params)
+	if command == "msg" then
+		-- For some reason, the params in this callback is a string rather than a table; need to parse the player name
+		local params_table = mc_core.split(params, " ")
+		local to_player = params_table[1]
+		if minetest.get_player_by_name(to_player) then
+			local message = string.sub(params, #to_player+2, #params)
+			local timestamp = tostring(os.date("%Y-%m-%d %H:%M:%S"))
+			local direct_msg = minetest.deserialize(mc_teacher.meta:get_string("dm_log")) or {}
+            direct_msg[name] = direct_msg[name] or {}
+            table.insert(direct_msg[name], {
+                timestamp = timestamp,
+                recipient = to_player,
+                message = message
+            })
+            mc_teacher.meta:set_string("dm_log", minetest.serialize(direct_msg))
+		end
+	end
+end)
+
+-- Log all chat messages
+minetest.register_on_chat_message(function(name, message)
+	local timestamp = tostring(os.date("%Y-%m-%d %H:%M:%S"))
+	local chat_msg = minetest.deserialize(mc_teacher.meta:get_string("chat_log")) or {}
+    chat_msg[name] = chat_msg[name] or {}
+    table.insert(chat_msg[name], {
+        timestamp = timestamp,
+        message = message
+    })
+	mc_teacher.meta:set_string("chat_log", minetest.serialize(chat_msg))
+end)
+
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	local pmeta = player:get_meta()
     local context = mc_teacher.get_fs_context(player)
@@ -69,20 +102,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			pmeta:set_string("default_teacher_tab", context.tab)
             reload = true
 		end
-        if fields.playerlist then
-			local event = minetest.explode_textlist_event(fields.playerlist)
-			if event.type == "CHG" then
-				context.player_chat_index = event.index
-                reload = true
-			end
-        end
-        if fields.playerchatlist then
-			local event = minetest.explode_textlist_event(fields.playerchatlist)
-			if event.type == "CHG" then
-				context.mod_chat_index = event.index
-                reload = true
-			end
-        end
 
         --------------
         -- OVERVIEW --
@@ -116,9 +135,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end 
         end
 
-        ---------------------------------
-        -- MANAGE CLASSROOMS
-        ---------------------------------
+        ----------------
+        -- CLASSROOMS --
+        ----------------
         if fields.mode and fields.mode ~= context.selected_mode then
             context.selected_mode = fields.mode
             reload = true
@@ -261,48 +280,42 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
         end
 
-        ---------------------------------
-        -- MODERATOR
-        ---------------------------------
-		if fields.clearlog then
-            local chatmessages = minetest.deserialize(mc_student.meta:get_string("chat_messages"))
-            local directmessages = minetest.deserialize(mc_student.meta:get_string("direct_messages"))
-            local pname = context.indexed_chat_players[tonumber(context.player_chat_index)]
-            if directmessages then
-                local player_dm_log = directmessages[pname]
-                if player_dm_log then
-                    for to_player,_ in pairs(player_dm_log) do
-                        local to_player_dms = player_dm_log[to_player]
-                        for key,_ in pairs(to_player_dms) do
-                            to_player_dms[key] = nil
-                        end
-                        player_dm_log[to_player] = to_player_dms
-                    end
-                    directmessages[pname] = player_dm_log
-                end
-                directmessages[pname] = {}
-                if directmessages[pname] then directmessages[pname] = nil end
+        ---------------
+        -- MODERATOR --
+        ---------------
+        if fields.mod_log_players then
+			local event = minetest.explode_textlist_event(fields.mod_log_players)
+			if event.type == "CHG" then
+				context.player_chat_index = event.index
+                context.message_chat_index = 1
+                reload = true
+			end
+        end
+        if fields.mod_log_messages then
+			local event = minetest.explode_textlist_event(fields.mod_log_messages)
+			if event.type == "CHG" then
+				context.message_chat_index = event.index
+                reload = true
+			end
+        end
+		if fields.mod_clearlog then
+            local chat_msg = minetest.deserialize(mc_teacher.meta:get_string("chat_log")) or {}
+            local direct_msg = minetest.deserialize(mc_teacher.meta:get_string("dm_log")) or {}
+            local player_to_clear = context.indexed_chat_players[context.player_chat_index]
+            if direct_msg and direct_msg[player_to_clear] then
+                direct_msg[player_to_clear] = nil
             end
-            if chatmessages then
-                local player_chat_log = chatmessages[pname]
-                if player_chat_log then
-                    for key,_ in pairs(player_chat_log) do
-                        player_chat_log[key] = nil
-                    end
-                    chatmessages[pname] = player_chat_log
-                end
-                chatmessages[pname] = {}
-                if chatmessages[pname] then chatmessages[pname] = nil end
+            if chat_msg and chat_msg[player_to_clear] then
+                chat_msg[player_to_clear] = nil
             end
-            mc_student.meta:set_string("chat_messages", minetest.serialize(chatmessages))
-            mc_student.meta:set_string("direct_messages", minetest.serialize(directmessages))
-            reload = true
-        elseif fields.deletemessage then
-            -- TODO: delete a specific message
+            mc_teacher.meta:set_string("chat_log", minetest.serialize(chat_msg))
+            mc_teacher.meta:set_string("dm_log", minetest.serialize(direct_msg))
             reload = true
         end
 
-        -- MANAGE SERVER
+        -----------------------
+        -- SERVER MANAGEMENT --
+        -----------------------
         if fields.submitmessage then
             minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..fields.servermessage))
 			reload = true
@@ -351,13 +364,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             return minetest.show_formspec(player:get_player_name(), "mc_rules:edit", mc_rules.show_edit_formspec(nil))
         end
 
+        -- GENERAL: RELOAD
         if reload then
-            -- save
             if fields.realmname then context.realmname = minetest.formspec_escape(fields.realmname) end
             if fields.realm_x_size then context.realm_x = fields.realm_x_size end
             if fields.realm_y_size then context.realm_y = fields.realm_y_size end
             if fields.realm_z_size then context.realm_z = fields.realm_z_size end
-            -- reload
             mc_teacher.show_controller_fs(player, context.tab)
         end
     end

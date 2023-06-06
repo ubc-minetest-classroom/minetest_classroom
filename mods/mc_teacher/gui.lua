@@ -351,11 +351,8 @@ function mc_teacher.show_controller_fs(player,tab)
 					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Players</b></center></style>]",
 					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Manage Players</b></center></style>]",
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
-                }
-
-                table.insert(fs, table.concat({
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
-                    "tabheader[", spacer, ",1.4;", panel_width - 2*spacer - 0.35, ",0.5;group_header;Students,Teachers,Group A,Group B,Group C;1;false;true]",
+                    "tabheader[", spacer, ",1.4;", panel_width - 2*spacer - 0.35, ",0.5;group_header;Students,Teachers;1;false;true]",
                     "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;group_list;;1;false]",
                     "button[", panel_width - spacer - 0.45, ",0.95;0.45,0.45;p_group_new;+]",
                     "button[", spacer, ",9;3.5,0.8;p_group_edit;Edit Group]",
@@ -395,7 +392,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     "button[", panel_width + spacer + 3.6, ",7.55;1.7,0.8;;Add]",
                     "button[", panel_width + spacer + 5.4, ",7.55;1.7,0.8;;Remove]",
                     "textarea[", panel_width + text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Server Role]",
-                }))
+                }
 
                 if has_server_privs then
                     table.insert(fs, table.concat({
@@ -414,204 +411,122 @@ function mc_teacher.show_controller_fs(player,tab)
                 return fs
             end,
 			["5"] = function() -- MODERATION
-                local fs = {}
-                local fsx, fsy
-                fsx = ((controller_width/2)-(((controller_width/8)*3)))/2
-                fs[#fs + 1] = "label["
-                fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                fs[#fs + 1] = ",0.55;"
-                fs[#fs + 1] = minetest.colorize("#000","Select a Player to View Messages")
-                fs[#fs + 1] = "]textlist["
-                fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                fs[#fs + 1] = ",0.85;"
-                fs[#fs + 1] = tostring(page_width)
-                fs[#fs + 1] = ","
-                fs[#fs + 1] = tostring(controller_height/4)
-                fs[#fs + 1] = ";playerlist;"
-                local chatmessages, directmessages
-                chatmessages = minetest.deserialize(mc_student.meta:get_string("chat_messages"))
-                directmessages = minetest.deserialize(mc_student.meta:get_string("direct_messages"))
-                local countchat = 0
-                local countdm = 0
-                local counter = 0
-                if chatmessages then for _ in pairs(chatmessages) do countchat = countchat + 1 end end
+                local fs = {
+                    "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
+					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+					"tooltip[exit;Exit;#404040;#ffffff]",
+					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Moderation</b></center></style>]",
+					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Message Log</b></center></style>]",
+					"style_type[textarea;font=mono,bold;textcolor=#000000]",
+                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+                }
+
+                local chat_msg = minetest.deserialize(mc_teacher.meta:get_string("chat_log"))
+                local direct_msg = minetest.deserialize(mc_teacher.meta:get_string("dm_log"))
                 local indexed_chat_players = {}
-                if directmessages then 
-                    for pname,_ in pairs(directmessages) do
-                        table.insert(indexed_chat_players,pname)
-                        local player_messages = directmessages[pname]
-                        for to_player,_ in pairs(player_messages) do
-                            local to_player_messages = player_messages[to_player]
-                            for _ in pairs(to_player_messages) do
-                                countdm = countdm + 1 
-                            end
+
+                if chat_msg then
+                    for cm_name,_ in pairs(chat_msg) do
+                        if not mc_core.tableHas(indexed_chat_players, cm_name) then
+                            table.insert(indexed_chat_players, cm_name)
                         end
-                    end 
-                end
-                local unique_chat_players = {}
-                if directmessages then
-                    for pnamed,_ in pairs(directmessages) do
-                        table.insert(unique_chat_players,pnamed)
-                        table.insert(indexed_chat_players,pnamed)
                     end
+                end
+                if direct_msg then
+                    for dm_name,_ in pairs(direct_msg) do
+                        if not mc_core.tableHas(indexed_chat_players, dm_name) then
+                            table.insert(indexed_chat_players, dm_name)
+                        end
+                    end
+                end
+                context.indexed_chat_players = indexed_chat_players
+
+                if #indexed_chat_players > 0 then
+                    if not context.player_chat_index or not indexed_chat_players[context.player_chat_index] then
+                        context.player_chat_index = 1
+                    end
+                    local selected = indexed_chat_players[context.player_chat_index]
+                    local stamps = {}
+                    local stamp_to_key = {}
+
+                    if chat_msg and chat_msg[selected] then
+                        for i, msg_table in ipairs(chat_msg[selected]) do
+                            table.insert(stamps, msg_table.timestamp)
+                            stamp_to_key[msg_table.timestamp] = "chat:"..i
+                        end
+                    end
+                    if direct_msg and direct_msg[selected] then
+                        for i, msg_table in ipairs(direct_msg[selected]) do
+                            table.insert(stamps, msg_table.timestamp)
+                            stamp_to_key[msg_table.timestamp] = "dm:"..i
+                        end
+                    end
+                    table.sort(stamps)
+
+                    local player_log = {}
+                    context.log_i_to_key = {}
+                    local chat_col = "#CCFFFF"
+                    local dm_col = "#FFFFCC"
+
+                    -- build main message list
+                    for i, stamp in ipairs(stamps) do
+                        local key = stamp_to_key[stamp] or "null:0"
+                        local split_key = mc_core.split(key, ":")
+                        local index = tonumber(split_key[2] or "0")
+                        if split_key[1] == "chat" and index ~= 0 then
+                            local msg_table = chat_msg[selected][index]
+                            table.insert(player_log, chat_col..minetest.formspec_escape(table.concat({"[", stamp, "] ", msg_table.message})))
+                            table.insert(context.log_i_to_key, key)
+                        elseif split_key[1] == "dm" and index ~= 0 then
+                            local msg_table = direct_msg[selected][index]
+                            table.insert(player_log, dm_col..minetest.formspec_escape(table.concat({"[", stamp, "] DM to ", msg_table.recipient, ": ", msg_table.message})))
+                            table.insert(context.log_i_to_key, key)
+                        end
+                    end
+
+                    if not context.message_chat_index or not context.log_i_to_key[context.message_chat_index] then
+                        context.message_chat_index = 1
+                    end
+                    local selected_key = context.log_i_to_key[context.message_chat_index]
+                    local sel_split_key = mc_core.split(selected_key, ":")
+                    local sel_index = tonumber(sel_split_key[2] or "0")
+                    local display_message = {}
+
+                    if sel_split_key[1] == "chat" and chat_msg[selected][sel_index] then
+                        display_message.header = "Global chat message"
+                        display_message.message = chat_msg[selected][sel_index].message
+                    elseif sel_split_key[1] == "dm" and direct_msg[selected][sel_index] then
+                        display_message.header = "Direct message to "..direct_msg[selected][sel_index].recipient
+                        display_message.message = direct_msg[selected][sel_index].message
+                    end
+
+                    table.insert(fs, table.concat({
+                        "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Message Logs]",
+                        "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",5.5;mod_log_players;", table.concat(indexed_chat_players, ","), ";", context.player_chat_index, ";false]",
+                        "button[", spacer, ",7;3.5,0.8;mod_mute;Mute player]", -- TODO: sync w/ mute button on Players tab
+                        "button[", spacer + 3.6, ",7;3.5,0.8;mod_clearlog;Delete log]",
+                        "textarea[", text_spacer, ",8;", panel_width - 2*text_spacer, ",1;;;Message ", selected or "player", "]",
+                        "style_type[textarea;font=mono]",
+                        "textarea[", spacer, ",8.4;", panel_width - 2*spacer - 0.8, ",1.4;mod_message;;]",
+                        "style_type[textarea;font=mono,bold]",
+                        "button[", panel_width - spacer - 0.8, ",8.4;0.8,1.4;mod_send_message;Send]",
+                        "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Sent Messages]",
+                        "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",6.4;mod_log_messages;", table.concat(player_log, ","), ";", context.message_chat_index, ";false]",
+                        "textarea[", panel_width + text_spacer, ",8;", panel_width - 2*text_spacer, ",1;;;", display_message and display_message.header or "Unknown", "]",
+                        "style_type[textarea;font=mono]",
+                        "textarea[", panel_width + text_spacer, ",8.4;", panel_width - 2*text_spacer, ",1.4;;;", display_message and display_message.message or "", "]",
+                        "tooltip[mod_clearlog;Removes all messages sent by the selected player from the log;#404040;#ffffff]",
+                    }))
+                else
+                    -- fallback formspec
+                    table.insert(fs, table.concat({
+                        "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;No messages logged!]",
+                        "style_type[textarea;font=mono]",
+                        "textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;When players send chat messages or direct messages to other players, they will be logged here!]",
+                    }))
                 end
 
-                if chatmessages then
-                    for pnamec,_ in pairs(chatmessages) do
-                        for pnamec,_ in pairs(unique_chat_players) do
-                            if pnamed ~= pnamec then
-                                table.insert(unique_chat_players,pnamed)
-                                table.insert(indexed_chat_players,pnamed)
-                            end
-                        end
-                    end
-                end
-                -- Send indexed_chat_players to mod storage so that we can use it later for delete/clear callbacks
-                context.indexed_chat_players = indexed_chat_players
-                if unique_chat_players then
-                    for _,pname in pairs(unique_chat_players) do
-                        counter = counter + 1
-                        fs[#fs + 1] = pname
-                        if counter ~= #unique_chat_players then fs[#fs + 1] = "," end
-                    end
-                else
-                    fs[#fs + 1] = "No chat messages logged"
-                end
-                fs[#fs + 1] = ";1;false]"
-                if #unique_chat_players > 0 then
-                    -- Add another textlist below with the messages from the selected player
-                    if not tonumber(context.player_chat_index) then context.player_chat_index = 1 end
-                    fs[#fs + 1] = "label["
-                    fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                    fs[#fs + 1] = ","
-                    fs[#fs + 1] = tostring(controller_height/4+0.85+0.4)
-                    fs[#fs + 1] = ";"
-                    fs[#fs + 1] = minetest.colorize("#000","Select a Message")
-                    fs[#fs + 1] = "]textlist["
-                    fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                    fs[#fs + 1] = ","
-                    fs[#fs + 1] = tostring(controller_height/4+0.85+0.7)
-                    fs[#fs + 1] = ";"
-                    fs[#fs + 1] = tostring(page_width)
-                    fs[#fs + 1] = ","
-                    fs[#fs + 1] = tostring(controller_height/4)
-                    fs[#fs + 1] = ";playerchatlist;"
-                    local pname = indexed_chat_players[tonumber(context.player_chat_index)]
-                    local player_chat_log, player_dm_log
-                    if chatmessages then player_chat_log = chatmessages[pname] end
-                    local to_player_names = {}
-                    if directmessages then 
-                        player_dm_log = directmessages[pname]
-                        -- Parse the textlist index to the to_player_names
-                        if player_dm_log then
-                            for to_pname,_ in pairs(player_dm_log) do
-                                local to_player_messages = player_dm_log[to_pname]
-                                -- Repeat the to_player_name for as many DMs logged to create the indexed array
-                                for _ in pairs(to_player_messages) do
-                                    table.insert(to_player_names,to_pname) 
-                                end
-                            end
-                        end
-                    end
-                    -- Direct messages first
-                    if player_dm_log then
-                        for to_player,_ in pairs(player_dm_log) do
-                            counter = 0
-                            for key,message in pairs(player_dm_log[to_player]) do
-                                counter = counter + 1
-                                fs[#fs + 1] = key
-                                fs[#fs + 1] = " DM to "
-                                fs[#fs + 1] = to_player
-                                fs[#fs + 1] = ": "
-                                fs[#fs + 1] = message
-                                if (counter ~= #player_dm_log[to_player]) or (counter == #player_dm_log[to_player] and player_chat_log and #player_chat_log > 0) then 
-                                    fs[#fs + 1] = "," 
-                                end
-                            end
-                        end
-                    end
-                    -- General chat messages second
-                    if player_chat_log then
-                        counter = 0
-                        for key,message in pairs(player_chat_log) do
-                            counter = counter + 1
-                            fs[#fs + 1] = key
-                            fs[#fs + 1] = ": "
-                            fs[#fs + 1] = message
-                            if counter ~= #player_chat_log then fs[#fs + 1] = "," end
-                        end
-                    end
-                    fs[#fs + 1] = ";"
-                    local chat_index = tonumber(context.mod_chat_index) or 1
-                    fs[#fs + 1] = tostring(chat_index)
-                    fs[#fs + 1] = ";false]"
-                    if countchat > 0 or countdm > 0 then
-                        if countdm > 0 and chat_index <= countdm then
-                            local selected_to_player = to_player_names[chat_index]
-                            local selected_to_player_log = player_dm_log[selected_to_player]
-                            -- Get the message
-                            counter = 0
-                            for key,message in pairs(selected_to_player_log) do
-                                counter = counter + 1
-                                -- There may be many DMs with the selected_to_player_log, so get the correct message based on the chat_index
-                                if counter == chat_index then
-                                    fs[#fs + 1] = "label["
-                                    fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                                    fs[#fs + 1] = ","
-                                    fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.2)
-                                    fs[#fs + 1] = ";"
-                                    fs[#fs + 1] = minetest.colorize("#000","Direct message to "..selected_to_player)
-                                    fs[#fs + 1] = "]style[message;textcolor=#000]textarea["
-                                    fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                                    fs[#fs + 1] = ","
-                                    fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.5)
-                                    fs[#fs + 1] = ";"
-                                    fs[#fs + 1] = tostring(page_width)
-                                    fs[#fs + 1] = ","
-                                    fs[#fs + 1] = "1"
-                                    fs[#fs + 1] = ";message;;"
-                                    fs[#fs + 1] = message
-                                    fs[#fs + 1] = "]"
-                                end
-                            end
-                        else
-                            counter = countdm
-                            for key,message in pairs(player_chat_log) do
-                                counter = counter + 1
-                                if counter == chat_index then
-                                    fs[#fs + 1] = "label["
-                                    fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                                    fs[#fs + 1] = ","
-                                    fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.2)
-                                    fs[#fs + 1] = ";"
-                                    fs[#fs + 1] = minetest.colorize("#000","Message to all players")
-                                    fs[#fs + 1] = "]style[message;textcolor=#000]textarea["
-                                    fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                                    fs[#fs + 1] = ","
-                                    fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.5)
-                                    fs[#fs + 1] = ";"
-                                    fs[#fs + 1] = tostring(page_width)
-                                    fs[#fs + 1] = ","
-                                    fs[#fs + 1] = "1"
-                                    fs[#fs + 1] = ";message;;"
-                                    fs[#fs + 1] = message
-                                    fs[#fs + 1] = "]"
-                                end
-                            end
-                        end
-                        -- There are chat messages, so add buttons
-                        fs[#fs + 1] = "button["
-                        fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                        fs[#fs + 1] = ","
-                        fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.5+1+0.2)
-                        fs[#fs + 1] = ";2.8,0.6;deletemessage;Delete Selected]button["
-                        fs[#fs + 1] = tostring(fsx+(controller_width/2))
-                        fs[#fs + 1] = ","
-                        fs[#fs + 1] = tostring(controller_height/4+0.85+0.7+controller_height/4+0.2+0.5+1+0.2+0.6+0.2)
-                        fs[#fs + 1] = ";3,0.6;clearlog;Clear Player's Log]"
-                    end
-                end
-				return fs
+                return fs
 			end,
             ["6"] = function() -- REPORTS
                 return {}
@@ -916,8 +831,18 @@ box[0,0;16.6,0.5;#737373]
 box[8.275,0;0.05,10.4;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.1,1;;;Moderation]
-textarea[8.85,0.1;7.1,1;;;Moderation]
-textarea[0.55,1;7.2,1;;;Coming soon!]
+textarea[8.85,0.1;7.1,1;;;Message Log]
+textarea[0.55,1;7.2,1;;;Message Logs]
+textlist[0.6,1.4;7.1,5.5;mod_log_players;;1;false]
+button[0.6,7;3.5,0.8;mod_mute;Mute player]
+button[4.2,7;3.5,0.8;mod_clearlog;Clear player's log]
+textarea[0.55,8;7.2,1;;;Message player]
+textarea[0.6,8.4;6.2,1.4;mod_message;;]
+button[6.8,8.4;0.9,1.4;mod_send_message;Send]
+textarea[8.85,1;7.2,1;;;Sent Messages]
+textlist[8.9,1.4;7.1,6.4;mod_log_messages;;1;false]
+textarea[8.85,8;7.2,1;;;(message type)]
+textarea[8.85,8.4;7.2,1.4;;;add message text here!]
 
 REPORTS:
 formspec_version[6]
