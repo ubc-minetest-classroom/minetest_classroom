@@ -67,8 +67,10 @@ function mc_mapper.map_handler(player)
 					for d = 1, #zz  do maxzz = maxzz > zz[d] and maxzz or zz[d] end	
 				else
 					-- Only one tile to update
-					minxx, maxxx = xx, xx
-					minzz, maxzz = zz, zz
+					minxx = type(xx) == "table" and xx[1] or xx
+					maxxx = type(xx) == "table" and xx[1] or xx
+					minzz = type(zz) == "table" and zz[1] or zz
+					maxzz = type(zz) == "table" and zz[1] or zz
 				end
 
 				local vm = minetest.get_voxel_manip()
