@@ -103,7 +103,9 @@ function Realm.ScanForPlayerRealms()
 
     for id, player in ipairs(connectedPlayers) do
         local realm = Realm.GetRealmFromPlayer(player)
-        realm:RegisterPlayer(player)
+        if realm then
+            realm:RegisterPlayer(player)
+        end
     end
 
 end

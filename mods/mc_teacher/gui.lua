@@ -139,9 +139,9 @@ function mc_teacher.show_controller_fs(player,tab)
                     "field[", panel_width + spacer, ",1.4;7.1,0.8;realmname;;", context.realmname or "", "]",
                     "field_close_on_enter[realmname;false]",
                     "textarea[", panel_width + text_spacer, ",2.25;3.6,1;;;Type]",
-                    "dropdown[", panel_width + spacer, ",2.7;3.5,0.8;realmcategory;Default,Spawn,Classroom,Instanced;", context.selected_realm_type or 1, ";true]",
+                    "dropdown[", panel_width + spacer, ",2.7;3.5,0.8;realmcategory;Default,Spawn,Classroom,Instanced" or "", ";", context.selected_realm_type or 1, ";true]",
                     "textarea[", panel_width + text_spacer + 3.6, ",2.25;3.6,1;;;Generation]",
-                    "dropdown[", panel_width + spacer + 3.6, ",2.7;3.5,0.8;mode;Empty World,Schematic,Digital Twin;", context.selected_mode or 1, ";true]",
+                    "dropdown[", panel_width + spacer + 3.6, ",2.7;3.5,0.8;mode;Empty World,Schematic,Digital Twin" or "", ";", context.selected_mode or 1, ";true]",
                 }
 
                 if context.selected_mode == mc_teacher.MODES.EMPTY then

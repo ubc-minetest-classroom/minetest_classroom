@@ -78,10 +78,10 @@ function mc_worldManager.GetRealmByName(realmName)
     return nil
 end
 
-function mc_worldManager.GetCreateInstancedRealm(realmName, player, schematic, temporary)
+function mc_worldManager.GetCreateInstancedRealm(realmName, player, schematic, temporary, size)
     local pmeta = player:get_meta()
-
     local realmKey = realmName:lower()
+    local realmSize = size or {}
 
     local realmInstanceTable = minetest.deserialize(pmeta:get_string("mc_worldmanager_realm_instances"))
     if (realmInstanceTable == nil) then
@@ -96,7 +96,7 @@ function mc_worldManager.GetCreateInstancedRealm(realmName, player, schematic, t
 
     if (realm == nil) then
         if (schematic == nil or schematic == "" or schematic == "nil") then
-            realm = Realm:New("instanced " .. realmName .. player:get_player_name(), { x = 80, y = 80, z = 80 })
+            realm = Realm:New("instanced " .. realmName .. player:get_player_name(), { x = realmSize.x or 80, y = realmSize.y or 80, z = realmSize.z or 80 })
             realm:CreateGround()
             realm:CreateBarriers()
         else

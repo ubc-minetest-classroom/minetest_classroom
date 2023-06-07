@@ -140,6 +140,18 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         ----------------
         if fields.mode and fields.mode ~= context.selected_mode then
             context.selected_mode = fields.mode
+            -- digital twins are currently incompatible with instanced realms
+            if context.selected_mode == mc_teacher.MODES.TWIN and context.selected_realm_type == Realm.CAT_KEY.INSTANCED then
+                context.selected_realm_type = Realm.CAT_KEY.DEFAULT
+            end
+            reload = true
+        end
+        if fields.realmcategory and fields.realmcategory ~= context.selected_realm_type then
+            context.selected_realm_type = fields.realmcategory
+            -- digital twins are currently incompatible with instanced realms
+            if context.selected_mode == mc_teacher.MODES.TWIN and context.selected_realm_type == Realm.CAT_KEY.INSTANCED then
+                context.selected_mode = mc_teacher.MODES.SCHEMATIC
+            end
             reload = true
         end
         if fields.schematic and fields.schematic ~= context.selected_schematic then
@@ -154,31 +166,29 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
         if fields.requestrealm then
             if mc_core.checkPrivs(player,{teacher = true}) then
-                local new_realm_name = fields.realmname or ""
+                local realm_name = fields.realmname or context.realmname or ""
+                local new_realm
                 local errors = {}
 
-                if new_realm_name == "" then
+                if realm_name == "" then
                     table.insert(errors, "Classrooms must have a non-empty name field.")
                 end
-                reload = true
-
-                --local realmName, realmSizeX, realmSizeZ, realmSizeY
-                --if fields.realmname == "" or fields.realmname == nil then realmName = "Unnamed Classroom" else realmName = fields.realmname end
+                
                 if context.selected_mode == mc_teacher.MODES.EMPTY then
                     -- Sanitize + check input
-                    local new_realm_info = {
-                        x_size = tonumber(fields.realm_x_size),
-                        y_size = tonumber(fields.realm_y_size),
-                        z_size = tonumber(fields.realm_z_size)
+                    local realm_size = {
+                        x = tonumber(fields.realm_x_size or context.realm_x),
+                        y = tonumber(fields.realm_y_size or context.realm_y),
+                        z = tonumber(fields.realm_z_size or context.realm_z)
                     }
 
-                    if new_realm_info.x_size < 80 or (new_realm_info.x_size > 240 and not has_server_privs) then
+                    if realm_size.x < 80 or (realm_size.x > 240 and not has_server_privs) then
                         table.insert(errors, "Classrooms must have a width "..(has_server_privs and "of at least 80 nodes." or "between 80 and 240 nodes."))
                     end
-                    if new_realm_info.y_size < 80 or (new_realm_info.y_size > 240 and not has_server_privs) then
+                    if realm_size.y < 80 or (realm_size.y > 240 and not has_server_privs) then
                         table.insert(errors, "Classrooms must have a height "..(has_server_privs and "of at least 80 nodes." or "between 80 and 240 nodes."))
                     end
-                    if new_realm_info.z_size < 80 or (new_realm_info.z_size > 240 and not has_server_privs) then
+                    if realm_size.z < 80 or (realm_size.z > 240 and not has_server_privs) then
                         table.insert(errors, "Classrooms must have a length "..(has_server_privs and "of at least 80 nodes." or "between 80 and 240 nodes."))
                     end
 
@@ -189,11 +199,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
                     end
 
-                    local new_realm = Realm:New(new_realm_name, new_realm_info)
-                    new_realm:CreateGround()
-                    new_realm:CreateBarriersFast()
-                    new_realm:set_data("owner", player:get_player_name())
-                    minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your requested classroom was successfully created."))
+                    if context.selected_realm_type == Realm.CAT_KEY.INSTANCED then
+                        new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, nil, true, realm_size)
+                    else
+                        -- TODO: refactor realm.lua so that it can generate realms of non-block-aligned sizes
+                        new_realm = Realm:New(realm_name, realm_size)
+                        new_realm:CreateGround()
+                        new_realm:CreateBarriersFast()
+                    end
                 elseif context.selected_mode == mc_teacher.MODES.SCHEMATIC then
                     if not context.selected_schematic then
                         table.insert(errors, "No schematic selected.")
@@ -208,10 +221,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
                     end
 
-                    local new_realm = Realm:NewFromSchematic(new_realm_name, context.selected_schematic)
-                    new_realm:set_data("owner", player:get_player_name())
-                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your requested classroom was successfully created."))
-                    reload = true
+                    if context.selected_realm_type == Realm.CAT_KEY.INSTANCED then
+                        new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, context.selected_schematic, true)
+                    else
+                        new_realm = Realm:NewFromSchematic(realm_name, context.selected_schematic)
+                    end
                 elseif context.selected_mode == mc_teacher.MODES.TWIN then
                     if not context.selected_dem then
                         table.insert(errors, "No digital twin world selected.")
@@ -226,11 +240,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
                     end
                     
-                    local new_realm = Realm:NewFromDEM(new_realm_name, context.selected_dem)
-                    new_realm:set_data("owner", player:get_player_name())
-                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your requested classroom was successfully created."))
-                    reload = true
+                    new_realm = Realm:NewFromDEM(realm_name, context.selected_dem)
                 end
+
+                new_realm:set_data("owner", player:get_player_name())
+                new_realm:setCategoryKey(Realm.CAT_MAP[context.selected_realm_type or "1"])
+                minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your requested classroom was successfully created."))
+                reload = true
             end
         end
 
@@ -253,7 +269,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			-- So always check that the requested realm exists and the realm category allows the player to join
 			-- Check that the player selected something from the textlist, otherwise default to spawn realm
 			if not context.selected_realm_id then context.selected_realm_id = mc_worldManager.spawnRealmID end
-			local realm = Realm.GetRealm(tonumber(context.selected_realm_id))
+            minetest.log(minetest.serialize(Realm.realmDict))
+			local realm = Realm.GetRealm(context.selected_realm_id)
 			if realm then
 				realm:TeleportPlayer(player)
 				context.selected_realm_id = nil
