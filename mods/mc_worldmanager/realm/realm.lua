@@ -69,6 +69,7 @@ function Realm:New(name, area, callbacks)
         PlayerLeaveTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
         RealmDeleteTable = {}, -- Table should be populated with tables as follows {{tableName=tableName, functionName=functionName}}
         Permissions = {},
+        PermissionsOverride = {},
         MetaStorage = {}
     }
 

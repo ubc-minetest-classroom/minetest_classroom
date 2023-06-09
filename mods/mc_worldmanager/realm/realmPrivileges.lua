@@ -26,6 +26,22 @@ function Realm.GetPrivWhitelist(file)
     end
 end
 
+function Realm.AugmentPrivWhitelist(sourceFile, destFile)
+    local source = Settings(sourceFile)
+    local sourceKeys = source:get_names()
+    local dest = Settings(destFile)
+    
+    for _,key in pairs(sourceKeys) do
+        if not dest:get(tostring(key)) then
+            local val = source:get_bool(tostring(key))
+            dest:set_bool(tostring(key), val)
+        end
+    end
+
+    local success = dest:write()
+    return success
+end
+
 function Realm.LoadPrivModDefaults()
     Realm.GetPrivWhitelist(modRealmPrivWhitelist)
     Realm.SetPrivWhitelist(worldRealmPrivWhitelist)
@@ -63,7 +79,6 @@ function Realm:ApplyPrivileges(player)
     local pmeta = player:get_meta()
     local privs = minetest.get_player_privs(name)
 
-
     -- Revoke all privileges
     for k, v in pairs(privs) do
         privs[k] = nil
@@ -89,10 +104,28 @@ function Realm:ApplyPrivileges(player)
         end
     end
 
+    -- Remove overridden privileges for the player in the current realm
+    if (self.PermissionsOverride and self.PermissionsOverride[name]) then
+        for k, v in pairs(self.PermissionsOverride[name]) do
+            minetest.log(minetest.serialize(k))
+            minetest.log(minetest.serialize(v))
+            if (Realm.whitelistedPrivs[k] == true) then
+                privs[k] = v
+            end
+        end
+    end
+
+    -- Ensure privs set to false do not get added
+    for k, v in pairs(privs) do
+        if v == false then
+            privs[k] = nil
+        end
+    end
     minetest.set_player_privs(name, privs)
 end
 
 if (mc_core.fileExists(worldRealmPrivWhitelist)) then
+    Realm.AugmentPrivWhitelist(modRealmPrivWhitelist, worldRealmPrivWhitelist)
     Realm.GetPrivWhitelist(worldRealmPrivWhitelist)
 else
     Debug.log("No realm permissions whitelist found, load mod defaults...")
