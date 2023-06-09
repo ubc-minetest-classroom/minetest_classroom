@@ -1,4 +1,6 @@
 Realm.categories = {}
+Realm.CAT_KEY = {DEFAULT = "1", SPAWN = "2", CLASSROOM = "3", INSTANCED = "4"}
+Realm.CAT_MAP = {["1"] = "default", ["2"] = "spawn", ["3"] = "classroom", ["4"] = "instanced"}
 
 function Realm.RegisterCategory(categoryDefinition)
     Realm.categories[string.lower(categoryDefinition.key)] = categoryDefinition
