@@ -36,7 +36,9 @@ function Realm:TeleportPlayer(player)
     self:RunTeleportInFunctions(player)
 
     -- Remove active huds that are realm-specific
-    mc_student.remove_marker(player:get_player_name())
+    if (OldRealmID ~= newRealmID) then
+        mc_core.remove_marker(player:get_player_name())
+    end
 
     return true, "Successfully teleported to realm."
 end
@@ -101,7 +103,9 @@ function Realm.ScanForPlayerRealms()
 
     for id, player in ipairs(connectedPlayers) do
         local realm = Realm.GetRealmFromPlayer(player)
-        realm:RegisterPlayer(player)
+        if realm then
+            realm:RegisterPlayer(player)
+        end
     end
 
 end

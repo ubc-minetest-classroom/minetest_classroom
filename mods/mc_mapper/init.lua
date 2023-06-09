@@ -5,19 +5,44 @@ mc_mapper = {}
 local c_air = minetest.CONTENT_AIR
 local registered_nodes = minetest.registered_nodes
 
---[[ -- TODO: remove tool registration and intgrate with student notebook
-minetest.register_tool("mc_mapper:map", {
-	description = "map",
-	inventory_image = "map_block.png",
-	on_use = function(itemstack, user, pointed_thing)
-	mc_mapper.map_handler(itemstack,user,pointed_thing)
-	end,
-}) ]]
+--- Rounds a yaw measurement to the nearest multiple which a texture exists for
+function mc_mapper.round_to_texture_multiple(yaw)
+	local adjust = math.floor(yaw / 90)
+	local yaw_ref = math.fmod(yaw, 90)
+	local angle_table = {10, 20, 30, 40, 45, 50, 60, 70, 80, 90}
+	local best = {angle = 0, diff = math.abs(yaw_ref)}
 
-function mc_mapper.map_handler(player)
+	for _,angle in pairs(angle_table) do
+		local diff = math.abs(yaw_ref - angle)
+		if diff < best.diff then
+			best.diff = diff
+			best.angle = angle
+		end
+	end
+	return best.angle + (adjust * 90)
+end
+
+local function save_tile(def, mapar, x, z, k, p2)
+	local tiles = def["tiles"]
+	if tiles ~= nil then
+		local tile = tiles[1]
+		local palette = mc_core.split(def["name"], ":")
+		if type(tile) == "table" then
+			tile = tile["name"]
+		end
+		mapar[x][z].y = k
+		mapar[x][z].im = tile
+		if palette[1] == "colorbrewer" then 
+			mapar[x][z].pa = palette[2] 
+			mapar[x][z].p2 = p2
+		end
+	end
+end
+
+function mc_mapper.map_handler(player, raw_bounds)
 	local realm = Realm.GetRealmFromPlayer(player)
 	local pos = player:get_pos()
-	pos.x, pos.y, pos.z = math.floor(pos.x), math.floor(pos.y), math.floor(pos.z)
+	pos.x, pos.y, pos.z = math.round(pos.x), math.round(pos.y), math.round(pos.z)
 	local ceiling = realm.EndPos.y-1
 	local player_name = player:get_player_name()
 	local mapar = {}
@@ -26,6 +51,12 @@ function mc_mapper.map_handler(player)
 	local pp
 	local po = {x = 0, y = 0, z = 0}
 	local tile = ""
+	local bounds = {
+		xmin = raw_bounds and raw_bounds.xmin or -17,
+		xmax = raw_bounds and raw_bounds.xmax or 17,
+		zmin = raw_bounds and raw_bounds.zmin or -17,
+		zmax = raw_bounds and raw_bounds.zmax or 17
+	}
 
 	-- Cache our results in player metadata to speed things and reduce calls to SQLlite database for large realms with many players
 	local pmeta = player:get_meta()
@@ -37,8 +68,8 @@ function mc_mapper.map_handler(player)
 			local c = 1
 			local xx
 			local zz
-			for i = -17,17,1 do
-				for j = -17,17,1 do
+			for i = bounds.xmin, bounds.xmax, 1 do
+				for j = bounds.zmin, bounds.zmax, 1 do
 					-- Avoid trying to cache positions outside of the realm
 					if pos.x + i >= realm.StartPos.x and pos.z + j >= realm.StartPos.z and pos.x + i <= realm.EndPos.x and pos.z + j <= realm.EndPos.z then
 						-- We are in the realm, check if the position is already cached
@@ -78,19 +109,17 @@ function mc_mapper.map_handler(player)
 				local a = VoxelArea:new{MinEdge = emin, MaxEdge = emax}
 				local data = vm:get_data()
 				local param2data = vm:get_param2_data()
-				local p2
-				local def
-				local k
+				local p2, def, k
 
-				for i = -17,17,1 do
-					mapar[i+17] = {}
+				for i = bounds.xmin, bounds.xmax, 1 do
+					mapar[i-bounds.xmin] = {}
 					if not realmMapCache.id[pos.x+i] then 
 						realmMapCache.id[pos.x+i] = {} 
 						realmMapCache.y[pos.x+i] = {}
 						realmMapCache.param2[pos.x+i] = {}
 					end
-					for j = -17,17,1 do
-						mapar[i+17][j+17] = {}
+					for j = bounds.zmin, bounds.zmax, 1 do
+						mapar[i-bounds.xmin][j-bounds.zmin] = {}
 						if realmMapCache.id[pos.x+i] and realmMapCache.id[pos.x+i][pos.z+j] then
 							def = registered_nodes[minetest.get_name_from_content_id(realmMapCache.id[pos.x+i][pos.z+j])]
 							k = realmMapCache.y[pos.x+i][pos.z+j]
@@ -116,22 +145,8 @@ function mc_mapper.map_handler(player)
 							realmMapCache.y[pos.x+i][pos.z+j] = k
 							realmMapCache.param2[pos.x+i][pos.z+j] = p2
 						end
-						local tiles
 						if def and pos.x+i <= realm.EndPos.x and pos.x+i >= realm.StartPos.x and pos.z+j <= realm.EndPos.z and pos.z+j >= realm.StartPos.z then 
-							tiles = def["tiles"]
-							if tiles ~= nil then
-								tile = tiles[1]
-								local palette = mc_core.split(def["name"], ":")
-								if type(tile) == "table" then
-									tile = tile["name"]
-								end
-								mapar[i+17][j+17].y = k
-								mapar[i+17][j+17].im = tile
-								if palette[1] == "colorbrewer" then 
-									mapar[i+17][j+17].pa = palette[2] 
-									mapar[i+17][j+17].p2 = p2
-								end
-							end
+							save_tile(def, mapar, i-bounds.xmin, j-bounds.zmin, k, p2)
 						end
 					end
 				end
@@ -139,36 +154,18 @@ function mc_mapper.map_handler(player)
 				pmeta:set_string("realmMapCache", minetest.serialize(realmMapCache))
 			else
 				-- The cache already contains all the tiles we need, return them without calling the LVM
-				local def
-				local k
-				local p2
-				local tiles
-				local palette
-				for i = -17,17,1 do
-					mapar[i+17] = {}
-					for j = -17,17,1 do
-						mapar[i+17][j+17] = {}
+				local def, k, p2, palette
+				for i = bounds.xmin, bounds.xmax, 1 do
+					mapar[i-bounds.xmin] = {}
+					for j = bounds.zmin, bounds.zmax, 1 do
+						mapar[i-bounds.xmin][j-bounds.zmin] = {}
 						if realmMapCache.id[pos.x+i] and realmMapCache.id[pos.x+i][pos.z+j] then
 							def = registered_nodes[minetest.get_name_from_content_id(realmMapCache.id[pos.x+i][pos.z+j])]
 						end
 						if def and pos.x+i <= realm.EndPos.x and pos.x+i >= realm.StartPos.x and pos.z+j <= realm.EndPos.z and pos.z+j >= realm.StartPos.z then
 							k = realmMapCache.y[pos.x+i] and realmMapCache.y[pos.x+i][pos.z+j]
 							p2 = realmMapCache.param2[pos.x+i] and realmMapCache.param2[pos.x+i][pos.z+j]
-							
-							tiles = def["tiles"]
-							if tiles ~= nil then
-								tile = tiles[1]
-								palette = mc_core.split(def["name"], ":")
-								if type(tile) == "table" then
-									tile = tile["name"]
-								end
-								mapar[i+17][j+17].y = k
-								mapar[i+17][j+17].im = tile
-								if palette[1] == "colorbrewer" then 
-									mapar[i+17][j+17].pa = palette[2] 
-									mapar[i+17][j+17].p2 = p2
-								end
-							end
+							save_tile(def, mapar, i-bounds.xmin, j-bounds.zmin, k, p2)
 						end
 					end
 				end
@@ -189,13 +186,13 @@ function mc_mapper.map_handler(player)
 			local param2data = vm:get_param2_data()
 			local p2
 		
-			for i = -17,17,1 do
-				mapar[i+17] = {}
+			for i = bounds.xmin, bounds.xmax, 1 do
+				mapar[i-bounds.xmin] = {}
 				realmMapCache.id[pos.x+i] = {}
 				realmMapCache.y[pos.x+i] = {}
 				realmMapCache.param2[pos.x+i] = {}
-				for j = -17,17,1 do
-					mapar[i+17][j+17] = {}
+				for j = bounds.zmin, bounds.zmax, 1 do
+					mapar[i-bounds.xmin][j-bounds.zmin] = {}
 					realmMapCache.id[pos.x+i][pos.z+j] = {}
 					realmMapCache.y[pos.x+i][pos.z+j] = {}
 					realmMapCache.param2[pos.x+i][pos.z+j] = {}
@@ -215,22 +212,8 @@ function mc_mapper.map_handler(player)
 					realmMapCache.y[pos.x+i][pos.z+j] = k
 					realmMapCache.param2[pos.x+i][pos.z+j] = p2
 					def = registered_nodes[minetest.get_name_from_content_id(c_no)]
-					local tiles
 					if def and pos.x+i <= realm.EndPos.x and pos.x+i >= realm.StartPos.x and pos.z+j <= realm.EndPos.z and pos.z+j >= realm.StartPos.z then
-						tiles = def["tiles"]
-						if tiles ~= nil then
-							tile = tiles[1]
-							local palette = mc_core.split(def["name"], ":")
-							if type(tile) == "table" then
-								tile = tile["name"]
-							end
-							mapar[i+17][j+17].y = k
-							mapar[i+17][j+17].im = tile
-							if palette[1] == "colorbrewer" then 
-								mapar[i+17][j+17].pa = palette[2] 
-								mapar[i+17][j+17].p2 = p2
-							end
-						end
+						save_tile(def, mapar, i-bounds.xmin, j-bounds.zmin, k, p2)
 					end
 				end
 			end
@@ -246,19 +229,19 @@ function mc_mapper.map_handler(player)
 		realmMapCache.param2 = {}
 		realmMapCache.realmID = {}
 		local vm = minetest.get_voxel_manip()
-		local emin, emax = vm:read_from_map({x=pos.x-17, y=realm.StartPos.y, z=pos.z-17}, {x=pos.x+17, y=realm.EndPos.y, z=pos.z+17})
+		local emin, emax = vm:read_from_map({x=pos.x+bounds.xmin, y=realm.StartPos.y, z=pos.z+bounds.zmin}, {x=pos.x+bounds.xmax, y=realm.EndPos.y, z=pos.z+bounds.zmax})
 		local a = VoxelArea:new{MinEdge = emin, MaxEdge = emax}
 		local data = vm:get_data()
 		local param2data = vm:get_param2_data()
 		local p2
 	
-		for i = -17,17,1 do
-			mapar[i+17] = {}
+		for i = bounds.xmin, bounds.xmax, 1 do
+			mapar[i-bounds.xmin] = {}
 			realmMapCache.id[pos.x+i] = {}
 			realmMapCache.y[pos.x+i] = {}
 			realmMapCache.param2[pos.x+i] = {}
-			for j = -17,17,1 do
-				mapar[i+17][j+17] = {}
+			for j = bounds.zmin, bounds.zmax, 1 do
+				mapar[i-bounds.xmin][j-bounds.zmin] = {}
 				realmMapCache.id[pos.x+i][pos.z+j] = {}
 				realmMapCache.y[pos.x+i][pos.z+j] = {}
 				realmMapCache.param2[pos.x+i][pos.z+j] = {}
@@ -278,22 +261,8 @@ function mc_mapper.map_handler(player)
 				realmMapCache.y[pos.x+i][pos.z+j] = k
 				realmMapCache.param2[pos.x+i][pos.z+j] = p2
 				def = registered_nodes[minetest.get_name_from_content_id(c_no)]
-				local tiles
 				if def and pos.x+i <= realm.EndPos.x and pos.x+i >= realm.StartPos.x and pos.z+j <= realm.EndPos.z and pos.z+j >= realm.StartPos.z then 
-					tiles = def["tiles"]
-					if tiles ~= nil then
-						tile = tiles[1]
-						local palette = mc_core.split(def["name"], ":")
-						if type(tile) == "table" then
-							tile = tile["name"]
-						end
-						mapar[i+17][j+17].y = k
-						mapar[i+17][j+17].im = tile
-						if palette[1] == "colorbrewer" then 
-							mapar[i+17][j+17].pa = palette[2] 
-							mapar[i+17][j+17].p2 = p2
-						end
-					end
+					save_tile(def, mapar, i-bounds.xmin, j-bounds.zmin, k, p2)
 				end
 			end
 		end
@@ -303,5 +272,4 @@ function mc_mapper.map_handler(player)
 	end
 
 	return mapar
-	--minetest.show_formspec(player_name, "mc_mapper:map", map)
 end

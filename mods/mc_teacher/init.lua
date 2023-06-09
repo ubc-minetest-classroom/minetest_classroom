@@ -3,10 +3,29 @@ mc_teacher = {
     students = {},
     meta = minetest.get_mod_storage(),
     path = minetest.get_modpath("mc_teacher"),
-    fs_context = {
-        selectedMode = "1",
+    marker_expiry = 120,
+    fs_context = {},
+    restart_scheduled = {},
+    TABS = {
+        OVERVIEW = "1",
+        CLASSROOMS = "2",
+        MAP = "3",
+        PLAYERS = "4",
+        MODERATION = "5",
+        REPORTS = "6",
+        HELP = "7",
+        SERVER = "8", -- TODO: make dynamic for easier modification of notebook
     },
-    restart_scheduled = {}
+    MODES = {
+        EMPTY = "1",
+        SCHEMATIC = "2",
+        TWIN = "3",
+    },
+    PMODE = {
+        SELECTED = "1",
+        TAB = "2",
+        ALL = "3",
+    }
 }
 
 -- Source files

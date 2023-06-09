@@ -177,11 +177,11 @@ The created formspec will exceed the bounds of the content area (0.5 units left,
   - `options` (*`table`*): Formspec options
     ```lua
     {
-        bg = "#325140",                     -- primary notebook colour
-        shadow = "#23392d",                 -- notebook shadow colour
-        binding = "#164326",                -- notebook binding colour
-        divider = nil,                      -- notebook divider colour, or nil to exclude
-        margin_lines = {1, width/2 + 1}     -- locations of vertical page margins
+        bg = "#325140",                   -- primary notebook colour
+        shadow = "#23392d",               -- notebook shadow colour
+        binding = "#164326",              -- notebook binding colour
+        divider = nil,                    -- notebook divider colour, or nil to exclude
+        margin_lines = {1, width/2 + 1}   -- locations of vertical page margins
     }
     ```
 - Returns:
