@@ -1,17 +1,3 @@
---- Returns a list of classrooms that the given player can join
-local function get_fs_classroom_list(player)
-	local list = {}
-	Realm.ScanForPlayerRealms()
-
-	for _,realm in pairs(Realm.realmDict) do
-        local playerCount = tonumber(realm:GetPlayerCount())
-        table.insert(list, table.concat({
-            minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"
-        }))
-	end
-	return table.concat(list, ",")
-end
-
 --- Returns a list containing the names of the given player's saved coordinates
 local function get_saved_coords(player)
 	local pmeta = player:get_meta()
@@ -64,7 +50,7 @@ function mc_teacher.show_controller_fs(player,tab)
 	if mc_core.checkPrivs(player) then
         local has_server_privs = mc_core.checkPrivs(player, {server = true})
 		local tab_map = {
-			["1"] = function() -- OVERVIEW
+			[mc_teacher.TABS.OVERVIEW] = function() -- OVERVIEW
                 local button_width = 1.7
 				local button_height = 1.6
 				local rules = mc_rules.meta:get_string("rules")
@@ -118,7 +104,19 @@ function mc_teacher.show_controller_fs(player,tab)
 
 				return fs
 			end,
-			["2"] = function() -- CLASSROOMS
+			[mc_teacher.TABS.CLASSROOMS] = function() -- CLASSROOMS
+                local classroom_list = {}
+				local realm_count = 1
+                context.realm_id_to_i = {}
+
+                Realm.ScanForPlayerRealms()
+                for id, realm in pairs(Realm.realmDict or {}) do
+                    local playerCount = tonumber(realm:GetPlayerCount())
+                    table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
+                    context.realm_id_to_i[tostring(id)] = realm_count
+                    realm_count = realm_count + 1
+                end
+
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
@@ -129,7 +127,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Available Classrooms]",
-                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", get_fs_classroom_list(player), ";", context.selected_realm_id or 1, ";false]",
+                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.realm_id_to_i and context.realm_id_to_i[context.selected_realm_id] or 1, ";false]",
                     "button[", spacer, ",9;2.3,0.8;teleportrealm;Teleport]",
                     "button[", spacer + 2.4, ",9;2.3,0.8;editrealm;Edit]",
                     "button[", spacer + 4.8, ",9;2.3,0.8;deleterealm;Delete]",
@@ -196,7 +194,7 @@ function mc_teacher.show_controller_fs(player,tab)
                         "textarea[", panel_width + text_spacer, ",3.6;", panel_width - 2*text_spacer, ",1.2;;;Select a generation mode for more options!]",
                     }))
                 end
-                    
+
                 table.insert(fs, table.concat({
                     "textarea[", panel_width + text_spacer, ",4.9;", panel_width - 2*text_spacer, ",1;;;Default Privileges]",
                     "style_type[textarea;font=mono]",
@@ -206,12 +204,12 @@ function mc_teacher.show_controller_fs(player,tab)
                     "textarea[", panel_width + text_spacer + 2.9, ",5.7;1.9,1;;;fly]",
                     "textarea[", panel_width + text_spacer + 5.3, ",5.3;1.9,1;;;noclip]",
                     "textarea[", panel_width + text_spacer + 5.3, ",5.7;1.9,1;;;give]",
-                    "checkbox[", panel_width + spacer, ",5.5;priv_interact;;true]",
-                    "checkbox[", panel_width + spacer, ",5.9;priv_shout;;true]",
-                    "checkbox[", panel_width + spacer + 2.4, ",5.5;priv_fast;;true]",
-                    "checkbox[", panel_width + spacer + 2.4, ",5.9;priv_fly;;false]",
-                    "checkbox[", panel_width + spacer + 4.8, ",5.5;priv_noclip;;false]",
-                    "checkbox[", panel_width + spacer + 4.8, ",5.9;priv_give;;false]",
+                    "checkbox[", panel_width + spacer, ",5.5;priv_interact;;", context.selected_privs.interact or "false", "]",
+                    "checkbox[", panel_width + spacer, ",5.9;priv_shout;;", context.selected_privs.shout or "false", "]",
+                    "checkbox[", panel_width + spacer + 2.4, ",5.5;priv_fast;;", context.selected_privs.fast or "false", "]",
+                    "checkbox[", panel_width + spacer + 2.4, ",5.9;priv_fly;;", context.selected_privs.fly or "false", "]",
+                    "checkbox[", panel_width + spacer + 4.8, ",5.5;priv_noclip;;", context.selected_privs.noclip or "false", "]",
+                    "checkbox[", panel_width + spacer + 4.8, ",5.9;priv_give;;", context.selected_privs.give or "false", "]",
 
                     "style_type[textarea;font=mono,bold]",
                     "textarea[", panel_width + text_spacer, ",6.2;", panel_width - 2*text_spacer, ",1;;;Background Music]",
@@ -222,24 +220,10 @@ function mc_teacher.show_controller_fs(player,tab)
                 }))
 
                 return fs
-                --[[ -- Background Music
-                -- method: local backgroundSound = realm:get_data("background_sound")
-                fs[#fs + 1] = "dropdown["
-                fs[#fs + 1] = tostring(fsx)
-                fs[#fs + 1] = ","
-                fs[#fs + 1] = tostring(fsy)
-                fs[#fs + 1] = ";"
-                last_width = (page_width/2)-0.1
-                fs[#fs + 1] = tostring(last_width)
-                fs[#fs + 1] = ","
-                last_height = 0.6
-                fs[#fs + 1] = tostring(last_height)
-                -- iterate registered music
-                mc_worldManager.path
-                fs[#fs + 1] = ";music;None,this song,another song,third song;"
-                fs[#fs + 1] = ";true]"]]
+                -- TODO: Background Music and skyboxes
+                -- method: local backgroundSound = realm:get_data("background_sound")]]
 			end,
-			["3"] = function() -- MAP
+			[mc_teacher.TABS.MAP] = function() -- MAP
                 local map_x = spacer + 0.025
 				local map_y = 1.425
 				local fs = {
@@ -343,7 +327,7 @@ function mc_teacher.show_controller_fs(player,tab)
 
 				return fs
 			end,
-            ["4"] = function() -- PLAYERS
+            [mc_teacher.TABS.PLAYERS] = function() -- PLAYERS
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
@@ -410,7 +394,7 @@ function mc_teacher.show_controller_fs(player,tab)
 
                 return fs
             end,
-			["5"] = function() -- MODERATION
+			[mc_teacher.TABS.MODERATION] = function() -- MODERATION
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
@@ -528,13 +512,13 @@ function mc_teacher.show_controller_fs(player,tab)
 
                 return fs
 			end,
-            ["6"] = function() -- REPORTS
+            [mc_teacher.TABS.REPORTS] = function() -- REPORTS
                 return {}
             end,
-            ["7"] = function() -- HELP
+            [mc_teacher.TABS.HELP] = function() -- HELP
                 return {}
             end,
-            ["8"] = function() -- SERVER
+            [mc_teacher.TABS.SERVER] = function() -- SERVER
                 local fsx, fsy
 				local fs = {}
                 fs[#fs + 1] = "field[1,0.85;"

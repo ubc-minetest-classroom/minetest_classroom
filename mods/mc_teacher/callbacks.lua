@@ -164,6 +164,25 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
         end
 
+        if fields.priv_interact then
+            context.selected_privs.interact = fields.priv_interact
+        end
+        if fields.priv_shout then
+            context.selected_privs.shout = fields.priv_shout
+        end
+        if fields.priv_fast then
+            context.selected_privs.fast = fields.priv_fast
+        end
+        if fields.priv_fly then
+            context.selected_privs.fly = fields.priv_fly
+        end
+        if fields.priv_noclip then
+            context.selected_privs.noclip = fields.priv_noclip
+        end
+        if fields.priv_give then
+            context.selected_privs.give = fields.priv_give
+        end
+        
         if fields.requestrealm then
             if mc_core.checkPrivs(player,{teacher = true}) then
                 local realm_name = fields.realmname or context.realmname or ""
@@ -245,6 +264,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
                 new_realm:set_data("owner", player:get_player_name())
                 new_realm:setCategoryKey(Realm.CAT_MAP[context.selected_realm_type or "1"])
+                new_realm:UpdateRealmPrivilege(context.selected_privs)
                 minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your requested classroom was successfully created."))
                 reload = true
             end
@@ -269,7 +289,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			-- So always check that the requested realm exists and the realm category allows the player to join
 			-- Check that the player selected something from the textlist, otherwise default to spawn realm
 			if not context.selected_realm_id then context.selected_realm_id = mc_worldManager.spawnRealmID end
-            minetest.log(minetest.serialize(Realm.realmDict))
+            --minetest.log(minetest.serialize(Realm.realmDict))
 			local realm = Realm.GetRealm(context.selected_realm_id)
 			if realm then
 				realm:TeleportPlayer(player)

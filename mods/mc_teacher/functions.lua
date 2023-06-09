@@ -7,7 +7,8 @@ function mc_teacher.get_fs_context(player)
 	if not mc_teacher.fs_context[pname] then
 		mc_teacher.fs_context[pname] = {
 			tab = mc_teacher.TABS.OVERVIEW,
-            selected_mode = "1"
+            selected_mode = "1",
+			selected_privs = {interact = "true", shout = "true", fast = "true"},
 		}
 	end
 	return mc_teacher.fs_context[pname]

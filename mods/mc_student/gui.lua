@@ -5,23 +5,6 @@ local function player_can_join_realm(player, realm)
 	return joinable
 end
 
---- Returns a list of classrooms that the given player can join
-local function get_fs_classroom_list(player)
-	local list = {}
-	Realm.ScanForPlayerRealms()
-
-	for _,realm in pairs(Realm.realmDict) do
-		-- check if the realm is something that should be shown to this player
-		if mc_core.checkPrivs(player, {teacher = true}) or player_can_join_realm(player, realm) then
-			local playerCount = tonumber(realm:GetPlayerCount())
-			table.insert(list, table.concat({
-				minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"
-			}))
-		end
-	end
-	return table.concat(list, ",")
-end
-
 --- Returns a ping indicator texture for the given player
 local function get_ping_texture(pinfo)
 	local tile = 5
@@ -130,6 +113,20 @@ function mc_student.show_notebook_fs(player, tab)
 				return fs
 			end,
 			[mc_student.TABS.CLASSROOMS] = function() -- CLASSROOMS + ONLINE PLAYERS
+				local classroom_list = {}
+				local realm_count = 1
+                context.realm_id_to_i = {}
+                Realm.ScanForPlayerRealms()
+				
+                for id, realm in pairs(Realm.realmDict) do
+					if mc_core.checkPrivs(player, {teacher = true}) or player_can_join_realm(player, realm) then
+						local playerCount = tonumber(realm:GetPlayerCount())
+						table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
+						context.realm_id_to_i[id] = realm_count
+						realm_count = realm_count + 1
+					end
+                end
+
 				-- TODO: add area/realm owner information
 				local fs = {
 					"image[0,0;", notebook_width, ",0.5;mc_pixel.png^[multiply:#737373]",
@@ -140,7 +137,7 @@ function mc_student.show_notebook_fs(player, tab)
 
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
 					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Available Classrooms]",
-					"textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", get_fs_classroom_list(player), ";", context.selected_realm or "1", ";false]",
+					"textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.realm_id_to_i and context.realm_id_to_i[context.selected_realm] or "1", ";false]",
 					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
 					"button[", spacer, ",9;", panel_width - 2*spacer, ",0.8;teleportrealm;Teleport]",
 				}

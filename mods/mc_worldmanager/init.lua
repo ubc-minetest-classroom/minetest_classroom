@@ -96,11 +96,11 @@ function mc_worldManager.GetCreateInstancedRealm(realmName, player, schematic, t
 
     if (realm == nil) then
         if (schematic == nil or schematic == "" or schematic == "nil") then
-            realm = Realm:New("instanced " .. realmName .. player:get_player_name(), { x = realmSize.x or 80, y = realmSize.y or 80, z = realmSize.z or 80 })
+            realm = Realm:New("[instance for " .. player:get_player_name() .. "] " .. realmName, { x = realmSize.x or 80, y = realmSize.y or 80, z = realmSize.z or 80 })
             realm:CreateGround()
             realm:CreateBarriers()
         else
-            realm = Realm:NewFromSchematic("instanced " .. realmName .. " " .. player:get_player_name(), schematic)
+            realm = Realm:NewFromSchematic("[instance for " .. player:get_player_name() .. "] " .. realmName, schematic)
         end
 
         realmInstanceTable[realmKey] = realm.ID

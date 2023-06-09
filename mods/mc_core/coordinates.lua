@@ -74,7 +74,7 @@ end
 minetest.register_on_joinplayer(function(player)
     local pname = player:get_player_name()
     local pmeta = player:get_meta()
-    temp = minetest.deserialize(pmeta:get_string("coordinates"))
+    local temp = minetest.deserialize(pmeta:get_string("coordinates"))
     -- old format: convert to newer format
     if temp and temp.notes then
         temp.note_map = {}

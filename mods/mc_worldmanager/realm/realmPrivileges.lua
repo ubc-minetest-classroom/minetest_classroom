@@ -26,6 +26,22 @@ function Realm.GetPrivWhitelist(file)
     end
 end
 
+function Realm.AugmentPrivWhitelist(sourceFile, destFile)
+    local source = Settings(sourceFile)
+    local sourceKeys = source:get_names()
+    local dest = Settings(destFile)
+    
+    for _,key in pairs(sourceKeys) do
+        if not dest:get(tostring(key)) then
+            local val = source:get_bool(tostring(key))
+            dest:set_bool(tostring(key), val)
+        end
+    end
+
+    local success = dest:write()
+    return success
+end
+
 function Realm.LoadPrivModDefaults()
     Realm.GetPrivWhitelist(modRealmPrivWhitelist)
     Realm.SetPrivWhitelist(worldRealmPrivWhitelist)
@@ -93,6 +109,7 @@ function Realm:ApplyPrivileges(player)
 end
 
 if (mc_core.fileExists(worldRealmPrivWhitelist)) then
+    Realm.AugmentPrivWhitelist(modRealmPrivWhitelist, worldRealmPrivWhitelist)
     Realm.GetPrivWhitelist(worldRealmPrivWhitelist)
 else
     Debug.log("No realm permissions whitelist found, load mod defaults...")
