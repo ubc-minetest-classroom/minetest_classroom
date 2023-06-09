@@ -328,6 +328,49 @@ function mc_teacher.show_controller_fs(player,tab)
 				return fs
 			end,
             [mc_teacher.TABS.PLAYERS] = function() -- PLAYERS
+                context.selected_p_tab = context.selected_p_tab or "1"
+                context.selected_p_player = context.selected_p_player or 1
+                context.selected_p_mode = context.selected_p_mode or mc_teacher.PMODE.SELECTED
+
+                if not context.p_list then
+                    context.p_list = {}
+                    if context.selected_p_tab == "1" then
+                        for student,_ in pairs(mc_teacher.students) do
+                            table.insert(context.p_list, student)
+                        end
+                    elseif context.selected_p_tab == "2" then
+                        for teacher,_ in pairs(mc_teacher.teachers) do
+                            table.insert(context.p_list, teacher)
+                        end
+                    elseif context.selected_p_tab == "3" then
+                        local this_realm = Realm.GetRealmFromPlayer(player)
+                        for _,p in pairs(minetest.get_connected_players() or {}) do
+                            if p:is_player() then
+                                local p_realm = Realm.GetRealmFromPlayer(p)
+                                if this_realm and p_realm and this_realm.ID == p_realm.ID then
+                                    table.insert(context.p_list, p:get_player_name())
+                                end
+                            end
+                        end
+                    end
+                end
+
+                local selected_player = context.p_list[context.selected_p_player]
+                local player_privs = {interact = true, shout = true, fast = true, fly = true, noclip = true, give = true}
+                if selected_player then
+                    local _,missing = minetest.check_player_privs(selected_player, player_privs)
+                    if type(missing) == "string" then missing = {missing} end
+
+                    for _,priv in pairs(missing or {}) do
+                        player_privs[priv] = false
+                    end
+                    for priv, v in pairs(player_privs) do
+                        context.selected_privs[priv] = v and "true" or "false"
+                    end
+                else
+                    player_privs = {}
+                end
+
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
@@ -336,16 +379,21 @@ function mc_teacher.show_controller_fs(player,tab)
 					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Manage Players</b></center></style>]",
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
-                    "tabheader[", spacer, ",1.4;", panel_width - 2*spacer - 0.35, ",0.5;group_header;Students,Teachers;1;false;true]",
-                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;group_list;;1;false]",
+                    -- TODO: re-implement groups
+                    "style[p_group_new,p_group_edit,p_group_delete,p_group_add_player,p_group_remove_player;bgimg=mc_pixel.png^[multiply:#acacac]",
+                    -- TODO: re-impelment remaining actions
+                    "style[p_teleport,p_bring,p_audience,p_freeze;bgimg=mc_pixel.png^[multiply:#acacac]",
+                    
+                    "tabheader[", spacer, ",1.4;", panel_width - 2*spacer - 0.35, ",0.5;p_list_header;Students,Teachers,Classroom;", context.selected_p_tab, ";false;true]",
+                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;p_list;", table.concat(context.p_list, ","), ";", context.selected_p_player, ";false]",
                     "button[", panel_width - spacer - 0.45, ",0.95;0.45,0.45;p_group_new;+]",
                     "button[", spacer, ",9;3.5,0.8;p_group_edit;Edit Group]",
                     "button[", spacer + 3.6, ",9;3.5,0.8;p_group_delete;Delete Group]",
 
                     "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Action Mode]",
-                    "button[", panel_width + spacer, ",1.4;2.3,0.8;;Selected]",
-                    "button[", panel_width + spacer + 2.4, ",1.4;2.3,0.8;;Group]",
-                    "button[", panel_width + spacer + 4.8, ",1.4;2.3,0.8;;All]",
+                    "button[", panel_width + spacer, ",1.4;2.3,0.8;p_mode_selected;Selected]",
+                    "button[", panel_width + spacer + 2.4, ",1.4;2.3,0.8;p_mode_tab;Tab]",
+                    "button[", panel_width + spacer + 4.8, ",1.4;2.3,0.8;p_mode_all;All]",
                     "textarea[", panel_width + text_spacer, ",2.45;", panel_width - 2*text_spacer, ",1;;;Classroom Privileges]",
                     "style_type[textarea;font=mono]",
                     "textarea[", panel_width + text_spacer + 0.5, ",2.85;1.8,1;;;interact]",
@@ -355,42 +403,62 @@ function mc_teacher.show_controller_fs(player,tab)
                     "textarea[", panel_width + text_spacer + 5.3, ",2.85;1.8,1;;;noclip]",
                     "textarea[", panel_width + text_spacer + 5.3, ",3.25;1.8,1;;;give]",
                     "style_type[textarea;font=mono,bold]",
-                    "checkbox[", panel_width + spacer, ",3.05;priv_interact;;true]",
-                    "checkbox[", panel_width + spacer, ",3.45;priv_shout;;true]",
-                    "checkbox[", panel_width + spacer + 2.4, ",3.05;priv_fast;;true]",
-                    "checkbox[", panel_width + spacer + 2.4, ",3.45;priv_fly;;false]",
-                    "checkbox[", panel_width + spacer + 4.8, ",3.05;priv_noclip;;false]",
-                    "checkbox[", panel_width + spacer + 4.8, ",3.45;priv_give;;false]",
-                    "button[", panel_width + spacer, ",3.75;3.5,0.8;;Update privs]",
-                    "button[", panel_width + spacer + 3.6, ",3.75;3.5,0.8;;Reset privs]",
-
-                    "textarea[", panel_width + text_spacer, ",4.8;", panel_width - 2*text_spacer, ",1;;;Actions]",
-                    "button[", panel_width + spacer, ",5.2;2.3,0.8;;Teleport]",
-                    "button[", panel_width + spacer + 2.4, ",5.2;2.3,0.8;;Bring]",
-                    "button[", panel_width + spacer + 4.8, ",5.2;2.3,0.8;;Audience]",
-                    "button[", panel_width + spacer, ",6.1;2.3,0.8;;Kick]",
-                    "button[", panel_width + spacer + 2.4, ",6.1;2.3,0.8;;Ban]",
-                    "button[", panel_width + spacer + 4.8, ",6.1;2.3,0.8;;Freeze]",
-                    "textarea[", panel_width + text_spacer, ",7.15;", panel_width - 2*text_spacer, ",1;;;Groups]",
-                    "dropdown[", panel_width + spacer, ",7.55;3.5,0.8;;;1;false]",
-                    "button[", panel_width + spacer + 3.6, ",7.55;1.7,0.8;;Add]",
-                    "button[", panel_width + spacer + 5.4, ",7.55;1.7,0.8;;Remove]",
-                    "textarea[", panel_width + text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Server Role]",
                 }
 
-                if has_server_privs then
-                    table.insert(fs, table.concat({
-                        "button[", panel_width + spacer, ",9;2.3,0.8;;Student]",
-                        "button[", panel_width + spacer + 2.4, ",9;2.3,0.8;;Teacher]",
-                        "button[", panel_width + spacer + 4.8, ",9;2.3,0.8;;Admin]",
-                    }))
-                else
-                    table.insert(fs, table.concat({
-                        "style_type[textarea;font=mono]",
-                        "textarea[", panel_width + text_spacer, ",9.2;", panel_width - 2*text_spacer, ",1;;;(role text)]",
-                        "style_type[textarea;font=mono,bold]",
-                    }))
+                if player_privs.interact then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05, ",2.85;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
                 end
+                if player_privs.shout then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05, ",3.25;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                end
+                if player_privs.fast then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer + 2.35, ",2.85;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                end
+                if player_privs.fly then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer + 2.35, ",3.25;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                end
+                if player_privs.noclip then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer + 4.75, ",2.85;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                end
+                if player_privs.give then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer + 4.75, ",3.25;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                end
+
+                table.insert(fs, table.concat({
+                    "checkbox[", panel_width + spacer, ",3.05;priv_interact;;", context.selected_privs.interact or "false", "]",
+                    "checkbox[", panel_width + spacer, ",3.45;priv_shout;;", context.selected_privs.shout or "false", "]",
+                    "checkbox[", panel_width + spacer + 2.4, ",3.05;priv_fast;;", context.selected_privs.fast or "false", "]",
+                    "checkbox[", panel_width + spacer + 2.4, ",3.45;priv_fly;;", context.selected_privs.fly or "false", "]",
+                    "checkbox[", panel_width + spacer + 4.8, ",3.05;priv_noclip;;", context.selected_privs.noclip or "false", "]",
+                    "checkbox[", panel_width + spacer + 4.8, ",3.45;priv_give;;", context.selected_privs.give or "false", "]",
+                    "button[", panel_width + spacer, ",3.75;3.5,0.8;p_priv_update;Update privs]",
+                    "button[", panel_width + spacer + 3.6, ",3.75;3.5,0.8;p_priv_reset;Reset privs]",
+
+                    "textarea[", panel_width + text_spacer, ",4.8;", panel_width - 2*text_spacer, ",1;;;Actions]",
+                    "button[", panel_width + spacer, ",5.2;2.3,0.8;p_teleport;Teleport]",
+                    "button[", panel_width + spacer + 2.4, ",5.2;2.3,0.8;p_bring;Bring]",
+                    "button[", panel_width + spacer + 4.8, ",5.2;2.3,0.8;p_audience;Audience]",
+                    "button[", panel_width + spacer, ",6.1;2.3,0.8;p_kick;Kick]",
+                    "button[", panel_width + spacer + 2.4, ",6.1;2.3,0.8;p_ban;Ban]",
+                    "button[", panel_width + spacer + 4.8, ",6.1;2.3,0.8;p_freeze;Freeze]",
+                    "textarea[", panel_width + text_spacer, ",7.15;", panel_width - 2*text_spacer, ",1;;;Groups]",
+                    "dropdown[", panel_width + spacer, ",7.55;3.5,0.8;p_group_select;(WIP);1;false]",
+                    "button[", panel_width + spacer + 3.6, ",7.55;1.7,0.8;p_group_add_player;Add]",
+                    "button[", panel_width + spacer + 5.4, ",7.55;1.7,0.8;p_group_remove_player;Remove]",
+                    "textarea[", panel_width + text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Server Role]",
+                }))
+
+                if not has_server_privs then
+                    table.insert(fs, "style_type[button;bgimg=mc_pixel.png^[multiply:#acacac]")
+                end
+                table.insert(fs, table.concat({
+                    "button[", panel_width + spacer, ",9;2.3,0.8;p_role_student;Student]",
+                    "button[", panel_width + spacer + 2.4, ",9;2.3,0.8;p_role_teacher;Teacher]",
+                    "button[", panel_width + spacer + 4.8, ",9;2.3,0.8;p_role_admin;Admin]",
+                    "tooltip[p_mode_selected;The selected player;#404040;#ffffff]",
+                    "tooltip[p_mode_tab;All players in the selected tab;#404040;#ffffff]",
+                    "tooltip[p_mode_all;All online players;#404040;#ffffff]",
+                }))
 
                 return fs
             end,
@@ -616,6 +684,7 @@ function mc_teacher.show_controller_fs(player,tab)
         end
 		local selected_tab = (tab_map[tab] and tab) or (tab_map[context.tab] and context.tab) or bookmarked_tab or "1"
         context.tab = selected_tab
+        mc_teacher.check_selected_priv_mode(context)
 
 		local teacher_formtable = {
 			"formspec_version[6]",

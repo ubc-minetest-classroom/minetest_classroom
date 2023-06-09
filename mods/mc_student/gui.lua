@@ -174,7 +174,7 @@ function mc_student.show_notebook_fs(player, tab)
 
 				--test students: {fofo = true, jiji = false, baba = 3, keke = "yes", me = 1, nan = 2, west = 3, lala = 4, foo = 6, bar = 7, baz = 8, bat = 9}
 				--test ping: {avg_rtt = math.random() * 2}
-				for student,_ in pairs(mc_student.students) do
+				for student,_ in pairs(mc_teacher.students) do
 					if student then
 						local pinfo = minetest.get_player_information(student)
 						local ping_texture = get_ping_texture(pinfo)

@@ -8,8 +8,17 @@ function mc_teacher.get_fs_context(player)
 		mc_teacher.fs_context[pname] = {
 			tab = mc_teacher.TABS.OVERVIEW,
             selected_mode = "1",
-			selected_privs = {interact = "true", shout = "true", fast = "true"},
 		}
 	end
 	return mc_teacher.fs_context[pname]
+end
+
+function mc_teacher.check_selected_priv_mode(context)
+    if context.tab == mc_teacher.TABS.CLASSROOMS and context.selected_privs_mode ~= mc_teacher.TABS.CLASSROOMS then
+        context.selected_privs = {interact = "true", shout = "true", fast = "true"}
+        context.selected_privs_mode = mc_teacher.TABS.CLASSROOMS
+    elseif context.tab == mc_teacher.TABS.PLAYERS and context.selected_privs_mode ~= mc_teacher.TABS.PLAYERS then
+        context.selected_privs = {}
+        context.selected_privs_mode = mc_teacher.TABS.PLAYERS
+    end
 end

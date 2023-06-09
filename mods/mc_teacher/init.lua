@@ -14,12 +14,17 @@ mc_teacher = {
         MODERATION = "5",
         REPORTS = "6",
         HELP = "7",
-        SERVER = "8" -- TODO: make dynamic for easier modification of notebook
+        SERVER = "8", -- TODO: make dynamic for easier modification of notebook
     },
     MODES = {
         EMPTY = "1",
         SCHEMATIC = "2",
-        TWIN = "3"
+        TWIN = "3",
+    },
+    PMODE = {
+        SELECTED = "1",
+        TAB = "2",
+        ALL = "3",
     }
 }
 
