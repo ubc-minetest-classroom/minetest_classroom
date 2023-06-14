@@ -35,7 +35,7 @@ function Realm:TeleportPlayer(player)
     -- We run the teleport functions of the new realm. These are added by non-core features, other mods, and realms.
     self:RunTeleportInFunctions(player)
 
-    -- Remove active huds that are realm-specific
+    -- We update active huds that are realm-specific.
     if (OldRealmID ~= newRealmID) then
         mc_core.update_marker_visibility(player:get_player_name(), newRealmID)
     end

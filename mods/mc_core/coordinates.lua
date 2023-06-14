@@ -118,10 +118,3 @@ minetest.register_on_joinplayer(function(player)
         pmeta:set_string("coordinates", minetest.serialize(temp))
     end
 end)
-
-minetest.register_on_leaveplayer(function(player)
-    local pname = player:get_player_name()
-    if mc_core.markers[pname] then
-		mc_core.remove_marker(pname)
-    end
-end)
