@@ -37,7 +37,7 @@ function Realm:TeleportPlayer(player)
 
     -- Remove active huds that are realm-specific
     if (OldRealmID ~= newRealmID) then
-        mc_core.remove_marker(player:get_player_name())
+        mc_core.update_marker_visibility(player:get_player_name(), newRealmID)
     end
 
     return true, "Successfully teleported to realm."
