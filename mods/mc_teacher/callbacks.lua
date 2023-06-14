@@ -448,7 +448,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..fields.servermessage))
 			reload = true
         elseif fields.submitsched then
-            if mc_teacher.restart_scheduled.timer then mc_teacher.restart_scheduled.timer:cancel() end
+            mc_teacher.cancel_shutdown()
             local sched = {
                 ["1 minute"] = 60,
                 ["5 minutes"] = 300,
@@ -458,18 +458,28 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 ["1 hour"] = 3600,
                 ["6 hours"] = 21600,
                 ["12 hours"] = 43200,
-                ["24 hours"] = 86400}
+                ["24 hours"] = 86400
+            }
+            local warn = {600, 540, 480, 420, 360, 300, 240, 180, 120, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 4, 3, 2, 1}
+
             local time = sched[fields.time]
-            mc_teacher.restart_scheduled.timer = minetest.after(time,mc_teacher.shutdown_server,true)
+            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server restart successfully scheduled!"))
+            minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] The server will be restarting in "..fields.time..". Worlds will be saved prior to the restart, so world data should not be lost."))
+            mc_teacher.restart_scheduled.timer = minetest.after(time, mc_teacher.shutdown_server, true)
+            for _,t in pairs(warn) do
+                if time >= t then
+                    mc_teacher.restart_scheduled["warn"..tostring(t)] = minetest.after(time - t, mc_teacher.display_restart_time, t)
+                end
+            end
         elseif fields.submitshutdown then
-            if mc_teacher.restart_scheduled.timer then mc_teacher.restart_scheduled.timer:cancel() end
+            mc_teacher.cancel_shutdown()
             mc_teacher.shutdown_server(true)
         elseif fields.addip then
             if fields.ipstart then
                 if not fields.ipend or fields.ipend == "Optional" or fields.ipend == "" then
-                    networking.modify_ipv4(player,fields.ipstart,nil,true)
+                    networking.modify_ipv4(player, fields.ipstart, nil, true)
                 else
-                    networking.modify_ipv4(player,fields.ipstart,fields.ipend,true)
+                    networking.modify_ipv4(player, fields.ipstart, fields.ipend, true)
                 end
             end
             reload = true
