@@ -22,3 +22,27 @@ function mc_teacher.check_selected_priv_mode(context)
         context.selected_privs_mode = mc_teacher.TABS.PLAYERS
     end
 end
+
+function mc_teacher.register_teacher(player)
+    local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name())
+    if pname then
+        mc_teacher.teachers[pname] = true
+        mc_teacher.students[pname] = nil
+    end
+end
+
+function mc_teacher.register_student(player)
+    local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name())
+    if pname then
+        mc_teacher.teachers[pname] = nil
+        mc_teacher.students[pname] = true
+    end
+end
+
+function mc_teacher.deregister_player(player)
+    local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name())
+    if pname then
+        mc_teacher.teachers[pname] = nil
+        mc_teacher.students[pname] = nil
+    end
+end

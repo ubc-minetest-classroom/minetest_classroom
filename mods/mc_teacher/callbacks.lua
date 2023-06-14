@@ -5,23 +5,25 @@ minetest.register_privilege("teacher", {
 
 minetest.register_on_priv_grant(function(name, granter, priv)
     if priv == "teacher" then
-        mc_teacher.teachers[name] = true
+        mc_teacher.register_teacher(name)
     end
+    return true -- continue to next callback
 end)
 
 minetest.register_on_priv_revoke(function(name, revoker, priv)
     if priv == "teacher" then
-        mc_teacher.teachers[name] = nil
+        mc_teacher.register_student(name)
     end
+    return true -- continue to next callback
 end)
 
 -- Teacher joins/leaves
 minetest.register_on_joinplayer(function(player)
 	local pname = player:get_player_name()
 	if minetest.check_player_privs(player, { teacher = true }) then
-		mc_teacher.teachers[pname] = true
+		mc_teacher.register_teacher(pname)
     else
-        mc_teacher.students[pname] = true
+        mc_teacher.register_student(pname)
     end
 
     local teachers = {}
@@ -36,12 +38,7 @@ minetest.register_on_joinplayer(function(player)
 end)
 
 minetest.register_on_leaveplayer(function(player)
-	local pname = player:get_player_name()
-	if minetest.check_player_privs(player, { teacher = true }) then
-		mc_teacher.teachers[pname] = nil
-	else
-		mc_teacher.students[pname] = nil
-	end
+    mc_teacher.deregister_player(player)
 end)
 
 -- Log all direct messages
