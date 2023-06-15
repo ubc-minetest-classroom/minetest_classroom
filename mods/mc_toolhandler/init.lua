@@ -152,7 +152,7 @@ function mc_toolhandler.register_tool_manager(tool, options)
     minetest.register_on_priv_grant(function(name, granter, priv)
         -- Check if priv has an effect on the privileges needed for the tool
         if name == nil or not mc_core.tableHas(options.privs, priv) or not minetest.get_player_by_name(name) then
-            return true -- skip this callback, continue to next callback
+            return true -- continue to next callback
         end
     
         local stack = ItemStack(tool)
@@ -182,9 +182,9 @@ function mc_toolhandler.register_tool_manager(tool, options)
     minetest.register_on_priv_revoke(function(name, revoker, priv)
         -- Check if priv has an effect on the privileges needed for the tool
         if name == nil or not mc_core.tableHas(options.privs, priv) or not minetest.get_player_by_name(name) then
-            return true -- skip this callback, continue to next callback
+            return true -- continue to next callback
         end
-    
+
         local stack = ItemStack(tool)
         local player = minetest.get_player_by_name(name)
         local list = get_player_item_location(player, stack)
@@ -266,7 +266,7 @@ function mc_toolhandler.register_group_manager(tools, options)
     minetest.register_on_priv_grant(function(name, granter, priv)
         -- Check if priv has an effect on the privileges needed for the tool
         if name == nil or not mc_core.tableHas(options.privs, priv) or not minetest.get_player_by_name(name) then
-            return true -- skip this callback, continue to next callback
+            return true -- continue to next callback
         end
     
         local player = minetest.get_player_by_name(name)
@@ -294,7 +294,7 @@ function mc_toolhandler.register_group_manager(tools, options)
     minetest.register_on_priv_revoke(function(name, revoker, priv)
         -- Check if priv has an effect on the privileges needed for the tool
         if name == nil or not mc_core.tableHas(options.privs, priv) or not minetest.get_player_by_name(name) then
-            return true -- skip this callback, continue to next callback
+            return true -- continue to next callback
         end
         
         local player = minetest.get_player_by_name(name)
