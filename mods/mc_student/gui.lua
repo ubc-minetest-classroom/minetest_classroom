@@ -60,11 +60,6 @@ local function get_saved_coords(player)
 	end
 end
 
--- Removes KEY_ from the front of key names
-local function clean_key(key)
-    return string.match(tostring(key), "K?E?Y?_?KEY_(.-)$") or key
-end
-
 function mc_student.show_notebook_fs(player, tab)
 	local notebook_width = 16.6
 	local notebook_height = 10.4
@@ -346,34 +341,36 @@ function mc_student.show_notebook_fs(player, tab)
 
 					-- Controls + keybinds
 					"textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;",
-					"Move forwards: ", clean_key(set:get("keymap_forward") or "KEY_KEY_W"), "\n",
-					"Move backwards: ", clean_key(set:get("keymap_backward") or "KEY_KEY_S"), "\n",
-					"Move left: ", clean_key(set:get("keymap_left") or "KEY_KEY_A"), "\n",
-					"Move right: ", clean_key(set:get("keymap_right") or "KEY_KEY_D"), "\n",
-					"Jump/climb up: ", clean_key(set:get("keymap_jump") or "KEY_SPACE"), "\n",
-					"Sneak", set:get("aux1_descends") == "true" and "" or "/climb down", ": ", clean_key(set:get("keymap_sneak") or "KEY_LSHIFT"), "\n",
-					"Sprint", set:get("aux1_descends") == "true" and "/climb down" or "", ": ", clean_key(set:get("keymap_aux1") or "KEY_KEY_E"), "\n",
-					"Zoom: ", clean_key(set:get("keymap_zoom") or "KEY_KEY_Z"), "\n",
+					"Move forwards: ", mc_core.clean_key(set:get("keymap_forward") or "KEY_KEY_W"), "\n",
+					"Move backwards: ", mc_core.clean_key(set:get("keymap_backward") or "KEY_KEY_S"), "\n",
+					"Move left: ", mc_core.clean_key(set:get("keymap_left") or "KEY_KEY_A"), "\n",
+					"Move right: ", mc_core.clean_key(set:get("keymap_right") or "KEY_KEY_D"), "\n",
+					"Jump/climb up: ", mc_core.clean_key(set:get("keymap_jump") or "KEY_SPACE"), "\n",
+					"Sneak", set:get("aux1_descends") == "true" and "" or "/climb down", ": ", mc_core.clean_key(set:get("keymap_sneak") or "KEY_LSHIFT"), "\n",
+					"Sprint", set:get("aux1_descends") == "true" and "/climb down" or "", ": ", mc_core.clean_key(set:get("keymap_aux1") or "KEY_KEY_E"), "\n",
+					"Zoom: ", mc_core.clean_key(set:get("keymap_zoom") or "KEY_KEY_Z"), "\n",
 					"\n",
-					"Dig block/use tool: ", set:get("keymap_dig") and clean_key(set:get("keymap_dig")) or "LEFT CLICK", "\n",
-					"Place block: ", set:get("keymap_dig") and clean_key(set:get("keymap_dig")) or "RIGHT CLICK", "\n",
+					"Dig block/use tool: ", set:get("keymap_dig") and mc_core.clean_key(set:get("keymap_dig") or "KEY_LBUTTON"), "\n",
+					"Place block: ", set:get("keymap_place") and mc_core.clean_key(set:get("keymap_place") or "KEY_RBUTTON"), "\n",
 					"Select hotbar item: SCROLL WHEEL or SLOT NUMBER (1-8)\n",
-					"Select next hotbar item: ", clean_key(set:get("keymap_hotbar_next") or "KEY_KEY_N"), "\n",
-					"Select previous hotbar item: ", clean_key(set:get("keymap_hotbar_previous") or "KEY_KEY_B"), "\n",
-					"Drop item: ", clean_key(set:get("keymap_drop") or "KEY_KEY_Q"), "\n",
+					"Select next hotbar item: ", mc_core.clean_key(set:get("keymap_hotbar_next") or "KEY_KEY_N"), "\n",
+					"Select previous hotbar item: ", mc_core.clean_key(set:get("keymap_hotbar_previous") or "KEY_KEY_B"), "\n",
+					"Drop item: ", mc_core.clean_key(set:get("keymap_drop") or "KEY_KEY_Q"), "\n",
 					"\n",
-					"Open inventory: ", clean_key(set:get("keymap_inventory") or "KEY_KEY_I"), "\n",
-					"Open chat: ", clean_key(set:get("keymap_chat") or "KEY_KEY_T"), "\n",
-					"View minimap: ", clean_key(set:get("keymap_minimap") or "KEY_KEY_V"), "\n",
-					"Take a screenshot: ", clean_key(set:get("keymap_screenshot") or "KEY_F12"), "\n",
-					"Change camera perspective: ", clean_key(set:get("keymap_camera_mode") or "KEY_KEY_C"), "\n",
+					"Open inventory: ", mc_core.clean_key(set:get("keymap_inventory") or "KEY_KEY_I"), "\n",
+					"Open chat: ", mc_core.clean_key(set:get("keymap_chat") or "KEY_KEY_T"), "\n",
+					"View minimap: ", mc_core.clean_key(set:get("keymap_minimap") or "KEY_KEY_V"), "\n",
+					"Take a screenshot: ", mc_core.clean_key(set:get("keymap_screenshot") or "KEY_F12"), "\n",
+					"Change camera perspective: ", mc_core.clean_key(set:get("keymap_camera_mode") or "KEY_KEY_C"), "\n",
+					"Mute/unmute game sound: ", mc_core.clean_key(set:get("keymap_mute") or "KEY_KEY_M"), "\n",
 					"\n",
-					"Enable/disable sprint: ", clean_key(set:get("keymap_fastmove") or "KEY_KEY_J"), "\n",
-					"Enable/disable fly mode: ", clean_key(set:get("keymap_freemove") or "KEY_KEY_K"), "\n",
-					"Enable/disable noclip mode: ", clean_key(set:get("keymap_noclip") or "KEY_KEY_H"), "\n",
-					"Show/hide HUD (display): ", clean_key(set:get("keymap_toggle_hud") or "KEY_F1"), "\n",
-					"Show/hide chat: ", clean_key(set:get("keymap_toggle_chat") or "KEY_F2"), "\n",
-					"Show/hide world fog: ", clean_key(set:get("keymap_toggle_force_fog_off") or "KEY_F3"),
+					"Enable/disable sprint: ", mc_core.clean_key(set:get("keymap_fastmove") or "KEY_KEY_J"), "\n",
+					"Enable/disable fly mode: ", mc_core.clean_key(set:get("keymap_freemove") or "KEY_KEY_K"), "\n",
+					"Enable/disable noclip mode: ", mc_core.clean_key(set:get("keymap_noclip") or "KEY_KEY_H"), "\n",
+					"Show/hide HUD (display): ", mc_core.clean_key(set:get("keymap_toggle_hud") or "KEY_F1"), "\n",
+					"Show/hide chat: ", mc_core.clean_key(set:get("keymap_toggle_chat") or "KEY_F2"), "\n",
+					"Show/hide world fog: ", mc_core.clean_key(set:get("keymap_toggle_force_fog_off") or "KEY_F3"), "\n",
+					"Expand/shrink chat window: ", mc_core.clean_key(set:get("keymap_console") or "KEY_F10"),
 					"]",
 
 					"textarea[", panel_width + text_spacer, ",1.5;", panel_width - 2*text_spacer, ",3;;;", minetest.formspec_escape("If you need to report a server issue or player, you can write a message in the box below that will be privately sent to "), 

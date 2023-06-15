@@ -1,95 +1,95 @@
 --- Returns a list containing the names of the given player's saved coordinates
 local function get_saved_coords(player)
-	local pmeta = player:get_meta()
-	local realm = Realm.GetRealmFromPlayer(player)
-	local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-	local context = mc_teacher.get_fs_context(player)
-	local coord_list = {}
+    local pmeta = player:get_meta()
+    local realm = Realm.GetRealmFromPlayer(player)
+    local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+    local context = mc_teacher.get_fs_context(player)
+    local coord_list = {}
 
-	if pdata == nil or pdata == {} then
-		context.coord_i_to_note = {}
-		return coord_list
-	elseif pdata.realms then
-		local new_note_map, new_coords, new_realms = {}, {}, {}
-		context.coord_i_to_note = {}
+    if pdata == nil or pdata == {} then
+        context.coord_i_to_note = {}
+        return coord_list
+    elseif pdata.realms then
+        local new_note_map, new_coords, new_realms = {}, {}, {}
+        context.coord_i_to_note = {}
 
-		for note,i in pairs(pdata.note_map) do
-			local coordrealm = Realm.GetRealm(pdata.realms[i])
-			if coordrealm then
-				-- Do not include coordinates saved in other realms in output
-				if realm and coordrealm.ID == realm.ID and note ~= "" then
-					table.insert(coord_list, note)
-					context.coord_i_to_note[#coord_list] = note
-				end
-				-- Remove coordinates saved in realms that no longer exist from database
-				table.insert(new_coords, pdata.coords[i])
-				table.insert(new_realms, pdata.realms[i])
-				new_note_map[note] = #new_coords
-			end
-		end
+        for note,i in pairs(pdata.note_map) do
+            local coordrealm = Realm.GetRealm(pdata.realms[i])
+            if coordrealm then
+                -- Do not include coordinates saved in other realms in output
+                if realm and coordrealm.ID == realm.ID and note ~= "" then
+                    table.insert(coord_list, note)
+                    context.coord_i_to_note[#coord_list] = note
+                end
+                -- Remove coordinates saved in realms that no longer exist from database
+                table.insert(new_coords, pdata.coords[i])
+                table.insert(new_realms, pdata.realms[i])
+                new_note_map[note] = #new_coords
+            end
+        end
 
-		pmeta:set_string("coordinates", minetest.serialize({note_map = new_note_map, coords = new_coords, realms = new_realms, format = 2}))
-		return coord_list
-	end
+        pmeta:set_string("coordinates", minetest.serialize({note_map = new_note_map, coords = new_coords, realms = new_realms, format = 2}))
+        return coord_list
+    end
 end
 
 function mc_teacher.show_controller_fs(player,tab)
-	local controller_width = 16.6
-	local controller_height = 10.4
+    local controller_width = 16.6
+    local controller_height = 10.4
     local panel_width = controller_width/2
     local spacer = 0.6
     local text_spacer = 0.55
 
     local pname = player:get_player_name()
-	local pmeta = player:get_meta()
-	local context = mc_teacher.get_fs_context(player)
+    local pmeta = player:get_meta()
+    local context = mc_teacher.get_fs_context(player)
 
     -- deprecated
     local page_width = (controller_width/8)*3.5
 
-	if mc_core.checkPrivs(player) then
+    if mc_core.checkPrivs(player) then
         local has_server_privs = mc_core.checkPrivs(player, {server = true})
-		local tab_map = {
-			[mc_teacher.TABS.OVERVIEW] = function() -- OVERVIEW
+        local tab_map = {
+            [mc_teacher.TABS.OVERVIEW] = function() -- OVERVIEW
                 local button_width = 1.7
-				local button_height = 1.6
-				local rules = mc_rules.meta:get_string("rules")
-				if not rules or rules == "" then
-					rules = "Rules have not yet been set for this server."
-				end
+                local button_height = 1.6
+                local rules = mc_rules.meta:get_string("rules")
+                if not rules or rules == "" then
+                    rules = "Rules have not yet been set for this server."
+                end
 
                 local Y_SIZE, FACTOR = controller_height - 0.5, 0.05
-				local fs = {
-					"image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
-					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
-					"tooltip[exit;Exit;#404040;#ffffff]",
-					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Overview</b></center></style>]",
-					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Dashboard</b></center></style>]",
+                local fs = {
+                    "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
+                    "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+                    "tooltip[exit;Exit;#404040;#ffffff]",
+                    "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Overview</b></center></style>]",
+                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Dashboard</b></center></style>]",
 
-					"style_type[textarea;font=mono,bold;textcolor=#000000]",
+                    "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
-					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Welcome to Minetest Classroom!]",
-					"textarea[", text_spacer, ",4.4;", panel_width - 2*text_spacer, ",1;;;Server Rules]",
-					"style_type[textarea;font=mono]",
-					"textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",2.6;;;", minetest.formspec_escape("This is the Teacher Controller, your tool for managing classrooms, player privileges, and server settings."),
-					"\n", minetest.formspec_escape("You cannot drop this tool, so you will never lose it. However, you can move it out of your hotbar and into your inventory or the toolbox."), "]",
-					"textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",", has_server_privs and 4 or 4.9, ";;;", minetest.formspec_escape(rules), "]",
+                    "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Welcome to Minetest Classroom!]",
+                    "textarea[", text_spacer, ",4.4;", panel_width - 2*text_spacer, ",1;;;Server Rules]",
+                    "style_type[textarea;font=mono]",
+                    "textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",2.6;;;", minetest.formspec_escape("This is the Teacher Controller, your tool for managing classrooms, player privileges, and server settings."),
+                    "\n", minetest.formspec_escape("You cannot drop this tool, so you will never lose it. However, you can move it out of your hotbar and into your inventory or the toolbox."), "]",
+                    "textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",", has_server_privs and 4 or 4.9, ";;;", minetest.formspec_escape(rules), "]",
                     has_server_privs and "button[0.6,9;7,0.8;modifyrules;Edit Server Rules]" or "",
 
                     "scrollbaroptions[min=0;max=", (11.6 + (has_server_privs and 1.7 or 0) - Y_SIZE)/FACTOR, ";smallstep=", 0.8/FACTOR, ";largestep=", 4.8/FACTOR, ";thumbsize=", 1/FACTOR, "]",
                     "scrollbar[", controller_width - 0.3, ",0.5;0.3,", Y_SIZE, ";vertical;overviewscroll;", context.overviewscroll or 0, "]",
                     "scroll_container[", panel_width, ",0.5;", panel_width, ",", Y_SIZE, ";overviewscroll;vertical;", FACTOR, "]",
 
-					"image_button[", spacer, ",0.5;", button_width, ",", button_height, ";mc_teacher_classrooms.png;classrooms;;false;false]",
+                    "image_button[", spacer, ",0.5;", button_width, ",", button_height, ";mc_teacher_classrooms.png;classrooms;;false;false]",
                     "hypertext[", spacer + 1.8, ",0.8;5.35,1.6;;<style color=#000000><b>Classrooms</b>\n", minetest.formspec_escape("Create and manage classrooms"), "</style>]",
-					"image_button[", spacer, ",2.3;", button_width, ",", button_height, ";mc_teacher_map.png;map;;false;false]",
-					"hypertext[", spacer + 1.8, ",2.6;5.35,1.6;;<style color=#000000><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "</style>]",
+                    "image_button[", spacer, ",2.3;", button_width, ",", button_height, ";mc_teacher_map.png;map;;false;false]",
+                    "hypertext[", spacer + 1.8, ",2.6;5.35,1.6;;<style color=#000000><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "</style>]",
                     "image_button[", spacer, ",4.1;", button_width, ",", button_height, ";mc_teacher_players.png;players;;false;false]",
                     "hypertext[", spacer + 1.8, ",4.4;5.35,1.6;;<style color=#000000><b>Players</b>\n", minetest.formspec_escape("Manage player privileges"), "</style>]",
-					"image_button[", spacer, ",5.9;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;moderation;;false;false]",
+                    "image_button[", spacer, ",5.9;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;moderation;;false;false]",
                     "hypertext[", spacer + 1.8, ",6.2;5.35,1.6;;<style color=#000000><b>Moderation</b>\n", minetest.formspec_escape("View player chat logs"), "</style>]",
                     "image_button[", spacer, ",7.7;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;reports;;false;false]",
-					"hypertext[", spacer + 1.8, ",8;5.35,1.6;;<style color=#000000><b>Reports</b>\n", minetest.formspec_escape("View and resolve player reports"), "</style>]",
+                    "hypertext[", spacer + 1.8, ",8;5.35,1.6;;<style color=#000000><b>Reports</b>\n", minetest.formspec_escape("View and resolve player reports"), "</style>]",
                     "image_button[", spacer, ",9.5;", button_width, ",", button_height, ";mc_teacher_help.png;help;;false;false]",
                     "hypertext[", spacer + 1.8, ",9.8;5.35,1.6;;<style color=#000000><b>Help</b>\n", minetest.formspec_escape("View guides and resources"), "</style>]",
                 }
@@ -102,11 +102,11 @@ function mc_teacher.show_controller_fs(player,tab)
                 end
                 table.insert(fs, "scroll_container_end[]")
 
-				return fs
-			end,
-			[mc_teacher.TABS.CLASSROOMS] = function() -- CLASSROOMS
+                return fs
+            end,
+            [mc_teacher.TABS.CLASSROOMS] = function() -- CLASSROOMS
                 local classroom_list = {}
-				local realm_count = 1
+                local realm_count = 1
                 context.realm_id_to_i = {}
 
                 Realm.ScanForPlayerRealms()
@@ -119,10 +119,10 @@ function mc_teacher.show_controller_fs(player,tab)
 
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
-					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
-					"tooltip[exit;Exit;#404040;#ffffff]",
-					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Classrooms</b></center></style>]",
-					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Build a Classroom</b></center></style>]",
+                    "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+                    "tooltip[exit;Exit;#404040;#ffffff]",
+                    "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Classrooms</b></center></style>]",
+                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Build a Classroom</b></center></style>]",
 
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
@@ -222,111 +222,111 @@ function mc_teacher.show_controller_fs(player,tab)
                 return fs
                 -- TODO: Background Music and skyboxes
                 -- method: local backgroundSound = realm:get_data("background_sound")]]
-			end,
-			[mc_teacher.TABS.MAP] = function() -- MAP
+            end,
+            [mc_teacher.TABS.MAP] = function() -- MAP
                 local map_x = spacer + 0.025
-				local map_y = 1.425
-				local fs = {
-					"image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
-					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
-					"tooltip[exit;Exit;#404040;#ffffff]",
-					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Map</b></center></style>]",
-					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Coordinates</b></center></style>]",
-					"style_type[textarea;font=mono,bold;textcolor=#000000]",
-					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Surrounding Area]",
-					"image[", map_x - 0.025, ",", map_y - 0.025, ";7.1,7.1;mc_pixel.png^[multiply:#000000]",
-					"image[", map_x, ",", map_y, ";7.05,7.05;mc_pixel.png^[multiply:#808080]",
-				}
-				
-				local bounds = {xmin = -24, xmax = 24, zmin = -24, zmax = 24}
-				local mapar = mc_mapper.map_handler(player, bounds)
-				for i = 1, bounds.xmax - bounds.xmin - 1, 1 do
-					for j = 1, bounds.zmax - bounds.zmin - 1, 1 do
-						if mapar[i][j].im ~= nil then
-							-- The following for colorbrewer integration
-							if mapar[i][j].pa then
-								local y_im = math.ceil(mapar[i][j].p2/16)
-								local x_im = mapar[i][j].p2-((y_im-1)*16)
-								mapar[i][j].im = mapar[i][j].pa.."_palette.png\\^[sheet\\:16x16:"..tostring(x_im).."\\,"..tostring(y_im) -- double backslash required to first escape lua and then escape the API
-							end
-							if mapar[i][j].y ~= mapar[i][j+1].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png^[transformR180)" end
-							if mapar[i][j].y ~= mapar[i][j-1].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png)" end
-							if mapar[i][j].y ~= mapar[i-1][j].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png^[transformR270)" end
-							if mapar[i][j].y ~= mapar[i+1][j].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png^[transformR90)" end
-							table.insert(fs, table.concat({
-								"image[", map_x + 0.15*(i - 1), ",", map_y + 0.15*(bounds.zmax - bounds.zmin - j - 1),
-								";0.15,0.15;", mapar[i][j].im, "]";
-							}))
-						end
-					end
-				end
+                local map_y = 1.425
+                local fs = {
+                    "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
+                    "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+                    "tooltip[exit;Exit;#404040;#ffffff]",
+                    "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Map</b></center></style>]",
+                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Coordinates</b></center></style>]",
+                    "style_type[textarea;font=mono,bold;textcolor=#000000]",
+                    "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Surrounding Area]",
+                    "image[", map_x - 0.025, ",", map_y - 0.025, ";7.1,7.1;mc_pixel.png^[multiply:#000000]",
+                    "image[", map_x, ",", map_y, ";7.05,7.05;mc_pixel.png^[multiply:#808080]",
+                }
+                
+                local bounds = {xmin = -24, xmax = 24, zmin = -24, zmax = 24}
+                local mapar = mc_mapper.map_handler(player, bounds)
+                for i = 1, bounds.xmax - bounds.xmin - 1, 1 do
+                    for j = 1, bounds.zmax - bounds.zmin - 1, 1 do
+                        if mapar[i][j].im ~= nil then
+                            -- The following for colorbrewer integration
+                            if mapar[i][j].pa then
+                                local y_im = math.ceil(mapar[i][j].p2/16)
+                                local x_im = mapar[i][j].p2-((y_im-1)*16)
+                                mapar[i][j].im = mapar[i][j].pa.."_palette.png\\^[sheet\\:16x16:"..tostring(x_im).."\\,"..tostring(y_im) -- double backslash required to first escape lua and then escape the API
+                            end
+                            if mapar[i][j].y ~= mapar[i][j+1].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png^[transformR180)" end
+                            if mapar[i][j].y ~= mapar[i][j-1].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png)" end
+                            if mapar[i][j].y ~= mapar[i-1][j].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png^[transformR270)" end
+                            if mapar[i][j].y ~= mapar[i+1][j].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png^[transformR90)" end
+                            table.insert(fs, table.concat({
+                                "image[", map_x + 0.15*(i - 1), ",", map_y + 0.15*(bounds.zmax - bounds.zmin - j - 1),
+                                ";0.15,0.15;", mapar[i][j].im, "]";
+                            }))
+                        end
+                    end
+                end
 
-				local yaw = player:get_look_yaw()
-				local rotate = 0
-				if yaw ~= nil then
-					-- Find rotation and texture based on yaw.
-					yaw = math.fmod(mc_mapper.round_to_texture_multiple(math.deg(yaw)), 360)
-					if yaw < 90 then
-						rotate = 90
-					elseif yaw < 180 then
-						rotate = 180
-					elseif yaw < 270 then
-						rotate = 270
-					else
-						rotate = 0
-					end
-					yaw = math.fmod(yaw, 90)
-				end
-				local pos = player:get_pos()
-				local round_px, round_pz = math.round(pos.x), math.round(pos.z)
+                local yaw = player:get_look_yaw()
+                local rotate = 0
+                if yaw ~= nil then
+                    -- Find rotation and texture based on yaw.
+                    yaw = math.fmod(mc_mapper.round_to_texture_multiple(math.deg(yaw)), 360)
+                    if yaw < 90 then
+                        rotate = 90
+                    elseif yaw < 180 then
+                        rotate = 180
+                    elseif yaw < 270 then
+                        rotate = 270
+                    else
+                        rotate = 0
+                    end
+                    yaw = math.fmod(yaw, 90)
+                end
+                local pos = player:get_pos()
+                local round_px, round_pz = math.round(pos.x), math.round(pos.z)
 
-				table.insert(fs, table.concat({
-					"image[", 3.95 + (pos.x - round_px)*0.15, ",", 4.75 - (pos.z - round_pz)*0.15,
-					";0.4,0.4;mc_mapper_d", yaw, ".png^[transformFY", rotate ~= 0 and ("R"..rotate) or "", "]",
-					"textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Coordinate and Elevation Display]",
-					"style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
-					"button[", spacer, ",9;1.7,0.8;utmcoords;UTM]",
-					"button[", spacer + 1.8, ",9;1.7,0.8;latloncoords;Lat/Lon]",
-					"button[", spacer + 3.6, ",9;1.7,0.8;classroomcoords;Local]",
-					"button[", spacer + 5.4, ",9;1.7,0.8;coordsoff;Off]",
-					"textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Saved Coordinates]",
-				}))
+                table.insert(fs, table.concat({
+                    "image[", 3.95 + (pos.x - round_px)*0.15, ",", 4.75 - (pos.z - round_pz)*0.15,
+                    ";0.4,0.4;mc_mapper_d", yaw, ".png^[transformFY", rotate ~= 0 and ("R"..rotate) or "", "]",
+                    "textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Coordinate and Elevation Display]",
+                    "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+                    "button[", spacer, ",9;1.7,0.8;utmcoords;UTM]",
+                    "button[", spacer + 1.8, ",9;1.7,0.8;latloncoords;Lat/Lon]",
+                    "button[", spacer + 3.6, ",9;1.7,0.8;classroomcoords;Local]",
+                    "button[", spacer + 5.4, ",9;1.7,0.8;coordsoff;Off]",
+                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Saved Coordinates]",
+                }))
 
-				local coord_list = get_saved_coords(player)
-				table.insert(fs, table.concat({
-					"textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.8;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
-					coord_list and #coord_list > 0 and "" or "style_type[image_button;bgimg=mc_pixel.png^[multiply:#acacac]",
-					"image_button[", panel_width + spacer, ",6.3;1.1,1.1;mc_teacher_teleport.png;", coord_list and #coord_list > 0 and "go" or "blocked", ";;false;false]",
-					"image_button[", panel_width + spacer + 1.2, ",6.3;1.1,1.1;mc_teacher_teleport_all.png;", coord_list and #coord_list > 0 and "go_all" or "blocked", ";;false;false]",
-					"image_button[", panel_width + spacer + 2.4, ",6.3;1.1,1.1;mc_teacher_share.png;", coord_list and #coord_list > 0 and "share" or "blocked", ";;false;false]",
-					"image_button[", panel_width + spacer + 3.6, ",6.3;1.1,1.1;mc_teacher_mark.png;", coord_list and #coord_list > 0 and "mark" or "blocked", ";;false;false]",
-					"image_button[", panel_width + spacer + 4.8, ",6.3;1.1,1.1;mc_teacher_delete.png;", coord_list and #coord_list > 0 and "delete" or "blocked", ";;false;false]",
+                local coord_list = get_saved_coords(player)
+                table.insert(fs, table.concat({
+                    "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.8;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
+                    coord_list and #coord_list > 0 and "" or "style_type[image_button;bgimg=mc_pixel.png^[multiply:#acacac]",
+                    "image_button[", panel_width + spacer, ",6.3;1.1,1.1;mc_teacher_teleport.png;", coord_list and #coord_list > 0 and "go" or "blocked", ";;false;false]",
+                    "image_button[", panel_width + spacer + 1.2, ",6.3;1.1,1.1;mc_teacher_teleport_all.png;", coord_list and #coord_list > 0 and "go_all" or "blocked", ";;false;false]",
+                    "image_button[", panel_width + spacer + 2.4, ",6.3;1.1,1.1;mc_teacher_share.png;", coord_list and #coord_list > 0 and "share" or "blocked", ";;false;false]",
+                    "image_button[", panel_width + spacer + 3.6, ",6.3;1.1,1.1;mc_teacher_mark.png;", coord_list and #coord_list > 0 and "mark" or "blocked", ";;false;false]",
+                    "image_button[", panel_width + spacer + 4.8, ",6.3;1.1,1.1;mc_teacher_delete.png;", coord_list and #coord_list > 0 and "delete" or "blocked", ";;false;false]",
                     "image_button[", panel_width + spacer + 6.0, ",6.3;1.1,1.1;mc_teacher_clear.png;", coord_list and #coord_list > 0 and "clear" or "blocked", ";;false;false]",
                     
                     coord_list and #coord_list > 0 and "" or "style_type[button;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
-					"textarea[", panel_width + text_spacer, ",8.5;", panel_width - 2*text_spacer, ",1;;;Save current coordinates]",
-					"style_type[textarea;font=mono]",
-					"textarea[", panel_width + text_spacer, ",7.6;", panel_width - 2*text_spacer, ",1;;;SELECTED\nLocal: (X, Y, Z)]",
-					"textarea[", panel_width + spacer, ",8.9;6.2,0.9;note;;]",
+                    "textarea[", panel_width + text_spacer, ",8.5;", panel_width - 2*text_spacer, ",1;;;Save current coordinates]",
+                    "style_type[textarea;font=mono]",
+                    "textarea[", panel_width + text_spacer, ",7.6;", panel_width - 2*text_spacer, ",1;;;SELECTED\nLocal: (X, Y, Z)]",
+                    "textarea[", panel_width + spacer, ",8.9;6.2,0.9;note;;]",
                     "style_type[image_button;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
-					"image_button[15.1,8.9;0.9,0.9;mc_teacher_save.png;record;Save;false;false]",
-					
-					"tooltip[utmcoords;Displays real-world UTM coordinates;#404040;#ffffff]",
-					"tooltip[latloncoords;Displays real-world latitude and longitude;#404040;#ffffff]",
-					"tooltip[classroomcoords;Displays in-game coordinates, relative to the classroom;#404040;#ffffff]",
-					"tooltip[coordsoff;Disables coordinate display;#404040;#ffffff]",
-					"tooltip[go;Teleport to location;#404040;#ffffff]",
+                    "image_button[15.1,8.9;0.9,0.9;mc_teacher_save.png;record;Save;false;false]",
+                    
+                    "tooltip[utmcoords;Displays real-world UTM coordinates;#404040;#ffffff]",
+                    "tooltip[latloncoords;Displays real-world latitude and longitude;#404040;#ffffff]",
+                    "tooltip[classroomcoords;Displays in-game coordinates, relative to the classroom;#404040;#ffffff]",
+                    "tooltip[coordsoff;Disables coordinate display;#404040;#ffffff]",
+                    "tooltip[go;Teleport to location;#404040;#ffffff]",
                     "tooltip[go_all;Teleport all players to location;#404040;#ffffff]",
-					"tooltip[share;Share location in chat;#404040;#ffffff]",
-					"tooltip[mark;Place marker in world;#404040;#ffffff]",
-					"tooltip[delete;Delete location;#404040;#ffffff]",
+                    "tooltip[share;Share location in chat;#404040;#ffffff]",
+                    "tooltip[mark;Place marker in world;#404040;#ffffff]",
+                    "tooltip[delete;Delete location;#404040;#ffffff]",
                     "tooltip[clear;Clear all saved locations;#404040;#ffffff]",
-					"tooltip[note;Add a note here!;#404040;#ffffff]",
+                    "tooltip[note;Add a note here!;#404040;#ffffff]",
                     "style_type[image_button;bgimg=blank.png]",
-				}))
+                }))
 
-				return fs
-			end,
+                return fs
+            end,
             [mc_teacher.TABS.PLAYERS] = function() -- PLAYERS
                 context.selected_p_tab = context.selected_p_tab or "1"
                 context.selected_p_player = context.selected_p_player or 1
@@ -373,11 +373,11 @@ function mc_teacher.show_controller_fs(player,tab)
 
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
-					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
-					"tooltip[exit;Exit;#404040;#ffffff]",
-					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Players</b></center></style>]",
-					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Manage Players</b></center></style>]",
-					"style_type[textarea;font=mono,bold;textcolor=#000000]",
+                    "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+                    "tooltip[exit;Exit;#404040;#ffffff]",
+                    "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Players</b></center></style>]",
+                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Manage Players</b></center></style>]",
+                    "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
                     -- TODO: re-implement groups
                     "style[p_group_new,p_group_edit,p_group_delete,p_group_add_player,p_group_remove_player;bgimg=mc_pixel.png^[multiply:#acacac]",
@@ -462,14 +462,14 @@ function mc_teacher.show_controller_fs(player,tab)
 
                 return fs
             end,
-			[mc_teacher.TABS.MODERATION] = function() -- MODERATION
+            [mc_teacher.TABS.MODERATION] = function() -- MODERATION
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
-					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
-					"tooltip[exit;Exit;#404040;#ffffff]",
-					"hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Moderation</b></center></style>]",
-					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Message Log</b></center></style>]",
-					"style_type[textarea;font=mono,bold;textcolor=#000000]",
+                    "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+                    "tooltip[exit;Exit;#404040;#ffffff]",
+                    "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Moderation</b></center></style>]",
+                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Message Log</b></center></style>]",
+                    "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
                 }
 
@@ -579,16 +579,74 @@ function mc_teacher.show_controller_fs(player,tab)
                 end
 
                 return fs
-			end,
+            end,
             [mc_teacher.TABS.REPORTS] = function() -- REPORTS
                 return {}
             end,
             [mc_teacher.TABS.HELP] = function() -- HELP
-                return {}
+                local set = minetest.settings
+                local fs = {
+                    "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
+                    "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+                    "tooltip[exit;Exit;#325140;#ffffff]",
+                    "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Help</b></center></style>]",
+                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Getting Started</b></center></style>]",
+                    "style_type[textarea;font=mono,bold;textcolor=#000000]",
+                    "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Game controls]",
+                    "style_type[textarea;font=mono]",
+                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+
+                    -- Controls + keybinds
+                    "textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;",
+                    "Move forwards: ", mc_core.clean_key(set:get("keymap_forward") or "KEY_KEY_W"), "\n",
+                    "Move backwards: ", mc_core.clean_key(set:get("keymap_backward") or "KEY_KEY_S"), "\n",
+                    "Move left: ", mc_core.clean_key(set:get("keymap_left") or "KEY_KEY_A"), "\n",
+                    "Move right: ", mc_core.clean_key(set:get("keymap_right") or "KEY_KEY_D"), "\n",
+                    "Jump/climb up: ", mc_core.clean_key(set:get("keymap_jump") or "KEY_SPACE"), "\n",
+                    "Sneak", set:get("aux1_descends") == "true" and "" or "/climb down", ": ", mc_core.clean_key(set:get("keymap_sneak") or "KEY_LSHIFT"), "\n",
+                    "Sprint", set:get("aux1_descends") == "true" and "/climb down" or "", ": ", mc_core.clean_key(set:get("keymap_aux1") or "KEY_KEY_E"), "\n",
+                    "Zoom: ", mc_core.clean_key(set:get("keymap_zoom") or "KEY_KEY_Z"), "\n",
+                    "\n",
+                    "Dig block/use tool: ", set:get("keymap_dig") and mc_core.clean_key(set:get("keymap_dig") or "KEY_LBUTTON"), "\n",
+                    "Place block: ", set:get("keymap_place") and mc_core.clean_key(set:get("keymap_place") or "KEY_RBUTTON"), "\n",
+                    "Select hotbar item: SCROLL WHEEL or SLOT NUMBER (1-8)\n",
+                    "Select next hotbar item: ", mc_core.clean_key(set:get("keymap_hotbar_next") or "KEY_KEY_N"), "\n",
+                    "Select previous hotbar item: ", mc_core.clean_key(set:get("keymap_hotbar_previous") or "KEY_KEY_B"), "\n",
+                    "Drop item: ", mc_core.clean_key(set:get("keymap_drop") or "KEY_KEY_Q"), "\n",
+                    "\n",
+                    "Open inventory: ", mc_core.clean_key(set:get("keymap_inventory") or "KEY_KEY_I"), "\n",
+                    "Open chat: ", mc_core.clean_key(set:get("keymap_chat") or "KEY_KEY_T"), "\n",
+                    "View minimap: ", mc_core.clean_key(set:get("keymap_minimap") or "KEY_KEY_V"), "\n",
+                    "Take a screenshot: ", mc_core.clean_key(set:get("keymap_screenshot") or "KEY_F12"), "\n",
+                    "Change camera perspective: ", mc_core.clean_key(set:get("keymap_camera_mode") or "KEY_KEY_C"), "\n",
+                    "Mute/unmute game sound: ", mc_core.clean_key(set:get("keymap_mute") or "KEY_KEY_M"), "\n",
+                    "\n",
+                    "Enable/disable sprint: ", mc_core.clean_key(set:get("keymap_fastmove") or "KEY_KEY_J"), "\n",
+                    "Enable/disable fly mode: ", mc_core.clean_key(set:get("keymap_freemove") or "KEY_KEY_K"), "\n",
+                    "Enable/disable noclip mode: ", mc_core.clean_key(set:get("keymap_noclip") or "KEY_KEY_H"), "\n",
+                    "Show/hide HUD (display): ", mc_core.clean_key(set:get("keymap_toggle_hud") or "KEY_F1"), "\n",
+                    "Show/hide chat: ", mc_core.clean_key(set:get("keymap_toggle_chat") or "KEY_F2"), "\n",
+                    "Show/hide world fog: ", mc_core.clean_key(set:get("keymap_toggle_force_fog_off") or "KEY_F3"), "\n",
+                    "Expand/shrink chat window: ", mc_core.clean_key(set:get("keymap_console") or "KEY_F10"), "\n",
+                    "\n",
+                    minetest.formspec_escape("[MINETEST TECHNICAL INFO]"), "\n",
+                    "Show/hide debug log: ", mc_core.clean_key(set:get("keymap_toggle_debug") or "KEY_F5"), "\n",
+                    "Show/hide profiler: ", mc_core.clean_key(set:get("keymap_toggle_profiler") or "KEY_F6"),
+                    "]",
+
+                    --"textarea[", panel_width + text_spacer, ",1.5;", panel_width - 2*text_spacer, ",3;;;", minetest.formspec_escape("If you need to report a server issue or player, you can write a message in the box below that will be privately sent to "), 
+                    --pairs(mc_teacher.teachers) ~= nil and "all teachers that are currently online" or "the first teacher that joins the server", ".\n",
+                    --minetest.formspec_escape("Your report message will be logged and visible to all teachers, so don't include any personal information in it. The server will also automatically log the current date and time, your classroom, and your world position in the report, so you don't need to include that information in your report message."), "]",
+                    --"dropdown[", panel_width + spacer, ",5.2;", panel_width - 2*spacer, ",0.7;reporttype;", table.concat(mc_student.REPORT_TYPE, ","), ";1;false]",
+                    --"textarea[", panel_width + spacer, ",6.5;", panel_width - 2*spacer, ",2.4;report;;]",
+                    --"button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;submitreport;Submit Report]",
+                }
+
+                return fs
             end,
             [mc_teacher.TABS.SERVER] = function() -- SERVER
                 local fsx, fsy
-				local fs = {}
+                local fs = {}
                 fs[#fs + 1] = "field[1,0.85;"
                 fs[#fs + 1] = tostring((page_width)-1.6)
                 fs[#fs + 1] = ",0.8;servermessage;"
@@ -602,18 +660,18 @@ function mc_teacher.show_controller_fs(player,tab)
                 fs[#fs + 1] = "button_exit[1,3.2;3,0.8;submitshutdown;Shutdown Now]"
                 fsx = ((controller_width/2)-(((controller_width/8)*3)))/2
                 fsy = 1
-				fs[#fs + 1] = "style_type[label;font_size=*1.2]label["
-				fs[#fs + 1] = tostring(controller_width/2+1.6)
-				fs[#fs + 1] = ",0.4;"
-				fs[#fs + 1] = minetest.colorize("#000","White-Listed IPv4 Addresses")
-				fs[#fs + 1] = "]textlist["
-				fs[#fs + 1] = tostring(fsx+(controller_width/2))
-				fs[#fs + 1] = ",1.1;"
-				fs[#fs + 1] = tostring(page_width)
-				fs[#fs + 1] = ","
-				fs[#fs + 1] = tostring(controller_height/3)
-				fs[#fs + 1] = ";iplist;"
-				local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+                fs[#fs + 1] = "style_type[label;font_size=*1.2]label["
+                fs[#fs + 1] = tostring(controller_width/2+1.6)
+                fs[#fs + 1] = ",0.4;"
+                fs[#fs + 1] = minetest.colorize("#000","White-Listed IPv4 Addresses")
+                fs[#fs + 1] = "]textlist["
+                fs[#fs + 1] = tostring(fsx+(controller_width/2))
+                fs[#fs + 1] = ",1.1;"
+                fs[#fs + 1] = tostring(page_width)
+                fs[#fs + 1] = ","
+                fs[#fs + 1] = tostring(controller_height/3)
+                fs[#fs + 1] = ";iplist;"
+                local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
                 local count = 0
                 local counter = 0
                 for _ in pairs(ipv4_whitelist) do count = count + 1 end
@@ -673,45 +731,45 @@ function mc_teacher.show_controller_fs(player,tab)
                 fs[#fs + 1] = tostring(fsy+(controller_height/4)+2.7+1.2)
                 fs[#fs + 1] = ";3.9,0.8;modifyrules;Modify Server Rules]"
                 -- TODO: Manage Bans
-				return fs
-			end,
-		}
+                return fs
+            end,
+        }
 
         local bookmarked_tab = pmeta:get_string("default_teacher_tab")
-		if not tab_map[bookmarked_tab] then
-			bookmarked_tab = nil
-			pmeta:set_string("default_teacher_tab", nil)
+        if not tab_map[bookmarked_tab] then
+            bookmarked_tab = nil
+            pmeta:set_string("default_teacher_tab", nil)
         end
-		local selected_tab = (tab_map[tab] and tab) or (tab_map[context.tab] and context.tab) or bookmarked_tab or "1"
+        local selected_tab = (tab_map[tab] and tab) or (tab_map[context.tab] and context.tab) or bookmarked_tab or "1"
         context.tab = selected_tab
         mc_teacher.check_selected_priv_mode(context)
 
-		local teacher_formtable = {
-			"formspec_version[6]",
-			"size[", controller_width, ",", controller_height, "]",
-			mc_core.draw_book_fs(controller_width, controller_height, {bg = "#404040", shadow = "#303030", binding = "#333333", divider = "#969696"}),
-			"style[tabheader;noclip=true]",
-			"tabheader[0,-0.25;", controller_width, ",0.55;record_nav;Overview,Classrooms,Map,Players,Moderation,Reports,Help",
+        local teacher_formtable = {
+            "formspec_version[6]",
+            "size[", controller_width, ",", controller_height, "]",
+            mc_core.draw_book_fs(controller_width, controller_height, {bg = "#404040", shadow = "#303030", binding = "#333333", divider = "#969696"}),
+            "style[tabheader;noclip=true]",
+            "tabheader[0,-0.25;", controller_width, ",0.55;record_nav;Overview,Classrooms,Map,Players,Moderation,Reports,Help",
             has_server_privs and ",Server" or "", ";", selected_tab, ";true;false]",
-			table.concat(tab_map[selected_tab](), "")
-		}
+            table.concat(tab_map[selected_tab](), "")
+        }
 
-		if bookmarked_tab == selected_tab then
-			table.insert(teacher_formtable, table.concat({
-				"style_type[image;noclip=true]",
-				"image[", controller_width - 0.6, ",-0.25;0.5,0.7;mc_teacher_bookmark_filled.png]",
-				"tooltip[", controller_width - 0.6, ",-0.25;0.5,0.8;This tab is currently bookmarked;#404040;#ffffff]",
-			}))
-		else
-			table.insert(teacher_formtable, table.concat({
-				"image_button[", controller_width - 0.6, ",-0.25;0.5,0.5;mc_teacher_bookmark_hollow.png^[colorize:#FFFFFF:127;default_tab;;true;false]",
-				"tooltip[default_tab;Bookmark this tab?;#404040;#ffffff]",
-			}))
-		end
+        if bookmarked_tab == selected_tab then
+            table.insert(teacher_formtable, table.concat({
+                "style_type[image;noclip=true]",
+                "image[", controller_width - 0.6, ",-0.25;0.5,0.7;mc_teacher_bookmark_filled.png]",
+                "tooltip[", controller_width - 0.6, ",-0.25;0.5,0.8;This tab is currently bookmarked;#404040;#ffffff]",
+            }))
+        else
+            table.insert(teacher_formtable, table.concat({
+                "image_button[", controller_width - 0.6, ",-0.25;0.5,0.5;mc_teacher_bookmark_hollow.png^[colorize:#FFFFFF:127;default_tab;;true;false]",
+                "tooltip[default_tab;Bookmark this tab?;#404040;#ffffff]",
+            }))
+        end
 
-		minetest.show_formspec(pname, "mc_teacher:controller_fs", table.concat(teacher_formtable, ""))
-		return true
-	end
+        minetest.show_formspec(pname, "mc_teacher:controller_fs", table.concat(teacher_formtable, ""))
+        return true
+    end
 end
 
 --[[

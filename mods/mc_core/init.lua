@@ -173,6 +173,7 @@ function mc_core.isNumber(str)
     end
     return not (str == "" or str:match("%D"))
 end
+
 function mc_core.trim(s)
     return s:match( "^%s*(.-)%s*$" )
 end
@@ -226,4 +227,13 @@ function mc_core.hex_string_to_num(hex)
     else
         return tonumber(hex, 16)
     end
+end
+
+---@public
+---Removes KEY_ from the front of key names
+---@param key Key to clean
+---@return string
+function mc_core.clean_key(key)
+	local match = string.match(tostring(key), "K?E?Y?_?KEY_(.-)$")
+    return (match == "LBUTTON" and "LEFT CLICK") or (match == "RBUTTON" and "RIGHT CLICK") or match or key
 end
