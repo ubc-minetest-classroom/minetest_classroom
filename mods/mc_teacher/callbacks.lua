@@ -542,7 +542,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 context.selected_coord = event.index
             end
         elseif fields.mark then
-            if mc_core.checkPrivs(player, {fly = true}) or mc_core.checkPrivs(player, {teacher = true}) then
+            if mc_core.checkPrivs(player, {shout = true}) or mc_core.checkPrivs(player, {teacher = true}) then
                 local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
                 if pdata and pdata.note_map then
                     local realm = Realm.GetRealmFromPlayer(player)
@@ -642,7 +642,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 }
 
                 local message = "[Minetest Classroom] "..player:get_player_name().." shared"
-                if (mc_core.checkPrivs(player, {fly = true}) or mc_core.checkPrivs(player, {teacher = true})) and note ~= "" then
+                if (mc_core.checkPrivs(player, {shout = true}) or mc_core.checkPrivs(player, {teacher = true})) and note ~= "" then
                     message = message.." \""..note.."\", located at"
                 else
                     message = message.." the location"
