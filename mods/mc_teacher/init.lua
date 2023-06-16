@@ -31,6 +31,12 @@ mc_teacher = {
         SERVER_PLAYER = "2",
         PLAYER = "3",
     },
+    MRECIP = {
+        STUDENT = "students",
+        TEACHER = "teachers",
+        ADMIN = "admins",
+        ALL = "everyone",
+    },
     T_INDEX = {
         ["30 seconds"] = {i = 1, t = 30},
         ["1 minute"] = {i = 2, t = 60},

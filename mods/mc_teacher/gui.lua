@@ -475,19 +475,30 @@ function mc_teacher.show_controller_fs(player,tab)
 
                 local chat_msg = minetest.deserialize(mc_teacher.meta:get_string("chat_log"))
                 local direct_msg = minetest.deserialize(mc_teacher.meta:get_string("dm_log"))
+                local server_msg = minetest.deserialize(mc_teacher.meta:get_string("server_log"))
                 local indexed_chat_players = {}
 
-                if chat_msg then
-                    for cm_name,_ in pairs(chat_msg) do
-                        if not mc_core.tableHas(indexed_chat_players, cm_name) then
-                            table.insert(indexed_chat_players, cm_name)
-                        end
+                for uname,_ in pairs(chat_msg or {}) do
+                    if not mc_core.tableHas(indexed_chat_players, uname) then
+                        table.insert(indexed_chat_players, uname)
                     end
                 end
-                if direct_msg then
-                    for dm_name,_ in pairs(direct_msg) do
-                        if not mc_core.tableHas(indexed_chat_players, dm_name) then
-                            table.insert(indexed_chat_players, dm_name)
+                for uname,_ in pairs(direct_msg or {}) do
+                    if not mc_core.tableHas(indexed_chat_players, uname) then
+                        table.insert(indexed_chat_players, uname)
+                    end
+                end
+                for uname, msg_list in pairs(server_msg or {}) do
+                    if not mc_core.tableHas(indexed_chat_players, uname) then
+                        if has_server_privs then
+                            table.insert(indexed_chat_players, uname)
+                        else
+                            for _,msg_table in pairs(msg_list) do
+                                if not msg_table.anonymous and msg_table.recipient ~= mc_teacher.MRECIP.ADMIN then
+                                    table.insert(indexed_chat_players, uname)
+                                    break
+                                end
+                            end
                         end
                     end
                 end
@@ -513,12 +524,21 @@ function mc_teacher.show_controller_fs(player,tab)
                             stamp_to_key[msg_table.timestamp] = "dm:"..i
                         end
                     end
+                    if server_msg and server_msg[selected] then
+                        for i, msg_table in ipairs(server_msg[selected]) do
+                            if has_server_privs or (not msg_table.anonymous and msg_table.recipient ~= mc_teacher.MRECIP.ADMIN) then
+                                table.insert(stamps, msg_table.timestamp)
+                                stamp_to_key[msg_table.timestamp] = "serv:"..i
+                            end
+                        end
+                    end
                     table.sort(stamps)
 
                     local player_log = {}
                     context.log_i_to_key = {}
                     local chat_col = "#CCFFFF"
                     local dm_col = "#FFFFCC"
+                    local serv_col = "#FFCCFF"
 
                     -- build main message list
                     for i, stamp in ipairs(stamps) do
@@ -528,12 +548,14 @@ function mc_teacher.show_controller_fs(player,tab)
                         if split_key[1] == "chat" and index ~= 0 then
                             local msg_table = chat_msg[selected][index]
                             table.insert(player_log, chat_col..minetest.formspec_escape(table.concat({"[", stamp, "] ", msg_table.message})))
-                            table.insert(context.log_i_to_key, key)
                         elseif split_key[1] == "dm" and index ~= 0 then
                             local msg_table = direct_msg[selected][index]
                             table.insert(player_log, dm_col..minetest.formspec_escape(table.concat({"[", stamp, "] DM to ", msg_table.recipient, ": ", msg_table.message})))
-                            table.insert(context.log_i_to_key, key)
+                        elseif split_key[1] == "serv" and index ~= 0 then
+                            local msg_table = server_msg[selected][index]
+                            table.insert(player_log, serv_col..minetest.formspec_escape(table.concat({"[", stamp, "] Server to ", msg_table.recipient, ": ", msg_table.message})))
                         end
+                        table.insert(context.log_i_to_key, key)
                     end
 
                     if not context.message_chat_index or not context.log_i_to_key[context.message_chat_index] then
@@ -550,6 +572,9 @@ function mc_teacher.show_controller_fs(player,tab)
                     elseif sel_split_key[1] == "dm" and direct_msg[selected][sel_index] then
                         display_message.header = "Direct message to "..direct_msg[selected][sel_index].recipient
                         display_message.message = direct_msg[selected][sel_index].message
+                    elseif sel_split_key[1] == "serv" and server_msg[selected][sel_index] then
+                        display_message.header = "Server message to "..server_msg[selected][sel_index].recipient
+                        display_message.message = server_msg[selected][sel_index].message
                     end
 
                     table.insert(fs, table.concat({
@@ -655,7 +680,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     "textarea[", spacer, ",1.4;", panel_width - 2*spacer, ",2.1;server_message;;", context.server_message or "", "]",
                     "style_type[textarea;font=mono,bold]",
                     "textarea[", text_spacer, ",3.6;", panel_width - 2*text_spacer, ",1;;;Send as:]",
-                    "dropdown[", spacer, ",4.0;", panel_width - 2*spacer, ",0.8;server_message_type;Anonymous server message,Server message from yourself,Chat message from yourself;", context.server_message_type or mc_teacher.MMODE.SERVER_ANON, ";true]",
+                    "dropdown[", spacer, ",4.0;", panel_width - 2*spacer, ",0.8;server_message_type;General server message,Server message from yourself,Chat message from yourself;", context.server_message_type or mc_teacher.MMODE.SERVER_ANON, ";true]",
                     "textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",1;;;Send to:]",
                     "button[", spacer, ",5.3;1.7,0.8;server_send_teachers;Teachers]",
                     "button[", spacer + 1.8, ",5.3;1.7,0.8;server_send_students;Students]",
@@ -696,7 +721,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     "field_close_on_enter[server_ip_start;false]",
                     "field_close_on_enter[server_ip_end;false]",
                     "button[", panel_width + spacer, ",9;3.5,0.8;server_ip_add;Add range]",
-                    "button[", panel_width + spacer + 3.6, ",9;3.5,0.8;sever_ip_remove;Remove range]",
+                    "button[", panel_width + spacer + 3.6, ",9;3.5,0.8;server_ip_remove;Remove range]",
 
                     "tooltip[server_message;Type your message here!;#404040;#ffffff]",
                     "tooltip[server_ban_manager;View and manage banned players;#404040;#ffffff]",

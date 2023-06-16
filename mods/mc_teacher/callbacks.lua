@@ -62,17 +62,32 @@ minetest.register_on_chatcommand(function(name, command, params)
 	end
 end)
 
--- Log all chat messages
-minetest.register_on_chat_message(function(name, message)
+local function log_chat_message(name, message)
 	local timestamp = tostring(os.date("%Y-%m-%d %H:%M:%S"))
-	local chat_msg = minetest.deserialize(mc_teacher.meta:get_string("chat_log")) or {}
-    chat_msg[name] = chat_msg[name] or {}
-    table.insert(chat_msg[name], {
+    local log = minetest.deserialize(mc_teacher.meta:get_string("chat_log")) or {}
+    log[name] = log[name] or {}
+    table.insert(log[name], {
         timestamp = timestamp,
-        message = message
+        message = message,
     })
-	mc_teacher.meta:set_string("chat_log", minetest.serialize(chat_msg))
-end)
+	mc_teacher.meta:set_string("chat_log", minetest.serialize(log))
+end
+
+local function log_server_message(name, message, recipient, is_anon)
+	local timestamp = tostring(os.date("%Y-%m-%d %H:%M:%S"))
+    local log = minetest.deserialize(mc_teacher.meta:get_string("server_log")) or {}
+    log[name] = log[name] or {}
+    table.insert(log[name], {
+        timestamp = timestamp,
+        message = message,
+        recipient = recipient,
+        anonymous = is_anon,
+    })
+	mc_teacher.meta:set_string("server_log", minetest.serialize(log))
+end
+
+-- Log all chat messages
+minetest.register_on_chat_message(log_chat_message)
 
 local function get_players_to_update(player, context)
     local list = {}
@@ -465,18 +480,22 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                             return "<"..player:get_player_name().."> "..fields.server_message
                         end,
                     }
-                    local message = message_map[fields.server_message_type or mc_teacher.MMODE.SERVER_ANON]()
+
+                    fields.server_message_type = fields.server_message_type or mc_teacher.MMODE.SERVER_ANON
+                    local message = message_map[fields.server_message_type]()
 
                     if fields.server_send_students then
                         for name,_ in pairs(mc_teacher.students) do
                             minetest.chat_send_player(name, message)
                         end
                         minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
+                        log_server_message(player:get_player_name(), fields.server_message, mc_teacher.MRECIP.STUDENT, fields.server_message_type == mc_teacher.MMODE.SERVER_ANON)
                     elseif fields.server_send_teachers then
                         for name,_ in pairs(mc_teacher.teachers) do
                             minetest.chat_send_player(name, message)
                         end
                         minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
+                        log_server_message(player:get_player_name(), fields.server_message, mc_teacher.MRECIP.TEACHER, fields.server_message_type == mc_teacher.MMODE.SERVER_ANON)
                     elseif fields.server_send_admins then
                         for _,p_obj in pairs(minetest.get_connected_players()) do
                             if p_obj:is_player() and mc_core.checkPrivs(p_obj, {teacher = true, server = true}) then
@@ -484,11 +503,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                             end
                         end
                         minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
-                    elseif fields.server_send_all then
+                        log_server_message(player:get_player_name(), fields.server_message, mc_teacher.MRECIP.ADMIN, fields.server_message_type == mc_teacher.MMODE.SERVER_ANON)
+                    else
                         minetest.chat_send_all(message)
                         minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
-                    else
-                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message could not be sent."))
+                        log_server_message(player:get_player_name(), fields.server_message, mc_teacher.MRECIP.ALL, fields.server_message_type == mc_teacher.MMODE.SERVER_ANON)
                     end
                 else
                     minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server messages can not be empty."))
