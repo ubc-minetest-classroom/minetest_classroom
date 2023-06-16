@@ -7,6 +7,7 @@ function mc_teacher.cancel_shutdown()
         for _,timer in pairs(mc_teacher.restart_scheduled) do
             timer:cancel()
         end
+        mc_teacher.clear_restart_time()
     end
 end
 
@@ -41,6 +42,14 @@ function mc_teacher.display_restart_time(time)
                     text = "Server restarting in "..time..extension
                 })
             end
+        end
+    end
+end
+
+function mc_teacher.clear_restart_time()
+    for _,player in pairs(minetest.get_connected_players()) do
+        if player:is_player() and mc_core.hud:get(player, "restart_timer") then
+            mc_core.hud:clear(player, "restart_timer")
         end
     end
 end

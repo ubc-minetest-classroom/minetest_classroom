@@ -441,80 +441,124 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
         end
 
-        ------------
-        -- SERVER --
-        ------------
-        if fields.server_send_students or fields.server_send_teachers or fields.server_send_admins or fields.server_send_all then
+        ----------------------------------------
+        -- SERVER (ADDITIONAL PRIVS REQUIRED) --
+        ----------------------------------------
+        if has_server_privs then
+            if fields.server_whitelist then
+                local event = minetest.explode_textlist_event(fields.server_whitelist)
+                if event.type == "CHG" then
+                    context.selected_ip_range = event.index
+                end
+            end
+                
+            if fields.server_send_students or fields.server_send_teachers or fields.server_send_admins or fields.server_send_all then
+                if fields.server_message ~= "" then
+                    local message_map = {
+                        [mc_teacher.MMODE.SERVER_ANON] = function()
+                            return minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..fields.server_message)
+                        end,
+                        [mc_teacher.MMODE.SERVER_PLAYER] = function()
+                            return minetest.colorize(mc_core.col.log, "[Minetest Classroom] From "..player:get_player_name()..": "..fields.server_message)
+                        end,
+                        [mc_teacher.MMODE.PLAYER] = function()
+                            return "<"..player:get_player_name().."> "..fields.server_message
+                        end,
+                    }
+                    local message = message_map[fields.server_message_type or mc_teacher.MMODE.SERVER_ANON]()
 
-            minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..fields.server_message))
-			reload = true
-        elseif fields.server_shutdown_schedule then
-            mc_teacher.cancel_shutdown()
-            local sched = {
-                ["30 seconds"] = 30,
-                ["1 minute"] = 60,
-                ["5 minutes"] = 300,
-                ["10 minutes"] = 600,
-                ["15 minutes"] = 900,
-                ["30 minutes"] = 1800,
-                ["45 minutes"] = 2700,
-                ["1 hour"] = 3600,
-                ["2 hours"] = 7200,
-                ["3 hours"] = 10800,
-                ["6 hours"] = 21600,
-                ["12 hours"] = 43200,
-                ["24 hours"] = 86400
-            }
-            local warn = {600, 540, 480, 420, 360, 300, 240, 180, 120, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 4, 3, 2, 1}
-            local time = sched[fields.server_restart_timer]
-            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server restart successfully scheduled!"))
-            minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] The server will be restarting in "..fields.time..". Worlds will be saved prior to the restart, so world data should not be lost."))
-            mc_teacher.restart_scheduled.timer = minetest.after(time, mc_teacher.shutdown_server, true)
-            for _,t in pairs(warn) do
-                if time >= t then
-                    mc_teacher.restart_scheduled["warn"..tostring(t)] = minetest.after(time - t, mc_teacher.display_restart_time, t)
-                end
-            end
-        elseif fields.server_shutdown_now then
-            mc_teacher.cancel_shutdown()
-            mc_teacher.shutdown_server(true)
-        elseif fields.addip then
-            if fields.ipstart then
-                if not fields.ipend or fields.ipend == "Optional" or fields.ipend == "" then
-                    networking.modify_ipv4(player, fields.ipstart, nil, true)
+                    if fields.server_send_students then
+                        for name,_ in pairs(mc_teacher.students) do
+                            minetest.chat_send_player(name, message)
+                        end
+                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
+                    elseif fields.server_send_teachers then
+                        for name,_ in pairs(mc_teacher.teachers) do
+                            minetest.chat_send_player(name, message)
+                        end
+                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
+                    elseif fields.server_send_admins then
+                        for _,p_obj in pairs(minetest.get_connected_players()) do
+                            if p_obj:is_player() and mc_core.checkPrivs(p_obj, {teacher = true, server = true}) then
+                                minetest.chat_send_player(p_obj:get_player_name(), message)
+                            end
+                        end
+                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
+                    elseif fields.server_send_all then
+                        minetest.chat_send_all(message)
+                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
+                    else
+                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message could not be sent."))
+                    end
                 else
-                    networking.modify_ipv4(player, fields.ipstart, fields.ipend, true)
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server messages can not be empty."))
                 end
-            end
-            reload = true
-        elseif fields.removeip then
-            if fields.ipstart then
-                if not fields.ipend or fields.ipend == "Optional" or fields.ipend == "" then
-                    networking.modify_ipv4(player,fields.ipstart,nil,nil)
-                else
-                    networking.modify_ipv4(player,fields.ipstart,fields.ipend,nil)
+            elseif fields.server_shutdown_cancel then
+                mc_teacher.cancel_shutdown()
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server restart successfully cancelled!"))
+                minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] The scheduled server restart has been cancelled."))
+                reload = true
+            elseif fields.server_shutdown_schedule then
+                mc_teacher.cancel_shutdown()
+                local warn = {600, 540, 480, 420, 360, 300, 240, 180, 120, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 4, 3, 2, 1}
+                local time = mc_teacher.T_INDEX[fields.server_shutdown_timer].t
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server restart successfully scheduled!"))
+                minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] The server will be restarting in "..fields.server_shutdown_timer..". Worlds will be saved prior to the restart, so world data should not be lost."))
+                mc_teacher.restart_scheduled.timer = minetest.after(time, mc_teacher.shutdown_server, true)
+                for _,t in pairs(warn) do
+                    if time >= t then
+                        mc_teacher.restart_scheduled["warn"..tostring(t)] = minetest.after(time - t, mc_teacher.display_restart_time, t)
+                    end
                 end
+                reload = true
+            elseif fields.server_shutdown_now then
+                mc_teacher.cancel_shutdown()
+                mc_teacher.shutdown_server(true)
+            elseif fields.addip then
+                if fields.ipstart then
+                    if not fields.ipend or fields.ipend == "Optional" or fields.ipend == "" then
+                        networking.modify_ipv4(player, fields.ipstart, nil, true)
+                    else
+                        networking.modify_ipv4(player, fields.ipstart, fields.ipend, true)
+                    end
+                end
+                reload = true
+            elseif fields.removeip then
+                if fields.ipstart then
+                    if not fields.ipend or fields.ipend == "Optional" or fields.ipend == "" then
+                        networking.modify_ipv4(player,fields.ipstart,nil,nil)
+                    else
+                        networking.modify_ipv4(player,fields.ipstart,fields.ipend,nil)
+                    end
+                end
+                reload = true
+            elseif fields.server_whitelist_toggle then
+                networking.toggle_whitelist(player)
+                reload = true
             end
-            reload = true
-        elseif fields.server_whitelist_toggle then
-            networking.toggle_whitelist(player)
-            reload = true
-        end
-        
-        -- SERVER + OVERVIEW
-        if fields.server_edit_rules then
-            return minetest.show_formspec(player:get_player_name(), "mc_rules:edit", mc_rules.show_edit_formspec(nil))
+            
+            -- SERVER + OVERVIEW
+            if fields.server_edit_rules then
+                return minetest.show_formspec(player:get_player_name(), "mc_rules:edit", mc_rules.show_edit_formspec(nil))
+            end
         end
 
         -- GENERAL: RELOAD
         if reload then
+            -- classroom
             if fields.realmname then context.realmname = minetest.formspec_escape(fields.realmname) end
             if fields.realm_x_size then context.realm_x = fields.realm_x_size end
             if fields.realm_y_size then context.realm_y = fields.realm_y_size end
             if fields.realm_z_size then context.realm_z = fields.realm_z_size end
+            -- server
             if fields.server_message then context.server_message = minetest.formspec_escape(fields.server_message) end
+            if fields.server_message_type then context.server_message_type = fields.server_message_type end
             if fields.server_ip_start then context.start_ip = minetest.formspec_escape(fields.server_ip_start) end
             if fields.server_ip_end then context.end_ip = minetest.formspec_escape(fields.server_ip_end) end
+            if fields.server_shutdown_timer then
+                context.time_index = mc_teacher.T_INDEX[fields.server_shutdown_timer] and mc_teacher.T_INDEX[fields.server_shutdown_timer].i
+            end
+            -- reload
             mc_teacher.show_controller_fs(player, context.tab)
         end
     end

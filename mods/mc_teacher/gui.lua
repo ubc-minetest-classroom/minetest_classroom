@@ -655,28 +655,42 @@ function mc_teacher.show_controller_fs(player,tab)
                     "textarea[", spacer, ",1.4;", panel_width - 2*spacer, ",2.1;server_message;;", context.server_message or "", "]",
                     "style_type[textarea;font=mono,bold]",
                     "textarea[", text_spacer, ",3.6;", panel_width - 2*text_spacer, ",1;;;Send as:]",
-                    "dropdown[", spacer, ",4.0;", panel_width - 2*spacer, ",0.8;server_message_type;Anonymous server message,Server message from yourself,Chat message from yourself;1;true]",
+                    "dropdown[", spacer, ",4.0;", panel_width - 2*spacer, ",0.8;server_message_type;Anonymous server message,Server message from yourself,Chat message from yourself;", context.server_message_type or mc_teacher.MMODE.SERVER_ANON, ";true]",
                     "textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",1;;;Send to:]",
                     "button[", spacer, ",5.3;1.7,0.8;server_send_teachers;Teachers]",
                     "button[", spacer + 1.8, ",5.3;1.7,0.8;server_send_students;Students]",
                     "button[", spacer + 3.6, ",5.3;1.7,0.8;server_send_admins;Admins]",
                     "button[", spacer + 5.4, ",5.3;1.7,0.8;server_send_all;Everyone]",
                     "textarea[", text_spacer, ",6.3;", panel_width - 2*text_spacer, ",1;;;Schedule Server Shutdown]",
-                    "dropdown[", spacer, ",6.7;", panel_width - 2*spacer, ",0.8;server_shutdown_timer;30 seconds,1 minute,5 minutes,10 minutes,15 minutes,30 minutes,45 minutes,1 hour,2 hours,3 hours,6 hours,12 hours,24 hours;1;false]",
-                    "button[", spacer, ",7.6;3.5,0.8;server_shutdown_schedule;Schedule]",
+                }
+
+                local time_options = {}
+                for t, t_table in pairs(mc_teacher.T_INDEX) do
+                    time_options[t_table.i] = t
+                end
+
+                local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+                local ip_whitelist = {}
+                for ipv4,_ in pairs(ipv4_whitelist) do
+                    table.insert(ip_whitelist, ipv4)
+                end
+
+                table.insert(fs, table.concat({
+                    "dropdown[", spacer, ",6.7;", panel_width - 2*spacer, ",0.8;server_shutdown_timer;", table.concat(time_options, ","), ";", context.time_index or 1, ";false]",
+                    "button[", spacer, ",7.6;3.5,0.8;server_shutdown_", mc_teacher.restart_scheduled.timer and "cancel" or "schedule", ";", mc_teacher.restart_scheduled.timer and "Cancel shutdown" or "Schedule", "]",
                     "button[", spacer + 3.6, ",7.6;3.5,0.8;server_shutdown_now;Shutdown now]",
                     "textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Misc. actions]",
                     "button[", spacer, ",9;3.5,0.8;server_ban_manager;Banned players]",
                     "button[", spacer + 3.6, ",9;3.5,0.8;server_edit_rules;Server rules]",
-                    
+
                     "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Whitelisted IPv4 Addresses]",
-                    "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.9;server_whitelist;;1;false]",
+                    "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.9;server_whitelist;", table.concat(ip_whitelist, ","), ";", context.selected_ip_range or 1, ";false]",
                     "button[", panel_width + spacer, ",6.4;3.5,0.8;server_whitelist_toggle;", whitelist_state and "DISABLE" or "ENABLE", " whitelist]",
                     "button[", panel_width + spacer + 3.6, ",6.4;3.5,0.8;server_whitelist_remove;Delete range]",
                     "textarea[", panel_width + text_spacer, ",7.4;", panel_width - 2*text_spacer, ",1;;;Modify Whitelist]",
                     "style_type[textarea;font_size=*0.85]",
-                    "textarea[", panel_width + text_spacer, ",8.6;3.6,1;;;Start IPv4]",
-                    "textarea[", panel_width + text_spacer + 3.6, ",8.6;3.6,1;;;End IPv4]",
+                    "textarea[", panel_width + text_spacer, ",8.6;3.6,0.8;;;Start IPv4]",
+                    "textarea[", panel_width + text_spacer + 3.6, ",8.6;3.6,0.8;;;End IPv4]",
                     "field[", panel_width + spacer, ",7.8;3.5,0.8;server_ip_start;;", context.start_ip or "0.0.0.0", "]",
                     "field[", panel_width + spacer + 3.6, ",7.8;3.5,0.8;server_ip_end;;", context.end_ip or "", "]",
                     "field_close_on_enter[server_ip_start;false]",
@@ -693,7 +707,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     "tooltip[server_ip_add;Adds the typed range of IPs to the whitelist;#404040;#ffffff]",
                     "tooltip[server_ip_remove;Removes the typed range of IPs from the whitelist;#404040;#ffffff]",
                     "tooltip[server_whitelist_toggle;Whitelist is currently ", whitelist_state and "ENABLED" or "DISABLED", ";#404040;#ffffff]",
-                }
+                }))
 
                 return fs
 

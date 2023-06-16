@@ -32,19 +32,19 @@ mc_teacher = {
         PLAYER = "3",
     },
     T_INDEX = {
-        ["30 seconds"] = 1,
-        ["1 minute"] = 2,
-        ["5 minutes"] = 3,
-        ["10 minutes"] = 4,
-        ["15 minutes"] = 5,
-        ["30 minutes"] = 6,
-        ["45 minutes"] = 7,
-        ["1 hour"] = 8,
-        ["2 hours"] = 9,
-        ["3 hours"] = 10,
-        ["6 hours"] = 11,
-        ["12 hours"] = 12,
-        ["24 hours"] = 13,
+        ["30 seconds"] = {i = 1, t = 30},
+        ["1 minute"] = {i = 2, t = 60},
+        ["5 minutes"] = {i = 3, t = 300},
+        ["10 minutes"] = {i = 4, t = 600},
+        ["15 minutes"] = {i = 5, t = 900},
+        ["30 minutes"] = {i = 6, t = 1800},
+        ["45 minutes"] = {i = 7, t = 2700},
+        ["1 hour"] = {i = 8, t = 3600},
+        ["2 hours"] = {i = 9, t = 7200},
+        ["3 hours"] = {i = 10, t = 10800},
+        ["6 hours"] = {i = 11, t = 21600},
+        ["12 hours"] = {i = 12, t = 43200},
+        ["24 hours"] = {i = 13, t = 86400}
     }
 }
 
