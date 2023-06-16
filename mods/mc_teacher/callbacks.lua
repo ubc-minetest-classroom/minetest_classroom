@@ -388,7 +388,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         for priv, v in pairs(context.selected_privs) do
                             realm.PermissionsOverride[p][priv] = (v == "true" and true or false)
                         end
-                        minetest.log(minetest.serialize(realm.PermissionsOverride[p]))
                     else
                         realm.PermissionsOverride[p] = nil
                     end

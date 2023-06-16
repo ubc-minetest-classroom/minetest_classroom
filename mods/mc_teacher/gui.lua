@@ -477,6 +477,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 local direct_msg = minetest.deserialize(mc_teacher.meta:get_string("dm_log"))
                 local server_msg = minetest.deserialize(mc_teacher.meta:get_string("server_log"))
                 local indexed_chat_players = {}
+                local add_server = false
 
                 for uname,_ in pairs(chat_msg or {}) do
                     if not mc_core.tableHas(indexed_chat_players, uname) then
@@ -489,18 +490,41 @@ function mc_teacher.show_controller_fs(player,tab)
                     end
                 end
                 for uname, msg_list in pairs(server_msg or {}) do
-                    if not mc_core.tableHas(indexed_chat_players, uname) then
-                        if has_server_privs then
+                    if has_server_privs then
+                        if not mc_core.tableHas(indexed_chat_players, uname) then
                             table.insert(indexed_chat_players, uname)
-                        else
-                            for _,msg_table in pairs(msg_list) do
-                                if not msg_table.anonymous and msg_table.recipient ~= mc_teacher.MRECIP.ADMIN then
-                                    table.insert(indexed_chat_players, uname)
-                                    break
+                        end
+                    else
+                        local add_player = false
+                        for _,msg_table in pairs(msg_list) do
+                            if msg_table.recipient ~= mc_teacher.MRECIP.ADMIN then
+                                if not msg_table.anonymous then
+                                    add_player = true
+                                else
+                                    add_server = true
                                 end
+                            end
+                            if add_player and add_server then
+                                break
+                            end
+                        end
+                        if not mc_core.tableHas(indexed_chat_players, uname) and add_player then
+                            table.insert(indexed_chat_players, uname)
+                        end
+                    end
+                end
+
+                if add_server then
+                    table.insert(indexed_chat_players, "server")
+                    local server_messages = {}
+                    for _, msg_list in pairs(server_msg or {}) do
+                        for _,msg_table in pairs(msg_list) do
+                            if msg_table.anonymous and msg_table.recipient ~= mc_teacher.MRECIP.ADMIN then
+                                table.insert(server_messages, msg_table)
                             end
                         end
                     end
+                    server_msg["server"] = server_messages
                 end
                 context.indexed_chat_players = indexed_chat_players
 
@@ -526,7 +550,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     end
                     if server_msg and server_msg[selected] then
                         for i, msg_table in ipairs(server_msg[selected]) do
-                            if has_server_privs or (not msg_table.anonymous and msg_table.recipient ~= mc_teacher.MRECIP.ADMIN) then
+                            if has_server_privs or (msg_table.recipient ~= mc_teacher.MRECIP.ADMIN and msg_table.anonymous == (selected == "server")) then
                                 table.insert(stamps, msg_table.timestamp)
                                 stamp_to_key[msg_table.timestamp] = "serv:"..i
                             end
