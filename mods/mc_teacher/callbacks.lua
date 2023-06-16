@@ -447,24 +447,29 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         ------------
         -- SERVER --
         ------------
-        if fields.submitmessage then
-            minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..fields.servermessage))
+        if fields.server_send_students or fields.server_send_teachers or fields.server_send_admins or fields.server_send_all then
+
+            minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..fields.server_message))
 			reload = true
-        elseif fields.submitsched then
+        elseif fields.server_shutdown_schedule then
             if mc_teacher.restart_scheduled.timer then mc_teacher.restart_scheduled.timer:cancel() end
             local sched = {
+                ["30 seconds"] = 30,
                 ["1 minute"] = 60,
                 ["5 minutes"] = 300,
                 ["10 minutes"] = 600,
                 ["15 minutes"] = 900,
                 ["30 minutes"] = 1800,
+                ["45 minutes"] = 2700,
                 ["1 hour"] = 3600,
+                ["2 hours"] = 7200,
+                ["3 hours"] = 10800,
                 ["6 hours"] = 21600,
                 ["12 hours"] = 43200,
                 ["24 hours"] = 86400}
-            local time = sched[fields.time]
-            mc_teacher.restart_scheduled.timer = minetest.after(time,mc_teacher.shutdown_server,true)
-        elseif fields.submitshutdown then
+            local time = sched[fields.server_restart_timer]
+            mc_teacher.restart_scheduled.timer = minetest.after(time, mc_teacher.shutdown_server, true)
+        elseif fields.server_shutdown_now then
             if mc_teacher.restart_scheduled.timer then mc_teacher.restart_scheduled.timer:cancel() end
             mc_teacher.shutdown_server(true)
         elseif fields.addip then
@@ -485,13 +490,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
             end
             reload = true
-        elseif fields.toggleon or fields.toggleoff then
+        elseif fields.server_whitelist_toggle then
             networking.toggle_whitelist(player)
             reload = true
         end
         
         -- SERVER + OVERVIEW
-        if fields.modifyrules then
+        if fields.server_edit_rules then
             return minetest.show_formspec(player:get_player_name(), "mc_rules:edit", mc_rules.show_edit_formspec(nil))
         end
 
@@ -501,6 +506,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if fields.realm_x_size then context.realm_x = fields.realm_x_size end
             if fields.realm_y_size then context.realm_y = fields.realm_y_size end
             if fields.realm_z_size then context.realm_z = fields.realm_z_size end
+            if fields.server_message then context.server_message = minetest.formspec_escape(fields.server_message) end
+            if fields.server_ip_start then context.start_ip = minetest.formspec_escape(fields.server_ip_start) end
+            if fields.server_ip_end then context.end_ip = minetest.formspec_escape(fields.server_ip_end) end
             mc_teacher.show_controller_fs(player, context.tab)
         end
     end

@@ -74,7 +74,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     "textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",2.6;;;", minetest.formspec_escape("This is the Teacher Controller, your tool for managing classrooms, player privileges, and server settings."),
                     "\n", minetest.formspec_escape("You cannot drop this tool, so you will never lose it. However, you can move it out of your hotbar and into your inventory or the toolbox."), "]",
                     "textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",", has_server_privs and 4 or 4.9, ";;;", minetest.formspec_escape(rules), "]",
-                    has_server_privs and "button[0.6,9;7,0.8;modifyrules;Edit Server Rules]" or "",
+                    has_server_privs and "button[0.6,9;7,0.8;server_edit_rules;Edit server rules]" or "",
 
                     "scrollbaroptions[min=0;max=", (11.6 + (has_server_privs and 1.7 or 0) - Y_SIZE)/FACTOR, ";smallstep=", 0.8/FACTOR, ";largestep=", 4.8/FACTOR, ";thumbsize=", 1/FACTOR, "]",
                     "scrollbar[", controller_width - 0.3, ",0.5;0.3,", Y_SIZE, ";vertical;overviewscroll;", context.overviewscroll or 0, "]",
@@ -588,7 +588,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
                     "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
-                    "tooltip[exit;Exit;#325140;#ffffff]",
+                    "tooltip[exit;Exit;#404040;#ffffff]",
                     "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Help</b></center></style>]",
                     "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Getting Started</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
@@ -633,18 +633,71 @@ function mc_teacher.show_controller_fs(player,tab)
                     "Show/hide debug log: ", mc_core.clean_key(set:get("keymap_toggle_debug") or "KEY_F5"), "\n",
                     "Show/hide profiler: ", mc_core.clean_key(set:get("keymap_toggle_profiler") or "KEY_F6"),
                     "]",
-
-                    --"textarea[", panel_width + text_spacer, ",1.5;", panel_width - 2*text_spacer, ",3;;;", minetest.formspec_escape("If you need to report a server issue or player, you can write a message in the box below that will be privately sent to "), 
-                    --pairs(mc_teacher.teachers) ~= nil and "all teachers that are currently online" or "the first teacher that joins the server", ".\n",
-                    --minetest.formspec_escape("Your report message will be logged and visible to all teachers, so don't include any personal information in it. The server will also automatically log the current date and time, your classroom, and your world position in the report, so you don't need to include that information in your report message."), "]",
-                    --"dropdown[", panel_width + spacer, ",5.2;", panel_width - 2*spacer, ",0.7;reporttype;", table.concat(mc_student.REPORT_TYPE, ","), ";1;false]",
-                    --"textarea[", panel_width + spacer, ",6.5;", panel_width - 2*spacer, ",2.4;report;;]",
-                    --"button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;submitreport;Submit Report]",
                 }
 
                 return fs
             end,
             [mc_teacher.TABS.SERVER] = function() -- SERVER
+                -- TODO: Implement ban manager
+                local whitelist_state = minetest.deserialize(networking.storage:get_string("enabled"))
+
+                local fs = {
+                    "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
+                    "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+                    "tooltip[exit;Exit;#404040;#ffffff]",
+                    "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Server Management</b></center></style>]",
+                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Server Whitelist</b></center></style>]",
+                    "style_type[textarea;font=mono,bold;textcolor=#000000]",
+                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+
+                    "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Global Messenger]",
+                    "style_type[textarea,field;font=mono]",
+                    "textarea[", spacer, ",1.4;", panel_width - 2*spacer, ",2.1;server_message;;", context.server_message or "", "]",
+                    "style_type[textarea;font=mono,bold]",
+                    "textarea[", text_spacer, ",3.6;", panel_width - 2*text_spacer, ",1;;;Send as:]",
+                    "dropdown[", spacer, ",4.0;", panel_width - 2*spacer, ",0.8;server_message_type;Anonymous server message,Server message from yourself,Chat message from yourself;1;true]",
+                    "textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",1;;;Send to:]",
+                    "button[", spacer, ",5.3;1.7,0.8;server_send_teachers;Teachers]",
+                    "button[", spacer + 1.8, ",5.3;1.7,0.8;server_send_students;Students]",
+                    "button[", spacer + 3.6, ",5.3;1.7,0.8;server_send_admins;Admins]",
+                    "button[", spacer + 5.4, ",5.3;1.7,0.8;server_send_all;Everyone]",
+                    "textarea[", text_spacer, ",6.3;", panel_width - 2*text_spacer, ",1;;;Schedule Server Shutdown]",
+                    "dropdown[", spacer, ",6.7;", panel_width - 2*spacer, ",0.8;server_shutdown_timer;30 seconds,1 minute,5 minutes,10 minutes,15 minutes,30 minutes,45 minutes,1 hour,2 hours,3 hours,6 hours,12 hours,24 hours;1;false]",
+                    "button[", spacer, ",7.6;3.5,0.8;server_shutdown_schedule;Schedule]",
+                    "button[", spacer + 3.6, ",7.6;3.5,0.8;server_shutdown_now;Shutdown now]",
+                    "textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Misc. actions]",
+                    "button[", spacer, ",9;3.5,0.8;server_ban_manager;Banned players]",
+                    "button[", spacer + 3.6, ",9;3.5,0.8;server_edit_rules;Server rules]",
+                    
+                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Whitelisted IPv4 Addresses]",
+                    "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.9;server_whitelist;;1;false]",
+                    "button[", panel_width + spacer, ",6.4;3.5,0.8;server_whitelist_toggle;", whitelist_state and "DISABLE" or "ENABLE", " whitelist]",
+                    "button[", panel_width + spacer + 3.6, ",6.4;3.5,0.8;server_whitelist_remove;Delete range]",
+                    "textarea[", panel_width + text_spacer, ",7.4;", panel_width - 2*text_spacer, ",1;;;Modify Whitelist]",
+                    "style_type[textarea;font_size=*0.85]",
+                    "textarea[", panel_width + text_spacer, ",8.6;3.6,1;;;Start IPv4]",
+                    "textarea[", panel_width + text_spacer + 3.6, ",8.6;3.6,1;;;End IPv4]",
+                    "field[", panel_width + spacer, ",7.8;3.5,0.8;server_ip_start;;", context.start_ip or "0.0.0.0", "]",
+                    "field[", panel_width + spacer + 3.6, ",7.8;3.5,0.8;server_ip_end;;", context.end_ip or "", "]",
+                    "field_close_on_enter[server_ip_start;false]",
+                    "field_close_on_enter[server_ip_end;false]",
+                    "button[", panel_width + spacer, ",9;3.5,0.8;server_ip_add;Add range]",
+                    "button[", panel_width + spacer + 3.6, ",9;3.5,0.8;sever_ip_remove;Remove range]",
+
+                    "tooltip[server_message;Type your message here!;#404040;#ffffff]",
+                    "tooltip[server_ban_manager;View and manage banned players;#404040;#ffffff]",
+                    "tooltip[server_edit_rules;Edit server rules;#404040;#ffffff]",
+                    "tooltip[server_ip_start;First IPv4 address in the desired range;#404040;#ffffff]",
+                    "tooltip[server_ip_end;Last IPv4 address in the desired range (optional);#404040;#ffffff]",
+                    "tooltip[server_whitelist_remove;Removes the selected IP range from the whitelist;#404040;#ffffff]",
+                    "tooltip[server_ip_add;Adds the typed range of IPs to the whitelist;#404040;#ffffff]",
+                    "tooltip[server_ip_remove;Removes the typed range of IPs from the whitelist;#404040;#ffffff]",
+                    "tooltip[server_whitelist_toggle;Whitelist is currently ", whitelist_state and "ENABLED" or "DISABLED", ";#404040;#ffffff]",
+                }
+
+                return fs
+
+                --[[
                 local fsx, fsy
                 local fs = {}
                 fs[#fs + 1] = "field[1,0.85;"
@@ -729,9 +782,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 fs[#fs + 1] = tostring(fsx+(controller_width/2))
                 fs[#fs + 1] = ","
                 fs[#fs + 1] = tostring(fsy+(controller_height/4)+2.7+1.2)
-                fs[#fs + 1] = ";3.9,0.8;modifyrules;Modify Server Rules]"
-                -- TODO: Manage Bans
-                return fs
+                fs[#fs + 1] = ";3.9,0.8;modifyrules;Modify Server Rules]"]]
             end,
         }
 
@@ -972,8 +1023,9 @@ box[0,0;16.6,0.5;#737373]
 box[8.275,0;0.05,10.4;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.1,1;;;Help]
-textarea[8.85,0.1;7.1,1;;;Help]
-textarea[0.55,1;7.2,1;;;Coming soon!]
+textarea[8.85,0.1;7.1,1;;;Getting Started]
+textarea[0.55,1;7.2,1;;;Controls]
+textarea[0.55,1.5;7.2,8.3;;;Add controls here!]
 
 SERVER:
 formspec_version[6]
@@ -981,7 +1033,33 @@ size[16.6,10.4]
 box[0,0;16.6,0.5;#737373]
 box[8.275,0;0.05,10.4;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
-textarea[0.55,0.1;7.1,1;;;Server]
-textarea[8.85,0.1;7.1,1;;;Server]
-textarea[0.55,1;7.2,1;;;Coming soon!]
+textarea[0.55,0.1;7.1,1;;;Server Management]
+textarea[8.85,0.1;7.1,1;;;Server Whitelist]
+textarea[0.55,1;7.2,1;;;Global Messenger]
+textarea[0.6,1.4;7.1,2.1;server_message;;]
+textarea[0.55,3.6;7.2,1;;;Send as:]
+dropdown[0.6,4;7.1,0.8;server_message_type;Anonymous server message,Server message from yourself,Chat message from yourself;1;true]
+textarea[0.55,4.9;7.2,1;;;Send to:]
+button[0.6,5.3;1.7,0.8;server_send_teachers;Teachers]
+button[2.4,5.3;1.7,0.8;server_send_students;Students]
+button[4.2,5.3;1.7,0.8;server_send_admins;Admins]
+button[6,5.3;1.7,0.8;server_send_all;Everyone]
+textarea[0.55,6.3;7.2,1;;;Schedule Server Shutdown]
+dropdown[0.6,6.7;7.1,0.8;server_shutdown_timer;;1;false]
+button[0.6,7.6;3.5,0.8;server_shutdown_schedule;Schedule]
+button[4.2,7.6;3.5,0.8;server_shutdown_now;Shutdown now]
+textarea[0.55,8.6;7.2,1;;;Misc. actions]
+button[0.6,9;3.5,0.8;server_ban_manager;Banned players]
+button[4.2,9;3.5,0.8;server_edit_rules;Server rules]
+textarea[8.85,1;7.2,1;;;Whitelisted IPv4 Addresses]
+textlist[8.9,1.4;7.1,4.9;server_whitelist;;1;false]
+button[8.9,6.4;3.5,0.8;server_whitelist_toggle;ENABLE whitelist]
+button[12.5,6.4;3.5,0.8;server_whitelist_remove;Delete range]
+textarea[8.85,7.4;7.2,1;;;Modify Whitelist]
+textarea[8.85,8.6;3.6,1;;;Start IPv4]
+textarea[12.45,8.6;3.6,1;;;End IPv4 (optional)]
+field[8.9,7.8;3.5,0.8;server_ip_start;;0.0.0.0]
+field[12.5,7.8;3.5,0.8;server_ip_end;;]
+button[8.9,9;3.5,0.8;server_ip_add;Add range]
+button[12.5,9;3.5,0.8;sever_ip_remove;Remove range]
 ]]

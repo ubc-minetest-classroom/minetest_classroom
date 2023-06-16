@@ -25,6 +25,26 @@ mc_teacher = {
         SELECTED = "1",
         TAB = "2",
         ALL = "3",
+    },
+    MMODE = {
+        SERVER_ANON = "1",
+        SERVER_PLAYER = "2",
+        PLAYER = "3",
+    },
+    T_INDEX = {
+        ["30 seconds"] = 1,
+        ["1 minute"] = 2,
+        ["5 minutes"] = 3,
+        ["10 minutes"] = 4,
+        ["15 minutes"] = 5,
+        ["30 minutes"] = 6,
+        ["45 minutes"] = 7,
+        ["1 hour"] = 8,
+        ["2 hours"] = 9,
+        ["3 hours"] = 10,
+        ["6 hours"] = 11,
+        ["12 hours"] = 12,
+        ["24 hours"] = 13,
     }
 }
 
