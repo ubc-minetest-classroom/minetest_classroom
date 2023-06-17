@@ -26,13 +26,11 @@ minetest.register_on_joinplayer(function(player)
         mc_teacher.register_student(pname)
     end
 
-    local teachers = {}
-    local count = 0
-    for teacher,_ in pairs(mc_teacher.teachers) do
-        table.insert(teachers, teacher)
-        count = count + 1
-    end
-    if count > 0 then 
+    if next(mc_teacher.teachers) ~= nil then
+        local teachers = {}
+        for teacher,_ in pairs(mc_teacher.teachers) do
+            table.insert(teachers, teacher)
+        end
         minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, table.concat({"[Minetest Classroom] ", count, " teacher", count == 1 and "" or "s", " currently online: ", table.concat(teachers, ", ")})))
     end
 end)
@@ -422,9 +420,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         end
 
-        ---------------
-        -- MODERATOR --
-        ---------------
+        ----------------
+        -- MODERATION --
+        ----------------
         if fields.mod_log_players then
 			local event = minetest.explode_textlist_event(fields.mod_log_players)
 			if event.type == "CHG" then
@@ -453,6 +451,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             mc_teacher.meta:set_string("chat_log", minetest.serialize(chat_msg))
             mc_teacher.meta:set_string("dm_log", minetest.serialize(direct_msg))
             reload = true
+        elseif fields.mod_send_message then
+
+
         end
 
         ----------------------------------------
@@ -568,6 +569,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if fields.realm_x_size then context.realm_x = fields.realm_x_size end
             if fields.realm_y_size then context.realm_y = fields.realm_y_size end
             if fields.realm_z_size then context.realm_z = fields.realm_z_size end
+            -- moderation
+            if fields.mod_message then context.mod_message = minetest.formspec_escape(fields.mod_message) end
             -- server
             if fields.server_message then context.server_message = minetest.formspec_escape(fields.server_message) end
             if fields.server_message_type then context.server_message_type = fields.server_message_type end

@@ -9,7 +9,8 @@ mc_core = {
     col = {
         log = "#FFC9FF",
         marker = "#DFA4F5"
-    }
+    },
+    SERVER_USER = "Server",
 }
 -- for compatibility with older mods
 mc_helpers = mc_core

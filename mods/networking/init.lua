@@ -352,7 +352,7 @@ function networking.modify_ipv4(player,startRange,endRange,add)
             end
         end
     else
-        minetest.chat_send_player(pname, "[Networking] Error: You do not have the Server privilege to run this function.")
+        minetest.chat_send_player(pname, "[Networking] Error: You do not have the server privilege, which is required to run this function.")
     end
 end
 

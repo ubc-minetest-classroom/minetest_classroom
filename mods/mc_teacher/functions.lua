@@ -75,12 +75,24 @@ function mc_teacher.check_selected_priv_mode(context)
     end
 end
 
+local function check_for_reports(pname)
+    local report_reminder = mc_teacher.meta:get_int("report_reminder")
+    if report_reminder > 0 then
+        chat_send_player(pname, minetest.colorize(mc_core.col.log, table.concat({
+            "[Minetest Classroom] ", report_reminder, " new report", report_reminder == 1 and " was" or "s were", " received while you were away.\n",
+            "Please check the Reports tab of the teacher controller for more information."
+        })))
+        mc_teacher.meta:set_int("report_reminder", 0)
+    end
+end
+
 function mc_teacher.register_teacher(player)
     local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name())
     if pname then
         mc_teacher.teachers[pname] = true
         mc_teacher.students[pname] = nil
     end
+    check_for_reports(pname)
 end
 
 function mc_teacher.register_student(player)

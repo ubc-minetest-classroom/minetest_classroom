@@ -515,7 +515,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 end
 
                 if add_server then
-                    table.insert(indexed_chat_players, "server")
+                    table.insert(indexed_chat_players, mc_core.SERVER_USER)
                     local server_messages = {}
                     for _, msg_list in pairs(server_msg or {}) do
                         for _,msg_table in pairs(msg_list) do
@@ -524,7 +524,7 @@ function mc_teacher.show_controller_fs(player,tab)
                             end
                         end
                     end
-                    server_msg["server"] = server_messages
+                    server_msg[mc_core.SERVER_USER] = server_messages
                 end
                 context.indexed_chat_players = indexed_chat_players
 
@@ -550,7 +550,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     end
                     if server_msg and server_msg[selected] then
                         for i, msg_table in ipairs(server_msg[selected]) do
-                            if has_server_privs or (msg_table.recipient ~= mc_teacher.MRECIP.ADMIN and msg_table.anonymous == (selected == "server")) then
+                            if has_server_privs or (msg_table.recipient ~= mc_teacher.MRECIP.ADMIN and msg_table.anonymous == (selected == mc_core.SERVER_USER)) then
                                 table.insert(stamps, msg_table.timestamp)
                                 stamp_to_key[msg_table.timestamp] = "serv:"..i
                             end
@@ -577,7 +577,7 @@ function mc_teacher.show_controller_fs(player,tab)
                             table.insert(player_log, dm_col..minetest.formspec_escape(table.concat({"[", stamp, "] DM to ", msg_table.recipient, ": ", msg_table.message})))
                         elseif split_key[1] == "serv" and index ~= 0 then
                             local msg_table = server_msg[selected][index]
-                            table.insert(player_log, serv_col..minetest.formspec_escape(table.concat({"[", stamp, "] Server to ", msg_table.recipient, ": ", msg_table.message})))
+                            table.insert(player_log, serv_col..minetest.formspec_escape(table.concat({"[", stamp, "] ", mc_core.SERVER_USER, " to ", msg_table.recipient, ": ", msg_table.message})))
                         end
                         table.insert(context.log_i_to_key, key)
                     end
@@ -606,11 +606,26 @@ function mc_teacher.show_controller_fs(player,tab)
                         "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",5.5;mod_log_players;", table.concat(indexed_chat_players, ","), ";", context.player_chat_index, ";false]",
                         "button[", spacer, ",7;3.5,0.8;mod_mute;Mute player]", -- TODO: sync w/ mute button on Players tab
                         "button[", spacer + 3.6, ",7;3.5,0.8;mod_clearlog;Delete log]",
-                        "textarea[", text_spacer, ",8;", panel_width - 2*text_spacer, ",1;;;Message ", selected or "player", "]",
-                        "style_type[textarea;font=mono]",
-                        "textarea[", spacer, ",8.4;", panel_width - 2*spacer - 0.8, ",1.4;mod_message;;]",
-                        "style_type[textarea;font=mono,bold]",
-                        "button[", panel_width - spacer - 0.8, ",8.4;0.8,1.4;mod_send_message;Send]",
+                    }))
+
+                    if selected == mc_core.SERVER_USER then
+                        table.insert(fs, table.concat({
+                            "textarea[", text_spacer, ",8;", panel_width - 2*text_spacer, ",1;;;Who is ", mc_core.SERVER_USER, "?]",
+                            "style_type[textarea;font=mono]",
+                            "textarea[", text_spacer, ",8.4;", panel_width - 2*text_spacer, ",1.4;;;", mc_core.SERVER_USER, " is not a player. It is a reserved name, used to represent something done by the Minetest Classroom server or a server administrator.\nMessages sent by ", mc_core.SERVER_USER, " are server messages sent by one of the server administrators.]",
+                            "style_type[textarea;font=mono,bold]",
+                        }))
+                    else
+                        table.insert(fs, table.concat({
+                            "textarea[", text_spacer, ",8;", panel_width - 2*text_spacer, ",1;;;Message ", selected or "player", "]",
+                            "style_type[textarea;font=mono]",
+                            "textarea[", spacer, ",8.4;", panel_width - 2*spacer - 0.8, ",1.4;mod_message;;", context.mod_message or "", "]",
+                            "style_type[textarea;font=mono,bold]",
+                            "button[", panel_width - spacer - 0.8, ",8.4;0.8,1.4;mod_send_message;Send]",
+                        }))
+                    end
+
+                    table.insert(fs, table.concat({
                         "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Sent Messages]",
                         "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",6.4;mod_log_messages;", table.concat(player_log, ","), ";", context.message_chat_index, ";false]",
                         "textarea[", panel_width + text_spacer, ",8;", panel_width - 2*text_spacer, ",1;;;", display_message and display_message.header or "Unknown", "]",
@@ -633,7 +648,6 @@ function mc_teacher.show_controller_fs(player,tab)
                 return {}
             end,
             [mc_teacher.TABS.HELP] = function() -- HELP
-                local set = minetest.settings
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
                     "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
@@ -645,43 +659,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     "style_type[textarea;font=mono]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
 
-                    -- Controls + keybinds
-                    "textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;",
-                    "Move forwards: ", mc_core.clean_key(set:get("keymap_forward") or "KEY_KEY_W"), "\n",
-                    "Move backwards: ", mc_core.clean_key(set:get("keymap_backward") or "KEY_KEY_S"), "\n",
-                    "Move left: ", mc_core.clean_key(set:get("keymap_left") or "KEY_KEY_A"), "\n",
-                    "Move right: ", mc_core.clean_key(set:get("keymap_right") or "KEY_KEY_D"), "\n",
-                    "Jump/climb up: ", mc_core.clean_key(set:get("keymap_jump") or "KEY_SPACE"), "\n",
-                    "Sneak", set:get("aux1_descends") == "true" and "" or "/climb down", ": ", mc_core.clean_key(set:get("keymap_sneak") or "KEY_LSHIFT"), "\n",
-                    "Sprint", set:get("aux1_descends") == "true" and "/climb down" or "", ": ", mc_core.clean_key(set:get("keymap_aux1") or "KEY_KEY_E"), "\n",
-                    "Zoom: ", mc_core.clean_key(set:get("keymap_zoom") or "KEY_KEY_Z"), "\n",
-                    "\n",
-                    "Dig block/use tool: ", set:get("keymap_dig") and mc_core.clean_key(set:get("keymap_dig") or "KEY_LBUTTON"), "\n",
-                    "Place block: ", set:get("keymap_place") and mc_core.clean_key(set:get("keymap_place") or "KEY_RBUTTON"), "\n",
-                    "Select hotbar item: SCROLL WHEEL or SLOT NUMBER (1-8)\n",
-                    "Select next hotbar item: ", mc_core.clean_key(set:get("keymap_hotbar_next") or "KEY_KEY_N"), "\n",
-                    "Select previous hotbar item: ", mc_core.clean_key(set:get("keymap_hotbar_previous") or "KEY_KEY_B"), "\n",
-                    "Drop item: ", mc_core.clean_key(set:get("keymap_drop") or "KEY_KEY_Q"), "\n",
-                    "\n",
-                    "Open inventory: ", mc_core.clean_key(set:get("keymap_inventory") or "KEY_KEY_I"), "\n",
-                    "Open chat: ", mc_core.clean_key(set:get("keymap_chat") or "KEY_KEY_T"), "\n",
-                    "View minimap: ", mc_core.clean_key(set:get("keymap_minimap") or "KEY_KEY_V"), "\n",
-                    "Take a screenshot: ", mc_core.clean_key(set:get("keymap_screenshot") or "KEY_F12"), "\n",
-                    "Change camera perspective: ", mc_core.clean_key(set:get("keymap_camera_mode") or "KEY_KEY_C"), "\n",
-                    "Mute/unmute game sound: ", mc_core.clean_key(set:get("keymap_mute") or "KEY_KEY_M"), "\n",
-                    "\n",
-                    "Enable/disable sprint: ", mc_core.clean_key(set:get("keymap_fastmove") or "KEY_KEY_J"), "\n",
-                    "Enable/disable fly mode: ", mc_core.clean_key(set:get("keymap_freemove") or "KEY_KEY_K"), "\n",
-                    "Enable/disable noclip mode: ", mc_core.clean_key(set:get("keymap_noclip") or "KEY_KEY_H"), "\n",
-                    "Show/hide HUD (display): ", mc_core.clean_key(set:get("keymap_toggle_hud") or "KEY_F1"), "\n",
-                    "Show/hide chat: ", mc_core.clean_key(set:get("keymap_toggle_chat") or "KEY_F2"), "\n",
-                    "Show/hide world fog: ", mc_core.clean_key(set:get("keymap_toggle_force_fog_off") or "KEY_F3"), "\n",
-                    "Expand/shrink chat window: ", mc_core.clean_key(set:get("keymap_console") or "KEY_F10"), "\n",
-                    "\n",
-                    minetest.formspec_escape("[MINETEST TECHNICAL INFO]"), "\n",
-                    "Show/hide debug log: ", mc_core.clean_key(set:get("keymap_toggle_debug") or "KEY_F5"), "\n",
-                    "Show/hide profiler: ", mc_core.clean_key(set:get("keymap_toggle_profiler") or "KEY_F6"),
-                    "]",
+                    "textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;", mc_core.get_controls_info(true), "]",
                 }
 
                 return fs

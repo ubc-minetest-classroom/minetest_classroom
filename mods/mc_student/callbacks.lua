@@ -80,12 +80,18 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			local report_type = fields.reporttype or "Other"
 			local timestamp = tostring(os.date("%Y-%m-%d %H:%M:%S"))
 
-			for teacher,_ in pairs(mc_teacher.teachers) do
-				minetest.chat_send_player(teacher, minetest.colorize(mc_core.col.log, table.concat({
-					"[Minetest Classroom] NEW REPORT: ", timestamp, " by ", pname, "\n",
-					"  ", string.upper(report_type), ": ", fields.report, "\n",
-					"  DETAILS: Realm #", realm.ID, " at position (x=", pos.x, ", y=", pos.y, ", z=", pos.z, ")"
-				})))
+			if next(mc_teacher.teachers) ~= nil then
+				for teacher,_ in pairs(mc_teacher.teachers) do
+					minetest.chat_send_player(teacher, minetest.colorize(mc_core.col.log, table.concat({
+						"[Minetest Classroom] NEW REPORT: ", timestamp, " by ", pname, "\n",
+						"  ", string.upper(report_type), ": ", fields.report, "\n",
+						"  DETAILS: Realm #", realm.ID, " at position (x=", pos.x, ", y=", pos.y, ", z=", pos.z, ")"
+					})))
+				end
+			else
+				local report_reminder = mc_teacher.meta:get_int("report_reminder")
+				report_reminder = report_reminder + 1
+				mc_teacher.meta:set_int("report_reminder", report_reminder)
 			end
 
 			local reports = minetest.deserialize(mc_teacher.meta:get_string("report_log")) or {}
