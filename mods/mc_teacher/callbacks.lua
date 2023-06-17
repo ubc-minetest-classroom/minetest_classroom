@@ -645,7 +645,31 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport to location."))
 			end
 			reload = true
-		elseif fields.delete then
+		elseif fields.go_all then
+			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+			if pdata and pdata.note_map then
+				if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
+					context.selected_coord = 1
+				end
+				local note_name = context.coord_i_to_note[context.selected_coord]
+				local note_i = pdata.note_map[note_name]
+				local realm = Realm.GetRealm(pdata.realms[note_i])
+				if realm then
+                    for _,p_obj in pairs(minetest.get_connected_players()) do
+                        local p_realm = Realm.GetRealmFromPlayer(p_obj)
+                        if p_realm and p_realm.ID == tonumber(pdata.realms[note_i]) and realm:getCategory().joinable(realm, p_obj) then
+                            realm:TeleportPlayer(p_obj)
+						    p_obj:set_pos(pdata.coords[note_i])
+                        end
+                    end
+				else
+					minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom no longer exists."))
+				end
+			else
+				minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport players to location."))
+			end
+			reload = true        
+        elseif fields.delete then
 			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
 			if pdata and pdata.note_map then
 				local new_note_map, new_coords, new_realms = {}, {}, {}
