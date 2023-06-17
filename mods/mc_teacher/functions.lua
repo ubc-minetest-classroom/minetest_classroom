@@ -78,9 +78,9 @@ end
 local function check_for_reports(pname)
     local report_reminder = mc_teacher.meta:get_int("report_reminder")
     if report_reminder > 0 then
-        chat_send_player(pname, minetest.colorize(mc_core.col.log, table.concat({
-            "[Minetest Classroom] ", report_reminder, " new report", report_reminder == 1 and " was" or "s were", " received while you were away.\n",
-            "Please check the Reports tab of the teacher controller for more information."
+        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, table.concat({
+            "[Minetest Classroom] ", report_reminder, " report", report_reminder == 1 and " was" or "s were", " received while you were away. ",
+            "Please check the \"Reports\" tab of the teacher controller for more information."
         })))
         mc_teacher.meta:set_int("report_reminder", 0)
     end

@@ -31,7 +31,7 @@ minetest.register_on_joinplayer(function(player)
         for teacher,_ in pairs(mc_teacher.teachers) do
             table.insert(teachers, teacher)
         end
-        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, table.concat({"[Minetest Classroom] ", count, " teacher", count == 1 and "" or "s", " currently online: ", table.concat(teachers, ", ")})))
+        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, table.concat({"[Minetest Classroom] ", #teachers, " teacher", #teachers == 1 and "" or "s", " currently online: ", table.concat(teachers, ", ")})))
     end
 end)
 
