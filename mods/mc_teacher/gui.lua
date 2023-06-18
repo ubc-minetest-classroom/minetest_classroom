@@ -645,7 +645,55 @@ function mc_teacher.show_controller_fs(player,tab)
                 return fs
             end,
             [mc_teacher.TABS.REPORTS] = function() -- REPORTS
-                return {}
+                local fs = {
+                    "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
+                    "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
+                    "tooltip[exit;Exit;#404040;#ffffff]",
+                    "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Reports</b></center></style>]",
+                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Report Info</b></center></style>]",
+                    "style_type[textarea;font=mono,bold;textcolor=#000000]",
+                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+                }
+
+                context.report_i_to_idx = {}
+                local report_log = minetest.deserialize(mc_teacher.meta:get_string("report_log")) or {}
+                local report_strings = {}
+                local report_idx_to_key = {}
+
+                for idx, report in pairs(report_log) do
+                    local report_string = minetest.formspec_escape("["..report.timestamp.."] "..report.type.." by "..report.player)
+                    table.insert(report_strings, report_string)
+                    report_idx_to_key[report_string] = idx
+                end
+                table.sort(report_strings)
+                for i,string in ipairs(report_strings) do
+                    context.report_i_to_idx[i] = report_idx_to_key[string]
+                end
+
+                context.selected_report = context.selected_report or 1
+                if context.selected_report > #report_strings then
+                    context.selected_report = math.max(#report_strings, 1)
+                end
+                local selected = report_log[context.report_i_to_idx[context.selected_report]]
+
+                table.insert(fs, table.concat({
+                    "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Report Log]",
+                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;report_log;", table.concat(report_strings, ","), ";", context.selected_report, ";false]",
+                    "button[", spacer, ",9;3.5,0.8;report_delete;Delete report]",
+                    "button[", spacer + 3.6, ",9;3.5,0.8;report_clearlog;Clear report log]",
+
+                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;", string.upper(selected.type or "Other"), "]",
+                    "textarea[", panel_width + text_spacer, ",8;7.2,1;;;Message ", selected.player or "reporter", "]",
+                    "style_type[textarea;font=mono]",
+                    "textarea[", panel_width + text_spacer, ",1.4;", panel_width - 2*text_spacer, ",6.5;;;",
+                    selected.message or "", "\n\n", "Reported on ", selected.timestamp or "an unknown date", " by ", selected.player or "an unknown player", "\n",
+                    "Realm ID ", selected.realm or "unknown", ", at ", selected.pos and "(X="..selected.pos.x..", Y="..selected.pos.y..", Z="..selected.pos.z..")" or "an unknown position", "]",
+                    "textarea[", panel_width + spacer, ",8.4;", panel_width - 2*spacer - 0.8, ",1.4;report_message;;", context.report_message or "", "]",
+                    "style_type[textarea;font=mono,bold]",
+                    "button[", controller_width - spacer - 0.8, ",8.4;0.8,1.4;report_send_message;Send]",
+                }))
+
+                return fs
             end,
             [mc_teacher.TABS.HELP] = function() -- HELP
                 local fs = {
@@ -657,7 +705,6 @@ function mc_teacher.show_controller_fs(player,tab)
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Game controls]",
                     "style_type[textarea;font=mono]",
-                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
 
                     "textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;", mc_core.get_controls_info(true), "]",
                 }
@@ -953,8 +1000,8 @@ textlist[0.6,1.4;7.1,5.5;mod_log_players;;1;false]
 button[0.6,7;3.5,0.8;mod_mute;Mute player]
 button[4.2,7;3.5,0.8;mod_clearlog;Clear player's log]
 textarea[0.55,8;7.2,1;;;Message player]
-textarea[0.6,8.4;6.2,1.4;mod_message;;]
-button[6.8,8.4;0.9,1.4;mod_send_message;Send]
+textarea[0.6,8.4;6.3,1.4;mod_message;;]
+button[6.9,8.4;0.8,1.4;mod_send_message;Send]
 textarea[8.85,1;7.2,1;;;Sent Messages]
 textlist[8.9,1.4;7.1,6.4;mod_log_messages;;1;false]
 textarea[8.85,8;7.2,1;;;(message type)]
@@ -967,8 +1014,16 @@ box[0,0;16.6,0.5;#737373]
 box[8.275,0;0.05,10.4;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.1,1;;;Reports]
-textarea[8.85,0.1;7.1,1;;;Reports]
-textarea[0.55,1;7.2,1;;;Coming soon!]
+textarea[8.85,0.1;7.1,1;;;Report Info]
+textarea[0.55,1;7.2,1;;;Report Log]
+textlist[0.6,1.4;7.1,7.5;report_log;;1;false]
+button[0.6,9;3.5,0.8;report_delete;Delete report]
+button[4.2,9;3.5,0.8;report_clearlog;Clear report log]
+textarea[8.85,1;7.2,1;;;(TYPE)]
+textarea[8.85,1.4;7.2,6.5;;;Report info]
+textarea[8.85,8;7.2,1;;;Message player]
+textarea[8.9,8.4;6.3,1.4;report_message;;]
+button[15.2,8.4;0.8,1.4;report_send_message;Send]
 
 HELP:
 formspec_version[6]

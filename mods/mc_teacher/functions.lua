@@ -108,5 +108,6 @@ function mc_teacher.deregister_player(player)
     if pname then
         mc_teacher.teachers[pname] = nil
         mc_teacher.students[pname] = nil
+        mc_teacher.fs_context[pname] = nil
     end
 end

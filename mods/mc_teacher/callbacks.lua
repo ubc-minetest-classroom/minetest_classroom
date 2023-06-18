@@ -452,9 +452,27 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             mc_teacher.meta:set_string("dm_log", minetest.serialize(direct_msg))
             reload = true
         elseif fields.mod_send_message then
-
-
+            -- TODO: send the message!
         end
+
+        -------------
+        -- REPORTS --
+        -------------
+        if fields.report_log then
+			local event = minetest.explode_textlist_event(fields.report_log)
+			if event.type == "CHG" then
+				context.selected_report = event.index
+                reload = true
+			end
+        end
+        if fields.report_delete then
+            -- TODO: delete the report
+        elseif fields.report_clear_log then
+            -- TODO: show a confirmation popup, then clear the log
+        elseif fields.report_send_message then
+            -- TODO: send the message!
+        end
+
 
         ----------------------------------------
         -- SERVER (ADDITIONAL PRIVS REQUIRED) --
@@ -569,8 +587,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if fields.realm_x_size then context.realm_x = fields.realm_x_size end
             if fields.realm_y_size then context.realm_y = fields.realm_y_size end
             if fields.realm_z_size then context.realm_z = fields.realm_z_size end
-            -- moderation
+            -- moderation + reports
             if fields.mod_message then context.mod_message = minetest.formspec_escape(fields.mod_message) end
+            if fields.report_message then context.report_message = minetest.formspec_escape(fields.report_message) end
             -- server
             if fields.server_message then context.server_message = minetest.formspec_escape(fields.server_message) end
             if fields.server_message_type then context.server_message_type = fields.server_message_type end

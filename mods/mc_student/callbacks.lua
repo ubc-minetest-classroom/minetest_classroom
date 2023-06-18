@@ -126,6 +126,12 @@ local function reformat_chat_key(key)
     return month and table.concat({year, "-", month, "-", day, " ", hour, ":", min, ":", sec}) or key
 end
 
+-- report log converter
+local function reformat_report_key(key)
+	local day, month, year, hour, min, sec = string.match(key, "(%d+)%-(%d+)%-(%d+) (%d+):(%d+):(%d+)")
+    return day and table.concat({year, "-", month, "-", day, " ", hour, ":", min, ":", sec}) or key
+end
+
 minetest.register_on_mods_loaded(function()
 	local chatmessages = minetest.deserialize(mc_student.meta:get_string("chat_messages"))
 	local directmessages = minetest.deserialize(mc_student.meta:get_string("direct_messages"))
@@ -173,7 +179,7 @@ minetest.register_on_mods_loaded(function()
 		for key, message in pairs(reports) do
 			table.insert(new_reportlog, {
 				player = string.match(key, "(.+) %d+%-%d+%-%d+ %d+:%d+:%d+") or "unknown",
-				timestamp = reformat_chat_key(key),
+				timestamp = reformat_report_key(key),
 				pos = {
 					x = tonumber(string.match(key, "{x=(%-?%d+%.%d*), y=%-?%d+%.%d*, z=%-?%d+%.%d*}") or "0"),
 					y = tonumber(string.match(key, "{x=%-?%d+%.%d*, y=(%-?%d+%.%d*), z=%-?%d+%.%d*}") or "0"),
@@ -187,5 +193,12 @@ minetest.register_on_mods_loaded(function()
 		mc_teacher.meta:set_string("report_log", minetest.serialize(new_reportlog))
 		mc_teacher.meta:set_int("report_log_format", 2)
 		mc_student.meta:set_string("reports", nil)
+	end
+end)
+
+minetest.register_on_leaveplayer(function(player)
+	local pname = player:get_player_name()
+	if pname then
+		mc_student.fs_context[pname] = nil
 	end
 end)
