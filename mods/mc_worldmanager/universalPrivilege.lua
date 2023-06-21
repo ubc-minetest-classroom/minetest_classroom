@@ -1,12 +1,7 @@
+-- Grants a universal privilege to a player
 function mc_worldManager.grantUniversalPriv(player, privs)
     local pmeta = player:get_meta()
-
-    local playerPrivileges = minetest.deserialize(pmeta:get_string("universalPrivs"))
-
-
-    if (playerPrivileges == nil) then
-        playerPrivileges = {}
-    end
+    local playerPrivileges = minetest.deserialize(pmeta:get_string("universalPrivs")) or {}
 
     for index, privilege in pairs(privs) do
         if (privilege == "all") then
@@ -24,15 +19,10 @@ function mc_worldManager.grantUniversalPriv(player, privs)
     pmeta:set_string("universalPrivs", minetest.serialize(playerPrivileges))
 end
 
-
+-- Revokes a universal privilege from a player
 function mc_worldManager.revokeUniversalPriv(player, privs)
     local pmeta = player:get_meta()
-
-    local playerPrivileges = minetest.deserialize(pmeta:get_string("universalPrivs"))
-
-    if (playerPrivileges == nil) then
-        playerPrivileges = {}
-    end
+    local playerPrivileges = minetest.deserialize(pmeta:get_string("universalPrivs")) or {}
 
     for index, privilege in pairs(privs) do
         if (privilege == "all") then
@@ -40,6 +30,27 @@ function mc_worldManager.revokeUniversalPriv(player, privs)
             break
         else
             playerPrivileges[privilege] = nil
+        end
+    end
+
+    pmeta:set_string("universalPrivs", minetest.serialize(playerPrivileges))
+end
+
+-- Revokes a universal privilege from a player, and restricts it from being given as a realm privilege
+function mc_worldManager.denyUniversalPriv(player, privs)
+    local pmeta = player:get_meta()
+    local playerPrivileges = minetest.deserialize(pmeta:get_string("universalPrivs")) or {}
+
+    for index, privilege in pairs(privs) do
+        if (privilege == "all") then
+            for k, v in pairs(minetest.registered_privileges) do
+                playerPrivileges[k] = false
+            end
+            break
+        else
+            if (minetest.registered_privileges[privilege] ~= nil) then
+                playerPrivileges[privilege] = false
+            end
         end
     end
 

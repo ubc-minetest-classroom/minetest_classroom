@@ -77,28 +77,67 @@ end
 function Realm:ApplyPrivileges(player)
     local name = player:get_player_name()
     local pmeta = player:get_meta()
-    local privs = minetest.get_player_privs(name)
 
     -- Revoke all privileges
-    for k, v in pairs(privs) do
-        privs[k] = nil
+    local privs = {} --minetest.get_player_privs(name) 
+
+    local universalPrivs = minetest.deserialize(pmeta:get_string("universalPrivs")) or {}
+    local realmPrivs = self.Permissions or {}
+    local overridePrivs = self.PermissionsOverride and self.PermissionsOverride[name] or {}
+
+    -- Create list of privs to check
+    local privsToCheck = {}
+    for k,_ in pairs(universalPrivs) do
+        privsToCheck[k] = true
+    end
+    for k,_ in pairs(realmPrivs) do
+        privsToCheck[k] = true
+    end
+    for k,_ in pairs(overridePrivs) do
+        privsToCheck[k] = true
     end
 
-    -- Add the universal privileges that a player has access to.
-    local defaultPerms = minetest.deserialize(pmeta:get_string("universalPrivs"))
-
-    if (defaultPerms == nil) then
-        defaultPerms = {}
+    -- Perform priv checks
+    for k,_ in pairs(privsToCheck) do
+        if (overridePrivs[k] == false) or (overridePrivs[k] == nil and ((universalPrivs[k] == false) or (universalPrivs[k] == nil and realmPrivs ~= true))) then
+            privs[k] = false
+        elseif (overridePrivs[k] == true) or (universalPrivs[k] == nil and realmPrivs == true) then
+            privs[k] = (Realm.whitelistedPrivs[k] == true)
+        elseif (realmPrivs ~= false) then
+            privs[k] = true
+        else
+            -- TODO: add check to see if universal privs take precedence
+            privs[k] = true
+        end
     end
 
-    for k, v in pairs(defaultPerms) do
+    minetest.log(minetest.serialize(privs))
+
+    -- debug
+    --minetest.log("universal: "..minetest.serialize(universalPrivs))
+    --minetest.log("realm: "..minetest.serialize(realmPrivs))
+    --minetest.log("override: "..minetest.serialize(overridePrivs))
+    --minetest.log("FINAL: "..minetest.serialize(privs))
+
+    --[[if (self.PermissionsOverride and self.PermissionsOverride[name]) then
+        for k, v in pairs(self.PermissionsOverride[name]) do
+            if (Realm.whitelistedPrivs[k] == true) then
+                privs[k] = v
+            end
+        end
+    end
+
+    -- Add the universal privileges that a player has access to
+    local universalPrivs = minetest.deserialize(pmeta:get_string("universalPrivs")) or {}
+    for k, v in pairs(universalPrivs) do
+        --minetest.log(minetest.serialize(k)..": "..minetest.serialize(v))
         privs[k] = v
     end
 
-    -- Add the realm privileges for any given realm.
+    -- Add the realm privileges for any given realm, as long as universal privileges are not denied
     if (self.Permissions ~= nil) then
         for k, v in pairs(self.Permissions) do
-            if (Realm.whitelistedPrivs[k] == true) then
+            if (Realm.whitelistedPrivs[k] == true and universalPrivs[k] ~= false) then
                 privs[k] = v
             end
         end
@@ -107,13 +146,11 @@ function Realm:ApplyPrivileges(player)
     -- Remove overridden privileges for the player in the current realm
     if (self.PermissionsOverride and self.PermissionsOverride[name]) then
         for k, v in pairs(self.PermissionsOverride[name]) do
-            minetest.log(minetest.serialize(k))
-            minetest.log(minetest.serialize(v))
             if (Realm.whitelistedPrivs[k] == true) then
                 privs[k] = v
             end
         end
-    end
+    end]]
 
     -- Ensure privs set to false do not get added
     for k, v in pairs(privs) do

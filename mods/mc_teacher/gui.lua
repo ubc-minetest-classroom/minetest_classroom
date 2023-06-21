@@ -604,19 +604,32 @@ function mc_teacher.show_controller_fs(player,tab)
                     table.insert(fs, table.concat({
                         "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Message Logs]",
                         "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",5.5;mod_log_players;", table.concat(indexed_chat_players, ","), ";", context.player_chat_index, ";false]",
-                        "button[", spacer, ",7;3.5,0.8;mod_mute;Mute player]", -- TODO: sync w/ mute button on Players tab
-                        "button[", spacer + 3.6, ",7;3.5,0.8;mod_clearlog;Delete log]",
                     }))
 
                     if selected == mc_core.SERVER_USER then
                         table.insert(fs, table.concat({
-                            "textarea[", text_spacer, ",8;", panel_width - 2*text_spacer, ",1;;;Who is ", mc_core.SERVER_USER, "?]",
+                            "textarea[", text_spacer, ",7.1;", panel_width - 2*text_spacer, ",1;;;Who is ", mc_core.SERVER_USER, "?]",
                             "style_type[textarea;font=mono]",
-                            "textarea[", text_spacer, ",8.4;", panel_width - 2*text_spacer, ",1.4;;;", mc_core.SERVER_USER, " is not a player. It is a reserved name, used to represent something done by the Minetest Classroom server or a server administrator.\nMessages sent by ", mc_core.SERVER_USER, " are server messages sent by one of the server administrators.]",
+                            "textarea[", text_spacer, ",7.5;", panel_width - 2*text_spacer, ",2.3;;;", mc_core.SERVER_USER, " is not a player. It is a reserved name used to represent something done by the Minetest Classroom server or a server administrator.\nMessages sent by ", mc_core.SERVER_USER, " are server messages sent by one of the server administrators.]",
+                            "style_type[textarea;font=mono,bold]",
+                        }))
+                    elseif not minetest.get_player_by_name(selected) then
+                        table.insert(fs, table.concat({
+                            "style[blocked;bgimg=mc_pixel.png^[multiply:#acacac]",
+                            "button[", spacer, ",7;3.5,0.8;blocked;Mute player]",
+                            "button[", spacer + 3.6, ",7;3.5,0.8;mod_clearlog;Delete log]",
+                            "textarea[", text_spacer, ",8;", panel_width - 2*text_spacer, ",1;;;Message ", selected or "player", "]",
+                            "style_type[textarea;font=mono]",
+                            "textarea[", spacer, ",8.4;", panel_width - 2*spacer, ",1.4;;;This player is currently not online and thus can not be messaged.]",
                             "style_type[textarea;font=mono,bold]",
                         }))
                     else
+                        local sel_obj = minetest.get_player_by_name(selected)
+                        local sel_meta = sel_obj:get_meta()
+                        local sel_privs = minetest.deserialize(sel_meta:get_string("universalPrivs")) or {}
                         table.insert(fs, table.concat({
+                            "button[", spacer, ",7;3.5,0.8;", sel_privs and sel_privs.shout == false and "mod_unmute;Unmute player" or "mod_mute;Mute player", "]",
+                            "button[", spacer + 3.6, ",7;3.5,0.8;mod_clearlog;Delete log]",
                             "textarea[", text_spacer, ",8;", panel_width - 2*text_spacer, ",1;;;Message ", selected or "player", "]",
                             "style_type[textarea;font=mono]",
                             "textarea[", spacer, ",8.4;", panel_width - 2*spacer - 0.8, ",1.4;mod_message;;", context.mod_message or "", "]",

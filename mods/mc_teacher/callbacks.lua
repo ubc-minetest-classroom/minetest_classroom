@@ -322,12 +322,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             context.selected_music = fields.music
             -- local background_sound = 
             -- play music as sample
-            minetest.sound_play(backgroundSound, {
+            --[[minetest.sound_play(backgroundSound, {
                 to_player = player:get_player_name(),
                 gain = 1,
                 object = player,
                 loop = false
-            })
+            })]]
             reload = true
         end
 
@@ -441,15 +441,35 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		if fields.mod_clearlog then
             local chat_msg = minetest.deserialize(mc_teacher.meta:get_string("chat_log")) or {}
             local direct_msg = minetest.deserialize(mc_teacher.meta:get_string("dm_log")) or {}
+            local server_msg = minetest.deserialize(mc_teacher.meta:get_string("server_log")) or {}
+
             local player_to_clear = context.indexed_chat_players[context.player_chat_index]
-            if direct_msg and direct_msg[player_to_clear] then
-                direct_msg[player_to_clear] = nil
-            end
             if chat_msg and chat_msg[player_to_clear] then
                 chat_msg[player_to_clear] = nil
             end
+            if direct_msg and direct_msg[player_to_clear] then
+                direct_msg[player_to_clear] = nil
+            end
+            if server_msg and server_msg[player_to_clear] then
+                server_msg[player_to_clear] = nil
+            end
+
             mc_teacher.meta:set_string("chat_log", minetest.serialize(chat_msg))
             mc_teacher.meta:set_string("dm_log", minetest.serialize(direct_msg))
+            mc_teacher.meta:set_string("server_log", minetest.serialize(server_msg))
+            reload = true
+        elseif fields.mod_mute or fields.mod_unmute then
+            local player_to_mute = context.indexed_chat_players[context.player_chat_index]
+            minetest.log(minetest.serialize(player_to_mute))
+            local p_obj = minetest.get_player_by_name(player_to_mute)
+            if fields.mod_mute then
+                mc_worldManager.denyUniversalPriv(p_obj, {"shout"})
+            else
+                mc_worldManager.grantUniversalPriv(p_obj, {"shout"})
+            end
+
+            local realm = Realm.GetRealmFromPlayer(p_obj)
+            if realm then realm:ApplyPrivileges(p_obj) end
             reload = true
         elseif fields.mod_send_message then
             -- TODO: send the message!
@@ -472,7 +492,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         elseif fields.report_send_message then
             -- TODO: send the message!
         end
-
 
         ----------------------------------------
         -- SERVER (ADDITIONAL PRIVS REQUIRED) --
