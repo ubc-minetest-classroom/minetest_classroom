@@ -52,30 +52,6 @@ minetest.register_on_chatcommand(function(name, command, params)
 	end
 end)
 
-local function log_chat_message(name, message)
-	local timestamp = tostring(os.date("%Y-%m-%d %H:%M:%S"))
-    local log = minetest.deserialize(mc_teacher.meta:get_string("chat_log")) or {}
-    log[name] = log[name] or {}
-    table.insert(log[name], {
-        timestamp = timestamp,
-        message = message,
-    })
-	mc_teacher.meta:set_string("chat_log", minetest.serialize(log))
-end
-
-local function log_server_message(name, message, recipient, is_anon)
-	local timestamp = tostring(os.date("%Y-%m-%d %H:%M:%S"))
-    local log = minetest.deserialize(mc_teacher.meta:get_string("server_log")) or {}
-    log[name] = log[name] or {}
-    table.insert(log[name], {
-        timestamp = timestamp,
-        message = message,
-        recipient = recipient,
-        anonymous = is_anon,
-    })
-	mc_teacher.meta:set_string("server_log", minetest.serialize(log))
-end
-
 -- Log all chat messages
 minetest.register_on_chat_message(mc_teacher.log_chat_message)
 
@@ -295,7 +271,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			-- So always check that the requested realm exists and the realm category allows the player to join
 			-- Check that the player selected something from the textlist, otherwise default to spawn realm
 			if not context.selected_realm_id then context.selected_realm_id = mc_worldManager.spawnRealmID end
-            --minetest.log(minetest.serialize(Realm.realmDict))
 			local realm = Realm.GetRealm(context.selected_realm_id)
 			if realm then
 				realm:TeleportPlayer(player)
@@ -324,23 +299,29 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
 
         --  CLASSROOMS + PLAYERS
-        if fields.priv_interact then
-            context.selected_privs.interact = fields.priv_interact
+        if fields.allowpriv_interact or fields.denypriv_interact or fields.ignorepriv_interact then
+            context.selected_privs.interact = (fields.allowpriv_interact and true) or (fields.ignorepriv_interact and "nil") or false
+            reload = true
         end
-        if fields.priv_shout then
-            context.selected_privs.shout = fields.priv_shout
+        if fields.allowpriv_shout or fields.denypriv_shout or fields.ignorepriv_shout then
+            context.selected_privs.shout = (fields.allowpriv_shout and true) or (fields.ignorepriv_shout and "nil") or false
+            reload = true
         end
-        if fields.priv_fast then
-            context.selected_privs.fast = fields.priv_fast
+        if fields.allowpriv_fast or fields.denypriv_fast or fields.ignorepriv_fast then
+            context.selected_privs.fast = (fields.allowpriv_fast and true) or (fields.ignorepriv_fast and "nil") or false
+            reload = true
         end
-        if fields.priv_fly then
-            context.selected_privs.fly = fields.priv_fly
+        if fields.allowpriv_fly or fields.denypriv_fly or fields.ignorepriv_fly then
+            context.selected_privs.fly = (fields.allowpriv_fly and true) or (fields.ignorepriv_fly and "nil") or false
+            reload = true
         end
-        if fields.priv_noclip then
-            context.selected_privs.noclip = fields.priv_noclip
+        if fields.allowpriv_noclip or fields.denypriv_noclip or fields.ignorepriv_noclip then
+            context.selected_privs.noclip = (fields.allowpriv_noclip and true) or (fields.ignorepriv_noclip and "nil") or false
+            reload = true
         end
-        if fields.priv_give then
-            context.selected_privs.give = fields.priv_give
+        if fields.allowpriv_give or fields.denypriv_give or fields.ignorepriv_give then
+            context.selected_privs.give = (fields.allowpriv_give and true) or (fields.ignorepriv_give and "nil") or false
+            reload = true
         end
 
         -------------
@@ -376,7 +357,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     if fields.p_priv_update then
                         realm.PermissionsOverride[p] = realm.PermissionsOverride[p] or {}
                         for priv, v in pairs(context.selected_privs) do
-                            realm.PermissionsOverride[p][priv] = (v == "true" and true or false)
+                            if v ~= "nil" then
+                                realm.PermissionsOverride[p][priv] = v
+                            else
+                                realm.PermissionsOverride[p][priv] = nil
+                            end
                         end
                     else
                         realm.PermissionsOverride[p] = nil
@@ -452,8 +437,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
         elseif fields.mod_mute or fields.mod_unmute then
             local player_to_mute = context.indexed_chat_players[context.player_chat_index]
-            minetest.log(minetest.serialize(player_to_mute))
             local p_obj = minetest.get_player_by_name(player_to_mute)
+
             if fields.mod_mute then
                 mc_worldManager.denyUniversalPriv(p_obj, {"shout"})
             else

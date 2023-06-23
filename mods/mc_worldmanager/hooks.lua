@@ -59,6 +59,7 @@ minetest.register_on_joinplayer(function(player, last_login)
     if (realm ~= nil) then
         realm:RegisterPlayer(player)
         realm:RunTeleportInFunctions(player)
+        realm:ApplyPrivileges(player)
     end
 
 end)

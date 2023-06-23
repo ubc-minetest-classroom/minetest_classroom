@@ -67,10 +67,10 @@ end
 
 function mc_teacher.check_selected_priv_mode(context)
     if context.tab == mc_teacher.TABS.CLASSROOMS and context.selected_privs_mode ~= mc_teacher.TABS.CLASSROOMS then
-        context.selected_privs = {interact = "true", shout = "true", fast = "true"}
+        context.selected_privs = {interact = true, shout = true, fast = true, fly = "nil", noclip = "nil", give = "nil"}
         context.selected_privs_mode = mc_teacher.TABS.CLASSROOMS
     elseif context.tab == mc_teacher.TABS.PLAYERS and context.selected_privs_mode ~= mc_teacher.TABS.PLAYERS then
-        context.selected_privs = {}
+        context.selected_privs = {interact = "nil", shout = "nil", fast = "nil", fly = "nil", noclip = "nil", give = "nil"}
         context.selected_privs_mode = mc_teacher.TABS.PLAYERS
     end
 end

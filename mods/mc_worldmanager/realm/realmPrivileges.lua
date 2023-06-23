@@ -62,6 +62,13 @@ function Realm:UpdateRealmPrivilege(privilegeTable)
             else
                 self.Permissions[k] = true
             end
+        elseif (v == false or v == "false") then
+            if (Realm.whitelistedPrivs[k] ~= true) then
+                table.insert(invalidPrivs, k)
+                Debug.log(tostring(k))
+            else
+                self.Permissions[k] = false
+            end
         else
             self.Permissions[k] = nil
         end
@@ -99,25 +106,16 @@ function Realm:ApplyPrivileges(player)
 
     -- Perform priv checks
     for k,_ in pairs(privsToCheck) do
-        if (overridePrivs[k] == false) or (overridePrivs[k] == nil and ((universalPrivs[k] == false) or (universalPrivs[k] == nil and realmPrivs ~= true))) then
+        if (overridePrivs[k] == true and Realm.whitelistedPrivs[k] == true) then
+            privs[k] = true
+        elseif (overridePrivs[k] == false) or (universalPrivs[k] == false) or (universalPrivs[k] == nil and realmPrivs[k] ~= true) then
             privs[k] = false
-        elseif (overridePrivs[k] == true) or (universalPrivs[k] == nil and realmPrivs == true) then
+        elseif (universalPrivs[k] == nil and realmPrivs[k] == true) then
             privs[k] = (Realm.whitelistedPrivs[k] == true)
-        elseif (realmPrivs ~= false) then
-            privs[k] = true
         else
-            -- TODO: add check to see if universal privs take precedence
-            privs[k] = true
+            privs[k] = (realmPrivs[k] ~= false)
         end
     end
-
-    minetest.log(minetest.serialize(privs))
-
-    -- debug
-    --minetest.log("universal: "..minetest.serialize(universalPrivs))
-    --minetest.log("realm: "..minetest.serialize(realmPrivs))
-    --minetest.log("override: "..minetest.serialize(overridePrivs))
-    --minetest.log("FINAL: "..minetest.serialize(privs))
 
     --[[if (self.PermissionsOverride and self.PermissionsOverride[name]) then
         for k, v in pairs(self.PermissionsOverride[name]) do
