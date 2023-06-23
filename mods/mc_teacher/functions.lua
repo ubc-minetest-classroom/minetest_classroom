@@ -111,3 +111,39 @@ function mc_teacher.deregister_player(player)
         mc_teacher.fs_context[pname] = nil
     end
 end
+
+function mc_teacher.log_chat_message(name, message)
+	local timestamp = tostring(os.date("%Y-%m-%d %H:%M:%S"))
+    local log = minetest.deserialize(mc_teacher.meta:get_string("chat_log")) or {}
+    log[name] = log[name] or {}
+    table.insert(log[name], {
+        timestamp = timestamp,
+        message = message,
+    })
+	mc_teacher.meta:set_string("chat_log", minetest.serialize(log))
+end
+
+function mc_teacher.log_server_message(name, message, recipient, is_anon)
+	local timestamp = tostring(os.date("%Y-%m-%d %H:%M:%S"))
+    local log = minetest.deserialize(mc_teacher.meta:get_string("server_log")) or {}
+    log[name] = log[name] or {}
+    table.insert(log[name], {
+        timestamp = timestamp,
+        message = message,
+        recipient = recipient,
+        anonymous = is_anon,
+    })
+	mc_teacher.meta:set_string("server_log", minetest.serialize(log))
+end
+
+function mc_teacher.log_direct_message(name, message, recipient)
+    local timestamp = tostring(os.date("%Y-%m-%d %H:%M:%S"))
+    local log = minetest.deserialize(mc_teacher.meta:get_string("dm_log")) or {}
+    log[name] = log[name] or {}
+    table.insert(log[name], {
+        timestamp = timestamp,
+        recipient = recipient,
+        message = message
+    })
+    mc_teacher.meta:set_string("dm_log", minetest.serialize(log))
+end
