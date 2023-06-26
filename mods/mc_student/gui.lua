@@ -284,9 +284,11 @@ function mc_student.show_notebook_fs(player, tab)
 
 				local coord_list = get_saved_coords(player)
 				local texture_base = "[combine:536x440:0,0=blank.png:48,0="
+				local has_share_privs = mc_core.checkPrivs(player, {shout = true}) or mc_core.checkPrivs(player, {teacher = true})
 				table.insert(fs, table.concat({
 					"textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.8;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
 					coord_list and #coord_list > 0 and "" or "style_type[image_button;bgimg=mc_pixel.png^[multiply:#acacac]",
+					has_share_privs and "" or "style[mark;bgimg=mc_pixel.png^[multiply:#acacac]",
 					"image_button[", panel_width + spacer, ",6.3;1.34,1.1;", texture_base, "mc_teacher_teleport.png;", coord_list and #coord_list > 0 and "go" or "blocked", ";;false;false]",
 					"image_button[", panel_width + spacer + 1.44, ",6.3;1.34,1.1;", texture_base, "mc_teacher_share.png;", coord_list and #coord_list > 0 and "share" or "blocked", ";;false;false]",
 					"image_button[", panel_width + spacer + 2.88, ",6.3;1.34,1.1;", texture_base, "mc_teacher_mark.png;", coord_list and #coord_list > 0 and "mark" or "blocked", ";;false;false]",
