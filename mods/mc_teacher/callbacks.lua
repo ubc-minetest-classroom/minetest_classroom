@@ -238,7 +238,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         if fields.realm_biome and fields.realm_biome ~= "" then
                             table.insert(param_table, fields.realm_biome)
                         end
-                        new_realm:GenerateTerrain(rgi.seed, rgi.sea_level, rgi.height_func, rgi.dec_func, #param_table > 0 and param_table)
+                        new_realm:GenerateTerrain(rgi.seed, rgi.sea_level, rgi.height_func, rgi.dec_func, param_table)
                     end
                 elseif context.selected_mode == mc_teacher.MODES.SCHEMATIC then
                     if not context.selected_schematic then
