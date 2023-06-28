@@ -31,6 +31,8 @@ mc_teacher = {
     R = {
         GEN = {NONE = "1", V1 = "2", V2 = "3", DNR = "4"},
         DEC = {NONE = "1", V1 = "2", V2 = "3", BIOME = "4"},
+        GEN_MAP = {["1"] = "nil", ["2"] = "v1", ["3"] = "v2", ["4"] = "dnr"},
+        DEC_MAP = {["1"] = "nil", ["2"] = "v1", ["3"] = "v2", ["4"] = "biomegen"},
     },
     T_INDEX = {
         ["30 seconds"] = {i = 1, t = 30},

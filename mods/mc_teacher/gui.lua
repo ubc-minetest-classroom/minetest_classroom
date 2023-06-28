@@ -182,8 +182,8 @@ function mc_teacher.show_controller_fs(player,tab)
                         table.insert(fs, table.concat({
                             "textarea[", text_spacer, ",5.2;3.6,1;;;Seed]",
                             "textarea[", text_spacer + 3.6, ",5.2;3.6,1;;;Sea Level]",
-                            "field[", spacer, ",5.6;3.5,0.8;realm_seed;;]",
-                            "field[", spacer + 3.6, ",5.6;3.5,0.8;realm_sealevel;;]",
+                            "field[", spacer, ",5.6;3.5,0.8;realm_seed;;", minetest.formspec_escape(context.realm_seed) or "", "]",
+                            "field[", spacer + 3.6, ",5.6;3.5,0.8;realm_sealevel;;", minetest.formspec_escape(context.realm_sealevel) or "", "]",
 
                             "field_close_on_enter[realm_seed;false]",
                             "field_close_on_enter[realm_sealevel;false]",
@@ -194,7 +194,7 @@ function mc_teacher.show_controller_fs(player,tab)
                             "textarea[", text_spacer, ",6.5;3.6,1;;;Biome]",
                             "textarea[", text_spacer + 3.6, ",6.5;3.6,1;;;Chill Coefficient]",
                             "dropdown[", spacer, ",6.9;3.5,0.8;realm_biome;;1;false]",
-                            "field[", spacer + 3.6, ",6.9;3.5,0.8;realm_chill;;0]",
+                            "field[", spacer + 3.6, ",6.9;3.5,0.8;realm_chill;;", minetest.formspec_escape(context.realm_chill) or "", "]",
 
                             "field_close_on_enter[realm_chill;false]",
                         }))

@@ -222,6 +222,24 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         new_realm:CreateGround()
                         new_realm:CreateBarriersFast()
                     end
+
+                    -- Generate realm terrain
+                    local rgi = {
+                        height_func =  mc_teacher.R.GEN_MAP[context.realm_gen or "1"],
+                        dec_func = mc_teacher.R.DEC_MAP[context.realm_dec or "1"],
+                        seed = context.realm_seed ~= "" and tonumber(context.realm_seed) or math.random(1, 999999999),
+                        sea_level = new_realm.StartPos.y + (context.realm_sealevel ~= "" and tonumber(context.realm_sealevel) or 30),
+                    }
+                    if rgi.height_func ~= "nil" then
+                        local param_table = {}
+                        if fields.realm_chill and fields.realm_chill ~= "" and tonumber(fields.realm_chill) then
+                            table.insert(param_table, fields.realm_chill)
+                        end
+                        if fields.realm_biome and fields.realm_biome ~= "" then
+                            table.insert(param_table, fields.realm_biome)
+                        end
+                        new_realm:GenerateTerrain(rgi.seed, rgi.sea_level, rgi.height_func, rgi.dec_func, #param_table > 0 and param_table)
+                    end
                 elseif context.selected_mode == mc_teacher.MODES.SCHEMATIC then
                     if not context.selected_schematic then
                         table.insert(errors, "No schematic selected.")
@@ -312,6 +330,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
         elseif fields.realm_biome and context.realm_biome ~= fields.realm_biome then
             context.realm_biome = fields.realm_biome
+            minetest.log(minetest.serialize(context.realm_biome))
         end
 
         --  CLASSROOMS + PLAYERS
@@ -642,6 +661,7 @@ end)
 ----------------------------------------------------
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	local pmeta = player:get_meta()
+    local context
 
 	if string.sub(formname, 1, 10) == "mc_student" then
 		context = mc_student.get_fs_context(player)
