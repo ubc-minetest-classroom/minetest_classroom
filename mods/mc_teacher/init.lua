@@ -6,6 +6,7 @@ mc_teacher = {
     marker_expiry = 120,
     fs_context = {},
     restart_scheduled = {},
+    -- named constants
     TABS = {
         OVERVIEW = "1",
         CLASSROOMS = "2",
@@ -16,26 +17,20 @@ mc_teacher = {
         HELP = "7",
         SERVER = "8", -- TODO: make dynamic for easier modification of notebook
     },
-    MODES = {
-        EMPTY = "1",
-        SCHEMATIC = "2",
-        TWIN = "3",
+    MODES = {EMPTY = "1", SCHEMATIC = "2", TWIN = "3"},
+    PMODE = {SELECTED = "1", TAB = "2", ALL = "3"},
+    M = {
+        MODE = {SERVER_ANON = "1", SERVER_PLAYER = "2", PLAYER = "3"},
+        RECIP = {
+            STUDENT = "students",
+            TEACHER = "teachers",
+            ADMIN = "admins",
+            ALL = "everyone",
+        }
     },
-    PMODE = {
-        SELECTED = "1",
-        TAB = "2",
-        ALL = "3",
-    },
-    MMODE = {
-        SERVER_ANON = "1",
-        SERVER_PLAYER = "2",
-        PLAYER = "3",
-    },
-    MRECIP = {
-        STUDENT = "students",
-        TEACHER = "teachers",
-        ADMIN = "admins",
-        ALL = "everyone",
+    R = {
+        GEN = {NONE = "1", V1 = "2", V2 = "3", DNR = "4"},
+        DEC = {NONE = "1", V1 = "2", V2 = "3", BIOME = "4"},
     },
     T_INDEX = {
         ["30 seconds"] = {i = 1, t = 30},

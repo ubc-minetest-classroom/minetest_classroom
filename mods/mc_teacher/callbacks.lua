@@ -139,6 +139,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         ----------------
         -- CLASSROOMS --
         ----------------
+        if fields.class_opt_scroll then
+            local event = minetest.explode_scrollbar_event(fields.class_opt_scroll)
+            if event.type == "CHG" then
+                context.class_opt_scroll = event.value
+            end
+        end
         if fields.mode and fields.mode ~= context.selected_mode then
             context.selected_mode = fields.mode
             -- digital twins are currently incompatible with instanced realms
@@ -162,6 +168,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         elseif fields.realterrain and context.selected_dem ~= fields.realterrain then
             context.selected_mode = mc_teacher.MODES.TWIN
             context.selected_dem = fields.realterrain
+            reload = true
+        end
+        if fields.realm_generator and fields.realm_generator ~= context.realm_gen then
+            context.realm_gen = fields.realm_generator
+            reload = true
+        end
+        if fields.realm_decorator and fields.realm_decorator ~= context.realm_dec then
+            context.realm_dec = fields.realm_decorator
             reload = true
         end
         
@@ -296,6 +310,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 loop = false
             })]]
             reload = true
+        elseif fields.realm_biome and context.realm_biome ~= fields.realm_biome then
+            context.realm_biome = fields.realm_biome
         end
 
         --  CLASSROOMS + PLAYERS
@@ -502,18 +518,18 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if fields.server_send_students or fields.server_send_teachers or fields.server_send_admins or fields.server_send_all then
                 if fields.server_message ~= "" then
                     local message_map = {
-                        [mc_teacher.MMODE.SERVER_ANON] = function()
+                        [mc_teacher.M.MODE.SERVER_ANON] = function()
                             return minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..fields.server_message)
                         end,
-                        [mc_teacher.MMODE.SERVER_PLAYER] = function()
+                        [mc_teacher.M.MODE.SERVER_PLAYER] = function()
                             return minetest.colorize(mc_core.col.log, "[Minetest Classroom] From "..player:get_player_name()..": "..fields.server_message)
                         end,
-                        [mc_teacher.MMODE.PLAYER] = function()
+                        [mc_teacher.M.MODE.PLAYER] = function()
                             return "<"..player:get_player_name().."> "..fields.server_message
                         end,
                     }
 
-                    fields.server_message_type = fields.server_message_type or mc_teacher.MMODE.SERVER_ANON
+                    fields.server_message_type = fields.server_message_type or mc_teacher.M.MODE.SERVER_ANON
                     local message = message_map[fields.server_message_type]()
 
                     if fields.server_send_students then
@@ -521,13 +537,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                             minetest.chat_send_player(name, message)
                         end
                         minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
-                        mc_teacher.log_server_message(player:get_player_name(), fields.server_message, mc_teacher.MRECIP.STUDENT, fields.server_message_type == mc_teacher.MMODE.SERVER_ANON)
+                        mc_teacher.log_server_message(player:get_player_name(), fields.server_message, mc_teacher.M.RECIP.STUDENT, fields.server_message_type == mc_teacher.M.MODE.SERVER_ANON)
                     elseif fields.server_send_teachers then
                         for name,_ in pairs(mc_teacher.teachers) do
                             minetest.chat_send_player(name, message)
                         end
                         minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
-                        mc_teacher.log_server_message(player:get_player_name(), fields.server_message, mc_teacher.MRECIP.TEACHER, fields.server_message_type == mc_teacher.MMODE.SERVER_ANON)
+                        mc_teacher.log_server_message(player:get_player_name(), fields.server_message, mc_teacher.M.RECIP.TEACHER, fields.server_message_type == mc_teacher.M.MODE.SERVER_ANON)
                     elseif fields.server_send_admins then
                         for _,p_obj in pairs(minetest.get_connected_players()) do
                             if p_obj:is_player() and mc_core.checkPrivs(p_obj, {teacher = true, server = true}) then
@@ -535,11 +551,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                             end
                         end
                         minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
-                        mc_teacher.log_server_message(player:get_player_name(), fields.server_message, mc_teacher.MRECIP.ADMIN, fields.server_message_type == mc_teacher.MMODE.SERVER_ANON)
+                        mc_teacher.log_server_message(player:get_player_name(), fields.server_message, mc_teacher.M.RECIP.ADMIN, fields.server_message_type == mc_teacher.M.MODE.SERVER_ANON)
                     else
                         minetest.chat_send_all(message)
                         minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
-                        mc_teacher.log_server_message(player:get_player_name(), fields.server_message, mc_teacher.MRECIP.ALL, fields.server_message_type == mc_teacher.MMODE.SERVER_ANON)
+                        mc_teacher.log_server_message(player:get_player_name(), fields.server_message, mc_teacher.M.RECIP.ALL, fields.server_message_type == mc_teacher.M.MODE.SERVER_ANON)
                     end
                 else
                     minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server messages can not be empty."))
@@ -601,6 +617,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if fields.realm_x_size then context.realm_x = fields.realm_x_size end
             if fields.realm_y_size then context.realm_y = fields.realm_y_size end
             if fields.realm_z_size then context.realm_z = fields.realm_z_size end
+            if fields.realm_seed then context.realm_seed = fields.realm_seed end
+            if fields.realm_sealevel then context.realm_sealevel = fields.realm_sealevel end
+            if fields.realm_chill then context.realm_chill = fields.realm_chill end
             -- moderation + reports
             if fields.mod_message then context.mod_message = minetest.formspec_escape(fields.mod_message) end
             if fields.report_message then context.report_message = minetest.formspec_escape(fields.report_message) end

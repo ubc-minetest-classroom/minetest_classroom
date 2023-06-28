@@ -33,6 +33,16 @@ local function get_saved_coords(player)
     end
 end
 
+local function get_options_height(context)
+    if (not context.realm_gen or context.realm_gen == mc_teacher.R.GEN.NONE) and (not context.realm_dec or context.realm_dec == mc_teacher.R.DEC.NONE) then
+        return 2.6
+    elseif context.realm_dec == mc_teacher.R.DEC.BIOME then
+        return 5.2
+    else
+        return 3.9
+    end
+end
+
 function mc_teacher.show_controller_fs(player,tab)
     local controller_width = 16.6
     local controller_height = 10.4
@@ -78,7 +88,7 @@ function mc_teacher.show_controller_fs(player,tab)
 
                     "scrollbaroptions[min=0;max=", (11.6 + (has_server_privs and 1.7 or 0) - Y_SIZE)/FACTOR, ";smallstep=", 0.8/FACTOR, ";largestep=", 4.8/FACTOR, ";thumbsize=", 1/FACTOR, "]",
                     "scrollbar[", controller_width - 0.3, ",0.5;0.3,", Y_SIZE, ";vertical;overviewscroll;", context.overviewscroll or 0, "]",
-                    "scroll_container[", panel_width, ",0.5;", panel_width, ",", Y_SIZE, ";overviewscroll;vertical;", FACTOR, "]",
+                    "scroll_container[", panel_width, ",0.5;", panel_width - 0.3, ",", Y_SIZE, ";overviewscroll;vertical;", FACTOR, "]",
 
                     "image_button[", spacer, ",0.5;", button_width, ",", button_height, ";mc_teacher_classrooms.png;classrooms;;false;false]",
                     "hypertext[", spacer + 1.8, ",0.8;5.35,1.6;;<style color=#000000><b>Classrooms</b>\n", minetest.formspec_escape("Create and manage classrooms"), "</style>]",
@@ -107,6 +117,8 @@ function mc_teacher.show_controller_fs(player,tab)
             [mc_teacher.TABS.CLASSROOMS] = function() -- CLASSROOMS
                 local classroom_list = {}
                 local realm_count = 1
+                local options_height = (context.selected_mode == mc_teacher.MODES.EMPTY and get_options_height(context)) or 1.3
+                local FACTOR = 0.1
                 context.realm_id_to_i = {}
 
                 Realm.ScanForPlayerRealms()
@@ -133,30 +145,60 @@ function mc_teacher.show_controller_fs(player,tab)
                     "button[", spacer + 4.8, ",9;2.3,0.8;deleterealm;Delete]",
 
                     "style_type[field;font=mono;textcolor=#ffffff]",
-                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Name]",
-                    "field[", panel_width + spacer, ",1.4;7.1,0.8;realmname;;", context.realmname or "", "]",
+                    "scrollbaroptions[min=0;max=", (options_height - 0.7)/FACTOR, ";smallstep=", 0.6/FACTOR, ";largestep=", 3.6/FACTOR, ";thumbsize=", 0.6/FACTOR, "]",
+                    "scrollbar[", controller_width - 0.3, ",1;0.3,", controller_height - 2.5, ";vertical;class_opt_scroll;", context.class_opt_scroll or 0, "]",
+                    "scroll_container[", panel_width, ",1;", panel_width - 0.3, ",", controller_height - 2.5, ";class_opt_scroll;vertical;", FACTOR, "]",
+
+                    "textarea[", text_spacer, ",0;", panel_width - 2*text_spacer, ",1;;;Name]",
+                    "field[", spacer, ",0.4;7.1,0.8;realmname;;", context.realmname or "", "]",
                     "field_close_on_enter[realmname;false]",
-                    "textarea[", panel_width + text_spacer, ",2.25;3.6,1;;;Type]",
-                    "dropdown[", panel_width + spacer, ",2.7;3.5,0.8;realmcategory;Default,Spawn,Classroom,Instanced" or "", ";", context.selected_realm_type or 1, ";true]",
-                    "textarea[", panel_width + text_spacer + 3.6, ",2.25;3.6,1;;;Generation]",
-                    "dropdown[", panel_width + spacer + 3.6, ",2.7;3.5,0.8;mode;Empty World,Schematic,Digital Twin" or "", ";", context.selected_mode or 1, ";true]",
+                    "textarea[", text_spacer, ",1.25;3.6,1;;;Type]",
+                    "dropdown[", spacer, ",1.7;3.5,0.8;realmcategory;Default,Spawn,Classroom,Instanced" or "", ";", context.selected_realm_type or 1, ";true]",
+                    "textarea[", text_spacer + 3.6, ",1.25;3.6,1;;;Generation]",
+                    "dropdown[", spacer + 3.6, ",1.7;3.5,0.8;mode;Empty World,Schematic,Digital Twin" or "", ";", context.selected_mode or 1, ";true]",
                 }
 
-                local options_height = 1.3
                 if context.selected_mode == mc_teacher.MODES.EMPTY then
-                    -- TODO: add generators, decorators, BEC biomes
                     table.insert(fs, table.concat({
-                        "textarea[", panel_width + text_spacer, ",3.6;", panel_width - 2*text_spacer, ",1;;;Classroom Size]",
-                        "textarea[", panel_width + text_spacer, ",4.2;1,1;;;X =]",
-                        "textarea[", panel_width + text_spacer + 2.4, ",4.2;1,1;;;Y =]",
-                        "textarea[", panel_width + text_spacer + 4.8, ",4.2;1,1;;;Z =]",
-                        "field[", panel_width + spacer + 0.9, ",4;1.3,0.8;realm_x_size;;", context.realm_x or 80, "]",
-                        "field[", panel_width + spacer + 3.3, ",4;1.3,0.8;realm_y_size;;", context.realm_y or 80, "]",
-                        "field[", panel_width + spacer + 5.7, ",4;1.3,0.8;realm_z_size;;", context.realm_z or 80, "]",
+                        "textarea[", text_spacer, ",2.6;", panel_width - 2*text_spacer, ",1;;;Classroom Size]",
+                        "textarea[", text_spacer, ",3.2;1,1;;;X =]",
+                        "textarea[", text_spacer + 2.4, ",3.2;1,1;;;Y =]",
+                        "textarea[", text_spacer + 4.8, ",3.2;1,1;;;Z =]",
+                        "field[", spacer + 0.9, ",3;1.3,0.8;realm_x_size;;", context.realm_x or 80, "]",
+                        "field[", spacer + 3.3, ",3;1.3,0.8;realm_y_size;;", context.realm_y or 80, "]",
+                        "field[", spacer + 5.7, ",3;1.3,0.8;realm_z_size;;", context.realm_z or 80, "]",
+                        "textarea[", text_spacer, ",3.9;3.6,1;;;Terrain Generator]",
+                        "textarea[", text_spacer + 3.6, ",3.9;3.6,1;;;Terrain Decorator]",
+                        "dropdown[", spacer, ",4.3;3.5,0.8;realm_generator;None,Version 1,Version 2,DNR;", context.realm_gen or 1, ";true]",
+                        "dropdown[", spacer + 3.6, ",4.3;3.5,0.8;realm_decorator;None,Version 1,Version 2,Biomegen;", context.realm_dec or 1, ";true]",
+                    
                         "field_close_on_enter[realm_x_size;false]",
                         "field_close_on_enter[realm_y_size;false]",
                         "field_close_on_enter[realm_z_size;false]",
                     }))
+
+                    -- TODO: link generators, decorators, BEC biomes to realm generation
+                    if options_height >= 3.9 then
+                        table.insert(fs, table.concat({
+                            "textarea[", text_spacer, ",5.2;3.6,1;;;Seed]",
+                            "textarea[", text_spacer + 3.6, ",5.2;3.6,1;;;Sea Level]",
+                            "field[", spacer, ",5.6;3.5,0.8;realm_seed;;]",
+                            "field[", spacer + 3.6, ",5.6;3.5,0.8;realm_sealevel;;]",
+
+                            "field_close_on_enter[realm_seed;false]",
+                            "field_close_on_enter[realm_sealevel;false]",
+                        }))
+                    end
+                    if options_height >= 5.2 then
+                        table.insert(fs, table.concat({
+                            "textarea[", text_spacer, ",6.5;3.6,1;;;Biome]",
+                            "textarea[", text_spacer + 3.6, ",6.5;3.6,1;;;Chill Coefficient]",
+                            "dropdown[", spacer, ",6.9;3.5,0.8;realm_biome;;1;false]",
+                            "field[", spacer + 3.6, ",6.9;3.5,0.8;realm_chill;;0]",
+
+                            "field_close_on_enter[realm_chill;false]",
+                        }))
+                    end
                 elseif context.selected_mode == mc_teacher.MODES.SCHEMATIC then
                     local schematics = {}
                     local name_to_i = {}
@@ -172,8 +214,8 @@ function mc_teacher.show_controller_fs(player,tab)
                     context.name_to_i = name_to_i
 
                     table.insert(fs, table.concat({
-                        "textarea[", panel_width + text_spacer, ",3.6;", panel_width - 2*text_spacer, ",1;;;Schematic]",
-                        "dropdown[", panel_width + spacer, ",4;", panel_width - 2*spacer, ",0.8;schematic;", table.concat(schematics, ","), ";", context.name_to_i[context.selected_schematic] or 1, ";false]",
+                        "textarea[", text_spacer, ",2.6;", panel_width - 2*text_spacer, ",1;;;Schematic]",
+                        "dropdown[", spacer, ",3;", panel_width - 2*spacer, ",0.8;schematic;", table.concat(schematics, ","), ";", context.name_to_i[context.selected_schematic] or 1, ";false]",
                     }))
                 elseif context.selected_mode == mc_teacher.MODES.TWIN then
                     local twins = {}
@@ -190,54 +232,65 @@ function mc_teacher.show_controller_fs(player,tab)
                     context.name_to_i = name_to_i
 
                     table.insert(fs, table.concat({
-                        "textarea[", panel_width + text_spacer, ",3.6;", panel_width - 2*text_spacer, ",1;;;Digital Twin World]",
-                        "dropdown[", panel_width + spacer, ",4;", panel_width - 2*spacer, ",0.8;realterrain;", table.concat(twins, ","), ";", context.name_to_i[context.selected_dem] or 1, ";false]",
+                        "textarea[", text_spacer, ",2.6;", panel_width - 2*text_spacer, ",1;;;Digital Twin World]",
+                        "dropdown[", spacer, ",3;", panel_width - 2*spacer, ",0.8;realterrain;", table.concat(twins, ","), ";", context.name_to_i[context.selected_dem] or 1, ";false]",
                     }))
                 else
                     table.insert(fs, table.concat({
-                        "textarea[", panel_width + text_spacer, ",3.6;", panel_width - 2*text_spacer, ",1.2;;;Select a generation mode for more options!]",
+                        "textarea[", text_spacer, ",2.6;", panel_width - 2*text_spacer, ",1.2;;;Select a generation mode for more options!]",
                     }))
                 end
 
                 table.insert(fs, table.concat({
-                    "textarea[", panel_width + text_spacer, ",4.9;", panel_width - 2*text_spacer, ",1;;;Default Privileges]",
+                    "container[0,", 2.6 + options_height, "]",
+                    "textarea[", text_spacer, ",0;", panel_width - 2*text_spacer, ",1;;;Default Privileges]",
                     "style_type[textarea;font=mono]",
-                    "textarea[", panel_width + text_spacer + 1.3, ",5.7;1.9,1;;;interact]",
-                    "textarea[", panel_width + text_spacer + 1.3, ",6.1;1.9,1;;;shout]",
-                    "textarea[", panel_width + text_spacer + 1.3, ",6.5;1.9,1;;;fast]",
-                    "textarea[", panel_width + text_spacer + 4.9, ",5.7;1.9,1;;;fly]",
-                    "textarea[", panel_width + text_spacer + 4.9, ",6.1;1.9,1;;;noclip]",
-                    "textarea[", panel_width + text_spacer + 4.9, ",6.5;1.9,1;;;give]",
-                    "image[", panel_width + text_spacer, ",5.3;0.4,0.4;mc_teacher_allowpriv.png]",
-                    "image[", panel_width + text_spacer + 0.4, ",5.3;0.4,0.4;mc_teacher_ignorepriv.png]",
-                    "image[", panel_width + text_spacer + 0.8, ",5.3;0.4,0.4;mc_teacher_denypriv.png]",
-                    "image[", panel_width + text_spacer + 3.6, ",5.3;0.4,0.4;mc_teacher_allowpriv.png]",
-                    "image[", panel_width + text_spacer + 4.0, ",5.3;0.4,0.4;mc_teacher_ignorepriv.png]",
-                    "image[", panel_width + text_spacer + 4.4, ",5.3;0.4,0.4;mc_teacher_denypriv.png]",
-                    "checkbox[", panel_width + spacer, ",5.9;allowpriv_interact;;", tostring(context.selected_privs.interact == true), "]",
-                    "checkbox[", panel_width + spacer, ",6.3;allowpriv_shout;;", tostring(context.selected_privs.shout == true), "]",
-                    "checkbox[", panel_width + spacer, ",6.7;allowpriv_fast;;", tostring(context.selected_privs.fast == true), "]",
-                    "checkbox[", panel_width + spacer + 0.4, ",5.9;ignorepriv_interact;;", tostring(context.selected_privs.interact == "nil"), "]",
-                    "checkbox[", panel_width + spacer + 0.4, ",6.3;ignorepriv_shout;;", tostring(context.selected_privs.shout == "nil"), "]",
-                    "checkbox[", panel_width + spacer + 0.4, ",6.7;ignorepriv_fast;;", tostring(context.selected_privs.fast == "nil"), "]",
-                    "checkbox[", panel_width + spacer + 0.8, ",5.9;denypriv_interact;;", tostring(context.selected_privs.interact == false), "]",
-                    "checkbox[", panel_width + spacer + 0.8, ",6.3;denypriv_shout;;", tostring(context.selected_privs.shout == false), "]",
-                    "checkbox[", panel_width + spacer + 0.8, ",6.7;denypriv_fast;;", tostring(context.selected_privs.fast == false), "]",
-                    "checkbox[", panel_width + spacer + 3.6, ",5.9;allowpriv_fly;;", tostring(context.selected_privs.fly == true), "]",
-                    "checkbox[", panel_width + spacer + 3.6, ",6.3;allowpriv_noclip;;", tostring(context.selected_privs.noclip == true), "]",
-                    "checkbox[", panel_width + spacer + 3.6, ",6.7;allowpriv_give;;", tostring(context.selected_privs.give == true), "]",
-                    "checkbox[", panel_width + spacer + 4.0, ",5.9;ignorepriv_fly;;", tostring(context.selected_privs.fly == "nil"), "]",
-                    "checkbox[", panel_width + spacer + 4.0, ",6.3;ignorepriv_noclip;;", tostring(context.selected_privs.noclip == "nil"), "]",
-                    "checkbox[", panel_width + spacer + 4.0, ",6.7;ignorepriv_give;;", tostring(context.selected_privs.give == "nil"), "]",
-                    "checkbox[", panel_width + spacer + 4.4, ",5.9;denypriv_fly;;", tostring(context.selected_privs.fly == false), "]",
-                    "checkbox[", panel_width + spacer + 4.4, ",6.3;denypriv_noclip;;", tostring(context.selected_privs.noclip == false), "]",
-                    "checkbox[", panel_width + spacer + 4.4, ",6.7;denypriv_give;;", tostring(context.selected_privs.give == false), "]",
+                    "textarea[", text_spacer + 1.3, ",0.8;1.9,1;;;interact]",
+                    "textarea[", text_spacer + 1.3, ",1.2;1.9,1;;;shout]",
+                    "textarea[", text_spacer + 1.3, ",1.6;1.9,1;;;fast]",
+                    "textarea[", text_spacer + 4.9, ",0.8;1.9,1;;;fly]",
+                    "textarea[", text_spacer + 4.9, ",1.2;1.9,1;;;noclip]",
+                    "textarea[", text_spacer + 4.9, ",1.6;1.9,1;;;give]",
+                    "image[", text_spacer, ",0.4;0.4,0.4;mc_teacher_allowpriv.png]",
+                    "image[", text_spacer + 0.4, ",0.4;0.4,0.4;mc_teacher_ignorepriv.png]",
+                    "image[", text_spacer + 0.8, ",0.4;0.4,0.4;mc_teacher_denypriv.png]",
+                    "image[", text_spacer + 3.6, ",0.4;0.4,0.4;mc_teacher_allowpriv.png]",
+                    "image[", text_spacer + 4.0, ",0.4;0.4,0.4;mc_teacher_ignorepriv.png]",
+                    "image[", text_spacer + 4.4, ",0.4;0.4,0.4;mc_teacher_denypriv.png]",
+                    "tooltip[", text_spacer, ",0.4;0.4,0.4;ALLOW: Privilege will be granted, unless the player has been\ndenied the corresponding universal priv;#404040;#ffffff]",
+                    "tooltip[", text_spacer + 0.4, ",0.4;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
+                    "tooltip[", text_spacer + 0.8, ",0.4;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
+                    "tooltip[", text_spacer + 3.6, ",0.4;0.4,0.4;ALLOW: Privilege will be granted, unless the player has been\ndenied the corresponding universal priv;#404040;#ffffff]",
+                    "tooltip[", text_spacer + 4.0, ",0.4;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
+                    "tooltip[", text_spacer + 4.4, ",0.4;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
+
+                    "checkbox[", spacer, ",1.0;allowpriv_interact;;", tostring(context.selected_privs.interact == true), "]",
+                    "checkbox[", spacer, ",1.4;allowpriv_shout;;", tostring(context.selected_privs.shout == true), "]",
+                    "checkbox[", spacer, ",1.8;allowpriv_fast;;", tostring(context.selected_privs.fast == true), "]",
+                    "checkbox[", spacer + 0.4, ",1.0;ignorepriv_interact;;", tostring(context.selected_privs.interact == "nil"), "]",
+                    "checkbox[", spacer + 0.4, ",1.4;ignorepriv_shout;;", tostring(context.selected_privs.shout == "nil"), "]",
+                    "checkbox[", spacer + 0.4, ",1.8;ignorepriv_fast;;", tostring(context.selected_privs.fast == "nil"), "]",
+                    "checkbox[", spacer + 0.8, ",1.0;denypriv_interact;;", tostring(context.selected_privs.interact == false), "]",
+                    "checkbox[", spacer + 0.8, ",1.4;denypriv_shout;;", tostring(context.selected_privs.shout == false), "]",
+                    "checkbox[", spacer + 0.8, ",1.8;denypriv_fast;;", tostring(context.selected_privs.fast == false), "]",
+                    "checkbox[", spacer + 3.6, ",1.0;allowpriv_fly;;", tostring(context.selected_privs.fly == true), "]",
+                    "checkbox[", spacer + 3.6, ",1.4;allowpriv_noclip;;", tostring(context.selected_privs.noclip == true), "]",
+                    "checkbox[", spacer + 3.6, ",1.8;allowpriv_give;;", tostring(context.selected_privs.give == true), "]",
+                    "checkbox[", spacer + 4.0, ",1.0;ignorepriv_fly;;", tostring(context.selected_privs.fly == "nil"), "]",
+                    "checkbox[", spacer + 4.0, ",1.4;ignorepriv_noclip;;", tostring(context.selected_privs.noclip == "nil"), "]",
+                    "checkbox[", spacer + 4.0, ",1.8;ignorepriv_give;;", tostring(context.selected_privs.give == "nil"), "]",
+                    "checkbox[", spacer + 4.4, ",1.0;denypriv_fly;;", tostring(context.selected_privs.fly == false), "]",
+                    "checkbox[", spacer + 4.4, ",1.4;denypriv_noclip;;", tostring(context.selected_privs.noclip == false), "]",
+                    "checkbox[", spacer + 4.4, ",1.8;denypriv_give;;", tostring(context.selected_privs.give == false), "]",
+                    "container_end[]",
 
                     "style_type[textarea;font=mono,bold]",
-                    "textarea[", panel_width + text_spacer, ",7;", panel_width - 2*text_spacer, ",1;;;Background Music]",
-                    "dropdown[", panel_width + spacer, ",7.4;", panel_width - 2*spacer, ",0.8;bgmusic;None;1;false]",
-                    "textarea[", panel_width + text_spacer, ",8.3;", panel_width - 2*text_spacer, ",1;;;Skybox]",
-                    "dropdown[", panel_width + spacer, ",8.7;", panel_width - 2*spacer, ",0.8;skybox;Default;1;false]",
+                    "textarea[", text_spacer, ",", 4.7 + options_height, ";", panel_width - 2*text_spacer, ",1;;;Background Music]",
+                    "dropdown[", spacer, ",", 5.1 + options_height, ";", panel_width - 2*spacer, ",0.8;bgmusic;None;1;false]",
+                    "textarea[", text_spacer, ",", 6 + options_height, ";", panel_width - 2*text_spacer, ",1;;;Skybox]",
+                    "dropdown[", spacer, ",", 6.4 + options_height, ";", panel_width - 2*spacer, ",0.8;skybox;Default;1;false]",
+                    "scroll_container_end[]",
+
                     "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;requestrealm;Generate Classroom]",
                 }))
 
@@ -498,18 +551,18 @@ function mc_teacher.show_controller_fs(player,tab)
                     "tooltip[p_mode_selected;The selected player;#404040;#ffffff]",
                     "tooltip[p_mode_tab;All players in the selected tab;#404040;#ffffff]",
                     "tooltip[p_mode_all;All online players;#404040;#ffffff]",
-                    "tooltip[", panel_width + text_spacer, ",2.7;0.4,0.4;ALLOW: Privilege will be granted (overrides universal privileges);#404040;#ffffff]",
+                    "tooltip[", panel_width + text_spacer, ",2.7;0.4,0.4;ALLOW: Privilege will be granted\n(overrides universal privileges);#404040;#ffffff]",
                     "tooltip[", panel_width + text_spacer + 0.4, ",2.7;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
-                    "tooltip[", panel_width + text_spacer + 0.8, ",2.7;0.4,0.4;DENY: Privilege will not be granted (overrides universal privileges);#404040;#ffffff]",
-                    "tooltip[", panel_width + text_spacer + 3.6, ",2.7;0.4,0.4;ALLOW: Privilege will be granted (overrides universal privileges);#404040;#ffffff]",
+                    "tooltip[", panel_width + text_spacer + 0.8, ",2.7;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
+                    "tooltip[", panel_width + text_spacer + 3.6, ",2.7;0.4,0.4;ALLOW: Privilege will be granted\n(overrides universal privileges);#404040;#ffffff]",
                     "tooltip[", panel_width + text_spacer + 4.0, ",2.7;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
-                    "tooltip[", panel_width + text_spacer + 4.4, ",2.7;0.4,0.4;DENY: Privilege will not be granted (overrides universal privileges);#404040;#ffffff]",
+                    "tooltip[", panel_width + text_spacer + 4.4, ",2.7;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
                     "tooltip[p_mute;Revokes the shout privilege globally;#404040;#ffffff]",
                     "tooltip[p_deactivate;Revokes the interact privilege globally;#404040;#ffffff]",
                     "tooltip[p_freeze;Disables player movement;#404040;#ffffff]",
                     "tooltip[p_teleport;Teleports you to the selected player;#404040;#ffffff]",
                     "tooltip[p_bring;Teleports the player to you;#404040;#ffffff]",
-                    "tooltip[p_timeout;Teleports the player to spawn and prevents them from joining classrooms;#404040;#ffffff]",
+                    "tooltip[p_timeout;Teleports the player to spawn and\nprevents them from joining classrooms;#404040;#ffffff]",
                 }))
 
                 return fs
@@ -549,7 +602,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     else
                         local add_player = false
                         for _,msg_table in pairs(msg_list) do
-                            if msg_table.recipient ~= mc_teacher.MRECIP.ADMIN then
+                            if msg_table.recipient ~= mc_teacher.M.RECIP.ADMIN then
                                 if not msg_table.anonymous then
                                     add_player = true
                                 else
@@ -571,7 +624,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     local server_messages = {}
                     for _, msg_list in pairs(server_msg or {}) do
                         for _,msg_table in pairs(msg_list) do
-                            if msg_table.anonymous and msg_table.recipient ~= mc_teacher.MRECIP.ADMIN then
+                            if msg_table.anonymous and msg_table.recipient ~= mc_teacher.M.RECIP.ADMIN then
                                 table.insert(server_messages, msg_table)
                             end
                         end
@@ -602,7 +655,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     end
                     if server_msg and server_msg[selected] then
                         for i, msg_table in ipairs(server_msg[selected]) do
-                            if has_server_privs or (msg_table.recipient ~= mc_teacher.MRECIP.ADMIN and msg_table.anonymous == (selected == mc_core.SERVER_USER)) then
+                            if has_server_privs or (msg_table.recipient ~= mc_teacher.M.RECIP.ADMIN and msg_table.anonymous == (selected == mc_core.SERVER_USER)) then
                                 table.insert(stamps, msg_table.timestamp)
                                 stamp_to_key[msg_table.timestamp] = "serv:"..i
                             end
@@ -794,7 +847,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     "textarea[", spacer, ",1.4;", panel_width - 2*spacer, ",2.1;server_message;;", context.server_message or "", "]",
                     "style_type[textarea;font=mono,bold]",
                     "textarea[", text_spacer, ",3.6;", panel_width - 2*text_spacer, ",1;;;Send as:]",
-                    "dropdown[", spacer, ",4.0;", panel_width - 2*spacer, ",0.8;server_message_type;General server message,Server message from yourself,Chat message from yourself;", context.server_message_type or mc_teacher.MMODE.SERVER_ANON, ";true]",
+                    "dropdown[", spacer, ",4.0;", panel_width - 2*spacer, ",0.8;server_message_type;General server message,Server message from yourself,Chat message from yourself;", context.server_message_type or mc_teacher.M.MODE.SERVER_ANON, ";true]",
                     "textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",1;;;Send to:]",
                     "button[", spacer, ",5.3;1.7,0.8;server_send_teachers;Teachers]",
                     "button[", spacer + 1.8, ",5.3;1.7,0.8;server_send_students;Students]",
