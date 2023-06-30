@@ -43,6 +43,40 @@ local function get_options_height(context)
     end
 end
 
+local function get_privs(player)
+    local pmeta = player:get_meta()
+    local privs = minetest.get_player_privs(player:get_player_name())
+    local universal_privs = minetest.deserialize(pmeta:get_string("universalPrivs")) or {}
+
+    for k, v in pairs(universal_privs) do
+        if v == false then
+            privs[k] = (privs[k] and "overridden") or false
+        end
+    end
+    return privs
+end
+
+local function generate_player_table(p_list, p_priv_list)
+    local privs_to_check = {"shout", "interact", "fast", "fly", "noclip", "give"}
+    local combined_list = {}
+    -- TODO: create new images for other priv statustes
+    for i, player in ipairs(p_list) do
+        for j, priv in ipairs(privs_to_check) do
+            if p_priv_list[i][priv] == true then
+                table.insert(combined_list, 1)
+            elseif p_priv_list[i][priv] == false then
+                table.insert(combined_list, 0--[[2]])
+            elseif p_priv_list[i][priv] == "overridden" then
+                table.insert(combined_list, 1--[[3]])
+            else
+                table.insert(combined_list, 0)
+            end
+        end
+        table.insert(combined_list, player)
+    end
+    return table.concat(combined_list, ",")
+end
+
 function mc_teacher.show_controller_fs(player,tab)
     local controller_width = 16.6
     local controller_height = 10.4
@@ -426,9 +460,13 @@ function mc_teacher.show_controller_fs(player,tab)
                         end
                     end
                 end
-
+                local p_priv_list = {}
+                for _,p in ipairs(context.p_list) do
+                    local p_obj = minetest.get_player_by_name(p)
+                    table.insert(p_priv_list, p_obj and get_privs(p_obj) or {})
+                end
                 local selected_player = context.p_list[context.selected_p_player]
-                
+
                 local player_privs = {interact = true, shout = true, fast = true, fly = true, noclip = true, give = true}
                 if selected_player then
                     local _,missing = minetest.check_player_privs(selected_player, player_privs)
@@ -441,6 +479,15 @@ function mc_teacher.show_controller_fs(player,tab)
                     player_privs = {}
                 end
 
+                local base_img = {
+                    shout = "mc_teacher_share.png^[resize:25x25", --"mc_teacher_p_shout.png^[resize:25x25",
+                    interact = "mc_teacher_isometric_crop.png^[resize:25x25", --"mc_teacher_p_interact.png^[resize:25x25",
+                    fast = "mc_teacher_players.png^[resize:25x25", --"mc_teacher_p_fast.png^[resize:25x25",
+                    fly = "mc_teacher_teleport.png^[resize:25x25", --"mc_teacher_p_fly.png^[resize:25x25",
+                    noclip = "mc_teacher_delete.png^[resize:25x25", --"mc_teacher_p_noclip.png^[resize:25x25",
+                    give = "mc_teacher_mark.png^[resize:25x25", --"mc_teacher_p_give.png^[resize:25x25",
+                    --blank = "blank.png^[resize:25x25",
+                }
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
                     "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
@@ -456,7 +503,15 @@ function mc_teacher.show_controller_fs(player,tab)
                     "style[p_mode_", context.selected_p_mode == mc_teacher.PMODE.ALL and "all" or context.selected_p_mode == mc_teacher.PMODE.TAB and "tab" or "selected", ";bgimg=mc_pixel.png^[multiply:", mc_core.col.b.selected, "]",
                     
                     "tabheader[", spacer, ",1.4;", panel_width - 2*spacer - 0.35, ",0.5;p_list_header;Students,Teachers,Classroom;", context.selected_p_tab, ";false;true]",
-                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;p_list;", table.concat(context.p_list, ","), ";", context.selected_p_player, ";false]",
+                    "tablecolumns[image,align=center,padding=0.1,tooltip=shout,0=", base_img.shout, "^[opacity:31,1=", base_img.shout, ";",
+                                 "image,align=center,padding=0.1,tooltip=interact,0=", base_img.interact, "^[opacity:31,1=", base_img.interact, ";",
+                                 "image,align=center,padding=0.1,tooltip=fast,0=", base_img.fast, "^[opacity:31,1=", base_img.fast, ";",
+                                 "image,align=center,padding=0.1,tooltip=fly,0=", base_img.fly, "^[opacity:31,1=", base_img.fly, ";",
+                                 "image,align=center,padding=0.1,tooltip=noclip,0=", base_img.noclip, "^[opacity:31,1=", base_img.noclip, ";",
+                                 "image,align=center,padding=0.1,tooltip=give,0=", base_img.give, "^[opacity:31,1=", base_img.give, ";",
+                                 "text]",
+                    "table[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;p_list;", generate_player_table(context.p_list, p_priv_list), ";", context.selected_p_player, "]",
+                    
                     "button[", panel_width - spacer - 0.45, ",0.95;0.45,0.45;p_group_new;+]",
                     "button[", spacer, ",9;3.5,0.8;p_group_edit;Edit Group]",
                     "button[", spacer + 3.6, ",9;3.5,0.8;p_group_delete;Delete Group]",
@@ -536,19 +591,28 @@ function mc_teacher.show_controller_fs(player,tab)
                     "button[", panel_width + spacer + 2.4, ",7.5;2.3,0.8;p_kick;Kick]",
                     "button[", panel_width + spacer + 4.8, ",7.5;2.3,0.8;p_ban;Ban]",
                     
-                    "textarea[", panel_width + text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Server Role]",
+                    "textarea[", panel_width + text_spacer, ",8.4;", panel_width - 2*text_spacer, ",1;;;Server Role]",
                 }))
 
                 if not has_server_privs then
-                    table.insert(fs, "style_type[button;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]")
+                    table.insert(fs, "style[blocked;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.blocked.."]")
                 end
                 table.insert(fs, table.concat({
-                    "button[", panel_width + spacer, ",9;2.3,0.8;p_role_student;Student]",
-                    "button[", panel_width + spacer + 2.4, ",9;2.3,0.8;p_role_teacher;Teacher]",
-                    "button[", panel_width + spacer + 4.8, ",9;2.3,0.8;p_role_admin;Admin]",
+                    "image[", panel_width + spacer, ",8.8;3.5,1;mc_pixel.png^[multiply:#acabff]",
+                    "image[", panel_width + spacer + 3.6, ",8.8;3.5,1;mc_pixel.png^[multiply:#f5c987]", --#ffd699
+                    "button[", panel_width + spacer + 0.1, ",8.9;1.6,0.8;p_role_none;None]",
+                    "button[", panel_width + spacer + 1.8, ",8.9;1.6,0.8;p_role_student;Student]",
+                    "button[", panel_width + spacer + 3.7, ",8.9;1.6,0.8;", has_server_privs and "p_role_teacher" or "blocked", ";Teacher]",
+                    "button[", panel_width + spacer + 5.4, ",8.9;1.6,0.8;", has_server_privs and "p_role_admin" or "blocked", ";Admin]",
+                    
                     "tooltip[p_mode_selected;The selected player;#404040;#ffffff]",
                     "tooltip[p_mode_tab;All players in the selected tab;#404040;#ffffff]",
                     "tooltip[p_mode_all;All online players;#404040;#ffffff]",
+                    "tooltip[p_role_none;No privileges\nListed as a student\nCan not use classroom tools;#404040;#ffffff]",
+                    "tooltip[p_role_student;Privileges: student\nListed as a student\nCan use student tools;#404040;#ffffff]",
+                    "tooltip[p_role_teacher;Privileges: student, teacher\nListed as a teacher\nCan use student and teacher tools;#404040;#ffffff]",
+                    "tooltip[p_role_admin;Privileges: student, teacher, server\nListed as a teacher\nCan use student, teacher, and administrator tools;#404040;#ffffff]",
+                    
                     "tooltip[", panel_width + text_spacer, ",2.7;0.4,0.4;ALLOW: Privilege will be granted\n(overrides universal privileges);#404040;#ffffff]",
                     "tooltip[", panel_width + text_spacer + 0.4, ",2.7;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
                     "tooltip[", panel_width + text_spacer + 0.8, ",2.7;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
@@ -1133,10 +1197,13 @@ button[13.7,6.6;2.3,0.8;p_freeze;Freeze]
 button[8.9,7.5;2.3,0.8;p_timeout;Timeout]
 button[11.3,7.5;2.3,0.8;p_kick;Kick]
 button[13.7,7.5;2.3,0.8;p_ban;Ban]
-textarea[8.85,8.6;7.2,1;;;Server Role]
-button[11.3,9;2.3,0.8;;Teacher]
-button[8.9,9;2.3,0.8;;Student]
-button[13.7,9;2.3,0.8;;Admin]
+textarea[8.9,8.4;7.2,1;;;Server Role]
+box[12.5,8.8;3.5,1;#FFCC00]
+box[8.9,8.8;3.5,1;#00FF00]
+button[9,8.9;1.6,0.8;p_role_none;None]
+button[10.7,8.9;1.6,0.8;p_role_student;Student]
+button[12.6,8.9;1.6,0.8;p_role_teacher;Teacher]
+button[14.3,8.9;1.6,0.8;p_role_admin;Admin]
 
 MODERATION:
 formspec_version[6]

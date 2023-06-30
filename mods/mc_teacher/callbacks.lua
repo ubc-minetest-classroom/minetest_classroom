@@ -306,7 +306,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             -- So always check that the requested realm exists and the realm category allows the player to join
             -- Check that the player selected something from the textlist, otherwise default to spawn realm
             if not context.selected_realm_id then context.selected_realm_id = mc_worldManager.spawnRealmID end
-            --minetest.log(minetest.serialize(Realm.realmDict))
             local realm = Realm.GetRealm(context.selected_realm_id)
             if realm then
                 realm:TeleportPlayer(player)
@@ -372,9 +371,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
         end
         if fields.p_list then
-            local event = minetest.explode_textlist_event(fields.p_list)
-            if event.type == "CHG" then
-                context.selected_p_player = event.index
+            local event = minetest.explode_table_event(fields.p_list)
+            if event.type == "CHG" and context.selected_p_player ~= event.row then
+                context.selected_p_player = tonumber(event.row)
                 reload = true
             end
         end
@@ -413,6 +412,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     end
                 end
             end
+            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player privileges updated!"))
             reload = true
         elseif fields.p_kick then
             local players_to_update = get_players_to_update(player, context)

@@ -86,8 +86,7 @@ function Realm:ApplyPrivileges(player)
     local pmeta = player:get_meta()
 
     -- Revoke all privileges
-    local privs = {} --minetest.get_player_privs(name) 
-
+    local privs = {}
     local universalPrivs = minetest.deserialize(pmeta:get_string("universalPrivs")) or {}
     local realmPrivs = self.Permissions or {}
     local overridePrivs = self.PermissionsOverride and self.PermissionsOverride[name] or {}
