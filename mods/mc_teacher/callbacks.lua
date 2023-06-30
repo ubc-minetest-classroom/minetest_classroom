@@ -22,9 +22,9 @@ end)
 
 -- Teacher joins/leaves
 minetest.register_on_joinplayer(function(player)
-	local pname = player:get_player_name()
-	if minetest.check_player_privs(player, {teacher = true}) then
-		mc_teacher.register_teacher(pname)
+    local pname = player:get_player_name()
+    if minetest.check_player_privs(player, {teacher = true}) then
+        mc_teacher.register_teacher(pname)
     else
         mc_teacher.register_student(pname)
     end
@@ -44,15 +44,15 @@ end)
 
 -- Log all direct messages
 minetest.register_on_chatcommand(function(name, command, params)
-	if command == "msg" then
-		-- For some reason, the params in this callback is a string rather than a table; need to parse the player name
-		local params_table = mc_core.split(params, " ")
-		local to_player = params_table[1]
+    if command == "msg" then
+        -- For some reason, the params in this callback is a string rather than a table; need to parse the player name
+        local params_table = mc_core.split(params, " ")
+        local to_player = params_table[1]
         if minetest.get_player_by_name(to_player) then
             local message = string.sub(params, #to_player+2, #params)
             mc_teacher.log_direct_message(name, message, to_player)
         end
-	end
+    end
 end)
 
 -- Log all chat messages
@@ -81,31 +81,31 @@ local function get_players_to_update(player, context)
 end
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
-	local pmeta = player:get_meta()
+    local pmeta = player:get_meta()
     local context = mc_teacher.get_fs_context(player)
 
-	if string.sub(formname, 1, 10) ~= "mc_teacher" or not mc_core.checkPrivs(player,{teacher = true}) then
-		return false
-	end
+    if string.sub(formname, 1, 10) ~= "mc_teacher" or not mc_core.checkPrivs(player, {teacher = true}) then
+        return false
+    end
 
-	local wait = os.clock()
+    local wait = os.clock()
     local reload = false
-	while os.clock() - wait < 0.05 do end --popups don't work without this
+    while os.clock() - wait < 0.05 do end --popups don't work without this
 
-	if formname == "mc_teacher:controller_fs" then
+    if formname == "mc_teacher:controller_fs" then
         local has_server_privs = mc_core.checkPrivs(player, {server = true})
 
         -------------
         -- GENERAL --
         -------------
-		if fields.record_nav then
+        if fields.record_nav then
             context.tab = fields.record_nav
             reload = true
-		end
+        end
         if fields.default_tab then
-			pmeta:set_string("default_teacher_tab", context.tab)
+            pmeta:set_string("default_teacher_tab", context.tab)
             reload = true
-		end
+        end
 
         --------------
         -- OVERVIEW --
@@ -302,18 +302,19 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 reload = true
             end
         elseif fields.teleportrealm then
-			-- Still a remote possibility that the realm is deleted in the time that the callback is executed
-			-- So always check that the requested realm exists and the realm category allows the player to join
-			-- Check that the player selected something from the textlist, otherwise default to spawn realm
-			if not context.selected_realm_id then context.selected_realm_id = mc_worldManager.spawnRealmID end
-			local realm = Realm.GetRealm(context.selected_realm_id)
-			if realm then
-				realm:TeleportPlayer(player)
-				context.selected_realm_id = nil
-			else
-				minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
-			end
-			reload = true
+            -- Still a remote possibility that the realm is deleted in the time that the callback is executed
+            -- So always check that the requested realm exists and the realm category allows the player to join
+            -- Check that the player selected something from the textlist, otherwise default to spawn realm
+            if not context.selected_realm_id then context.selected_realm_id = mc_worldManager.spawnRealmID end
+            --minetest.log(minetest.serialize(Realm.realmDict))
+            local realm = Realm.GetRealm(context.selected_realm_id)
+            if realm then
+                realm:TeleportPlayer(player)
+                context.selected_realm_id = nil
+            else
+                minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
+            end
+            reload = true
         elseif fields.deleterealm then
             local realm = Realm.GetRealm(tonumber(context.selected_realm_id))
             if realm and tonumber(context.selected_realm_id) ~= mc_worldManager.spawnRealmID then realm:Delete() end
@@ -541,21 +542,21 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         -- MODERATION --
         ----------------
         if fields.mod_log_players then
-			local event = minetest.explode_textlist_event(fields.mod_log_players)
-			if event.type == "CHG" then
-				context.player_chat_index = event.index
+            local event = minetest.explode_textlist_event(fields.mod_log_players)
+            if event.type == "CHG" then
+                context.player_chat_index = event.index
                 context.message_chat_index = 1
                 reload = true
-			end
+            end
         end
         if fields.mod_log_messages then
-			local event = minetest.explode_textlist_event(fields.mod_log_messages)
-			if event.type == "CHG" then
-				context.message_chat_index = event.index
+            local event = minetest.explode_textlist_event(fields.mod_log_messages)
+            if event.type == "CHG" then
+                context.message_chat_index = event.index
                 reload = true
-			end
+            end
         end
-		if fields.mod_clearlog then
+        if fields.mod_clearlog then
             local chat_msg = minetest.deserialize(mc_teacher.meta:get_string("chat_log")) or {}
             local direct_msg = minetest.deserialize(mc_teacher.meta:get_string("dm_log")) or {}
             local server_msg = minetest.deserialize(mc_teacher.meta:get_string("server_log")) or {}
@@ -605,11 +606,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         -- REPORTS --
         -------------
         if fields.report_log then
-			local event = minetest.explode_textlist_event(fields.report_log)
-			if event.type == "CHG" then
-				context.selected_report = event.index
+            local event = minetest.explode_textlist_event(fields.report_log)
+            if event.type == "CHG" then
+                context.selected_report = event.index
                 reload = true
-			end
+            end
         end
         if fields.report_delete then
             -- TODO: delete the report
@@ -765,175 +766,194 @@ end)
 -- MAP (common to both mc_teacher and mc_student) --
 ----------------------------------------------------
 minetest.register_on_player_receive_fields(function(player, formname, fields)
-	local pmeta = player:get_meta()
+    local pmeta = player:get_meta()
     local context
 
-	if string.sub(formname, 1, 10) == "mc_student" then
-		context = mc_student.get_fs_context(player)
-	elseif string.sub(formname, 1, 10) == "mc_teacher" then
-		context = mc_teacher.get_fs_context(player)
-	else
-		return false
-	end
+    if string.sub(formname, 1, 10) == "mc_student" and mc_core.checkPrivs(player, {interact = true}) then
+        context = mc_student.get_fs_context(player)
+    elseif string.sub(formname, 1, 10) == "mc_teacher" and mc_core.checkPrivs(player, {teacher = true}) then
+        context = mc_teacher.get_fs_context(player)
+    else
+        return false
+    end
 
-	local wait = os.clock()
-	while os.clock() - wait < 0.05 do end --popups don't work without this
+    local wait = os.clock()
+    while os.clock() - wait < 0.05 do end --popups don't work without this
 
-	local reload = false
+    local reload = false
 
-	if formname == "mc_student:notebook_fs" or formname == "mc_teacher:controller_fs" then
-		if fields.record and fields.note ~= "" then
-			mc_core.record_coordinates(player, fields.note)
-			reload = true
-		elseif fields.coordlist then
-			local event = minetest.explode_textlist_event(fields.coordlist)
-			if event.type == "CHG" then
-				context.selected_coord = event.index
-			end
-		elseif fields.mark then
-			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-			if pdata and pdata.note_map then
-				local realm = Realm.GetRealmFromPlayer(player)
-				if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
-					context.selected_coord = 1
-				end
-				local note_to_mark = context.coord_i_to_note[context.selected_coord]
-				mc_core.queue_marker(player, note_to_mark, pdata.coords[pdata.note_map[note_to_mark]], formname == "mc_student:notebook_fs" and mc_student.marker_expiry or mc_teacher.marker_expiry)
-			else
-				minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected coordinate could not be marked."))
-			end
-		elseif fields.go then
-			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-			if pdata and pdata.note_map then
-				if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
-					context.selected_coord = 1
-				end
-				local note_name = context.coord_i_to_note[context.selected_coord]
-				local note_i = pdata.note_map[note_name]
-				local realm = Realm.GetRealm(pdata.realms[note_i])
-				if realm then
-					if realm:getCategory().joinable(realm, player) then
-						realm:TeleportPlayer(player)
-						player:set_pos(pdata.coords[note_i])
-					else
-						minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You no longer have access to this classroom."))
-					end
-				else
-					minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom no longer exists."))
-				end
-			else
-				minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport to location."))
-			end
-			reload = true
-		elseif fields.go_all then
-			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-			if pdata and pdata.note_map then
-				if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
-					context.selected_coord = 1
-				end
-				local note_name = context.coord_i_to_note[context.selected_coord]
-				local note_i = pdata.note_map[note_name]
-				local realm = Realm.GetRealm(pdata.realms[note_i])
-				if realm then
+    if formname == "mc_student:notebook_fs" or formname == "mc_teacher:controller_fs" then
+        if fields.record and fields.note ~= "" then
+            mc_core.record_coordinates(player, fields.note)
+            reload = true
+        elseif fields.coordlist then
+            local event = minetest.explode_textlist_event(fields.coordlist)
+            if event.type == "CHG" then
+                context.selected_coord = event.index
+            end
+        elseif fields.mark then
+            if mc_core.checkPrivs(player, {shout = true}) or mc_core.checkPrivs(player, {teacher = true}) then
+                local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+                if pdata and pdata.note_map then
+                    local realm = Realm.GetRealmFromPlayer(player)
+                    if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
+                        context.selected_coord = 1
+                    end
+                    local note_to_mark = context.coord_i_to_note[context.selected_coord]
+                    mc_core.queue_marker(player, note_to_mark, pdata.coords[pdata.note_map[note_to_mark]], formname == "mc_student:notebook_fs" and mc_student.marker_expiry or mc_teacher.marker_expiry)
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Marker placed!"))
+                else
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected coordinate could not be marked."))
+                end
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You do not have sufficient privileges to mark coordinates."))
+            end
+        elseif fields.go then
+            local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+            if pdata and pdata.note_map then
+                if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
+                    context.selected_coord = 1
+                end
+                local note_name = context.coord_i_to_note[context.selected_coord]
+                local note_i = pdata.note_map[note_name]
+                local realm = Realm.GetRealm(pdata.realms[note_i])
+                if realm then
+                    if realm:getCategory().joinable(realm, player) then
+                        realm:TeleportPlayer(player)
+                        player:set_pos(pdata.coords[note_i])
+                    else
+                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You no longer have access to this classroom."))
+                    end
+                else
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom no longer exists."))
+                end
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport to location."))
+            end
+            reload = true
+        elseif fields.go_all then
+            local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+            if pdata and pdata.note_map then
+                if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
+                    context.selected_coord = 1
+                end
+                local note_name = context.coord_i_to_note[context.selected_coord]
+                local note_i = pdata.note_map[note_name]
+                local realm = Realm.GetRealm(pdata.realms[note_i])
+                if realm then
                     for _,p_obj in pairs(minetest.get_connected_players()) do
                         local p_realm = Realm.GetRealmFromPlayer(p_obj)
                         if p_realm and p_realm.ID == tonumber(pdata.realms[note_i]) and realm:getCategory().joinable(realm, p_obj) then
                             realm:TeleportPlayer(p_obj)
-						    p_obj:set_pos(pdata.coords[note_i])
+                            p_obj:set_pos(pdata.coords[note_i])
                         end
                     end
-				else
-					minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom no longer exists."))
-				end
-			else
-				minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport players to location."))
-			end
-			reload = true        
+                else
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom no longer exists."))
+                end
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport players to location."))
+            end
+            reload = true
         elseif fields.delete then
-			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-			if pdata and pdata.note_map then
-				local new_note_map, new_coords, new_realms = {}, {}, {}
-				if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
-					context.selected_coord = 1
-				end
-				local note_to_delete = context.coord_i_to_note[context.selected_coord]
-				if note_to_delete then
-					for note,i in pairs(pdata.note_map) do
-						if note ~= note_to_delete then
-							table.insert(new_coords, pdata.coords[i])
-							table.insert(new_realms, pdata.realms[i])
-							new_note_map[note] = #new_coords
-						end
-					end
-					minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected coordinate successfully deleted."))
-				else
-					minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected coordinate could not be deleted."))
-				end
-				pmeta:set_string("coordinates", minetest.serialize({note_map = new_note_map, coords = new_coords, realms = new_realms, format = 2}))
-			else
-				minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected coordinate could not be deleted."))
-			end
-			reload = true
-		elseif fields.clear then
-			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-			if pdata and pdata.note_map then
-				local new_note_map, new_coords, new_realms = {}, {}, {}
-				local realm = Realm.GetRealmFromPlayer(player)
-				for note,i in pairs(pdata.note_map) do 
-					local coordrealm = Realm.GetRealm(pdata.realms[i])
-					if realm and coordrealm and coordrealm.ID ~= realm.ID then
-						table.insert(new_coords, pdata.coords[i])
-						table.insert(new_realms, pdata.realms[i])
-						new_note_map[note] = #new_coords
-					end
-				end
-				pmeta:set_string("coordinates", minetest.serialize({note_map = new_note_map, coords = new_coords, realms = new_realms, format = 2}))
-				minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] All coordinates saved in this classroom have been cleared."))
-			else
-				minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Saved coordinates could not be cleared."))
-			end
-			reload = true
-		elseif fields.share then
-			local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-			if pdata and pdata.note_map then
-				local realm = Realm.GetRealmFromPlayer(player)
-				if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
-					context.selected_coord = 1
-				end
-				local note_to_share = context.coord_i_to_note[context.selected_coord]
-				local realmID = pdata.realms[pdata.note_map[note_to_share]]
-				local pos = pdata.coords[pdata.note_map[note_to_share]]
-				for _,connplayer in pairs(minetest.get_connected_players()) do 
-					local connRealm = Realm.GetRealmFromPlayer(connplayer)
-					if connRealm.ID == realmID then
-						minetest.chat_send_player(connplayer:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..player:get_player_name().." shared location {x="..tostring(math.round(pos.x-realm.StartPos.x))..", y="..tostring(math.round(pos.y-realm.StartPos.y))..", z="..tostring(math.round(pos.z-realm.StartPos.z)).."} with the note: "..note_to_share))
-					end
-				end
-			else
-				minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Location could not be shared."))
-			end
-			reload = true
-		elseif fields.utmcoords then
+            local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+            if pdata and pdata.note_map then
+                local new_note_map, new_coords, new_realms = {}, {}, {}
+                if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
+                    context.selected_coord = 1
+                end
+                local note_to_delete = context.coord_i_to_note[context.selected_coord]
+                if note_to_delete then
+                    for note,i in pairs(pdata.note_map) do
+                        if note ~= note_to_delete then
+                            table.insert(new_coords, pdata.coords[i])
+                            table.insert(new_realms, pdata.realms[i])
+                            new_note_map[note] = #new_coords
+                        end
+                    end
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected coordinate successfully deleted."))
+                else
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected coordinate could not be deleted."))
+                end
+                pmeta:set_string("coordinates", minetest.serialize({note_map = new_note_map, coords = new_coords, realms = new_realms, format = 2}))
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected coordinate could not be deleted."))
+            end
+            reload = true
+        elseif fields.clear then
+            local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+            if pdata and pdata.note_map then
+                local new_note_map, new_coords, new_realms = {}, {}, {}
+                local realm = Realm.GetRealmFromPlayer(player)
+                for note,i in pairs(pdata.note_map) do 
+                    local coordrealm = Realm.GetRealm(pdata.realms[i])
+                    if realm and coordrealm and coordrealm.ID ~= realm.ID then
+                        table.insert(new_coords, pdata.coords[i])
+                        table.insert(new_realms, pdata.realms[i])
+                        new_note_map[note] = #new_coords
+                    end
+                end
+                pmeta:set_string("coordinates", minetest.serialize({note_map = new_note_map, coords = new_coords, realms = new_realms, format = 2}))
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] All coordinates saved in this classroom have been cleared."))
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Saved coordinates could not be cleared."))
+            end
+            reload = true
+        elseif fields.share then
+            local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+            if pdata and pdata.note_map then
+                local realm = Realm.GetRealmFromPlayer(player)
+                if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
+                    context.selected_coord = 1
+                end
+                local note = context.coord_i_to_note[context.selected_coord]
+                local realmID = pdata.realms[pdata.note_map[note]]
+                local pos = pdata.coords[pdata.note_map[note]]
+                local loc = {
+                    x = tostring(math.round(pos.x - realm.StartPos.x)),
+                    y = tostring(math.round(pos.y - realm.StartPos.y)),
+                    z = tostring(math.round(pos.z - realm.StartPos.z)),
+                }
+
+                local message = "[Minetest Classroom] "..player:get_player_name().." shared"
+                if (mc_core.checkPrivs(player, {shout = true}) or mc_core.checkPrivs(player, {teacher = true})) and note ~= "" then
+                    message = message.." \""..note.."\", located at"
+                else
+                    message = message.." the location"
+                end
+                message = message.." (x="..loc.x..", y="..loc.y..", z="..loc.z..")"
+
+                for _,connplayer in pairs(minetest.get_connected_players()) do 
+                    local connRealm = Realm.GetRealmFromPlayer(connplayer)
+                    if connRealm.ID == realmID then
+                        minetest.chat_send_player(connplayer:get_player_name(), minetest.colorize(mc_core.col.log, message))
+                    end
+                end
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Location could not be shared."))
+            end
+            reload = true
+        elseif fields.utmcoords then
             local pmeta = player:get_meta()
             pmeta:set_string("positionHudMode", "utm")
-		elseif fields.latloncoords then
-			local pmeta = player:get_meta()
+        elseif fields.latloncoords then
+            local pmeta = player:get_meta()
             pmeta:set_string("positionHudMode", "latlong")
-		elseif fields.classroomcoords then
-			local pmeta = player:get_meta()
+        elseif fields.classroomcoords then
+            local pmeta = player:get_meta()
             pmeta:set_string("positionHudMode", "local")
-		elseif fields.coordsoff then
-			local pmeta = player:get_meta()
-			pmeta:set_string("positionHudMode", "")
+        elseif fields.coordsoff then
+            local pmeta = player:get_meta()
+            pmeta:set_string("positionHudMode", "")
             mc_worldManager.RemoveHud(player)
-		end
+        end
 
-		if reload == true then
-			if formname == "mc_student:notebook_fs" then
-				mc_student.show_notebook_fs(player, mc_student.TABS.MAP)
-			elseif formname == "mc_teacher:controller_fs" then
-				mc_teacher.show_controller_fs(player, mc_teacher.TABS.MAP)
-			end
-		end
-	end
+        if reload == true then
+            if formname == "mc_student:notebook_fs" then
+                mc_student.show_notebook_fs(player, mc_student.TABS.MAP)
+            elseif formname == "mc_teacher:controller_fs" then
+                mc_teacher.show_controller_fs(player, mc_teacher.TABS.MAP)
+            end
+        end
+    end
 end)

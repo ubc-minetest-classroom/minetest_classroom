@@ -60,8 +60,8 @@ minetest.register_on_joinplayer(function(player, last_login)
         realm:RegisterPlayer(player)
         realm:RunTeleportInFunctions(player)
         realm:ApplyPrivileges(player)
+        mc_core.update_marker_visibility(player:get_player_name(), realm.ID)
     end
-
 end)
 
 -- When player leave the game, we delete their hud
