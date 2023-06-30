@@ -283,7 +283,7 @@ function mc_student.show_notebook_fs(player, tab)
 				table.insert(fs, table.concat({
 					"textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.8;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
 					coord_list and #coord_list > 0 and "" or "style_type[image_button;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
-          has_share_privs and "" or "style[mark;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
+					has_share_privs and "" or "style[mark;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
 					"image_button[", panel_width + spacer, ",6.3;1.34,1.1;", texture_base, "mc_teacher_teleport.png;", coord_list and #coord_list > 0 and "go" or "blocked", ";;false;false]",
 					"image_button[", panel_width + spacer + 1.44, ",6.3;1.34,1.1;", texture_base, "mc_teacher_share.png;", coord_list and #coord_list > 0 and "share" or "blocked", ";;false;false]",
 					"image_button[", panel_width + spacer + 2.88, ",6.3;1.34,1.1;", texture_base, "mc_teacher_mark.png;", coord_list and #coord_list > 0 and "mark" or "blocked", ";;false;false]",
@@ -306,7 +306,7 @@ function mc_student.show_notebook_fs(player, tab)
 					"tooltip[share;Share location in chat;#325140;#ffffff]",
 					"tooltip[mark;Place marker in world;#325140;#ffffff]",
 					"tooltip[delete;Delete location;#325140;#ffffff]",
-                    "tooltip[clear;Clear all saved locations;#325140;#ffffff]",
+					"tooltip[clear;Clear all saved locations;#325140;#ffffff]",
 					"tooltip[note;Add a note here!;#325140;#ffffff]",
 					"style_type[image_button;bgimg=blank.png]",
 				}))
