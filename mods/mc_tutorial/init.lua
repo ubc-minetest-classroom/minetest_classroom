@@ -504,15 +504,15 @@ function mc_tutorial.show_record_fs(player)
                     "textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",1;;;Completion message]",
                     "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Tutorial summary]",
                     "style_type[textarea;border=false;font=mono;textcolor=white]",
-                    "image[", spacer, ",1.4;", panel_width - 2*spacer, ",0.7;mc_pixel.png^[multiply:#1e1e1e]",
-                    "image[", spacer, ",2.7;", panel_width - 2*spacer, ",2;mc_pixel.png^[multiply:#1e1e1e]",
-                    "image[", spacer, ",5.3;", panel_width - 2*spacer, ",2;mc_pixel.png^[multiply:#1e1e1e]",
+                    "image[", spacer, ",1.4;", panel_width - 2*spacer, ",0.7;mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+                    "image[", spacer, ",2.7;", panel_width - 2*spacer, ",2;mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+                    "image[", spacer, ",5.3;", panel_width - 2*spacer, ",2;mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
                     "textarea[", spacer, ",1.4;", panel_width - 2*spacer, ",0.7;title;;", temp.title or "", "]",
                     "textarea[", spacer, ",2.7;", panel_width - 2*spacer, ",2;description;;", temp.description or "", "]",
                     "textarea[", spacer, ",5.3;", panel_width - 2*spacer, ",2;message;;", temp.on_completion and temp.on_completion.message or "", "]",
                     "style_type[textarea;border=true;font=mono;textcolor=black]",
                     "textarea[", panel_width + spacer, ",1.5;", panel_width - 2*spacer, ",8.7;;;", minetest.formspec_escape(get_tutorial_summary(temp)), "]",
-                    "style_type[button_exit;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+                    "style_type[button_exit;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
                     "button_exit[", spacer, ",8.1;", panel_width - 2*spacer, ",0.8;finish;Finish and save]",
                     "button_exit[", spacer, ",9;", panel_width - 2*spacer, ",0.8;cancel;Exit without saving]",
                     "tooltip[title;Title of tutorial, will be listed in the tutorial book;#63406a;#ffffff]",
@@ -530,7 +530,7 @@ function mc_tutorial.show_record_fs(player)
                     "textarea[", text_spacer, ",1;", book_width - 2*text_spacer, ",1;;;Current event sequence]",
                     "style[eventlist;font=mono]",
                     "textlist[", spacer, ",1.4;", book_width - 2*spacer, ",6.85;eventlist;", table.concat(context.events, ","), ";", context.selected_event or 1, ";false]",
-                    "style_type[image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+                    "style_type[image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
                     "image_button[", spacer, ",8.35;1.45,1.45;mc_tutorial_add_event.png;eventlist_add_event;;false;true]",
                     "image_button[", spacer + 1.55, ",8.35;1.45,1.45;mc_tutorial_add_group.png;eventlist_add_group;;false;true]",
                     "image_button[", spacer + 3.1, ",8.35;1.45,1.45;mc_tutorial_edit.png;eventlist_edit;;false;true]",
@@ -568,16 +568,16 @@ function mc_tutorial.show_record_fs(player)
                     "style_type[textlist;font=mono]",
                     "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",5.9;reward_list;", concat_col_field_list(context.rewards, ","), ";", context.reward_selected and context.reward_selected[1] or 1, ";false]",
                     "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",5.9;reward_selection;", concat_col_field_list(context.selected_rewards, ","), ";", context.reward_selected and context.reward_selected[2] or 1, ";false]",
-                    "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+                    "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
                     "style_type[field;border=false;font=mono]",
                     "image_button[7.9,1.4;0.8,2.85;mc_tutorial_reward_add.png;reward_add;;false;true]",
                     "image_button[7.9,4.45;0.8,2.85;mc_tutorial_reward_delete.png;reward_delete;;false;true]",
                     "textarea[", panel_width + text_spacer, ",7.4;", panel_width - 2*text_spacer, ",1;;;Quantity (WIP)]",
                     "textarea[", panel_width + text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Search for rewards (WIP)]",
-                    "image[", panel_width + spacer, ",7.8;", panel_width - 2*spacer, ",0.8;mc_pixel.png^[multiply:#1e1e1e]",
+                    "image[", panel_width + spacer, ",7.8;", panel_width - 2*spacer, ",0.8;mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
                     "field[", panel_width + spacer, ",7.8;", panel_width - 2*spacer, ",0.8;reward_quantity;;1]",
                     --"button[14.1,7.8;1.9,0.8;reward_quantity_update;Update]",
-                    "image[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;mc_pixel.png^[multiply:#1e1e1e]",
+                    "image[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
                     "field[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;reward_search;;]",
                     --"image_button[14.4,9;0.8,0.8;mc_tutorial_search.png;reward_search_go;;false;false]",
                     --"image_button[15.2,9;0.8,0.8;mc_tutorial_cancel.png;reward_search_x;;false;false]",
@@ -611,14 +611,14 @@ function mc_tutorial.show_record_fs(player)
                     "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",6.1;depend_tutorials;", table.concat(context.tutorials.main.list, ","), ";", context.tutorials.main.selected or 1, ";false]",
                     "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",3;dependencies;", table.concat(context.tutorials.dep_cy.list, ","), ";", context.tutorials.dep_cy.selected or 1, ";false]",
                     "textlist[", panel_width + spacer, ",5.9;", panel_width - 2*spacer, ",3;dependents;", table.concat(context.tutorials.dep_nt.list, ","), ";", context.tutorials.dep_nt.selected or 1, ";false]",
-                    "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+                    "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
                     "style_type[field;border=false;font=mono]",
                     "button[", spacer, ",7.6;3.5,0.8;dependencies_add;Add dependency]",
                     "button[", spacer + 3.6, ",7.6;3.5,0.8;dependents_add;Add dependent]",
                     "button[", panel_width + spacer, ",4.5;", panel_width - 2*spacer, ",0.8;dependencies_delete;Delete dependency]",
                     "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;dependents_delete;Delete dependent]",
                     "textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Search for tutorials (WIP)]",
-                    "image[", spacer, ",9;", panel_width - 2*spacer, ",0.8;mc_pixel.png^[multiply:#1e1e1e]",
+                    "image[", spacer, ",9;", panel_width - 2*spacer, ",0.8;mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
                     "field[", spacer, ",9;", panel_width - 2*spacer, ",0.8;depend_search;;]",
                     --"image_button[6,8.8;0.8,0.8;mc_tutorial_search.png;depend_search_go;;false;false]",
                     --"image_button[6.8,8.8;0.8,0.8;mc_tutorial_cancel.png;depend_search_x;;false;false]",
@@ -1174,12 +1174,12 @@ function mc_tutorial.show_tutorials(player)
         if mc_tutorial.active[pname] then
             if context.tutorial_i_to_id[context.tutorial_selected] == mc_tutorial.active[pname] then
                 table.insert(fs, table.concat({
-                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#590c0c]",
+                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.red, "]",
                     "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;stop;Stop tutorial]",
                 }))
             else
                 table.insert(fs, table.concat({
-                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", dep_check and "#6e5205" or "#acacac", "]",
+                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", dep_check and mc_core.col.b.orange or mc_core.col.b.blocked, "]",
                     "button_exit[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;", dep_check and "start" or "start_blocked", ";Start new tutorial]",
                     "tooltip[start;This will stop the active tutorial;#403e65;#ffffff]",
                     "tooltip[start_blocked;Not all prerequisite tutorials have been completed;#403e65;#ffffff]",
@@ -1187,7 +1187,7 @@ function mc_tutorial.show_tutorials(player)
             end
         else
             table.insert(fs, table.concat({
-                "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", dep_check and "#055c22" or "#acacac", "]",
+                "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", dep_check and mc_core.col.b.selected or mc_core.col.b.blocked, "]",
                 "button_exit[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;", dep_check and "start" or "start_blocked", ";Start tutorial]",
                 "tooltip[start_blocked;Not all prerequisite tutorials have been completed;#403e65;#ffffff]",
             }))
@@ -1197,7 +1197,7 @@ function mc_tutorial.show_tutorials(player)
         if has_recorder_privs then
             local tutorial_inactive = not mc_tutorial.active[pname] or context.tutorial_i_to_id[context.tutorial_selected] ~= mc_tutorial.active[pname]
             table.insert(fs, table.concat({
-                "style_type[image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", tutorial_inactive and "#1e1e1e" or "#acacac", "]",
+                "style_type[image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", tutorial_inactive and mc_core.col.b.default or mc_core.col.b.blocked, "]",
                 "image_button[", spacer, ",9;2.3,0.8;blank.png;", tutorial_inactive and "edit" or "blocked", ";Edit;false;true]",
                 "image_button[", spacer + 2.4, ",9;2.3,0.8;blank.png;", tutorial_inactive and "hide" or "blocked", ";Hide;false;true]",
                 "image_button[", spacer + 4.8, ",9;2.3,0.8;blank.png;", tutorial_inactive and "delete" or "blocked", ";Delete;false;true]",

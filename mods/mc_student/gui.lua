@@ -133,7 +133,7 @@ function mc_student.show_notebook_fs(player, tab)
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
 					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Available Classrooms]",
 					"textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.realm_id_to_i and context.realm_id_to_i[context.selected_realm] or "1", ";false]",
-					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 					"button[", spacer, ",9;", panel_width - 2*spacer, ",0.8;teleportrealm;Teleport]",
 				}
 
@@ -269,7 +269,7 @@ function mc_student.show_notebook_fs(player, tab)
 					"image[", 3.95 + (pos.x - round_px)*0.15, ",", 4.75 - (pos.z - round_pz)*0.15,
 					";0.4,0.4;mc_mapper_d", yaw, ".png^[transformFY", rotate ~= 0 and ("R"..rotate) or "", "]",
 					"textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Coordinate and Elevation Display]",
-					"style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					"style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 					"button[", spacer, ",9;1.7,0.8;utmcoords;UTM]",
 					"button[", spacer + 1.8, ",9;1.7,0.8;latloncoords;Lat/Lon]",
 					"button[", spacer + 3.6, ",9;1.7,0.8;classroomcoords;Local]",
@@ -281,19 +281,19 @@ function mc_student.show_notebook_fs(player, tab)
 				local texture_base = "[combine:536x440:0,0=blank.png:48,0="
 				table.insert(fs, table.concat({
 					"textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.8;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
-					coord_list and #coord_list > 0 and "" or "style_type[image_button;bgimg=mc_pixel.png^[multiply:#acacac]",
+					coord_list and #coord_list > 0 and "" or "style_type[image_button;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
 					"image_button[", panel_width + spacer, ",6.3;1.34,1.1;", texture_base, "mc_teacher_teleport.png;", coord_list and #coord_list > 0 and "go" or "blocked", ";;false;false]",
 					"image_button[", panel_width + spacer + 1.44, ",6.3;1.34,1.1;", texture_base, "mc_teacher_share.png;", coord_list and #coord_list > 0 and "share" or "blocked", ";;false;false]",
 					"image_button[", panel_width + spacer + 2.88, ",6.3;1.34,1.1;", texture_base, "mc_teacher_mark.png;", coord_list and #coord_list > 0 and "mark" or "blocked", ";;false;false]",
 					"image_button[", panel_width + spacer + 4.32, ",6.3;1.34,1.1;", texture_base, "mc_teacher_delete.png;", coord_list and #coord_list > 0 and "delete" or "blocked", ";;false;false]",
 					"image_button[", panel_width + spacer + 5.76, ",6.3;1.34,1.1;", texture_base, "mc_teacher_clear.png;", coord_list and #coord_list > 0 and "clear" or "blocked", ";;false;false]",
 
-					coord_list and #coord_list > 0 and "" or "style_type[button;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					coord_list and #coord_list > 0 and "" or "style_type[button;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 					"textarea[", panel_width + text_spacer, ",8.5;", panel_width - 2*text_spacer, ",1;;;Save current coordinates]",
 					"style_type[textarea;font=mono]",
 					"textarea[", panel_width + text_spacer, ",7.6;", panel_width - 2*text_spacer, ",1;;;SELECTED\nLocal: (X, Y, Z)]",
 					"textarea[", panel_width + spacer, ",8.9;6.2,0.9;note;;]",
-					"style_type[image_button;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					"style_type[image_button;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 					"image_button[15.1,8.9;0.9,0.9;mc_teacher_save.png;record;Save;false;false]",
 					
 					"tooltip[utmcoords;Displays real-world UTM coordinates;#325140;#ffffff]",
@@ -336,7 +336,7 @@ function mc_student.show_notebook_fs(player, tab)
 					"textarea[", panel_width + text_spacer, ",6.1;", panel_width - 2*text_spacer, ",1;;;Report message]",
 					"textarea[", panel_width + text_spacer, ",4.8;", panel_width - 2*text_spacer, ",1;;;Report type]",
 					"style_type[textarea;font=mono]",
-					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 
 					"textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;", mc_core.get_controls_info(false), "]",
 					"textarea[", panel_width + text_spacer, ",1.5;", panel_width - 2*text_spacer, ",3;;;", minetest.formspec_escape("If you need to report a server issue or player, you can write a message in the box below that will be privately sent to "), 

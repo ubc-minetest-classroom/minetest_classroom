@@ -2,6 +2,9 @@
 minetest.register_privilege("teacher", {
     give_to_singleplayer = false
 })
+minetest.register_privilege("student", {
+    give_to_singleplayer = true
+})
 
 minetest.register_on_priv_grant(function(name, granter, priv)
     if priv == "teacher" then
@@ -20,7 +23,7 @@ end)
 -- Teacher joins/leaves
 minetest.register_on_joinplayer(function(player)
 	local pname = player:get_player_name()
-	if minetest.check_player_privs(player, { teacher = true }) then
+	if minetest.check_player_privs(player, {teacher = true}) then
 		mc_teacher.register_teacher(pname)
     else
         mc_teacher.register_student(pname)
@@ -330,7 +333,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
         elseif fields.realm_biome and context.realm_biome ~= fields.realm_biome then
             context.realm_biome = fields.realm_biome
-            minetest.log(minetest.serialize(context.realm_biome))
         end
 
         --  CLASSROOMS + PLAYERS
@@ -377,10 +379,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
         if fields.p_mode_selected then
             context.selected_p_mode = mc_teacher.PMODE.SELECTED
+            reload = true
         elseif fields.p_mode_tab then
             context.selected_p_mode = mc_teacher.PMODE.TAB
+            reload = true
         elseif fields.p_mode_all then
             context.selected_p_mode = mc_teacher.PMODE.ALL
+            reload = true
         end
 
         if fields.p_priv_update or fields.p_priv_reset then
@@ -430,6 +435,106 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not ban yourself from the server."))
                 end
             end
+        elseif fields.p_teleport then
+            local pname = player:get_player_name()
+            local sel_pname = context.p_list[context.selected_p_player]
+            local sel_pobj = minetest.get_player_by_name(sel_pname or "")
+            if sel_pname and sel_pobj then
+                local destination = sel_pobj:get_pos()
+                local realm = Realm.GetRealmFromPlayer(sel_pobj)
+                if realm and realm:getCategory().joinable(realm, player) then
+                    realm:TeleportPlayer(player)
+                    player:set_pos(destination)
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Teleported to "..sel_pname.."!"))
+                else
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport to "..sel_pname.."."))
+                end
+            else
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player "..sel_pname.." could not be found!"))
+            end
+            reload = true
+        elseif fields.p_bring then
+            local players_to_update = get_players_to_update(player, context)
+            local pname = player:get_player_name()
+            local destination = player:get_pos()
+            local destRealm = Realm.GetRealmFromPlayer(player)
+            if destRealm then
+                for _,p in pairs(players_to_update) do
+                    local p_obj = minetest.get_player_by_name(p)
+                    if p_obj and destRealm:getCategory().joinable(destRealm, player) then
+                        destRealm:TeleportPlayer(p_obj)
+                        p_obj:set_pos(destination)
+                    else
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not bring "..p.."to your current location."))
+                    end
+                end
+            else
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport players to your current realm."))
+            end
+        elseif fields.p_mute or fields.p_unmute then
+            local players_to_update = get_players_to_update(player, context)
+            local pname = player:get_player_name()
+            for _,p in pairs(players_to_update) do
+                if p ~= pname then
+                    local p_obj = minetest.get_player_by_name(player_to_mute)
+                    if p_obj then
+                        if fields.p_mute then
+                            mc_worldManager.denyUniversalPriv(p_obj, {"shout"})
+                        else
+                            mc_worldManager.grantUniversalPriv(p_obj, {"shout"})
+                        end
+                        local realm = Realm.GetRealmFromPlayer(p_obj)
+                        if realm then realm:ApplyPrivileges(p_obj) end
+                    else
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_mute and "" or "un").."mute "..p.."."))
+                    end
+                else
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_mute and "" or "un").."mute yourself."))
+                end
+            end
+            reload = true
+        elseif fields.p_freeze or fields.p_unfreeze then
+            local players_to_update = get_players_to_update(player, context)
+            local pname = player:get_player_name()
+            for _,p in pairs(players_to_update) do
+                if p ~= pname then
+                    local p_obj = minetest.get_player_by_name(player_to_mute)
+                    if p_obj then
+                        if fields.p_freeze then
+                            -- TODO: freeze
+                        else
+                            -- TODO: unfreeze
+                        end
+                    else
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_freeze and "" or "un").."freeze "..p.."."))
+                    end
+                else
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_freeze and "" or "un").."freeze yourself."))
+                end
+            end
+            reload = true
+        elseif fields.p_deactivate or fields.p_reactivate then
+            local players_to_update = get_players_to_update(player, context)
+            local pname = player:get_player_name()
+            for _,p in pairs(players_to_update) do
+                if p ~= pname then
+                    local p_obj = minetest.get_player_by_name(player_to_mute)
+                    if p_obj then
+                        if fields.p_mute then
+                            mc_worldManager.denyUniversalPriv(p_obj, {"interact"})
+                        else
+                            mc_worldManager.grantUniversalPriv(p_obj, {"interact"})
+                        end
+                        local realm = Realm.GetRealmFromPlayer(p_obj)
+                        if realm then realm:ApplyPrivileges(p_obj) end
+                    else
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_deactivate and "de" or "re").."activate "..p.."."))
+                    end
+                else
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_deactivate and "de" or "re").."activate yourself."))
+                end
+            end
+            reload = true
         end
 
         ----------------

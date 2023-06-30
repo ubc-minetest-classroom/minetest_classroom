@@ -3,12 +3,18 @@ minetest_classroom = {}
 mc_core = {
     path = minetest.get_modpath("mc_core"),
     meta = minetest.get_mod_storage(),
-    log_colour = "#FFC9FF",
     hud = mhud.init(),
     markers = {},
     col = {
         log = "#FFC9FF",
-        marker = "#DFA4F5"
+        marker = "#DFA4F5",
+        b = {
+            default = "#1E1E1E",
+            blocked = "#ACACAC",
+            selected = "#055C22",
+            red = "#590C0C",
+            orange = "#6E5205",
+        }
     },
     SERVER_USER = "Server",
 }
