@@ -54,9 +54,6 @@ function mc_teacher.show_controller_fs(player,tab)
     local pmeta = player:get_meta()
     local context = mc_teacher.get_fs_context(player)
 
-    -- deprecated
-    local page_width = (controller_width/8)*3.5
-
     if mc_core.checkPrivs(player) then
         local has_server_privs = mc_core.checkPrivs(player, {server = true})
         local tab_map = {
