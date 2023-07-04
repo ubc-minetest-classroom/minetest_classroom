@@ -706,22 +706,31 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             elseif fields.server_shutdown_now then
                 mc_teacher.cancel_shutdown()
                 mc_teacher.shutdown_server(true)
-            elseif fields.addip then
-                if fields.ipstart then
-                    if not fields.ipend or fields.ipend == "Optional" or fields.ipend == "" then
-                        networking.modify_ipv4(player, fields.ipstart, nil, true)
+            elseif fields.server_ip_add or fields.server_ip_remove then
+                if fields.server_ip_start and fields.server_ip_start ~= "" then
+                    local add_cond = (fields.server_ip_remove == nil) or nil
+                    if not fields.server_ip_end or fields.server_ip_end == "" then
+                        networking.modify_ipv4(player, fields.server_ip_start, nil, add_cond)
                     else
-                        networking.modify_ipv4(player, fields.ipstart, fields.ipend, true)
+                        local ips_ordered = mc_core.ipv4_compare(fields.server_ip_start, fields.server_ip_end)
+                        local start_ip = ips_ordered and fields.server_ip_start or fields.server_ip_end
+                        local end_ip = ips_ordered and fields.server_ip_end or fields.server_ip_start
+                        networking.modify_ipv4(player, start_ip, end_ip, add_cond)
                     end
                 end
                 reload = true
-            elseif fields.removeip then
-                if fields.ipstart then
-                    if not fields.ipend or fields.ipend == "Optional" or fields.ipend == "" then
-                        networking.modify_ipv4(player,fields.ipstart,nil,nil)
-                    else
-                        networking.modify_ipv4(player,fields.ipstart,fields.ipend,nil)
-                    end
+            elseif fields.server_whitelist_remove then
+                local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+                local ip_whitelist = {}
+                for ipv4,_ in pairs(ipv4_whitelist or {}) do
+                    table.insert(ip_whitelist, ipv4)
+                end
+                table.sort(ip_whitelist, mc_core.ipv4_compare)
+
+                local ip_to_remove = ip_whitelist[tonumber(context.selected_ip_range)]
+                if ip_to_remove then
+                    ipv4_whitelist[ip_to_remove] = nil
+                    networking.storage:set_string("ipv4_whitelist", minetest.serialize(ipv4_whitelist))
                 end
                 reload = true
             elseif fields.server_whitelist_toggle then

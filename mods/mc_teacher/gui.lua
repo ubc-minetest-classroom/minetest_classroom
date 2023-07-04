@@ -928,6 +928,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 for ipv4,_ in pairs(ipv4_whitelist) do
                     table.insert(ip_whitelist, ipv4)
                 end
+                table.sort(ip_whitelist, mc_core.ipv4_compare)
 
                 table.insert(fs, table.concat({
                     "dropdown[", spacer, ",6.7;", panel_width - 2*spacer, ",0.8;server_shutdown_timer;", table.concat(time_options, ","), ";", context.time_index or 1, ";false]",
