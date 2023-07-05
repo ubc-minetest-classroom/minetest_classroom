@@ -1,22 +1,20 @@
 networking = {}
 networking.storage = minetest.get_mod_storage()
-networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
-if not networking.ipv4_whitelist then
+if not minetest.deserialize(networking.storage:get_string("ipv4_whitelist")) then
     -- Set a boolean for enabling the whitelist. Whitelist is disabled by default on startup to avoid players from automatically being kicked if not hosted locally.
     networking.storage:set_string("enabled", minetest.serialize(false))
     networking.storage:set_string("kick_message", "You are not authorized to join this server.")
     -- Initialize and set default whitelist ipv4 address 127.0.0.1 for singleplayer
-    networking.ipv4_whitelist = {}
-    networking.ipv4_whitelist["127.0.0.1"] = true
-    networking.storage:set_string("ipv4_whitelist", minetest.serialize(networking.ipv4_whitelist))
+    local ipv4_whitelist = {["127.0.0.1"] = true}
+    networking.storage:set_string("ipv4_whitelist", minetest.serialize(ipv4_whitelist))
 end
 
 minetest.register_on_joinplayer(function(player) 
     local pname = player:get_player_name()
     local ipv4 = minetest.get_player_ip(pname)
-    networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+    local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
     local state = minetest.deserialize(networking.storage:get_string("enabled"))
-    if not networking.ipv4_whitelist[ipv4] and state then
+    if not ipv4_whitelist[ipv4] and state then
         minetest.kick_player(pname, networking.storage:get_string("kick_message"))
     end
 end)
@@ -39,7 +37,7 @@ function networking.parse(s, sep)
     return values
 end
 
----Returns true if IP address a comes before or is identical to IP address b
+---Returns true if IP address a comes before IP address b
 ---This function can be used as a comparison function for table.sort
 ---If either input is not an IP address, sorts valid IP addresses before other inputs
 function networking.ipv4_compare(a, b)
@@ -61,12 +59,28 @@ function networking.ipv4_compare(a, b)
                 if tonumber(ip_a[3]) ~= tonumber(ip_b[3]) then
                     return tonumber(ip_a[3]) < tonumber(ip_b[3])
                 elseif tonumber(ip_a[4]) and tonumber(ip_b[4]) then
-                    return tonumber(ip_a[4]) <= tonumber(ip_b[4])
+                    return tonumber(ip_a[4]) < tonumber(ip_b[4])
                 end
             end
         end
     end
     return a < b
+end
+
+---Returns true if IP address a is identical to IP address b
+---If either input is not an IP address, returns true if a and b are equal
+function networking.ipv4_match(a, b)
+    if not a or not b then
+        return a == b
+    end
+
+    local ip_a = networking.parse(a, ".")
+    local ip_b = networking.parse(b, ".")
+    if #ip_a == 4 and #ip_b == 4 then
+        return tonumber(ip_a[1]) == tonumber(ip_b[1]) and tonumber(ip_a[2]) == tonumber(ip_b[2]) and tonumber(ip_a[3]) == tonumber(ip_b[3]) and tonumber(ip_a[4]) == tonumber(ip_b[4]) 
+    end
+    
+    return a == b
 end
 
 function networking.modify_ipv4(player, startRange, endRange, add)
@@ -106,13 +120,13 @@ function networking.modify_ipv4(player, startRange, endRange, add)
             end
         end
 
-        if not networking.ipv4_compare(startRange, endRange) then
-            return minetest.chat_send_player(pname, "[Networking] Error: Input was misspecified. The start of the range comes after the end of the range. Check your input and try again.")
+        if not networking.ipv4_compare(startRange, endRange) and not networking.ipv4_match(startRange, endRange) then
+            return minetest.chat_send_player(pname, "[Networking] ERROR: Input was misspecified. The start of the range comes after the end of the range. Check your input and try again.")
         end
 
         minetest.chat_send_player(pname, "[Networking] Starting to process specified range of IPv4 addresses, this may take a moment. Please wait for the success message.")
-        networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
-        networking.counter = 0
+        local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+        local total, counter = 0, 0
 
         for oct1 = tonumber(startOctets[1]), tonumber(endOctets[1]), 1 do
             local lastOct2 = oct1 == tonumber(endOctets[1])
@@ -122,24 +136,27 @@ function networking.modify_ipv4(player, startRange, endRange, add)
                     local lastOct4 = lastOct3 and oct3 == tonumber(endOctets[3])
                     for oct4 = tonumber(startOctets[4]), (lastOct4 and tonumber(endOctets[4]) or 255), 1 do
                         local address = tostring(oct1).."."..tostring(oct2).."."..tostring(oct3).."."..tostring(oct4)
-                        networking.ipv4_whitelist[address] = add
-                        networking.counter = networking.counter + 1
+                        total = total + 1
+                        if ipv4_whitelist[address] ~= add then
+                            ipv4_whitelist[address] = add
+                            counter = counter + 1
+                        end
                     end
                 end
             end
         end
 
-        networking.storage:set_string("ipv4_whitelist", minetest.serialize(networking.ipv4_whitelist))
+        networking.storage:set_string("ipv4_whitelist", minetest.serialize(ipv4_whitelist))
         if add then
-            minetest.chat_send_player(pname, "[Networking] SUCCESS: Total of "..tostring(networking.counter).." IPV4 addresses in range of "..startRange.." to "..endRange.." were added to the whitelist.")
+            minetest.chat_send_player(pname, "[Networking] SUCCESS: "..tostring(counter).." of "..tostring(total).." IPV4 addresses in the range "..startRange.." to "..endRange.." were added to the whitelist.")
         else
-            minetest.chat_send_player(pname, "[Networking] SUCCESS: Total of "..tostring(networking.counter).." IPV4 addresses in range of "..startRange.." to "..endRange.." were removed from the whitelist.")
+            minetest.chat_send_player(pname, "[Networking] SUCCESS: "..tostring(counter).." of "..tostring(total).." IPV4 addresses in the range "..startRange.." to "..endRange.." were removed from the whitelist.")
         end
     else
-        networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+        local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
         local address = tostring(tonumber(startOctets[1])).."."..tostring(tonumber(startOctets[2])).."."..tostring(tonumber(startOctets[3])).."."..tostring(tonumber(startOctets[4]))
-        networking.ipv4_whitelist[address] = add
-        networking.storage:set_string("ipv4_whitelist", minetest.serialize(networking.ipv4_whitelist))
+        ipv4_whitelist[address] = add
+        networking.storage:set_string("ipv4_whitelist", minetest.serialize(ipv4_whitelist))
         if add then
             minetest.chat_send_player(pname, "[Networking] SUCCESS: Added IPV4 address at '"..startRange.."'.")
         else
@@ -157,8 +174,8 @@ function networking.toggle_whitelist(player)
     else
 		-- Quick check to ensure current admin player is connected from a whitelisted IP to avoid unintentional lock-out
 		local ipv4 = minetest.get_player_ip(pname)
-		networking.ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
-		if not networking.ipv4_whitelist[ipv4] then
+		local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+		if not ipv4_whitelist[ipv4] then
 			minetest.chat_send_player(pname, "[Networking] WARNING: You need to join from a whitelisted IP address before you can enable the whitelist otherwise you will be locked out of the server.")
 		else
 			networking.storage:set_string("enabled", minetest.serialize(true))
