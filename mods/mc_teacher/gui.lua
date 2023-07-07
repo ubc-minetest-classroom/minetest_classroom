@@ -77,6 +77,45 @@ local function generate_player_table(p_list, p_priv_list)
     return table.concat(combined_list, ",")
 end
 
+local function get_priv_button_states(p_list, p_priv_list)
+    local states = {}
+    local privs_to_check = {shout = true, interact = true}
+    for _,table in pairs(p_priv_list) do
+        for priv,_ in pairs(privs_to_check) do
+            if table[priv] == "overridden" or table[priv] == false then
+                states[priv] = (states[priv] == true and "mixed") or false
+            else
+                states[priv] = (states[priv] == false and "mixed") or true
+            end
+            if states[priv] == "mixed" then
+                privs_to_check[priv] = nil
+            end
+        end
+    end
+    return states
+end
+
+local function create_state_button(x, y, width, height, state_names, state_labels, state)
+    if state == "mixed" then
+        local button_width = (width - 0.3)/2
+        return table.concat({
+            "style[", state_names[true], ";bgimg=blank.png]",
+            "style[", state_names[false], ";bgimg=blank.png]",
+
+            "image[", x, ",", y, ";", width, ",", height, ";mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+            "image[", x + 0.1, ",", y + 0.1, ";", button_width, ",", height - 0.2, ";mc_pixel.png^[multiply:", mc_core.col.b.red, "]",
+            "image[", x + button_width + 0.2, ",", y + 0.1, ";", button_width, ",", height - 0.2, ";mc_pixel.png^[multiply:", mc_core.col.b.selected, "]",
+            "hypertext[", x, ",", y + 0.05, ";", width, ",", height - 0.05, ";;<global valign=middle halign=center font=mono><b>", state_labels.default, "</b>]",
+            "button[", x + 0.1, ",", y + 0.1, ";", button_width, ",", height - 0.2, ";", state_names[true], ";]",
+            "button[", x + button_width + 0.2, ",", y + 0.1, ";", button_width, ",", height - 0.2, ";", state_names[false], ";]",
+        })
+    elseif state == false then
+        return table.concat({"button[", x, ",", y, ";", width, ",", height, ";", state_names[false], ";", state_labels[false], "]"})
+    else
+        return table.concat({"button[", x, ",", y, ";", width, ",", height, ";", state_names[true], ";", state_labels[true], "]"})
+    end
+end
+
 function mc_teacher.show_confirm_popup(player, fs_name, action, size)
     local spacer = mc_teacher.fs_spacer
     local text_spacer = mc_teacher.fs_t_spacer
@@ -525,6 +564,7 @@ function mc_teacher.show_controller_fs(player, tab)
                 else
                     player_privs = {}
                 end
+                local priv_b_state = get_priv_button_states(context.p_list, p_priv_list)
 
                 local base_img = {
                     shout = "mc_teacher_share.png^[resize:25x25", --"mc_teacher_p_shout.png^[resize:25x25",
@@ -633,12 +673,15 @@ function mc_teacher.show_controller_fs(player, tab)
                     "button[", panel_width + spacer, ",5.7;2.3,0.8;p_teleport;Teleport]",
                     "button[", panel_width + spacer + 2.4, ",5.7;2.3,0.8;p_bring;Bring]",
                     "button[", panel_width + spacer + 4.8, ",5.7;2.3,0.8;p_audience;Audience]",
-                    "button[", panel_width + spacer, ",6.6;2.3,0.8;p_mute;Mute]",
-                    "button[", panel_width + spacer + 2.4, ",6.6;2.3,0.8;p_deactivate;Deactivate]",
-                    "button[", panel_width + spacer + 4.8, ",6.6;2.3,0.8;p_freeze;Freeze]",
-                    "button[", panel_width + spacer, ",7.5;2.3,0.8;p_timeout;Timeout]",
                     "button[", panel_width + spacer + 2.4, ",7.5;2.3,0.8;p_kick;Kick]",
                     "button[", panel_width + spacer + 4.8, ",7.5;2.3,0.8;p_ban;Ban]",
+                    create_state_button(panel_width + spacer, 6.6, 2.3, 0.8, {[true] = "p_mute", [false] = "p_unmute"},
+                    {[true] = "Mute", [false] = "Unmute", default = "Mute"}, priv_b_state.shout),
+                    create_state_button(panel_width + spacer + 2.4, 6.6, 2.3, 0.8, {[true] = "p_deactivate", [false] = "p_reactivate"},
+                    {[true] = "Deactivate", [false] = "Reactivate", default = "Activate"}, priv_b_state.interact),
+                    -- TODO: use state buttons to determine which button to show
+                    "button[", panel_width + spacer + 4.8, ",6.6;2.3,0.8;p_freeze;Freeze]",
+                    "button[", panel_width + spacer, ",7.5;2.3,0.8;p_timeout;Timeout]",
                     
                     "textarea[", panel_width + text_spacer, ",8.4;", panel_width - 2*text_spacer, ",1;;;Server Role]",
                 }))
@@ -669,11 +712,16 @@ function mc_teacher.show_controller_fs(player, tab)
                     "tooltip[", panel_width + text_spacer + 4.0, ",2.7;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
                     "tooltip[", panel_width + text_spacer + 4.4, ",2.7;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
                     "tooltip[p_mute;Revokes the shout privilege globally;#404040;#ffffff]",
+                    "tooltip[p_unmute;Re-grants the shout privilege globally;#404040;#ffffff]",
                     "tooltip[p_deactivate;Revokes the interact privilege globally;#404040;#ffffff]",
+                    "tooltip[p_reactivate;Re-grants the interact privilege globally;#404040;#ffffff]",
                     "tooltip[p_freeze;Disables player movement;#404040;#ffffff]",
+                    "tooltip[p_unfreeze;Re-enables player movement;#404040;#ffffff]",
                     "tooltip[p_teleport;Teleports you to the selected player;#404040;#ffffff]",
-                    "tooltip[p_bring;Teleports the player to you;#404040;#ffffff]",
-                    "tooltip[p_timeout;Teleports the player to spawn and\nprevents them from joining classrooms;#404040;#ffffff]",
+                    "tooltip[p_bring;Teleports players to your position;#404040;#ffffff]",
+                    "tooltip[p_audience;Teleports players to you, standing in a semicircle facing you;#404040;#ffffff]",
+                    "tooltip[p_timeout;Teleports players to spawn and\nprevents them from joining classrooms;#404040;#ffffff]",
+                    "tooltip[p_untimeout;Allows players to join classrooms again;#404040;#ffffff]",
                 }))
 
                 return fs
