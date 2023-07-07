@@ -77,7 +77,29 @@ local function generate_player_table(p_list, p_priv_list)
     return table.concat(combined_list, ",")
 end
 
-function mc_teacher.show_controller_fs(player,tab)
+function mc_teacher.show_confirm_popup(player, fs_name, action, size)
+    local spacer = 0.6
+    local text_spacer = 0.55
+    local width = math.max(size and size.x or 7.5, 1.5)
+    local height = math.max(size and size.y or 3.4, 2.1)
+    local button_width = (width - 1.3)/2
+
+    local pname = player:get_player_name()
+    
+    local fs = {
+        "formspec_version[6]",
+        "size[", width, ",", height, "]",
+        "style_type[textarea;font=mono]",
+        "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+        "textarea[", text_spacer, ",0.5;", width - 2*text_spacer, ",", height - 2, ";;;", action and action.action or "Are you sure you want to perform this action?",
+        action.irreversible and "\nThis action is irreversible." or "", "]",
+        "button[", spacer, ",", height - 1.4, ";", button_width, ",0.8;confirm;", action and action.button or "Confirm", "]",
+        "button[", spacer + 0.1 + button_width, ",", height - 1.4, ";", button_width, ",0.8;cancel;Cancel]",
+    }
+    minetest.show_formspec(pname, "mc_teacher:"..fs_name, table.concat(fs, ""))
+end
+
+function mc_teacher.show_controller_fs(player, tab)
     local controller_width = 16.6
     local controller_height = 10.4
     local panel_width = controller_width/2
@@ -501,6 +523,8 @@ function mc_teacher.show_controller_fs(player,tab)
                     "style[p_group_new,p_group_edit,p_group_delete;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     -- TODO: re-impelment remaining actions
                     "style[p_audience,p_freeze,p_timeout;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
+                    -- TODO: implement role buttons
+                    "style[p_role_none,p_role_student,p_role_teacher,p_role_admin;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     "style[p_mode_", context.selected_p_mode == mc_teacher.PMODE.ALL and "all" or context.selected_p_mode == mc_teacher.PMODE.TAB and "tab" or "selected", ";bgimg=mc_pixel.png^[multiply:", mc_core.col.b.selected, "]",
                     
                     "tabheader[", spacer, ",1.4;", panel_width - 2*spacer - 0.35, ",0.5;p_list_header;Students,Teachers,Classroom;", context.selected_p_tab, ";false;true]",
@@ -514,8 +538,8 @@ function mc_teacher.show_controller_fs(player,tab)
                     "table[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;p_list;", generate_player_table(context.p_list, p_priv_list), ";", context.selected_p_player, "]",
                     
                     "button[", panel_width - spacer - 0.45, ",0.95;0.45,0.45;p_group_new;+]",
-                    "button[", spacer, ",9;3.5,0.8;p_group_edit;Edit Group]",
-                    "button[", spacer + 3.6, ",9;3.5,0.8;p_group_delete;Delete Group]",
+                    "button[", spacer, ",9;3.5,0.8;p_group_edit;Edit group]",
+                    "button[", spacer + 3.6, ",9;3.5,0.8;p_group_delete;Delete group]",
 
                     "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Action Mode]",
                     "button[", panel_width + spacer, ",1.4;2.3,0.8;p_mode_selected;Selected]",
@@ -596,23 +620,23 @@ function mc_teacher.show_controller_fs(player,tab)
                 }))
 
                 if not has_server_privs then
-                    table.insert(fs, "style[blocked;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.blocked.."]")
+                    table.insert(fs, "style[blocked_role_teacher,blocked_role_admin;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.blocked.."]")
                 end
                 table.insert(fs, table.concat({
                     "image[", panel_width + spacer, ",8.8;3.5,1;mc_pixel.png^[multiply:#acabff]",
                     "image[", panel_width + spacer + 3.6, ",8.8;3.5,1;mc_pixel.png^[multiply:#f5c987]", --#ffd699
                     "button[", panel_width + spacer + 0.1, ",8.9;1.6,0.8;p_role_none;None]",
                     "button[", panel_width + spacer + 1.8, ",8.9;1.6,0.8;p_role_student;Student]",
-                    "button[", panel_width + spacer + 3.7, ",8.9;1.6,0.8;", has_server_privs and "p_role_teacher" or "blocked", ";Teacher]",
-                    "button[", panel_width + spacer + 5.4, ",8.9;1.6,0.8;", has_server_privs and "p_role_admin" or "blocked", ";Admin]",
+                    "button[", panel_width + spacer + 3.7, ",8.9;1.6,0.8;", has_server_privs and "p_role_teacher" or "blocked_role_teacher", ";Teacher]",
+                    "button[", panel_width + spacer + 5.4, ",8.9;1.6,0.8;", has_server_privs and "p_role_admin" or "blocked_role_teacher", ";Admin]",
                     
                     "tooltip[p_mode_selected;The selected player;#404040;#ffffff]",
                     "tooltip[p_mode_tab;All players in the selected tab;#404040;#ffffff]",
                     "tooltip[p_mode_all;All online players;#404040;#ffffff]",
                     "tooltip[p_role_none;No privileges\nListed as a student\nCan not use classroom tools;#404040;#ffffff]",
                     "tooltip[p_role_student;Privileges: student\nListed as a student\nCan use student tools;#404040;#ffffff]",
-                    "tooltip[p_role_teacher;Privileges: student, teacher\nListed as a teacher\nCan use student and teacher tools;#404040;#ffffff]",
-                    "tooltip[p_role_admin;Privileges: student, teacher, server\nListed as a teacher\nCan use student, teacher, and administrator tools;#404040;#ffffff]",
+                    "tooltip[", has_server_privs and "p_role_teacher" or "blocked_role_teacher", ";Privileges: student, teacher\nListed as a teacher\nCan use student and teacher tools;#404040;#ffffff]",
+                    "tooltip[", has_server_privs and "p_role_admin" or "blocked_role_teacher", ";Privileges: student, teacher, server\nListed as a teacher\nCan use student, teacher, and administrator tools;#404040;#ffffff]",
                     
                     "tooltip[", panel_width + text_spacer, ",2.7;0.4,0.4;ALLOW: Privilege will be granted\n(overrides universal privileges);#404040;#ffffff]",
                     "tooltip[", panel_width + text_spacer + 0.4, ",2.7;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
@@ -834,7 +858,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Report Info</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-                    "style[report_delete,report_clearlog;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
+                    "style[blocked;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                 }
 
                 context.report_i_to_idx = {}
@@ -861,19 +885,29 @@ function mc_teacher.show_controller_fs(player,tab)
                 table.insert(fs, table.concat({
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Report Log]",
                     "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;report_log;", table.concat(report_strings, ","), ";", context.selected_report, ";false]",
-                    "button[", spacer, ",9;3.5,0.8;report_delete;Delete report]",
-                    "button[", spacer + 3.6, ",9;3.5,0.8;report_clearlog;Clear report log]",
-
-                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;", string.upper(selected.type or "Other"), "]",
-                    "textarea[", panel_width + text_spacer, ",8;7.2,1;;;Message ", selected.player or "reporter", "]",
-                    "style_type[textarea;font=mono]",
-                    "textarea[", panel_width + text_spacer, ",1.4;", panel_width - 2*text_spacer, ",6.5;;;",
-                    selected.message or "", "\n\n", "Reported on ", selected.timestamp or "an unknown date", " by ", selected.player or "an unknown player", "\n",
-                    "Realm ID ", selected.realm or "unknown", ", at ", selected.pos and "(X="..selected.pos.x..", Y="..selected.pos.y..", Z="..selected.pos.z..")" or "an unknown position", "]",
-                    "textarea[", panel_width + spacer, ",8.4;", panel_width - 2*spacer - 0.8, ",1.4;report_message;;", context.report_message or "", "]",
-                    "style_type[textarea;font=mono,bold]",
-                    "button[", controller_width - spacer - 0.8, ",8.4;0.8,1.4;report_send_message;Send]",
+                    "button[", spacer, ",9;3.5,0.8;", selected and "report_delete" or "blocked", ";Delete report]",
+                    "button[", spacer + 3.6, ",9;3.5,0.8;", selected and "report_clearlog" or "blocked", ";Clear report log]",
                 }))
+
+                if selected then
+                    table.insert(fs, table.concat({
+                        "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;", string.upper(selected.type or "Other"), "]",
+                        "textarea[", panel_width + text_spacer, ",8;7.2,1;;;Message ", selected.player or "reporter", "]",
+                        "style_type[textarea;font=mono]",
+                        "textarea[", panel_width + text_spacer, ",1.4;", panel_width - 2*text_spacer, ",6.5;;;",
+                        selected.message or "", "\n\n", "Reported on ", selected.timestamp or "an unknown date", " by ", selected.player or "an unknown player", "\n",
+                        "Realm ID ", selected.realm or "unknown", ", at ", selected.pos and "(X="..selected.pos.x..", Y="..selected.pos.y..", Z="..selected.pos.z..")" or "an unknown position", "]",
+                        "textarea[", panel_width + spacer, ",8.4;", panel_width - 2*spacer - 0.8, ",1.4;report_message;;", context.report_message or "", "]",
+                        "style_type[textarea;font=mono,bold]",
+                        "button[", controller_width - spacer - 0.8, ",8.4;0.8,1.4;report_send_message;Send]",
+                    }))
+                else
+                    table.insert(fs, table.concat({
+                        "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;No reports found!]",
+                        "style_type[textarea;font=mono]",
+                        "textarea[", panel_width + text_spacer, ",1.4;", panel_width - 2*text_spacer, ",6.5;;;When a player submits a report, it will appear here!]",
+                    }))
+                end
 
                 return fs
             end,
@@ -933,7 +967,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 for ipv4,_ in pairs(ipv4_whitelist) do
                     table.insert(ip_whitelist, ipv4)
                 end
-                table.sort(ip_whitelist, mc_core.ipv4_compare)
+                table.sort(ip_whitelist, networking.ipv4_compare)
 
                 table.insert(fs, table.concat({
                     "dropdown[", spacer, ",6.7;", panel_width - 2*spacer, ",0.8;server_shutdown_timer;", table.concat(time_options, ","), ";", context.time_index or 1, ";false]",
@@ -972,6 +1006,11 @@ function mc_teacher.show_controller_fs(player,tab)
                 return fs
             end,
         }
+
+        -- Remove unauthorized tabs
+        if not has_server_privs then
+            tab_map[mc_teacher.TABS.SERVER] = nil
+        end
 
         local bookmarked_tab = pmeta:get_string("default_teacher_tab")
         if not tab_map[bookmarked_tab] then
@@ -1147,8 +1186,8 @@ textarea[8.85,0.1;7.2,1;;;Manage Players]
 textarea[0.55,1;6.7,1;;;Students]
 textlist[0.6,1.4;7.1,7.5;student_list;;1;false]
 button[7.25,0.95;0.45,0.45;p_group_new;+]
-button[0.6,9;3.5,0.8;p_group_edit;Edit Group]
-button[4.2,9;3.5,0.8;p_group_delete;Delete Group]
+button[0.6,9;3.5,0.8;p_group_edit;Edit group]
+button[4.2,9;3.5,0.8;p_group_delete;Delete group]
 image[4.25,1.45;0.4,0.4;]
 image[4.75,1.45;0.4,0.4;]
 image[5.25,1.45;0.4,0.4;]

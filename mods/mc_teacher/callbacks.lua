@@ -92,7 +92,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     local reload = false
     while os.clock() - wait < 0.05 do end --popups don't work without this
 
-    if formname == "mc_teacher:controller_fs" then
+    if formname == "mc_teacher:confirm_report_clear" then
+        if fields.confirm then
+            mc_teacher.meta:set_string("report_log", minetest.serialize({}))
+            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The report log has been cleared."))
+        end
+        mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:controller_fs" then
         local has_server_privs = mc_core.checkPrivs(player, {server = true})
 
         -------------
@@ -622,9 +628,18 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         end
         if fields.report_delete then
-            -- TODO: delete the report
-        elseif fields.report_clear_log then
-            -- TODO: show a confirmation popup, then clear the log
+            local report_log = minetest.deserialize(mc_teacher.meta:get_string("report_log")) or {}
+            local selected = context.report_i_to_idx[context.selected_report]
+            if selected then
+                report_log[selected] = nil
+                mc_teacher.meta:set_string("report_log", minetest.serialize(report_log))
+                reload = true
+            end
+        elseif fields.report_clearlog then
+            return mc_teacher.show_confirm_popup(player, "confirm_report_clear", {
+                action = "Are you sure you want to clear the report log?",
+                button = "Clear log", irreversible = true,
+            })
         elseif fields.report_send_message then
             if fields.report_message ~= "" then
                 local pname = player:get_player_name()
@@ -721,7 +736,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     if not fields.server_ip_end or fields.server_ip_end == "" then
                         networking.modify_ipv4(player, fields.server_ip_start, nil, add_cond)
                     else
-                        local ips_ordered = mc_core.ipv4_compare(fields.server_ip_start, fields.server_ip_end)
+                        local ips_ordered = networking.ipv4_compare(fields.server_ip_start, fields.server_ip_end)
                         local start_ip = ips_ordered and fields.server_ip_start or fields.server_ip_end
                         local end_ip = ips_ordered and fields.server_ip_end or fields.server_ip_start
                         networking.modify_ipv4(player, start_ip, end_ip, add_cond)
@@ -734,7 +749,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 for ipv4,_ in pairs(ipv4_whitelist or {}) do
                     table.insert(ip_whitelist, ipv4)
                 end
-                table.sort(ip_whitelist, mc_core.ipv4_compare)
+                table.sort(ip_whitelist, networking.ipv4_compare)
 
                 local ip_to_remove = ip_whitelist[tonumber(context.selected_ip_range)]
                 if ip_to_remove then

@@ -255,26 +255,3 @@ function mc_core.clean_key(key)
 	local match = string.match(tostring(key), "K?E?Y?_?KEY_(.-)$")
     return (match == "LBUTTON" and "LEFT CLICK") or (match == "RBUTTON" and "RIGHT CLICK") or match or key
 end
-
----@public
----Sort comparison function for IPv4 addresses
----@param a First IP address string to compare
----@param b Second IP address string to compare
-function mc_core.ipv4_compare(a, b)
-    local ip_a = mc_core.split(a, ".")
-    local ip_b = mc_core.split(b, ".")
-
-    if tonumber(ip_a[1]) ~= tonumber(ip_b[1]) then
-        return tonumber(ip_a[1]) < tonumber(ip_b[1])
-    elseif tonumber(ip_a[2]) ~= tonumber(ip_b[2]) then
-        return tonumber(ip_a[2]) < tonumber(ip_b[2])
-    elseif tonumber(ip_a[3]) ~= tonumber(ip_b[3]) then
-        return tonumber(ip_a[3]) < tonumber(ip_b[3])
-    elseif tonumber(ip_a[4]) ~= tonumber(ip_b[4]) then
-        return tonumber(ip_a[4]) < tonumber(ip_b[4])
-    elseif not a or not b then
-        return not b
-    else
-        return a < b
-    end
-end
