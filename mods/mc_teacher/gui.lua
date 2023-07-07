@@ -91,7 +91,7 @@ function mc_teacher.show_controller_fs(player,tab)
     if mc_core.checkPrivs(player) then
         local has_server_privs = mc_core.checkPrivs(player, {server = true})
         local tab_map = {
-            [mc_teacher.TABS.OVERVIEW] = function() -- OVERVIEW
+            [mc_teacher.TABS.OVERVIEW] = function()
                 local button_width = 1.7
                 local button_height = 1.6
                 local rules = mc_rules.meta:get_string("rules")
@@ -145,7 +145,7 @@ function mc_teacher.show_controller_fs(player,tab)
 
                 return fs
             end,
-            [mc_teacher.TABS.CLASSROOMS] = function() -- CLASSROOMS
+            [mc_teacher.TABS.CLASSROOMS] = function()
                 local classroom_list = {}
                 local realm_count = 1
                 local options_height = (context.selected_mode == mc_teacher.MODES.EMPTY and get_options_height(context)) or 1.3
@@ -169,6 +169,7 @@ function mc_teacher.show_controller_fs(player,tab)
 
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+                    "style[editrealm;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Available Classrooms]",
                     "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.realm_id_to_i and context.realm_id_to_i[context.selected_realm_id] or 1, ";false]",
                     "button[", spacer, ",9;2.3,0.8;teleportrealm;Teleport]",
@@ -329,7 +330,7 @@ function mc_teacher.show_controller_fs(player,tab)
                 -- TODO: Background Music and skyboxes
                 -- method: local backgroundSound = realm:get_data("background_sound")]]
             end,
-            [mc_teacher.TABS.MAP] = function() -- MAP
+            [mc_teacher.TABS.MAP] = function()
                 local map_x = spacer + 0.025
                 local map_y = 1.425
                 local fs = {
@@ -433,7 +434,7 @@ function mc_teacher.show_controller_fs(player,tab)
 
                 return fs
             end,
-            [mc_teacher.TABS.PLAYERS] = function() -- PLAYERS
+            [mc_teacher.TABS.PLAYERS] = function()
                 context.selected_p_tab = context.selected_p_tab or "1"
                 context.selected_p_player = context.selected_p_player or 1
                 context.selected_p_mode = context.selected_p_mode or mc_teacher.PMODE.SELECTED
@@ -629,7 +630,7 @@ function mc_teacher.show_controller_fs(player,tab)
 
                 return fs
             end,
-            [mc_teacher.TABS.MODERATION] = function() -- MODERATION
+            [mc_teacher.TABS.MODERATION] = function()
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
                     "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
@@ -777,7 +778,7 @@ function mc_teacher.show_controller_fs(player,tab)
                         table.insert(fs, table.concat({
                             "textarea[", text_spacer, ",7.1;", panel_width - 2*text_spacer, ",1;;;Who is ", mc_core.SERVER_USER, "?]",
                             "style_type[textarea;font=mono]",
-                            "textarea[", text_spacer, ",7.5;", panel_width - 2*text_spacer, ",2.3;;;", mc_core.SERVER_USER, " is not a player. It is a reserved name used to represent something done by the Minetest Classroom server or a server administrator.\nMessages sent by ", mc_core.SERVER_USER, " are server messages sent by one of the server administrators.]",
+                            "textarea[", text_spacer, ",7.5;", panel_width - 2*text_spacer, ",2.3;;;", mc_core.SERVER_USER, " is not a player. It is a reserved name used to represent something done by the Minetest Classroom server or a server administrator.\nThe messages logged here are server messages sent by server administrators.]",
                             "style_type[textarea;font=mono,bold]",
                         }))
                     elseif not minetest.get_player_by_name(selected) then
@@ -824,7 +825,7 @@ function mc_teacher.show_controller_fs(player,tab)
 
                 return fs
             end,
-            [mc_teacher.TABS.REPORTS] = function() -- REPORTS
+            [mc_teacher.TABS.REPORTS] = function()
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
                     "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
@@ -833,6 +834,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Report Info</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+                    "style[report_delete,report_clearlog;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                 }
 
                 context.report_i_to_idx = {}
@@ -875,7 +877,7 @@ function mc_teacher.show_controller_fs(player,tab)
 
                 return fs
             end,
-            [mc_teacher.TABS.HELP] = function() -- HELP
+            [mc_teacher.TABS.HELP] = function()
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
                     "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
@@ -885,13 +887,15 @@ function mc_teacher.show_controller_fs(player,tab)
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Game controls]",
                     "style_type[textarea;font=mono]",
-
                     "textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;", mc_core.get_controls_info(true), "]",
+
+                    "style_type[textarea;font=mono,bold]",
+                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;More help coming soon!]",
                 }
 
                 return fs
             end,
-            [mc_teacher.TABS.SERVER] = function() -- SERVER
+            [mc_teacher.TABS.SERVER] = function()
                 -- TODO: Implement ban manager
                 local whitelist_state = minetest.deserialize(networking.storage:get_string("enabled"))
 
@@ -903,6 +907,7 @@ function mc_teacher.show_controller_fs(player,tab)
                     "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Server Whitelist</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+                    "style[server_ban_manager;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
 
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Global Messenger]",
                     "style_type[textarea,field;font=mono]",

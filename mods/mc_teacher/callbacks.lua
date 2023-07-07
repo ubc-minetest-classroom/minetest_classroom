@@ -569,7 +569,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 direct_msg[player_to_clear] = nil
             end
             if server_msg and server_msg[player_to_clear] then
-                server_msg[player_to_clear] = nil
+                -- anonymous server messages should not be removed if they are listed under "Server"
+                local new_server_msg = (not has_server_privs and {}) or nil
+                if not has_server_privs and server_msg[player_to_clear] then
+                    for _,msg_table in pairs(server_msg[player_to_clear]) do
+                        if msg_table.anonymous then
+                            table.insert(new_server_msg, msg_table)
+                        end
+                    end
+                end
+                server_msg[player_to_clear] = new_server_msg
             end
 
             mc_teacher.meta:set_string("chat_log", minetest.serialize(chat_msg))
