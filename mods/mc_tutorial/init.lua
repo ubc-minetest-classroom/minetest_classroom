@@ -68,7 +68,7 @@ local SAFE, CAUTION, UNSAFE = 0, 1, 2
 -- basic privilege safety: may be worth moving?
 local PRIV_SAFETY = { -- basic privileges by overall safety
     -- SAFE: generally safe to give to players
-    ["fast"] = SAFE, ["fly"] = SAFE, ["interact"] = SAFE, ["shout"] = SAFE,
+    ["fast"] = SAFE, ["fly"] = SAFE, ["interact"] = SAFE, ["shout"] = SAFE, ["student"] = SAFE,
     -- CAUTION: privileges which may be appropriate to grant in some circumstances, but have the potential to be abused
     ["noclip"] = CAUTION, ["give"] = CAUTION, ["teleport"] = CAUTION, ["bring"] = CAUTION, ["creative"] = CAUTION,
     ["settime"] = CAUTION, ["debug"] = CAUTION,
@@ -116,7 +116,7 @@ function mc_tutorial.fetch_setting_key_table(name)
     return output
 end
 
-mc_tutorial.player_priv_table = mc_tutorial.fetch_setting_key_table("player_priv_table") or {interact = true}
+mc_tutorial.player_priv_table = mc_tutorial.fetch_setting_key_table("player_priv_table") or {student = true}
 mc_tutorial.recorder_priv_table = mc_tutorial.fetch_setting_key_table("recorder_priv_table") or {teacher = true, interact = true}
 mc_tutorial.check_interval = math.max(tonumber(mc_tutorial.fetch_setting("check_interval")), 0.1) or 1
 mc_tutorial.check_dir_tolerance = math.rad(tonumber(mc_tutorial.fetch_setting("check_dir_tolerance") or 2))
@@ -180,16 +180,16 @@ local function get_reward_desc(type_id, item)
         return minetest.formspec_escape("No reward selected!")
     end
 
-    local desc = "<style font=mono color=#000000>"
+    local desc = "<global font=mono color=#000000>"
     if type_id == "P" then
         desc = desc..(minetest.registered_privileges[item] and minetest.registered_privileges[item].description or "")
 
         if not PRIV_SAFETY[item] then
-            desc = desc.."\n<style color=#B55E00><b>Reward with caution.</b> This privilege comes from an external mod and may be dangerous. Make sure you know what it does before adding it as a reward."
+            desc = desc.."\n<style color=#B55E00><b>Reward with caution.</b> This privilege comes from an external mod and may be dangerous. Make sure you know what it does before adding it as a reward.</style>"
         elseif PRIV_SAFETY[item] == CAUTION then
-            desc = desc.."\n<style color=#B55E00><b>Reward with caution.</b> This privilege gives players access to utilities which may be dangerous if used irresponsibly."
+            desc = desc.."\n<style color=#B55E00><b>Reward with caution.</b> This privilege gives players access to utilities which may be dangerous if used irresponsibly.</style>"
         elseif PRIV_SAFETY[item] == UNSAFE then
-            desc = desc.."\n<style color=#CC0000><b>Reward with extreme caution.</b> This privilege allows players to modify the server and should only be given to trusted users."
+            desc = desc.."\n<style color=#CC0000><b>Reward with extreme caution.</b> This privilege allows players to modify the server and should only be given to trusted users.</style>"
         end
      elseif ItemStack(item):is_known() then
         local stack = ItemStack(item)
@@ -203,13 +203,13 @@ local function get_reward_desc(type_id, item)
                 table.insert(priv_list, k)
             end
             if next(priv_list) then
-                desc = desc.."If you would like to add it as a reward, you should reward the following privileges instead: <b>"..table.concat(priv_list, "</b>, <b>").."</b>.</style>"
+                desc = desc.."If you would like to add it as a reward, you should reward the following privileges instead: <b>"..table.concat(priv_list, "</b>, <b>").."</b></style>"
             else
                 desc = desc.."All players have this tool by default.</style>"
             end
         end
     end
-    return minetest.formspec_escape(desc.."</style>")
+    return minetest.formspec_escape(desc.."\n")
 end
 
 local function get_selected_reward_info(context, list_id)

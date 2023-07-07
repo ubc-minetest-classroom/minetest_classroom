@@ -20,9 +20,20 @@ minetest.register_on_priv_revoke(function(name, revoker, priv)
     return true -- continue to next callback
 end)
 
--- Teacher joins/leaves
+minetest.register_on_newplayer(function(player)
+end)
+
 minetest.register_on_joinplayer(function(player)
     local pname = player:get_player_name()
+    local pmeta = player:get_meta()
+
+    if not pmeta:get("priv_format") then
+        local privs = minetest.get_player_privs(pname)
+        privs["student"] = true
+        minetest.set_player_privs(pname, privs)
+        pmeta:set_int("priv_format", 2)
+    end
+
     if minetest.check_player_privs(player, {teacher = true}) then
         mc_teacher.register_teacher(pname)
     else
