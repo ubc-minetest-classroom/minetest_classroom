@@ -92,15 +92,33 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     local reload = false
     while os.clock() - wait < 0.05 do end --popups don't work without this
 
+    local has_server_privs = mc_core.checkPrivs(player, {server = true})
+
     if formname == "mc_teacher:confirm_report_clear" then
         if fields.confirm then
             mc_teacher.meta:set_string("report_log", minetest.serialize({}))
             minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The report log has been cleared."))
         end
         mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:ban_manager" and has_server_privs then
+        if fields.ban_list then
+            local event = minetest.explode_textlist_event(fields.ban_list)
+            if event.type == "CHG" then
+                context.selected_ban = event.index
+            end
+        end
+        if fields.unban then
+            context.selected_ban = context.selected_ban or 1
+            local ban_string = minetest.get_ban_list() or ""
+            local bans = mc_core.split(ban_string, ",")
+            if bans[context.selected_ban] then
+                minetest.unban_player_or_ip(bans[context.selected_ban])
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player unbanned!"))
+            end
+        elseif fields.quit or fields.exit then
+            mc_teacher.show_controller_fs(player, context.tab)
+        end
     elseif formname == "mc_teacher:controller_fs" then
-        local has_server_privs = mc_core.checkPrivs(player, {server = true})
-
         -------------
         -- GENERAL --
         -------------
@@ -760,6 +778,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             elseif fields.server_whitelist_toggle then
                 networking.toggle_whitelist(player)
                 reload = true
+            elseif fields.server_ban_manager then
+                return mc_teacher.show_ban_popup(player)
             end
             
             -- SERVER + OVERVIEW

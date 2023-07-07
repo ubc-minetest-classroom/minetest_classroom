@@ -78,8 +78,8 @@ local function generate_player_table(p_list, p_priv_list)
 end
 
 function mc_teacher.show_confirm_popup(player, fs_name, action, size)
-    local spacer = 0.6
-    local text_spacer = 0.55
+    local spacer = mc_teacher.fs_spacer
+    local text_spacer = mc_teacher.fs_t_spacer
     local width = math.max(size and size.x or 7.5, 1.5)
     local height = math.max(size and size.y or 3.4, 2.1)
     local button_width = (width - 1.3)/2
@@ -99,12 +99,36 @@ function mc_teacher.show_confirm_popup(player, fs_name, action, size)
     minetest.show_formspec(pname, "mc_teacher:"..fs_name, table.concat(fs, ""))
 end
 
+function mc_teacher.show_ban_popup(player)
+    local spacer = mc_teacher.fs_spacer
+    local text_spacer = mc_teacher.fs_t_spacer
+    local width = 7.5
+    local height = 7.5
+    local button_width = (width - 1.3)/2
+
+    local pname = player:get_player_name()
+    local context = mc_teacher.get_fs_context(player)
+
+    local fs = {
+        "formspec_version[6]",
+        "size[", width, ",", height, "]",
+        "style_type[textarea;font=mono,bold]",
+        "style_type[textlist;font=mono]",
+        "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+        "textarea[", text_spacer, ",0.5;", width - 2*text_spacer, ",1;;;Banned Players]",
+        "textlist[", spacer, ",0.9;", width - 2*spacer, ",", height - 2.4, ";ban_list;", minetest.get_ban_list() or "", ";", context.selected_ban or 1, ";false]",
+        "button[", spacer, ",", height - 1.4, ";", button_width, ",0.8;exit;Exit]",
+        "button[", spacer + 0.1 + button_width, ",", height - 1.4, ";", button_width, ",0.8;unban;Unban player]",
+    }
+    minetest.show_formspec(pname, "mc_teacher:ban_manager", table.concat(fs, ""))
+end
+
 function mc_teacher.show_controller_fs(player, tab)
     local controller_width = 16.6
     local controller_height = 10.4
     local panel_width = controller_width/2
-    local spacer = 0.6
-    local text_spacer = 0.55
+    local spacer = mc_teacher.fs_spacer
+    local text_spacer = mc_teacher.fs_t_spacer
 
     local pname = player:get_player_name()
     local pmeta = player:get_meta()
@@ -941,7 +965,6 @@ function mc_teacher.show_controller_fs(player, tab)
                     "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Server Whitelist</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-                    "style[server_ban_manager;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
 
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Global Messenger]",
                     "style_type[textarea,field;font=mono]",
@@ -974,7 +997,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     "button[", spacer, ",7.6;3.5,0.8;server_shutdown_", mc_teacher.restart_scheduled.timer and "cancel" or "schedule", ";", mc_teacher.restart_scheduled.timer and "Cancel shutdown" or "Schedule", "]",
                     "button[", spacer + 3.6, ",7.6;3.5,0.8;server_shutdown_now;Shutdown now]",
                     "textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Misc. actions]",
-                    "button[", spacer, ",9;3.5,0.8;server_ban_manager;Banned players]",
+                    "button[", spacer, ",9;3.5,0.8;server_ban_manager;Ban manager]",
                     "button[", spacer + 3.6, ",9;3.5,0.8;server_edit_rules;Server rules]",
 
                     "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Whitelisted IPv4 Addresses]",

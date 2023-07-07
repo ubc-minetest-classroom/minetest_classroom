@@ -4,6 +4,8 @@ mc_teacher = {
     meta = minetest.get_mod_storage(),
     path = minetest.get_modpath("mc_teacher"),
     marker_expiry = 120,
+    fs_spacer = 0.6,
+    fs_t_spacer = 0.55,
     fs_context = {},
     restart_scheduled = {},
     -- named constants
@@ -48,7 +50,7 @@ mc_teacher = {
         ["6 hours"] = {i = 11, t = 21600},
         ["12 hours"] = {i = 12, t = 43200},
         ["24 hours"] = {i = 13, t = 86400}
-    }
+    },
 }
 
 -- Source files
