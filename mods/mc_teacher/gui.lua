@@ -377,12 +377,12 @@ function mc_teacher.show_controller_fs(player, tab)
                     "textarea[", text_spacer + 4.9, ",0.8;1.9,1;;;fly]",
                     "textarea[", text_spacer + 4.9, ",1.2;1.9,1;;;noclip]",
                     "textarea[", text_spacer + 4.9, ",1.6;1.9,1;;;give]",
-                    "image[", text_spacer, ",0.4;0.4,0.4;mc_teacher_allowpriv.png]",
-                    "image[", text_spacer + 0.4, ",0.4;0.4,0.4;mc_teacher_ignorepriv.png]",
-                    "image[", text_spacer + 0.8, ",0.4;0.4,0.4;mc_teacher_denypriv.png]",
-                    "image[", text_spacer + 3.6, ",0.4;0.4,0.4;mc_teacher_allowpriv.png]",
-                    "image[", text_spacer + 4.0, ",0.4;0.4,0.4;mc_teacher_ignorepriv.png]",
-                    "image[", text_spacer + 4.4, ",0.4;0.4,0.4;mc_teacher_denypriv.png]",
+                    "image[", text_spacer, ",0.4;0.4,0.4;mc_teacher_check.png]",
+                    "image[", text_spacer + 0.4, ",0.4;0.4,0.4;mc_teacher_ignore.png]",
+                    "image[", text_spacer + 0.8, ",0.4;0.4,0.4;mc_teacher_delete.png]",
+                    "image[", text_spacer + 3.6, ",0.4;0.4,0.4;mc_teacher_check.png]",
+                    "image[", text_spacer + 4.0, ",0.4;0.4,0.4;mc_teacher_ignore.png]",
+                    "image[", text_spacer + 4.4, ",0.4;0.4,0.4;mc_teacher_delete.png]",
                     "tooltip[", text_spacer, ",0.4;0.4,0.4;ALLOW: Privilege will be granted\n(does NOT override universal privileges);#404040;#ffffff]",
                     "tooltip[", text_spacer + 0.4, ",0.4;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
                     "tooltip[", text_spacer + 0.8, ",0.4;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
@@ -510,7 +510,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     "textarea[", panel_width + text_spacer, ",7.6;", panel_width - 2*text_spacer, ",1;;;SELECTED\nLocal: (X, Y, Z)]",
                     "textarea[", panel_width + spacer, ",8.9;6.2,0.9;note;;]",
                     "style_type[image_button;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-                    "image_button[15.1,8.9;0.9,0.9;mc_teacher_save.png;record;Save;false;false]",
+                    "image_button[15.1,8.9;0.9,0.9;blank.png;record;Save;false;false]", --mc_teacher_save.png
                     
                     "tooltip[utmcoords;Displays real-world UTM coordinates;#404040;#ffffff]",
                     "tooltip[latloncoords;Displays real-world latitude and longitude;#404040;#ffffff]",
@@ -630,12 +630,12 @@ function mc_teacher.show_controller_fs(player, tab)
                     "textarea[", panel_width + text_spacer + 4.9, ",3.5;2.3,1;;;noclip]",
                     "textarea[", panel_width + text_spacer + 4.9, ",3.9;2.3,1;;;give]",
                     "style_type[textarea;font=mono,bold]",
-                    "image[", panel_width + text_spacer, ",2.7;0.4,0.4;mc_teacher_allowpriv.png]",
-                    "image[", panel_width + text_spacer + 0.4, ",2.7;0.4,0.4;mc_teacher_ignorepriv.png]",
-                    "image[", panel_width + text_spacer + 0.8, ",2.7;0.4,0.4;mc_teacher_denypriv.png]",
-                    "image[", panel_width + text_spacer + 3.6, ",2.7;0.4,0.4;mc_teacher_allowpriv.png]",
-                    "image[", panel_width + text_spacer + 4.0, ",2.7;0.4,0.4;mc_teacher_ignorepriv.png]",
-                    "image[", panel_width + text_spacer + 4.4, ",2.7;0.4,0.4;mc_teacher_denypriv.png]",
+                    "image[", panel_width + text_spacer, ",2.7;0.4,0.4;mc_teacher_check.png]",
+                    "image[", panel_width + text_spacer + 0.4, ",2.7;0.4,0.4;mc_teacher_ignore.png]",
+                    "image[", panel_width + text_spacer + 0.8, ",2.7;0.4,0.4;mc_teacher_delete.png]",
+                    "image[", panel_width + text_spacer + 3.6, ",2.7;0.4,0.4;mc_teacher_check.png]",
+                    "image[", panel_width + text_spacer + 4.0, ",2.7;0.4,0.4;mc_teacher_ignore.png]",
+                    "image[", panel_width + text_spacer + 4.4, ",2.7;0.4,0.4;mc_teacher_delete.png]",
                 }
 
                 -- TODO: reimplement images behind checkboxes
@@ -1200,12 +1200,12 @@ textarea[10.15,6.5;2.3,1;;;fast]
 textarea[13.75,5.7;2.3,1;;;fly]
 textarea[13.75,6.1;2.3,1;;;noclip]
 textarea[13.75,6.5;2.3,1;;;give]
-image[8.9,5.3;0.4,0.4;mc_teacher_allowpriv.png]
-image[9.3,5.3;0.4,0.4;mc_teacher_ignorepriv.png]
-image[9.7,5.3;0.4,0.4;mc_teacher_denypriv.png]
-image[12.5,5.3;0.4,0.4;mc_teacher_allowpriv.png]
-image[12.9,5.3;0.4,0.4;mc_teacher_ignorepriv.png]
-image[13.3,5.3;0.4,0.4;mc_teacher_denypriv.png]
+image[8.9,5.3;0.4,0.4;mc_teacher_check.png]
+image[9.3,5.3;0.4,0.4;mc_teacher_ignore.png]
+image[9.7,5.3;0.4,0.4;mc_teacher_delete.png]
+image[12.5,5.3;0.4,0.4;mc_teacher_check.png]
+image[12.9,5.3;0.4,0.4;mc_teacher_ignore.png]
+image[13.3,5.3;0.4,0.4;mc_teacher_delete.png]
 checkbox[8.9,5.9;allowpriv_interact;;true]
 checkbox[8.9,6.3;allowpriv_shout;;true]
 checkbox[8.9,6.7;allowpriv_fast;;true]
@@ -1291,12 +1291,12 @@ textarea[10.15,3.9;1.8,1;;;fast]
 textarea[13.75,3.1;1.8,1;;;fly]
 textarea[13.75,3.5;1.8,1;;;noclip]
 textarea[13.75,3.9;1.8,1;;;give]
-image[8.9,2.7;0.4,0.4;mc_teacher_allowpriv.png]
-image[9.3,2.7;0.4,0.4;mc_teacher_ignorepriv.png]
-image[9.7,2.7;0.4,0.4;mc_teacher_denypriv.png]
-image[12.5,2.7;0.4,0.4;mc_teacher_allowpriv.png]
-image[12.9,2.7;0.4,0.4;mc_teacher_ignorepriv.png]
-image[13.3,2.7;0.4,0.4;mc_teacher_denypriv.png]
+image[8.9,2.7;0.4,0.4;mc_teacher_check.png]
+image[9.3,2.7;0.4,0.4;mc_teacher_ignore.png]
+image[9.7,2.7;0.4,0.4;mc_teacher_delete.png]
+image[12.5,2.7;0.4,0.4;mc_teacher_check.png]
+image[12.9,2.7;0.4,0.4;mc_teacher_ignore.png]
+image[13.3,2.7;0.4,0.4;mc_teacher_delete.png]
 checkbox[8.9,3.3;allowpriv_interact;;false]
 checkbox[8.9,3.7;allowpriv_shout;;false]
 checkbox[8.9,4.1;allowpriv_fast;;false]
