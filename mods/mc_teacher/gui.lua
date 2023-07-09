@@ -65,9 +65,9 @@ local function generate_player_table(p_list, p_priv_list)
             if p_priv_list[i][priv] == true then
                 table.insert(combined_list, 1)
             elseif p_priv_list[i][priv] == false then
-                table.insert(combined_list, 0--[[2]])
+                table.insert(combined_list, 2)
             elseif p_priv_list[i][priv] == "overridden" then
-                table.insert(combined_list, 1--[[3]])
+                table.insert(combined_list, 3)
             else
                 table.insert(combined_list, 0)
             end
@@ -566,14 +566,17 @@ function mc_teacher.show_controller_fs(player, tab)
                 end
                 local priv_b_state = get_priv_button_states(context.p_list, p_priv_list)
 
-                local base_img = {
-                    shout = "mc_teacher_share.png^[resize:25x25", --"mc_teacher_p_shout.png^[resize:25x25",
-                    interact = "mc_teacher_isometric_crop.png^[resize:25x25", --"mc_teacher_p_interact.png^[resize:25x25",
-                    fast = "mc_teacher_players.png^[resize:25x25", --"mc_teacher_p_fast.png^[resize:25x25",
-                    fly = "mc_teacher_teleport.png^[resize:25x25", --"mc_teacher_p_fly.png^[resize:25x25",
-                    noclip = "mc_teacher_delete.png^[resize:25x25", --"mc_teacher_p_noclip.png^[resize:25x25",
-                    give = "mc_teacher_mark.png^[resize:25x25", --"mc_teacher_p_give.png^[resize:25x25",
-                    --blank = "blank.png^[resize:25x25",
+                local img = {
+                    shout = "mc_teacher_shout",
+                    interact = "mc_teacher_interact",
+                    fast = "mc_teacher_fast",
+                    fly = "mc_teacher_fly",
+                    noclip = "mc_teacher_noclip",
+                    give = "mc_teacher_give",
+                    slash = "mc_teacher_slash",
+                    e = ".png",
+                    r = "^[resize:25x25",
+                    o = "^[opacity:31",
                 }
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
@@ -592,14 +595,14 @@ function mc_teacher.show_controller_fs(player, tab)
                     "style[p_mode_", context.selected_p_mode == mc_teacher.PMODE.ALL and "all" or context.selected_p_mode == mc_teacher.PMODE.TAB and "tab" or "selected", ";bgimg=mc_pixel.png^[multiply:", mc_core.col.b.selected, "]",
                     
                     "tabheader[", spacer, ",1.4;", panel_width - 2*spacer - 0.35, ",0.5;p_list_header;Students,Teachers,Classroom;", context.selected_p_tab, ";false;true]",
-                    "tablecolumns[image,align=center,padding=0.1,tooltip=shout,0=", base_img.shout, "^[opacity:31,1=", base_img.shout, ";",
-                                 "image,align=center,padding=0.1,tooltip=interact,0=", base_img.interact, "^[opacity:31,1=", base_img.interact, ";",
-                                 "image,align=center,padding=0.1,tooltip=fast,0=", base_img.fast, "^[opacity:31,1=", base_img.fast, ";",
-                                 "image,align=center,padding=0.1,tooltip=fly,0=", base_img.fly, "^[opacity:31,1=", base_img.fly, ";",
-                                 "image,align=center,padding=0.1,tooltip=noclip,0=", base_img.noclip, "^[opacity:31,1=", base_img.noclip, ";",
-                                 "image,align=center,padding=0.1,tooltip=give,0=", base_img.give, "^[opacity:31,1=", base_img.give, ";",
+                    "tablecolumns[image,align=center,padding=0.1,tooltip=shout,",    "0=", img.shout,    img.e, img.r, img.o, ",1=", img.shout,    img.e, img.r, ",2=", img.shout,    img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.shout,    "_o", img.e, img.r, ";",
+                                 "image,align=center,padding=0.1,tooltip=interact,", "0=", img.interact, img.e, img.r, img.o, ",1=", img.interact, img.e, img.r, ",2=", img.interact, img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.interact, "_o", img.e, img.r, ";",
+                                 "image,align=center,padding=0.1,tooltip=fast,",     "0=", img.fast,     img.e, img.r, img.o, ",1=", img.fast,     img.e, img.r, ",2=", img.fast,     img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.fast,     "_o", img.e, img.r, ";",
+                                 "image,align=center,padding=0.1,tooltip=fly,",      "0=", img.fly,      img.e, img.r, img.o, ",1=", img.fly,      img.e, img.r, ",2=", img.fly,      img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.fly,      "_o", img.e, img.r, ";",
+                                 "image,align=center,padding=0.1,tooltip=noclip,",   "0=", img.noclip,   img.e, img.r, img.o, ",1=", img.noclip,   img.e, img.r, ",2=", img.noclip,   img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.noclip,   "_o", img.e, img.r, ";",
+                                 "image,align=center,padding=0.1,tooltip=give,",     "0=", img.give,     img.e, img.r, img.o, ",1=", img.give,     img.e, img.r, ",2=", img.give,     img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.give,     "_o", img.e, img.r, ";",
                                  "text]",
-                    "table[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;p_list;", generate_player_table(context.p_list, p_priv_list), ";", context.selected_p_player, "]",
+                    "table[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;p_list;", generate_player_table(context.p_list, p_priv_list), ",2=", context.selected_p_player, "]",
                     
                     "button[", panel_width - spacer - 0.45, ",0.95;0.45,0.45;p_group_new;+]",
                     "button[", spacer, ",9;3.5,0.8;p_group_edit;Edit group]",
