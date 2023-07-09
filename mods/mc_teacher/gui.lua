@@ -56,10 +56,19 @@ local function get_privs(player)
     return privs
 end
 
+local function role_to_fs_elem(role_string, caller_has_server_privs)
+    local map = {
+        [mc_teacher.ROLES.NONE] = {[true] = "p_role_none", [false] = "p_role_none"},
+        [mc_teacher.ROLES.STUDENT] = {[true] = "p_role_student", [false] = "p_role_student"},
+        [mc_teacher.ROLES.TEACHER] = {[true] = "p_role_teacher", [false] = "blocked_role_teacher"},
+        [mc_teacher.ROLES.ADMIN] = {[true] = "p_role_admin", [false] = "blocked_role_admin"},
+    }
+    return role_string and map[role_string] and map[role_string][caller_has_server_privs] or ""
+end
+
 local function generate_player_table(p_list, p_priv_list)
     local privs_to_check = {"shout", "interact", "fast", "fly", "noclip", "give"}
     local combined_list = {}
-    -- TODO: create new images for other priv statustes
     for i, player in ipairs(p_list) do
         for j, priv in ipairs(privs_to_check) do
             if p_priv_list[i][priv] == true then
@@ -590,9 +599,8 @@ function mc_teacher.show_controller_fs(player, tab)
                     "style[p_group_new,p_group_edit,p_group_delete;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     -- TODO: re-impelment remaining actions
                     "style[p_audience,p_freeze,p_timeout;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
-                    -- TODO: implement role buttons
-                    "style[p_role_none,p_role_student,p_role_teacher,p_role_admin;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     "style[p_mode_", context.selected_p_mode == mc_teacher.PMODE.ALL and "all" or context.selected_p_mode == mc_teacher.PMODE.TAB and "tab" or "selected", ";bgimg=mc_pixel.png^[multiply:", mc_core.col.b.selected, "]",
+                    context.selected_p_mode ~= mc_teacher.PMODE.SELECTED and "style[p_teleport;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.orange.."]" or "",
                     
                     "tabheader[", spacer, ",1.4;", panel_width - 2*spacer - 0.35, ",0.5;p_list_header;Students,Teachers,Classroom;", context.selected_p_tab, ";false;true]",
                     "tablecolumns[image,align=center,padding=0.1,tooltip=shout,",    "0=", img.shout,    img.e, img.r, img.o, ",1=", img.shout,    img.e, img.r, ",2=", img.shout,    img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.shout,    "_o", img.e, img.r, ";",
@@ -602,7 +610,7 @@ function mc_teacher.show_controller_fs(player, tab)
                                  "image,align=center,padding=0.1,tooltip=noclip,",   "0=", img.noclip,   img.e, img.r, img.o, ",1=", img.noclip,   img.e, img.r, ",2=", img.noclip,   img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.noclip,   "_o", img.e, img.r, ";",
                                  "image,align=center,padding=0.1,tooltip=give,",     "0=", img.give,     img.e, img.r, img.o, ",1=", img.give,     img.e, img.r, ",2=", img.give,     img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.give,     "_o", img.e, img.r, ";",
                                  "text]",
-                    "table[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;p_list;", generate_player_table(context.p_list, p_priv_list), ",2=", context.selected_p_player, "]",
+                    "table[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;p_list;", generate_player_table(context.p_list, p_priv_list), ";", context.selected_p_player, "]",
                     
                     "button[", panel_width - spacer - 0.45, ",0.95;0.45,0.45;p_group_new;+]",
                     "button[", spacer, ",9;3.5,0.8;p_group_edit;Edit group]",
@@ -692,13 +700,16 @@ function mc_teacher.show_controller_fs(player, tab)
                 if not has_server_privs then
                     table.insert(fs, "style[blocked_role_teacher,blocked_role_admin;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.blocked.."]")
                 end
+                if selected_player then
+                    table.insert(fs, "style["..role_to_fs_elem(mc_teacher.get_server_role(selected_player), has_server_privs)..";bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.selected.."]")
+                end
                 table.insert(fs, table.concat({
                     "image[", panel_width + spacer, ",8.8;3.5,1;mc_pixel.png^[multiply:#acabff]",
                     "image[", panel_width + spacer + 3.6, ",8.8;3.5,1;mc_pixel.png^[multiply:#f5c987]", --#ffd699
                     "button[", panel_width + spacer + 0.1, ",8.9;1.6,0.8;p_role_none;None]",
                     "button[", panel_width + spacer + 1.8, ",8.9;1.6,0.8;p_role_student;Student]",
                     "button[", panel_width + spacer + 3.7, ",8.9;1.6,0.8;", has_server_privs and "p_role_teacher" or "blocked_role_teacher", ";Teacher]",
-                    "button[", panel_width + spacer + 5.4, ",8.9;1.6,0.8;", has_server_privs and "p_role_admin" or "blocked_role_teacher", ";Admin]",
+                    "button[", panel_width + spacer + 5.4, ",8.9;1.6,0.8;", has_server_privs and "p_role_admin" or "blocked_role_admin", ";Admin]",
                     
                     "tooltip[p_mode_selected;The selected player;#404040;#ffffff]",
                     "tooltip[p_mode_tab;All players in the selected tab;#404040;#ffffff]",
@@ -706,7 +717,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     "tooltip[p_role_none;No privileges\nListed as a student\nCan not use classroom tools;#404040;#ffffff]",
                     "tooltip[p_role_student;Privileges: student\nListed as a student\nCan use student tools;#404040;#ffffff]",
                     "tooltip[", has_server_privs and "p_role_teacher" or "blocked_role_teacher", ";Privileges: student, teacher\nListed as a teacher\nCan use student and teacher tools;#404040;#ffffff]",
-                    "tooltip[", has_server_privs and "p_role_admin" or "blocked_role_teacher", ";Privileges: student, teacher, server\nListed as a teacher\nCan use student, teacher, and administrator tools;#404040;#ffffff]",
+                    "tooltip[", has_server_privs and "p_role_admin" or "blocked_role_admin", ";Privileges: student, teacher, server\nListed as a teacher\nCan use student, teacher, and administrator tools;#404040;#ffffff]",
                     
                     "tooltip[", panel_width + text_spacer, ",2.7;0.4,0.4;ALLOW: Privilege will be granted\n(overrides universal privileges);#404040;#ffffff]",
                     "tooltip[", panel_width + text_spacer + 0.4, ",2.7;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",

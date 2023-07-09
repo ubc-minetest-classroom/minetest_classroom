@@ -19,6 +19,12 @@ mc_teacher = {
         HELP = "7",
         SERVER = "8", -- TODO: make dynamic for easier modification of notebook
     },
+    ROLES = {
+        NONE = "roleless",
+        STUDENT = "student",
+        TEACHER = "teacher",
+        ADMIN = "administrator",
+    },
     MODES = {EMPTY = "1", SCHEMATIC = "2", TWIN = "3"},
     PMODE = {SELECTED = "1", TAB = "2", ALL = "3"},
     M = {

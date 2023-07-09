@@ -147,3 +147,17 @@ function mc_teacher.log_direct_message(name, message, recipient)
     })
     mc_teacher.meta:set_string("dm_log", minetest.serialize(log))
 end
+
+function mc_teacher.get_server_role(player)
+    local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name()) or ""
+    local privs = minetest.get_player_privs(pname)
+    if not privs["student"] then
+        return mc_teacher.ROLES.NONE
+    elseif not privs["teacher"] then
+        return mc_teacher.ROLES.STUDENT
+    elseif not privs["server"] then
+        return mc_teacher.ROLES.TEACHER
+    else
+        return mc_teacher.ROLES.ADMIN
+    end
+end
