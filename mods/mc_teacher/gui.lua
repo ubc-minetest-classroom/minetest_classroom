@@ -976,13 +976,19 @@ function mc_teacher.show_controller_fs(player, tab)
                 }))
 
                 if selected then
+                    local realm = Realm.GetRealm(selected.realm) or {Name = "Unknown", StartPos = {x=0, y=0, z=0}}
+                    local loc = selected.pos and {
+                        x = tostring(math.round(selected.pos.x - realm.StartPos.x)),
+                        y = tostring(math.round(selected.pos.y - realm.StartPos.y)),
+                        z = tostring(math.round(selected.pos.z - realm.StartPos.z)),
+                    }
                     table.insert(fs, table.concat({
                         "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;", string.upper(selected.type or "Other"), "]",
                         "textarea[", panel_width + text_spacer, ",8;7.2,1;;;Message ", selected.player or "reporter", "]",
                         "style_type[textarea;font=mono]",
                         "textarea[", panel_width + text_spacer, ",1.4;", panel_width - 2*text_spacer, ",6.5;;;",
                         selected.message or "", "\n\n", "Reported on ", selected.timestamp or "an unknown date", " by ", selected.player or "an unknown player", "\n",
-                        "Realm ID ", selected.realm or "unknown", ", at ", selected.pos and "(X="..selected.pos.x..", Y="..selected.pos.y..", Z="..selected.pos.z..")" or "an unknown position", "]",
+                        selected.realm and "Realm #"..selected.realm.." ("..realm.Name..")" or "Unknown realm", " at ", selected.pos and "position (x="..loc.x..", y="..loc.y..", z="..loc.z..")" or "an unknown position", "]",
                         "textarea[", panel_width + spacer, ",8.4;", panel_width - 2*spacer - 0.8, ",1.4;report_message;;", context.report_message or "", "]",
                         "style_type[textarea;font=mono,bold]",
                         "button[", controller_width - spacer - 0.8, ",8.4;0.8,1.4;report_send_message;Send]",

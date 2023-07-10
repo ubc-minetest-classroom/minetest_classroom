@@ -1,6 +1,6 @@
 -- Privileges
 minetest.register_privilege("teacher", {
-    give_to_singleplayer = false
+    give_to_singleplayer = true
 })
 minetest.register_privilege("student", {
     give_to_singleplayer = true
@@ -18,9 +18,6 @@ minetest.register_on_priv_revoke(function(name, revoker, priv)
         mc_teacher.register_student(name)
     end
     return true -- continue to next callback
-end)
-
-minetest.register_on_newplayer(function(player)
 end)
 
 minetest.register_on_joinplayer(function(player)
@@ -162,7 +159,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
                 local p_obj = minetest.get_player_by_name(p)
                 if not p_obj or not p_obj:is_player() then
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of "..tostring(p).."."))
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of player "..tostring(p).."."))
                 end
                 if formname == "mc_teacher:role_change_"..mc_teacher.ROLES.NONE then
                     mc_worldManager.revokeUniversalPriv(p_obj, {"student", "teacher", "server"})
@@ -179,7 +176,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher", "server"})
                     mc_teacher.register_teacher(p)
                 else
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of "..tostring(p).."."))
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of player "..tostring(p).."."))
                 end
             end
             minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server role changes applied!"))
@@ -511,7 +508,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             for _,p in pairs(players_to_update) do
                 if p ~= pname then
                     local success = minetest.kick_player(p)
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..(success and p.." successfully kicked from the server." or "Could not kick "..p.." from the server.")))
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Successfully kicked player "..(success and p.." from the server." or "Could not kick "..p.." from the server.")))
                 else
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not kick yourself from the server."))
                 end
@@ -522,7 +519,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             for _,p in pairs(players_to_update) do
                 if p ~= pname then
                     local success = minetest.ban_player(p)
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..(success and p.." successfully banned from the server." or "Could not ban "..p.." from the server.")))
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Successfully banned player "..(success and p.." from the server." or "Could not ban "..p.." from the server.")))
                 else
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not ban yourself from the server."))
                 end
@@ -537,12 +534,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 if realm and realm:getCategory().joinable(realm, player) then
                     realm:TeleportPlayer(player)
                     player:set_pos(destination)
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Teleported to "..sel_pname.."!"))
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Teleported to player "..tostring(sel_pname).."!"))
                 else
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport to "..sel_pname.."."))
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport to player "..tostring(sel_pname).."."))
                 end
             else
-                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player "..tostring(sel_pname).." could not be found!"))
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not find the selected player!"))
             end
             reload = true
         elseif fields.p_bring then
@@ -557,11 +554,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         destRealm:TeleportPlayer(p_obj)
                         p_obj:set_pos(destination)
                     else
-                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not bring "..tostring(p).."to your current location."))
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player "..tostring(p).." does not have access to your current classroom. Please check your current classroom's category and try again."))
                     end
                 end
             else
-                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport players to your current realm."))
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your current classroom could not be found! Please ask a server administrator to check that this classroom exists."))
             end
         elseif fields.p_mute or fields.p_unmute then
             local players_to_update = get_players_to_update(player, context)
@@ -578,7 +575,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         local realm = Realm.GetRealmFromPlayer(p_obj)
                         if realm then realm:ApplyPrivileges(p_obj) end
                     else
-                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_mute and "" or "un").."mute "..tostring(p).."."))
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_mute and "" or "un").."mute player "..tostring(p).."."))
                     end
                 else
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_mute and "" or "un").."mute yourself."))
@@ -598,7 +595,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                             -- TODO: unfreeze
                         end
                     else
-                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_freeze and "" or "un").."freeze "..tostring(p).."."))
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_freeze and "" or "un").."freeze player "..tostring(p).."."))
                     end
                 else
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_freeze and "" or "un").."freeze yourself."))
@@ -620,7 +617,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         local realm = Realm.GetRealmFromPlayer(p_obj)
                         if realm then realm:ApplyPrivileges(p_obj) end
                     else
-                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_deactivate and "de" or "re").."activate "..tostring(p).."."))
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_deactivate and "de" or "re").."activate player "..tostring(p).."."))
                     end
                 else
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_deactivate and "de" or "re").."activate yourself."))
@@ -707,27 +704,38 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
         elseif fields.mod_mute or fields.mod_unmute then
             local player_to_mute = context.indexed_chat_players[context.player_chat_index]
-            local p_obj = minetest.get_player_by_name(player_to_mute)
+            local pname = player:get_player_name()
 
-            if fields.mod_mute then
-                mc_worldManager.denyUniversalPriv(p_obj, {"shout"})
+            if player_to_mute ~= pname then
+                local p_obj = minetest.get_player_by_name(player_to_mute)
+                if p_obj then
+                    if fields.mod_mute then
+                        mc_worldManager.denyUniversalPriv(p_obj, {"shout"})
+                    else
+                        mc_worldManager.grantUniversalPriv(p_obj, {"shout"})
+                    end
+                    local realm = Realm.GetRealmFromPlayer(p_obj)
+                    if realm then realm:ApplyPrivileges(p_obj) end
+                else
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.mod_mute and "" or "un").."mute player "..tostring(player_to_mute).."."))
+                end
             else
-                mc_worldManager.grantUniversalPriv(p_obj, {"shout"})
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.mod_mute and "" or "un").."mute yourself."))
             end
-
-            local realm = Realm.GetRealmFromPlayer(p_obj)
-            if realm then realm:ApplyPrivileges(p_obj) end
-            reload = true
         elseif fields.mod_send_message then
+            local pname = player:get_player_name()
             if fields.mod_message ~= "" then
-                local pname = player:get_player_name()
                 local recipient = context.indexed_chat_players[context.player_chat_index]
-                minetest.chat_send_player(recipient, "DM from "..pname..": "..fields.mod_message)
-                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
-                mc_teacher.log_direct_message(pname, fields.mod_message, recipient)
-                reload = true
+                if recipient then
+                    minetest.chat_send_player(recipient, "DM from "..pname..": "..fields.mod_message)
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
+                    mc_teacher.log_direct_message(pname, fields.mod_message, recipient)
+                    reload = true
+                else
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not send message to player."))
+                end
             else
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not send an empty message to a player."))
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not send an empty message to a player."))
             end
         end
 
@@ -759,9 +767,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 local pname = player:get_player_name()
                 local report_log = minetest.deserialize(mc_teacher.meta:get_string("report_log")) or {}
                 local selected = report_log[context.report_i_to_idx[context.selected_report]]
-                minetest.chat_send_player(selected.player, "DM from "..pname..": "..fields.report_message)
-                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
-                mc_teacher.log_direct_message(pname, fields.report_message, selected.player)
+                -- TODO: save reporter name in context so that messages can be sent regardless of whether the report exists
+                if selected then
+                    minetest.chat_send_player(selected.player, "DM from "..pname..": "..fields.report_message)
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
+                    mc_teacher.log_direct_message(pname, fields.report_message, selected.player)
+                else
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not send message to reporter."))
+                end
             else
                 minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not send an empty message to a player."))
             end
@@ -833,7 +846,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 local warn = {600, 540, 480, 420, 360, 300, 240, 180, 120, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 4, 3, 2, 1}
                 local time = mc_teacher.T_INDEX[fields.server_shutdown_timer].t
                 minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server restart successfully scheduled!"))
-                minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] The server will be restarting in "..fields.server_shutdown_timer..". Worlds will be saved prior to the restart."))
+                minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] The server will be restarting in "..fields.server_shutdown_timer..". Classrooms will be saved prior to the restart."))
                 mc_teacher.restart_scheduled.timer = minetest.after(time, mc_teacher.shutdown_server, true)
                 for _,t in pairs(warn) do
                     if time >= t then
@@ -1026,7 +1039,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
                 pmeta:set_string("coordinates", minetest.serialize({note_map = new_note_map, coords = new_coords, realms = new_realms, format = 2}))
             else
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected coordinate could not be deleted."))
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected coordinate not found! Please report this issue to a server administrator or to the Minetest Classroom development team on GitHub."))
             end
             reload = true
         elseif fields.clear then

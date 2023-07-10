@@ -75,17 +75,27 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 			local pname = player:get_player_name() or "unknown"
 			local pos = player:get_pos() or {x = 0, y = 0, z = 0}
-			local realm = Realm.GetRealmFromPlayer(player) or {ID = 0}
+			local realm = Realm.GetRealmFromPlayer(player) or {Name = "Unknown", ID = 0}
 			local clean_report = minetest.formspec_escape(fields.report)
 			local report_type = fields.reporttype or "Other"
 			local timestamp = tostring(os.date("%Y-%m-%d %H:%M:%S"))
 
 			if next(mc_teacher.teachers) ~= nil then
+				local details = "  DETAILS: "
+				if realm.ID ~= 0 then
+					local loc = {
+						x = tostring(math.round(pos.x - realm.StartPos.x)),
+						y = tostring(math.round(pos.y - realm.StartPos.y)),
+						z = tostring(math.round(pos.z - realm.StartPos.z)),
+					}
+					details = details.."Realm #"..realm.ID.." ("..realm.Name..") at position (x="..loc.x..", y="..loc.y..", z="..loc.z..")"
+				else
+					details = details.."Unknown realm at position (x="..pos.x..", y="..pos.y..", z="..pos.z..")"
+				end
 				for teacher,_ in pairs(mc_teacher.teachers) do
 					minetest.chat_send_player(teacher, minetest.colorize(mc_core.col.log, table.concat({
 						"[Minetest Classroom] NEW REPORT: ", timestamp, " by ", pname, "\n",
-						"  ", string.upper(report_type), ": ", fields.report, "\n",
-						"  DETAILS: Realm #", realm.ID, " at position (x=", pos.x, ", y=", pos.y, ", z=", pos.z, ")"
+						"  ", string.upper(report_type), ": ", fields.report, "\n", details,
 					})))
 				end
 			else
