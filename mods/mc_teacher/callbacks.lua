@@ -159,7 +159,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
                 local p_obj = minetest.get_player_by_name(p)
                 if not p_obj or not p_obj:is_player() then
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of player "..tostring(p).."."))
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of player "..tostring(p).." (they are probably offline)."))
                 end
                 if formname == "mc_teacher:role_change_"..mc_teacher.ROLES.NONE then
                     mc_worldManager.revokeUniversalPriv(p_obj, {"student", "teacher", "server"})
@@ -575,7 +575,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         local realm = Realm.GetRealmFromPlayer(p_obj)
                         if realm then realm:ApplyPrivileges(p_obj) end
                     else
-                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_mute and "" or "un").."mute player "..tostring(p).."."))
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_mute and "" or "un").."mute player "..tostring(p).." (they are probably offline)."))
                     end
                 else
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_mute and "" or "un").."mute yourself."))
@@ -595,7 +595,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                             -- TODO: unfreeze
                         end
                     else
-                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_freeze and "" or "un").."freeze player "..tostring(p).."."))
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_freeze and "" or "un").."freeze player "..tostring(p).." (they are probably offline)."))
                     end
                 else
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_freeze and "" or "un").."freeze yourself."))
@@ -617,7 +617,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         local realm = Realm.GetRealmFromPlayer(p_obj)
                         if realm then realm:ApplyPrivileges(p_obj) end
                     else
-                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_deactivate and "de" or "re").."activate player "..tostring(p).."."))
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_deactivate and "de" or "re").."activate player "..tostring(p).." (they are probably offline)."))
                     end
                 else
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_deactivate and "de" or "re").."activate yourself."))
@@ -717,7 +717,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     local realm = Realm.GetRealmFromPlayer(p_obj)
                     if realm then realm:ApplyPrivileges(p_obj) end
                 else
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.mod_mute and "" or "un").."mute player "..tostring(player_to_mute).."."))
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.mod_mute and "" or "un").."mute player "..tostring(player_to_mute).." (they are probably offline)."))
                 end
             else
                 minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.mod_mute and "" or "un").."mute yourself."))
@@ -726,6 +726,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             local pname = player:get_player_name()
             if fields.mod_message ~= "" then
                 local recipient = context.indexed_chat_players[context.player_chat_index]
+                -- TODO: save recipient name so that messages can be sent regardless of whether the log exists
                 if recipient then
                     minetest.chat_send_player(recipient, "DM from "..pname..": "..fields.mod_message)
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Message sent!"))
