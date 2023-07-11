@@ -3,13 +3,20 @@ minetest_classroom = {}
 mc_core = {
     path = minetest.get_modpath("mc_core"),
     meta = minetest.get_mod_storage(),
-    log_colour = "#FFC9FF",
     hud = mhud.init(),
     markers = {},
     col = {
         log = "#FFC9FF",
-        marker = "#DFA4F5"
-    }
+        marker = "#DFA4F5",
+        b = {
+            default = "#1E1E1E",
+            blocked = "#ACACAC",
+            selected = "#055C22",
+            red = "#590C0C",
+            orange = "#6E5205",
+        }
+    },
+    SERVER_USER = "Server",
 }
 -- for compatibility with older mods
 mc_helpers = mc_core
@@ -129,6 +136,17 @@ function mc_core.tableHas(table, val)
     return false
 end
 
+---@private
+---Helper function which escapes magic characters used as delimiters by mc_core.split
+local function escape_delimiter(delimiter)
+    local magic = {"^", "$", "(", ")", "%", ".", "[", "]", "*", "+", "-", "?"}
+    local output = delimiter
+    for _,char in pairs(magic) do
+        output = string.gsub(output, "%"..char, "%%%0")
+    end
+    return output
+end
+
 ---@public
 ---Returns a table where s has been split into multiple parts according to param delimiter
 ---@param string s string to split
@@ -136,7 +154,7 @@ end
 ---@return table with split entries
 function mc_core.split(s, delimiter)
     local result = {};
-    for match in (s .. delimiter):gmatch("(.-)" .. delimiter) do
+    for match in (s .. delimiter):gmatch("(.-)" .. escape_delimiter(delimiter)) do
         table.insert(result, match);
     end
     return result;
@@ -173,6 +191,7 @@ function mc_core.isNumber(str)
     end
     return not (str == "" or str:match("%D"))
 end
+
 function mc_core.trim(s)
     return s:match( "^%s*(.-)%s*$" )
 end
@@ -226,4 +245,13 @@ function mc_core.hex_string_to_num(hex)
     else
         return tonumber(hex, 16)
     end
+end
+
+---@public
+---Removes KEY_ from the front of key names
+---@param key Key to clean
+---@return string
+function mc_core.clean_key(key)
+	local match = string.match(tostring(key), "K?E?Y?_?KEY_(.-)$")
+    return (match == "LBUTTON" and "LEFT CLICK") or (match == "RBUTTON" and "RIGHT CLICK") or match or key
 end

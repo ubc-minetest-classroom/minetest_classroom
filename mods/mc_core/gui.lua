@@ -2,11 +2,11 @@
 --- The created formspec will exceed the bounds of the content area
 --- --- General bounds are (0.5 units left, 0.75 units right, 1.1 units above, 0.4 units below)
 --- --- Upper page edge starts at (0, -0.25), content area starts at (0, 0)
---- @param width Content area width
---- @param height Content area height
---- @param options Formspec options
---- @see README.md > GUI Templates
---- @return formspec string
+---@param width Content area width
+---@param height Content area height
+---@param options Formspec options
+---@see README.md > GUI Templates
+---@return formspec string
 function mc_core.draw_book_fs(width, height, options)
     options = options or {}
     -- book border: L=0.25, R=0.5, T=1.1, B=0.4, LX=0.5, RX=0.75
@@ -39,4 +39,52 @@ function mc_core.draw_book_fs(width, height, options)
     end
 
     return table.concat(book_bg, "")
+end
+
+--- Creates a string containing the primary controls for Minetest, intended for use in a formspec
+---@param show_technical Boolean indicating whether to show controls for viewing Minetest debug info
+---@return string
+function mc_core.get_controls_info(show_technical)
+    local set = minetest.settings
+    local controls = {
+        "Move forwards: ", mc_core.clean_key(set:get("keymap_forward") or "KEY_KEY_W"), "\n",
+        "Move backwards: ", mc_core.clean_key(set:get("keymap_backward") or "KEY_KEY_S"), "\n",
+        "Move left: ", mc_core.clean_key(set:get("keymap_left") or "KEY_KEY_A"), "\n",
+        "Move right: ", mc_core.clean_key(set:get("keymap_right") or "KEY_KEY_D"), "\n",
+        "Jump/climb up: ", mc_core.clean_key(set:get("keymap_jump") or "KEY_SPACE"), "\n",
+        "Sneak", set:get("aux1_descends") == "true" and "" or "/climb down", ": ", mc_core.clean_key(set:get("keymap_sneak") or "KEY_LSHIFT"), "\n",
+        "Sprint", set:get("aux1_descends") == "true" and "/climb down" or "", ": ", mc_core.clean_key(set:get("keymap_aux1") or "KEY_KEY_E"), "\n",
+        "Zoom: ", mc_core.clean_key(set:get("keymap_zoom") or "KEY_KEY_Z"), "\n",
+        "\n",
+        "Dig block/use tool: ", set:get("keymap_dig") and mc_core.clean_key(set:get("keymap_dig") or "KEY_LBUTTON"), "\n",
+        "Place block: ", set:get("keymap_place") and mc_core.clean_key(set:get("keymap_place") or "KEY_RBUTTON"), "\n",
+        "Select hotbar item: SCROLL WHEEL or SLOT NUMBER (1-8)\n",
+        "Select next hotbar item: ", mc_core.clean_key(set:get("keymap_hotbar_next") or "KEY_KEY_N"), "\n",
+        "Select previous hotbar item: ", mc_core.clean_key(set:get("keymap_hotbar_previous") or "KEY_KEY_B"), "\n",
+        "Drop item: ", mc_core.clean_key(set:get("keymap_drop") or "KEY_KEY_Q"), "\n",
+        "\n",
+        "Open inventory: ", mc_core.clean_key(set:get("keymap_inventory") or "KEY_KEY_I"), "\n",
+        "Open chat: ", mc_core.clean_key(set:get("keymap_chat") or "KEY_KEY_T"), "\n",
+        "View minimap: ", mc_core.clean_key(set:get("keymap_minimap") or "KEY_KEY_V"), "\n",
+        "Take a screenshot: ", mc_core.clean_key(set:get("keymap_screenshot") or "KEY_F12"), "\n",
+        "Change camera perspective: ", mc_core.clean_key(set:get("keymap_camera_mode") or "KEY_KEY_C"), "\n",
+        "Mute/unmute game sound: ", mc_core.clean_key(set:get("keymap_mute") or "KEY_KEY_M"), "\n",
+        "\n",
+        "Enable/disable sprint: ", mc_core.clean_key(set:get("keymap_fastmove") or "KEY_KEY_J"), "\n",
+        "Enable/disable fly mode: ", mc_core.clean_key(set:get("keymap_freemove") or "KEY_KEY_K"), "\n",
+        "Enable/disable noclip mode: ", mc_core.clean_key(set:get("keymap_noclip") or "KEY_KEY_H"), "\n",
+        "Show/hide HUD (display): ", mc_core.clean_key(set:get("keymap_toggle_hud") or "KEY_F1"), "\n",
+        "Show/hide chat: ", mc_core.clean_key(set:get("keymap_toggle_chat") or "KEY_F2"), "\n",
+        "Show/hide world fog: ", mc_core.clean_key(set:get("keymap_toggle_force_fog_off") or "KEY_F3"), "\n",
+        "Expand/shrink chat window: ", mc_core.clean_key(set:get("keymap_console") or "KEY_F10"),
+    }
+    if show_technical then
+        table.insert(controls, table.concat({
+            "\n\n", minetest.formspec_escape("[MINETEST TECHNICAL INFO]"), "\n",
+            "Show/hide debug log: ", mc_core.clean_key(set:get("keymap_toggle_debug") or "KEY_F5"), "\n",
+            "Show/hide profiler: ", mc_core.clean_key(set:get("keymap_toggle_profiler") or "KEY_F6"),
+        }))
+    end
+
+    return table.concat(controls)
 end

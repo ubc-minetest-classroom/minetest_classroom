@@ -60,11 +60,6 @@ local function get_saved_coords(player)
 	end
 end
 
--- Removes KEY_ from the front of key names
-local function clean_key(key)
-    return string.match(tostring(key), "K?E?Y?_?KEY_(.-)$") or key
-end
-
 function mc_student.show_notebook_fs(player, tab)
 	local notebook_width = 16.6
 	local notebook_height = 10.4
@@ -138,7 +133,7 @@ function mc_student.show_notebook_fs(player, tab)
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
 					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Available Classrooms]",
 					"textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.realm_id_to_i and context.realm_id_to_i[context.selected_realm] or "1", ";false]",
-					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 					"button[", spacer, ",9;", panel_width - 2*spacer, ",0.8;teleportrealm;Teleport]",
 				}
 
@@ -274,7 +269,7 @@ function mc_student.show_notebook_fs(player, tab)
 					"image[", 3.95 + (pos.x - round_px)*0.15, ",", 4.75 - (pos.z - round_pz)*0.15,
 					";0.4,0.4;mc_mapper_d", yaw, ".png^[transformFY", rotate ~= 0 and ("R"..rotate) or "", "]",
 					"textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Coordinate and Elevation Display]",
-					"style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					"style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 					"button[", spacer, ",9;1.7,0.8;utmcoords;UTM]",
 					"button[", spacer + 1.8, ",9;1.7,0.8;latloncoords;Lat/Lon]",
 					"button[", spacer + 3.6, ",9;1.7,0.8;classroomcoords;Local]",
@@ -284,21 +279,23 @@ function mc_student.show_notebook_fs(player, tab)
 
 				local coord_list = get_saved_coords(player)
 				local texture_base = "[combine:536x440:0,0=blank.png:48,0="
+				local has_share_privs = mc_core.checkPrivs(player, {shout = true}) or mc_core.checkPrivs(player, {teacher = true})
 				table.insert(fs, table.concat({
 					"textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.8;coordlist;", coord_list and #coord_list > 0 and table.concat(coord_list, ",") or "No coordinates saved!", ";", context.selected_coord or 1, ";false]",
-					coord_list and #coord_list > 0 and "" or "style_type[image_button;bgimg=mc_pixel.png^[multiply:#acacac]",
+					coord_list and #coord_list > 0 and "" or "style_type[image_button;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
+					has_share_privs and "" or "style[mark;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
 					"image_button[", panel_width + spacer, ",6.3;1.34,1.1;", texture_base, "mc_teacher_teleport.png;", coord_list and #coord_list > 0 and "go" or "blocked", ";;false;false]",
 					"image_button[", panel_width + spacer + 1.44, ",6.3;1.34,1.1;", texture_base, "mc_teacher_share.png;", coord_list and #coord_list > 0 and "share" or "blocked", ";;false;false]",
 					"image_button[", panel_width + spacer + 2.88, ",6.3;1.34,1.1;", texture_base, "mc_teacher_mark.png;", coord_list and #coord_list > 0 and "mark" or "blocked", ";;false;false]",
 					"image_button[", panel_width + spacer + 4.32, ",6.3;1.34,1.1;", texture_base, "mc_teacher_delete.png;", coord_list and #coord_list > 0 and "delete" or "blocked", ";;false;false]",
 					"image_button[", panel_width + spacer + 5.76, ",6.3;1.34,1.1;", texture_base, "mc_teacher_clear.png;", coord_list and #coord_list > 0 and "clear" or "blocked", ";;false;false]",
 
-					coord_list and #coord_list > 0 and "" or "style_type[button;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					coord_list and #coord_list > 0 and "" or "style_type[button;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 					"textarea[", panel_width + text_spacer, ",8.5;", panel_width - 2*text_spacer, ",1;;;Save current coordinates]",
 					"style_type[textarea;font=mono]",
 					"textarea[", panel_width + text_spacer, ",7.6;", panel_width - 2*text_spacer, ",1;;;SELECTED\nLocal: (X, Y, Z)]",
 					"textarea[", panel_width + spacer, ",8.9;6.2,0.9;note;;]",
-					"style_type[image_button;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					"style_type[image_button;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 					"image_button[15.1,8.9;0.9,0.9;mc_teacher_save.png;record;Save;false;false]",
 					
 					"tooltip[utmcoords;Displays real-world UTM coordinates;#325140;#ffffff]",
@@ -309,7 +306,7 @@ function mc_student.show_notebook_fs(player, tab)
 					"tooltip[share;Share location in chat;#325140;#ffffff]",
 					"tooltip[mark;Place marker in world;#325140;#ffffff]",
 					"tooltip[delete;Delete location;#325140;#ffffff]",
-                    "tooltip[clear;Clear all saved locations;#325140;#ffffff]",
+					"tooltip[clear;Clear all saved locations;#325140;#ffffff]",
 					"tooltip[note;Add a note here!;#325140;#ffffff]",
 					"style_type[image_button;bgimg=blank.png]",
 				}))
@@ -329,7 +326,6 @@ function mc_student.show_notebook_fs(player, tab)
 				return fs
 			end,
 			[mc_student.TABS.HELP] = function() -- HELP + REPORTS
-				local set = minetest.settings
 				local fs = {
 					"image[0,0;", notebook_width, ",0.5;mc_pixel.png^[multiply:#737373]",
 					"image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
@@ -342,42 +338,11 @@ function mc_student.show_notebook_fs(player, tab)
 					"textarea[", panel_width + text_spacer, ",6.1;", panel_width - 2*text_spacer, ",1;;;Report message]",
 					"textarea[", panel_width + text_spacer, ",4.8;", panel_width - 2*text_spacer, ",1;;;Report type]",
 					"style_type[textarea;font=mono]",
-					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:#1e1e1e]",
+					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 
-					-- Controls + keybinds
-					"textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;",
-					"Move forwards: ", clean_key(set:get("keymap_forward") or "KEY_KEY_W"), "\n",
-					"Move backwards: ", clean_key(set:get("keymap_backward") or "KEY_KEY_S"), "\n",
-					"Move left: ", clean_key(set:get("keymap_left") or "KEY_KEY_A"), "\n",
-					"Move right: ", clean_key(set:get("keymap_right") or "KEY_KEY_D"), "\n",
-					"Jump/climb up: ", clean_key(set:get("keymap_jump") or "KEY_SPACE"), "\n",
-					"Sneak", set:get("aux1_descends") == "true" and "" or "/climb down", ": ", clean_key(set:get("keymap_sneak") or "KEY_LSHIFT"), "\n",
-					"Sprint", set:get("aux1_descends") == "true" and "/climb down" or "", ": ", clean_key(set:get("keymap_aux1") or "KEY_KEY_E"), "\n",
-					"Zoom: ", clean_key(set:get("keymap_zoom") or "KEY_KEY_Z"), "\n",
-					"\n",
-					"Dig block/use tool: ", set:get("keymap_dig") and clean_key(set:get("keymap_dig")) or "LEFT CLICK", "\n",
-					"Place block: ", set:get("keymap_dig") and clean_key(set:get("keymap_dig")) or "RIGHT CLICK", "\n",
-					"Select hotbar item: SCROLL WHEEL or SLOT NUMBER (1-8)\n",
-					"Select next hotbar item: ", clean_key(set:get("keymap_hotbar_next") or "KEY_KEY_N"), "\n",
-					"Select previous hotbar item: ", clean_key(set:get("keymap_hotbar_previous") or "KEY_KEY_B"), "\n",
-					"Drop item: ", clean_key(set:get("keymap_drop") or "KEY_KEY_Q"), "\n",
-					"\n",
-					"Open inventory: ", clean_key(set:get("keymap_inventory") or "KEY_KEY_I"), "\n",
-					"Open chat: ", clean_key(set:get("keymap_chat") or "KEY_KEY_T"), "\n",
-					"View minimap: ", clean_key(set:get("keymap_minimap") or "KEY_KEY_V"), "\n",
-					"Take a screenshot: ", clean_key(set:get("keymap_screenshot") or "KEY_F12"), "\n",
-					"Change camera perspective: ", clean_key(set:get("keymap_camera_mode") or "KEY_KEY_C"), "\n",
-					"\n",
-					"Enable/disable sprint: ", clean_key(set:get("keymap_fastmove") or "KEY_KEY_J"), "\n",
-					"Enable/disable fly mode: ", clean_key(set:get("keymap_freemove") or "KEY_KEY_K"), "\n",
-					"Enable/disable noclip mode: ", clean_key(set:get("keymap_noclip") or "KEY_KEY_H"), "\n",
-					"Show/hide HUD (display): ", clean_key(set:get("keymap_toggle_hud") or "KEY_F1"), "\n",
-					"Show/hide chat: ", clean_key(set:get("keymap_toggle_chat") or "KEY_F2"), "\n",
-					"Show/hide world fog: ", clean_key(set:get("keymap_toggle_force_fog_off") or "KEY_F3"),
-					"]",
-
+					"textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;", mc_core.get_controls_info(false), "]",
 					"textarea[", panel_width + text_spacer, ",1.5;", panel_width - 2*text_spacer, ",3;;;", minetest.formspec_escape("If you need to report a server issue or player, you can write a message in the box below that will be privately sent to "), 
-					pairs(mc_teacher.teachers) ~= nil and "all teachers that are currently online" or "the first teacher that joins the server", ".\n",
+					next(mc_teacher.teachers) ~= nil and "all teachers that are currently online" or "the first teacher that joins the server", ".\n",
 					minetest.formspec_escape("Your report message will be logged and visible to all teachers, so don't include any personal information in it. The server will also automatically log the current date and time, your classroom, and your world position in the report, so you don't need to include that information in your report message."), "]",
 					"dropdown[", panel_width + spacer, ",5.2;", panel_width - 2*spacer, ",0.7;reporttype;", table.concat(mc_student.REPORT_TYPE, ","), ";1;false]",
 					"textarea[", panel_width + spacer, ",6.5;", panel_width - 2*spacer, ",2.4;report;;]",
