@@ -1,6 +1,6 @@
 minetest.register_tool("mc_teacher:controller", {
     description = "Controller for teachers",
-    inventory_image = "controller.png",
+    inventory_image = "mc_teacher_controller.png",
     _mc_tool_privs = {teacher = true},
     on_use = function(itemstack, player, pointed_thing)
         local pmeta = player:get_meta()
@@ -8,7 +8,7 @@ minetest.register_tool("mc_teacher:controller", {
             if pmeta:get_string("default_teacher_tab") ~= "" then
                 mc_teacher.show_controller_fs(player, pmeta:get_string("default_teacher_tab"))
             else
-                mc_teacher.show_controller_fs(player,"1")
+                mc_teacher.show_controller_fs(player, "1")
             end
         end
     end,
