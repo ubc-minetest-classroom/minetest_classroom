@@ -142,6 +142,42 @@ local function calc_biome_from_noise(heat, humid, pos, seaLevel)
     return biome_closest
 end
 
+local function get_default_biome()
+    local core_cid = minetest.get_content_id
+    local function cid(name)
+        if not name then
+            return
+        end
+        local result
+        pcall(function() --< try
+            result = core_cid(name)
+        end)
+        if not result then
+            print("[biomegen] Node " .. name .. " not found!")
+        end
+        return result
+    end
+
+    return {
+        node_top = cid("mapgen_stone"),
+        depth_top = 0,
+        node_filler =  cid("mapgen_stone"),
+        depth_filler = 0,
+        node_stone = cid("mapgen_stone"),
+        node_water_top = cid("mapgen_water_source"),
+        depth_water_top = 0,
+        node_water = cid("mapgen_water_source"),
+        node_river_water = cid("mapgen_river_water_source"),
+        node_riverbed = cid("mapgen_stone"),
+        depth_riverbed = 0,
+        min_pos = {x=-31000, y=-31000, z=-31000},
+		max_pos = {x=31000, y=31000, z=31000},
+		vertical_blend = 0,
+		heat_point = 50,
+		humidity_point = 50,
+    }
+end
+
 local function get_biome_at_index(i, pos, seaLevel)
 
     if (forcedBiome and pos.y and seaLevel) then
@@ -157,7 +193,7 @@ local function get_biome_at_index(i, pos, seaLevel)
 
     --(math.max(pos.y - seaLevel, seaLevel + 20 - pos.y) * elevation_chill * 0.5)
 
-    return calc_biome_from_noise(heat, humid, pos, seaLevel)
+    return calc_biome_from_noise(heat, humid, pos, seaLevel) or get_default_biome()
 end
 
 local function generate_biomes(data, a, minp, maxp, seed, seaLevel, forcedBiomeName)

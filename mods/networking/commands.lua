@@ -148,4 +148,3 @@ minetest.register_chatcommand("whitelist", {
         end
 	end
 })
-

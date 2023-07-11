@@ -91,7 +91,7 @@ function Realm:New(name, area, callbacks)
                         z = (this.StartPos.z + this.EndPos.z) / 2 }
 
     -- if (areas) then
-    --     local protectionID = areas:add("Server", this.ID .. this.Name, this.StartPos, this.EndPos)
+    --     local protectionID = areas:add(mc_core.SERVER_USER, this.ID .. this.Name, this.StartPos, this.EndPos)
     --     this:set_data("protectionID", protectionID)
     --     areas:save()
     -- end
