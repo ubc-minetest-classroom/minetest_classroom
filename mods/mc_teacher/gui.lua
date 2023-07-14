@@ -53,6 +53,9 @@ local function get_privs(player)
             privs[k] = (privs[k] and "overridden") or false
         end
     end
+    if mc_teacher.is_frozen(player) then
+        privs["fast"] = "alt_deny"
+    end
     return privs
 end
 
@@ -77,6 +80,8 @@ local function generate_player_table(p_list, p_priv_list)
                 table.insert(combined_list, 2)
             elseif p_priv_list[i][priv] == "overridden" then
                 table.insert(combined_list, 3)
+            elseif p_priv_list[i][priv] == "alt_deny" then
+                table.insert(combined_list, 4)
             else
                 table.insert(combined_list, 0)
             end
@@ -98,6 +103,17 @@ local function get_priv_button_states(p_list, p_priv_list)
             end
             if states[priv] == "mixed" then
                 privs_to_check[priv] = nil
+            end
+        end
+    end
+    for _,player in pairs(p_list) do
+        local p_obj = minetest.get_player_by_name(player)
+        -- freeze
+        if states["frozen"] ~= "mixed" and p_obj then
+            if mc_teacher.is_frozen(p_obj) then
+                states["frozen"] = (states[priv] == true and "mixed") or false
+            else
+                states["frozen"] = (states[priv] == false and "mixed") or true
             end
         end
     end
@@ -598,14 +614,14 @@ function mc_teacher.show_controller_fs(player, tab)
                     -- TODO: re-implement groups
                     "style[p_group_new,p_group_edit,p_group_delete;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     -- TODO: re-impelment remaining actions
-                    "style[p_audience,p_freeze,p_timeout;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
+                    "style[p_audience,p_timeout;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     "style[p_mode_", context.selected_p_mode == mc_teacher.PMODE.ALL and "all" or context.selected_p_mode == mc_teacher.PMODE.TAB and "tab" or "selected", ";bgimg=mc_pixel.png^[multiply:", mc_core.col.b.selected, "]",
                     context.selected_p_mode ~= mc_teacher.PMODE.SELECTED and "style[p_teleport;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.orange.."]" or "",
                     
                     "tabheader[", spacer, ",1.4;", panel_width - 2*spacer - 0.35, ",0.5;p_list_header;Students,Teachers,Classroom;", context.selected_p_tab, ";false;true]",
                     "tablecolumns[image,align=center,padding=0.1,tooltip=shout,",    "0=", img.shout,    img.e, img.r, img.o, ",1=", img.shout,    img.e, img.r, ",2=", img.shout,    img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.shout,    "_o", img.e, img.r, ";",
                                  "image,align=center,padding=0.1,tooltip=interact,", "0=", img.interact, img.e, img.r, img.o, ",1=", img.interact, img.e, img.r, ",2=", img.interact, img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.interact, "_o", img.e, img.r, ";",
-                                 "image,align=center,padding=0.1,tooltip=fast,",     "0=", img.fast,     img.e, img.r, img.o, ",1=", img.fast,     img.e, img.r, ",2=", img.fast,     img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.fast,     "_o", img.e, img.r, ";",
+                                 "image,align=center,padding=0.1,tooltip=fast,",     "0=", img.fast,     img.e, img.r, img.o, ",1=", img.fast,     img.e, img.r, ",2=", img.fast,     img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.fast,     "_o", img.e, img.r, ",4=mc_teacher_frozen", img.e, img.r, ";",
                                  "image,align=center,padding=0.1,tooltip=fly,",      "0=", img.fly,      img.e, img.r, img.o, ",1=", img.fly,      img.e, img.r, ",2=", img.fly,      img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.fly,      "_o", img.e, img.r, ";",
                                  "image,align=center,padding=0.1,tooltip=noclip,",   "0=", img.noclip,   img.e, img.r, img.o, ",1=", img.noclip,   img.e, img.r, ",2=", img.noclip,   img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.noclip,   "_o", img.e, img.r, ";",
                                  "image,align=center,padding=0.1,tooltip=give,",     "0=", img.give,     img.e, img.r, img.o, ",1=", img.give,     img.e, img.r, ",2=", img.give,     img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.give,     "_o", img.e, img.r, ";",
@@ -690,8 +706,8 @@ function mc_teacher.show_controller_fs(player, tab)
                     {[true] = "Mute", [false] = "Unmute", default = "Mute"}, priv_b_state.shout),
                     create_state_button(panel_width + spacer + 2.4, 6.6, 2.3, 0.8, {[true] = "p_deactivate", [false] = "p_reactivate"},
                     {[true] = "Deactivate", [false] = "Reactivate", default = "Activate"}, priv_b_state.interact),
-                    -- TODO: use state buttons to determine which button to show
-                    "button[", panel_width + spacer + 4.8, ",6.6;2.3,0.8;p_freeze;Freeze]",
+                    create_state_button(panel_width + spacer + 4.8, 6.6, 2.3, 0.8, {[true] = "p_freeze", [false] = "p_unfreeze"},
+                    {[true] = "Freeze", [false] = "Unfreeze", default = "Freeze"}, priv_b_state.frozen),
                     "button[", panel_width + spacer, ",7.5;2.3,0.8;p_timeout;Timeout]",
                     
                     "textarea[", panel_width + text_spacer, ",8.4;", panel_width - 2*text_spacer, ",1;;;Server Role]",
