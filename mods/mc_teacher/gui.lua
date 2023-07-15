@@ -146,7 +146,7 @@ function mc_teacher.show_confirm_popup(player, fs_name, action, size)
     local text_spacer = mc_teacher.fs_t_spacer
     local width = math.max(size and size.x or 7.5, 1.5)
     local height = math.max(size and size.y or 3.4, 2.1)
-    local button_width = (width - 1.3)/2
+    local button_width = (width - 2*spacer - 0.1)/2
 
     local pname = player:get_player_name()
     
@@ -168,7 +168,7 @@ function mc_teacher.show_ban_popup(player)
     local text_spacer = mc_teacher.fs_t_spacer
     local width = 7.5
     local height = 7.5
-    local button_width = (width - 1.3)/2
+    local button_width = (width - 2*spacer - 0.1)/2
 
     local pname = player:get_player_name()
     local context = mc_teacher.get_fs_context(player)
@@ -186,6 +186,153 @@ function mc_teacher.show_ban_popup(player)
     }
     minetest.show_formspec(pname, "mc_teacher:ban_manager", table.concat(fs, ""))
 end
+
+function mc_teacher.show_edit_popup(player, realmID)
+    local spacer = mc_teacher.fs_spacer
+    local text_spacer = mc_teacher.fs_t_spacer
+    local width = 8.3
+    local height = 9.5
+    local button_width = (width - 2*spacer - 0.1)/2
+
+    local pname = player:get_player_name()
+    local context = mc_teacher.get_fs_context(player)
+    local realm = Realm.GetRealm(realmID)
+
+    if not realmID or not realm then
+        return minetest.show_formspec(pname, "mc_teacher:edit_realm", table.concat({
+            "formspec_version[6]", "size[6,2.5]",
+            "textarea[0.55,0.5;4.9,1;;;Classroom not found!]",
+            "button[0.6,1.1;4.8,0.8;cancel;Return]",
+        }, ""))
+    end
+
+    if not context.edit_realm then
+        local cat = realm:getCategory()
+        context.edit_realm = {
+            name = realm.Name or "",
+            type = cat and Realm.CAT_RMAP[cat.key] or Realm.CAT_KEY.DEFAULT,
+            privs = {interact = "nil", shout = "nil", fast = "nil", fly = "nil", noclip = "nil", give = "nil"},
+            id = realmID,
+        }
+        for priv,v in pairs(realm.Permissions or {interact = true, shout = true, fast = true}) do
+            if context.edit_realm.privs[priv] ~= nil then
+                context.edit_realm.privs[priv] = v
+            end
+        end
+    end
+
+    local fs = {
+        "formspec_version[6]",
+        "size[", width, ",", height, "]",
+        "style_type[textarea;font=mono,bold]",
+        "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+        "style_type[field;font=mono;textcolor=#ffffff]",
+        "textarea[", text_spacer, ",0.5;", width - 2*text_spacer, ",1;;;Name]",
+        "field[", spacer, " ,0.9;", width - 2*spacer, ",0.8;erealm_name;;", context.edit_realm.name, "]",
+        "field_close_on_enter[erealm_name;false]",
+        "textarea[", text_spacer, ",1.8;", button_width + 0.1, ",1;;;Type]",
+        "dropdown[", spacer, " ,2.2;", button_width, ",0.8;erealm_cat;Default,Spawn,Classroom,Instanced;", context.edit_realm.type, ";true]",
+        "hypertext[", text_spacer + button_width + 0.1, ",1.82;", button_width + 0.1, ",1;;<global font=mono halign=center><b>Internal ID</b>]",
+        "hypertext[", text_spacer + button_width + 0.1, ",2.22;", button_width + 0.1, ",2;;<global font=mono halign=center><b><bigger>", realmID, "</bigger></b>]",
+
+        "textarea[", text_spacer, ",3.1;", width - 2*text_spacer, ",1;;;Default Privileges]",
+        "style_type[textarea;font=mono]",
+        "textarea[", text_spacer + 1.3, ",3.9;2.3,1;;;interact]",
+        "textarea[", text_spacer + 1.3, ",4.3;2.3,1;;;shout]",
+        "textarea[", text_spacer + 1.3, ",4.7;2.3,1;;;fast]",
+        "textarea[", text_spacer + button_width + 1.4, ",3.9;2.3,1;;;fly]",
+        "textarea[", text_spacer + button_width + 1.4, ",4.3;2.3,1;;;noclip]",
+        "textarea[", text_spacer + button_width + 1.4, ",4.7;2.3,1;;;give]",
+        "style_type[textarea;font=mono,bold]",
+
+        "image[", text_spacer, ",3.5;0.4,0.4;mc_teacher_check.png]",
+        "image[", text_spacer + 0.4, ",3.5;0.4,0.4;mc_teacher_ignore.png]",
+        "image[", text_spacer + 0.8, ",3.5;0.4,0.4;mc_teacher_delete.png]",
+        "image[", text_spacer + button_width + 0.1, ",3.5;0.4,0.4;mc_teacher_check.png]",
+        "image[", text_spacer + button_width + 0.5, ",3.5;0.4,0.4;mc_teacher_ignore.png]",
+        "image[", text_spacer + button_width + 0.9, ",3.5;0.4,0.4;mc_teacher_delete.png]",
+        "tooltip[", text_spacer, ",3.5;0.4,0.4;ALLOW: Privilege will be granted\n(does NOT override universal privileges);#404040;#ffffff]",
+        "tooltip[", text_spacer + 0.4, ",3.5;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
+        "tooltip[", text_spacer + 0.8, ",3.5;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
+        "tooltip[", text_spacer + 3.6, ",3.5;0.4,0.4;ALLOW: Privilege will be granted\n(does NOT override universal privileges);#404040;#ffffff]",
+        "tooltip[", text_spacer + 4.0, ",3.5;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
+        "tooltip[", text_spacer + 4.4, ",3.5;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
+
+        "checkbox[", spacer, ",4.1;allowpriv_interact;;",        tostring(context.edit_realm.privs.interact == true), "]",
+        "checkbox[", spacer, ",4.5;allowpriv_shout;;",           tostring(context.edit_realm.privs.shout    == true), "]",
+        "checkbox[", spacer, ",4.9;allowpriv_fast;;",            tostring(context.edit_realm.privs.fast     == true), "]",
+        "checkbox[", spacer + 0.4, ",4.1;ignorepriv_interact;;", tostring(context.edit_realm.privs.interact == "nil"), "]",
+        "checkbox[", spacer + 0.4, ",4.5;ignorepriv_shout;;",    tostring(context.edit_realm.privs.shout    == "nil"), "]",
+        "checkbox[", spacer + 0.4, ",4.9;ignorepriv_fast;;",     tostring(context.edit_realm.privs.fast     == "nil"), "]",
+        "checkbox[", spacer + 0.8, ",4.1;denypriv_interact;;",   tostring(context.edit_realm.privs.interact == false), "]",
+        "checkbox[", spacer + 0.8, ",4.5;denypriv_shout;;",      tostring(context.edit_realm.privs.shout    == false), "]",
+        "checkbox[", spacer + 0.8, ",4.9;denypriv_fast;;",       tostring(context.edit_realm.privs.fast     == false), "]",
+        "checkbox[", spacer + button_width + 0.1, ",4.1;allowpriv_fly;;",     tostring(context.edit_realm.privs.fly    == true), "]",
+        "checkbox[", spacer + button_width + 0.1, ",4.5;allowpriv_noclip;;",  tostring(context.edit_realm.privs.noclip == true), "]",
+        "checkbox[", spacer + button_width + 0.1, ",4.9;allowpriv_give;;",    tostring(context.edit_realm.privs.give   == true), "]",
+        "checkbox[", spacer + button_width + 0.5, ",4.1;ignorepriv_fly;;",    tostring(context.edit_realm.privs.fly    == "nil"), "]",
+        "checkbox[", spacer + button_width + 0.5, ",4.5;ignorepriv_noclip;;", tostring(context.edit_realm.privs.noclip == "nil"), "]",
+        "checkbox[", spacer + button_width + 0.5, ",4.9;ignorepriv_give;;",   tostring(context.edit_realm.privs.give   == "nil"), "]",
+        "checkbox[", spacer + button_width + 0.9, ",4.1;denypriv_fly;;",      tostring(context.edit_realm.privs.fly    == false), "]",
+        "checkbox[", spacer + button_width + 0.9, ",4.5;denypriv_noclip;;",   tostring(context.edit_realm.privs.noclip == false), "]",
+        "checkbox[", spacer + button_width + 0.9, ",4.9;denypriv_give;;",     tostring(context.edit_realm.privs.give   == false), "]",
+        
+        "textarea[", text_spacer, ",5.2;", width - 2*text_spacer, ",1;;;Background Music]",
+        "dropdown[", spacer, " ,5.6;", width - 2*spacer, ",0.8;erealm_bgmusic;;1;true]",
+        "textarea[", text_spacer, ",6.5;", width - 2*text_spacer, ",1;;;Skybox]",
+        "dropdown[", spacer, ",6.9;", width - 2*spacer, ",0.8;erealm_skybox;;1;true]",
+        "button[", spacer, " ,8.1;", button_width, ",0.8;save_realm;Save changes]",
+        "button[4.2,8.1;", button_width, ",0.8;cancel;Cancel]",
+    }
+    minetest.show_formspec(pname, "mc_teacher:edit_realm", table.concat(fs, ""))
+end
+
+--[[ EDIT FORMSPEC
+formspec_version[6]
+size[8.3,9.5]
+textarea[0.55,0.5;7.2,1;;;Name]
+field[0.6,0.9;7.1,0.8;realmname;;]
+textarea[0.55,1.8;3.6,1;;;Type]
+dropdown[0.6,2.2;3.5,0.8;realmcategory;Default,Spawn,Classroom,Instanced;1;true]
+textarea[4.15,1.8;3.6,1;;;Internal ID]
+textarea[0.55,3.1;7.2,1;;;Default Privileges]
+textarea[1.85,3.9;2.3,1;;;interact]
+textarea[1.85,4.3;2.3,1;;;shout]
+textarea[1.85,4.7;2.3,1;;;fast]
+textarea[5.45,3.9;2.3,1;;;fly]
+textarea[5.45,4.3;2.3,1;;;noclip]
+textarea[5.45,4.7;2.3,1;;;give]
+image[0.6,3.5;0.4,0.4;mc_teacher_check.png]
+image[1,3.5;0.4,0.4;mc_teacher_ignore.png]
+image[1.4,3.5;0.4,0.4;mc_teacher_delete.png]
+image[4.2,3.5;0.4,0.4;mc_teacher_check.png]
+image[4.6,3.5;0.4,0.4;mc_teacher_ignore.png]
+image[5,3.5;0.4,0.4;mc_teacher_delete.png]
+checkbox[0.6,4.1;allowpriv_interact;;true]
+checkbox[0.6,4.5;allowpriv_shout;;true]
+checkbox[0.6,4.9;allowpriv_fast;;true]
+checkbox[1,4.1;ignorepriv_interact;;false]
+checkbox[1,4.5;ignorepriv_shout;;false]
+checkbox[1,4.9;ignorepriv_fast;;false]
+checkbox[1.4,4.1;denypriv_interact;;false]
+checkbox[1.4,4.5;denypriv_shout;;false]
+checkbox[1.4,4.9;denypriv_fast;;false]
+checkbox[4.2,4.1;allowpriv_fly;;false]
+checkbox[4.2,4.5;allowpriv_noclip;;false]
+checkbox[4.2,4.9;allowpriv_give;;false]
+checkbox[4.6,4.1;ignorepriv_fly;;true]
+checkbox[4.6,4.5;ignorepriv_noclip;;true]
+checkbox[4.6,4.9;ignorepriv_give;;true]
+checkbox[5,4.1;denypriv_fly;;false]
+checkbox[5,4.5;denypriv_noclip;;false]
+checkbox[5,4.9;denypriv_give;;false]
+textarea[0.55,5.2;7.2,1;;;Background Music]
+dropdown[0.6,5.6;7.1,0.8;bgmusic;;1;true]
+textarea[0.55,6.5;7.2,1;;;Skybox]
+dropdown[0.6,6.9;7.1,0.8;;;1;true]
+button[0.6,8.1;3.5,0.8;save_realm;Save changes]
+button[4.2,8.1;3.5,0.8;cancel;Cancel]
+]]
 
 function mc_teacher.show_controller_fs(player, tab)
     local controller_width = 16.6
@@ -279,12 +426,13 @@ function mc_teacher.show_controller_fs(player, tab)
 
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-                    "style[editrealm;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Available Classrooms]",
-                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.realm_id_to_i and context.realm_id_to_i[context.selected_realm_id] or 1, ";false]",
+                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.realm_id_to_i and context.realm_id_to_i[tostring(context.selected_realm_id)] or 1, ";false]",
                     "button[", spacer, ",9;2.3,0.8;teleportrealm;Teleport]",
                     "button[", spacer + 2.4, ",9;2.3,0.8;editrealm;Edit]",
                     "button[", spacer + 4.8, ",9;2.3,0.8;deleterealm;Delete]",
+
+                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;requestrealm;Generate Classroom]",
 
                     "style_type[field;font=mono;textcolor=#ffffff]",
                     "scrollbaroptions[min=0;max=", (options_height - 0.7)/FACTOR, ";smallstep=", 0.6/FACTOR, ";largestep=", 3.6/FACTOR, ";thumbsize=", 0.6/FACTOR, "]",
@@ -309,8 +457,8 @@ function mc_teacher.show_controller_fs(player, tab)
                         "field[", spacer + 0.9, ",3;1.3,0.8;realm_x_size;;", context.realm_x or 80, "]",
                         "field[", spacer + 3.3, ",3;1.3,0.8;realm_y_size;;", context.realm_y or 80, "]",
                         "field[", spacer + 5.7, ",3;1.3,0.8;realm_z_size;;", context.realm_z or 80, "]",
-                        "textarea[", text_spacer, ",3.9;3.6,1;;;Terrain Generator]",
-                        "textarea[", text_spacer + 3.6, ",3.9;3.6,1;;;Terrain Decorator]",
+                        "textarea[", text_spacer, ",3.9;3.6,1;;;Terrain]",
+                        "textarea[", text_spacer + 3.6, ",3.9;3.6,1;;;Foliage]",
                         "dropdown[", spacer, ",4.3;3.5,0.8;realm_generator;None,Version 1,Version 2,DNR;", context.realm_gen or 1, ";true]",
                         "dropdown[", spacer + 3.6, ",4.3;3.5,0.8;realm_decorator;None,Version 1,Version 2,Biomegen;", context.realm_dec or 1, ";true]",
                     
@@ -332,10 +480,18 @@ function mc_teacher.show_controller_fs(player, tab)
                         }))
                     end
                     if options_height >= 5.2 then
+                        local raw_biomes = biomegen.get_biomes()
+                        context.i_to_biome = {}
+                        for biome,_ in pairs(raw_biomes) do
+                            table.insert(context.i_to_biome, biome)
+                        end
+                        table.sort(context.i_to_biome)
+                        context.realm_biome = context.realm_biome or 1
+
                         table.insert(fs, table.concat({
                             "textarea[", text_spacer, ",6.5;3.6,1;;;Biome]",
                             "textarea[", text_spacer + 3.6, ",6.5;3.6,1;;;Chill Coefficient]",
-                            "dropdown[", spacer, ",6.9;3.5,0.8;realm_biome;;1;false]",
+                            "dropdown[", spacer, ",6.9;3.5,0.8;realm_biome;", table.concat(context.i_to_biome, ","), ";", context.realm_biome, ";true]",
                             "field[", spacer + 3.6, ",6.9;3.5,0.8;realm_chill;;", minetest.formspec_escape(context.realm_chill) or "", "]",
 
                             "field_close_on_enter[realm_chill;false]",
@@ -406,24 +562,24 @@ function mc_teacher.show_controller_fs(player, tab)
                     "tooltip[", text_spacer + 4.0, ",0.4;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
                     "tooltip[", text_spacer + 4.4, ",0.4;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
 
-                    "checkbox[", spacer, ",1.0;allowpriv_interact;;", tostring(context.selected_privs.interact == true), "]",
-                    "checkbox[", spacer, ",1.4;allowpriv_shout;;", tostring(context.selected_privs.shout == true), "]",
-                    "checkbox[", spacer, ",1.8;allowpriv_fast;;", tostring(context.selected_privs.fast == true), "]",
+                    "checkbox[", spacer, ",1.0;allowpriv_interact;;",        tostring(context.selected_privs.interact == true), "]",
+                    "checkbox[", spacer, ",1.4;allowpriv_shout;;",           tostring(context.selected_privs.shout    == true), "]",
+                    "checkbox[", spacer, ",1.8;allowpriv_fast;;",            tostring(context.selected_privs.fast     == true), "]",
                     "checkbox[", spacer + 0.4, ",1.0;ignorepriv_interact;;", tostring(context.selected_privs.interact == "nil"), "]",
-                    "checkbox[", spacer + 0.4, ",1.4;ignorepriv_shout;;", tostring(context.selected_privs.shout == "nil"), "]",
-                    "checkbox[", spacer + 0.4, ",1.8;ignorepriv_fast;;", tostring(context.selected_privs.fast == "nil"), "]",
-                    "checkbox[", spacer + 0.8, ",1.0;denypriv_interact;;", tostring(context.selected_privs.interact == false), "]",
-                    "checkbox[", spacer + 0.8, ",1.4;denypriv_shout;;", tostring(context.selected_privs.shout == false), "]",
-                    "checkbox[", spacer + 0.8, ",1.8;denypriv_fast;;", tostring(context.selected_privs.fast == false), "]",
-                    "checkbox[", spacer + 3.6, ",1.0;allowpriv_fly;;", tostring(context.selected_privs.fly == true), "]",
-                    "checkbox[", spacer + 3.6, ",1.4;allowpriv_noclip;;", tostring(context.selected_privs.noclip == true), "]",
-                    "checkbox[", spacer + 3.6, ",1.8;allowpriv_give;;", tostring(context.selected_privs.give == true), "]",
-                    "checkbox[", spacer + 4.0, ",1.0;ignorepriv_fly;;", tostring(context.selected_privs.fly == "nil"), "]",
-                    "checkbox[", spacer + 4.0, ",1.4;ignorepriv_noclip;;", tostring(context.selected_privs.noclip == "nil"), "]",
-                    "checkbox[", spacer + 4.0, ",1.8;ignorepriv_give;;", tostring(context.selected_privs.give == "nil"), "]",
-                    "checkbox[", spacer + 4.4, ",1.0;denypriv_fly;;", tostring(context.selected_privs.fly == false), "]",
-                    "checkbox[", spacer + 4.4, ",1.4;denypriv_noclip;;", tostring(context.selected_privs.noclip == false), "]",
-                    "checkbox[", spacer + 4.4, ",1.8;denypriv_give;;", tostring(context.selected_privs.give == false), "]",
+                    "checkbox[", spacer + 0.4, ",1.4;ignorepriv_shout;;",    tostring(context.selected_privs.shout    == "nil"), "]",
+                    "checkbox[", spacer + 0.4, ",1.8;ignorepriv_fast;;",     tostring(context.selected_privs.fast     == "nil"), "]",
+                    "checkbox[", spacer + 0.8, ",1.0;denypriv_interact;;",   tostring(context.selected_privs.interact == false), "]",
+                    "checkbox[", spacer + 0.8, ",1.4;denypriv_shout;;",      tostring(context.selected_privs.shout    == false), "]",
+                    "checkbox[", spacer + 0.8, ",1.8;denypriv_fast;;",       tostring(context.selected_privs.fast     == false), "]",
+                    "checkbox[", spacer + 3.6, ",1.0;allowpriv_fly;;",       tostring(context.selected_privs.fly      == true), "]",
+                    "checkbox[", spacer + 3.6, ",1.4;allowpriv_noclip;;",    tostring(context.selected_privs.noclip   == true), "]",
+                    "checkbox[", spacer + 3.6, ",1.8;allowpriv_give;;",      tostring(context.selected_privs.give     == true), "]",
+                    "checkbox[", spacer + 4.0, ",1.0;ignorepriv_fly;;",      tostring(context.selected_privs.fly      == "nil"), "]",
+                    "checkbox[", spacer + 4.0, ",1.4;ignorepriv_noclip;;",   tostring(context.selected_privs.noclip   == "nil"), "]",
+                    "checkbox[", spacer + 4.0, ",1.8;ignorepriv_give;;",     tostring(context.selected_privs.give     == "nil"), "]",
+                    "checkbox[", spacer + 4.4, ",1.0;denypriv_fly;;",        tostring(context.selected_privs.fly      == false), "]",
+                    "checkbox[", spacer + 4.4, ",1.4;denypriv_noclip;;",     tostring(context.selected_privs.noclip   == false), "]",
+                    "checkbox[", spacer + 4.4, ",1.8;denypriv_give;;",       tostring(context.selected_privs.give     == false), "]",
                     "container_end[]",
 
                     "style_type[textarea;font=mono,bold]",
@@ -432,8 +588,6 @@ function mc_teacher.show_controller_fs(player, tab)
                     "textarea[", text_spacer, ",", 6 + options_height, ";", panel_width - 2*text_spacer, ",1;;;Skybox]",
                     "dropdown[", spacer, ",", 6.4 + options_height, ";", panel_width - 2*spacer, ",0.8;skybox;Default;1;false]",
                     "scroll_container_end[]",
-
-                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;requestrealm;Generate Classroom]",
                 }))
 
                 return fs
@@ -561,11 +715,11 @@ function mc_teacher.show_controller_fs(player, tab)
                         end
                     elseif context.selected_p_tab == "3" then
                         local this_realm = Realm.GetRealmFromPlayer(player)
-                        for _,p in pairs(minetest.get_connected_players() or {}) do
-                            if p:is_player() then
-                                local p_realm = Realm.GetRealmFromPlayer(p)
-                                if this_realm and p_realm and this_realm.ID == p_realm.ID then
-                                    table.insert(context.p_list, p:get_player_name())
+                        if this_realm then
+                            for _,p in pairs(this_realm:GetPlayersAsArray() or {}) do
+                                local p_obj = minetest.get_player_by_name(p)
+                                if p_obj and p_obj:is_player() then
+                                    table.insert(context.p_list, p)
                                 end
                             end
                         end

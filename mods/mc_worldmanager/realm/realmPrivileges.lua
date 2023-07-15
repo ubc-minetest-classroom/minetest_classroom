@@ -58,14 +58,12 @@ function Realm:UpdateRealmPrivilege(privilegeTable)
         if (v == true or v == "true") then
             if (Realm.whitelistedPrivs[k] ~= true) then
                 table.insert(invalidPrivs, k)
-                Debug.log(tostring(k))
             else
                 self.Permissions[k] = true
             end
         elseif (v == false or v == "false") then
             if (Realm.whitelistedPrivs[k] ~= true) then
                 table.insert(invalidPrivs, k)
-                Debug.log(tostring(k))
             else
                 self.Permissions[k] = false
             end

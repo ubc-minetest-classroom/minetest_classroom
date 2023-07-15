@@ -130,7 +130,7 @@ end
 function Realm:GetPlayersAsArray()
     local players = self:GetPlayers()
     local retval = {}
-    for k, v in pairs(players) do
+    for k, v in pairs(players or {}) do
         if (v == true) then
             table.insert(retval, k)
         end
