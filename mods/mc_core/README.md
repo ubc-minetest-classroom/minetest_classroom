@@ -187,6 +187,24 @@ The created formspec will exceed the bounds of the content area (0.5 units left,
 - Returns:
   - *`formspec string`*: Blank notebook formspec template
 
+### `mc_core.draw_note_fs(width, height, options)  -->  formspec string`
+
+Creates a sticky note formspec with a content area of the given width and height  
+The created formspec will contain the `no_prepend[]` element
+
+- Parameters:
+  - `width` (*`number`*): Content area width
+  - `height` (*`number`*): Content area height
+  - `options` (*`table`*): Formspec options
+    ```lua
+    {
+        bg = "#325140",       -- primary sticky note colour
+        accent = "#164326"    -- secondary sticky note colour
+    }
+    ```
+- Returns:
+  - *`formspec string`*: Blank sticky note formspec template
+
 ## Compression ([`lualzw.lua`](lualzw.lua))
 
 *Copyright (c) 2016 Rochet2, licensed under the MIT license*  

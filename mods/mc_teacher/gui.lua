@@ -151,9 +151,8 @@ function mc_teacher.show_confirm_popup(player, fs_name, action, size)
     local pname = player:get_player_name()
     
     local fs = {
-        "formspec_version[6]",
-        "size[", width, ",", height, "]",
-        "style_type[textarea;font=mono]",
+        mc_core.draw_note_fs(width, height, {bg = "#f2aeec", accent = "#f9c8fa"}),
+        "style_type[textarea;font=mono,bold;textcolor=#000000]",
         "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
         "textarea[", text_spacer, ",0.5;", width - 2*text_spacer, ",", height - 2, ";;;", action and action.action or "Are you sure you want to perform this action?",
         action.irreversible and "\nThis action is irreversible." or "", "]",
@@ -174,9 +173,8 @@ function mc_teacher.show_ban_popup(player)
     local context = mc_teacher.get_fs_context(player)
 
     local fs = {
-        "formspec_version[6]",
-        "size[", width, ",", height, "]",
-        "style_type[textarea;font=mono,bold]",
+        mc_core.draw_note_fs(width, height, {bg = "#baf5a2", accent = "#e0fccf"}),
+        "style_type[textarea;font=mono,bold;textcolor=#000000]",
         "style_type[textlist;font=mono]",
         "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
         "textarea[", text_spacer, ",0.5;", width - 2*text_spacer, ",1;;;Banned Players]",
@@ -200,7 +198,8 @@ function mc_teacher.show_edit_popup(player, realmID)
 
     if not realmID or not realm then
         return minetest.show_formspec(pname, "mc_teacher:edit_realm", table.concat({
-            "formspec_version[6]", "size[6,2.5]",
+            mc_core.draw_note_fs(6, 2.5),
+            "style_type[textarea;font=mono;textcolor=#000000]",
             "textarea[0.55,0.5;4.9,1;;;Classroom not found!]",
             "button[0.6,1.1;4.8,0.8;cancel;Return]",
         }, ""))
@@ -222,9 +221,8 @@ function mc_teacher.show_edit_popup(player, realmID)
     end
 
     local fs = {
-        "formspec_version[6]",
-        "size[", width, ",", height, "]",
-        "style_type[textarea;font=mono,bold]",
+        mc_core.draw_note_fs(width, height),
+        "style_type[textarea;font=mono,bold;textcolor=#000000]",
         "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
         "style_type[field;font=mono;textcolor=#ffffff]",
         "textarea[", text_spacer, ",0.5;", width - 2*text_spacer, ",1;;;Name]",
@@ -232,8 +230,8 @@ function mc_teacher.show_edit_popup(player, realmID)
         "field_close_on_enter[erealm_name;false]",
         "textarea[", text_spacer, ",1.8;", button_width + 0.1, ",1;;;Type]",
         "dropdown[", spacer, " ,2.2;", button_width, ",0.8;erealm_cat;Default,Spawn,Classroom,Instanced;", context.edit_realm.type, ";true]",
-        "hypertext[", text_spacer + button_width + 0.1, ",1.82;", button_width + 0.1, ",1;;<global font=mono halign=center><b>Internal ID</b>]",
-        "hypertext[", text_spacer + button_width + 0.1, ",2.22;", button_width + 0.1, ",2;;<global font=mono halign=center><b><bigger>", realmID, "</bigger></b>]",
+        "hypertext[", text_spacer + button_width + 0.1, ",1.82;", button_width + 0.1, ",1;;<global font=mono halign=center color=#000000><b>Internal ID</b>]",
+        "hypertext[", text_spacer + button_width + 0.1, ",2.22;", button_width + 0.1, ",2;;<global font=mono halign=center color=#000000><b><bigger>#", realmID, "</bigger></b>]",
 
         "textarea[", text_spacer, ",3.1;", width - 2*text_spacer, ",1;;;Default Privileges]",
         "style_type[textarea;font=mono]",

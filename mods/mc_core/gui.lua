@@ -41,6 +41,32 @@ function mc_core.draw_book_fs(width, height, options)
     return table.concat(book_bg, "")
 end
 
+--- Creates a sticky note formspec with a content area of the given width and height
+--- The created formspec will contain the no_prepend[] element
+---@param width Content area width
+---@param height Content area height
+---@param options Formspec options
+---@see README.md > GUI Templates
+---@return formspec string
+function mc_core.draw_note_fs(width, height, options)
+    options = options or {}
+    local raw_corner = math.min(width/4, 0.5)
+    local corner_size = mc_core.round(raw_corner, 1)
+
+    local note_bg = {
+        "formspec_version[6]",
+        "size[", width, ",", height, "]",
+        "no_prepend[]",
+        "bgcolor[#00000000;true;]",
+        "style_type[image;noclip=true]",
+        "image[0,0;", width - corner_size, ",", height, ";mc_pixel.png^[multiply:", options.bg or "#faf596", "]",
+        "image[0,0;", width, ",", height - corner_size, ";mc_pixel.png^[multiply:", options.bg or "#faf596", "]",
+        "image[", width - corner_size, ",", height - corner_size, ";", corner_size, ",", corner_size, ";mc_triangle.png^[multiply:", options.accent or "#fcf5c2", "]",
+        "style_type[image;noclip=false]",
+    }
+    return table.concat(note_bg, "")
+end
+
 --- Creates a string containing the primary controls for Minetest, intended for use in a formspec
 ---@param show_technical Boolean indicating whether to show controls for viewing Minetest debug info
 ---@return string
