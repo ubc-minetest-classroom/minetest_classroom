@@ -226,10 +226,10 @@ function mc_teacher.show_edit_popup(player, realmID)
         "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
         "style_type[field;font=mono;textcolor=#ffffff]",
         "textarea[", text_spacer, ",0.5;", width - 2*text_spacer, ",1;;;Name]",
-        "field[", spacer, " ,0.9;", width - 2*spacer, ",0.8;erealm_name;;", context.edit_realm.name, "]",
+        "field[", spacer, " ,0.9;", width - 2*spacer, ",0.8;erealm_name;;", minetest.formspec_escape(context.edit_realm.name), "]",
         "field_close_on_enter[erealm_name;false]",
         "textarea[", text_spacer, ",1.8;", button_width + 0.1, ",1;;;Type]",
-        "dropdown[", spacer, " ,2.2;", button_width, ",0.8;erealm_cat;Default,Spawn,Classroom,Instanced;", context.edit_realm.type, ";true]",
+        "dropdown[", spacer, " ,2.2;", button_width, ",0.8;erealm_cat;Default,Spawn,Classroom,Private;", context.edit_realm.type, ";true]",
         "hypertext[", text_spacer + button_width + 0.1, ",1.82;", button_width + 0.1, ",1;;<global font=mono halign=center color=#000000><b>Internal ID</b>]",
         "hypertext[", text_spacer + button_width + 0.1, ",2.22;", button_width + 0.1, ",2;;<global font=mono halign=center color=#000000><b><bigger>#", realmID, "</bigger></b>]",
 
@@ -291,7 +291,7 @@ size[8.3,9.5]
 textarea[0.55,0.5;7.2,1;;;Name]
 field[0.6,0.9;7.1,0.8;realmname;;]
 textarea[0.55,1.8;3.6,1;;;Type]
-dropdown[0.6,2.2;3.5,0.8;realmcategory;Default,Spawn,Classroom,Instanced;1;true]
+dropdown[0.6,2.2;3.5,0.8;realmcategory;Default,Spawn,Classroom,Private;1;true]
 textarea[4.15,1.8;3.6,1;;;Internal ID]
 textarea[0.55,3.1;7.2,1;;;Default Privileges]
 textarea[1.85,3.9;2.3,1;;;interact]
@@ -439,7 +439,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     "field[", spacer, ",0.4;7.1,0.8;realmname;;", context.realmname or "", "]",
                     "field_close_on_enter[realmname;false]",
                     "textarea[", text_spacer, ",1.25;3.6,1;;;Type]",
-                    "dropdown[", spacer, ",1.7;3.5,0.8;realmcategory;Default,Spawn,Classroom,Instanced" or "", ";", context.selected_realm_type or 1, ";true]",
+                    "dropdown[", spacer, ",1.7;3.5,0.8;realmcategory;Default,Spawn,Classroom,Private" or "", ";", context.selected_realm_type or 1, ";true]",
                     "textarea[", text_spacer + 3.6, ",1.25;3.6,1;;;Generation]",
                     "dropdown[", spacer + 3.6, ",1.7;3.5,0.8;mode;Empty World,Schematic,Digital Twin" or "", ";", context.selected_mode or 1, ";true]",
                 }
@@ -1355,7 +1355,7 @@ button[5.4,9;2.3,0.8;deleterealm;Delete]
 textarea[8.85,1;7.2,1;;;Name]
 field[8.9,1.4;7.1,0.8;realmname;;]
 textarea[8.85,2.3;3.6,1;;;Type]
-dropdown[8.9,2.7;3.5,0.8;realmcategory;Default,Spawn,Classroom,Instanced;1;true]
+dropdown[8.9,2.7;3.5,0.8;realmcategory;Default,Spawn,Classroom,Private;1;true]
 textarea[12.45,2.3;3.6,1;;;Generation]
 dropdown[12.5,2.7;3.5,0.8;mode;Empty World,Schematic,Digital Twin;1;true]
 textarea[8.85,3.6;7.2,1;;;OPTIONS]

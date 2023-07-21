@@ -415,7 +415,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     end
 
                     if context.selected_realm_type == Realm.CAT_KEY.INSTANCED then
-                        new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, nil, true, realm_size)
+                        new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, nil, false, realm_size)
                     else
                         -- TODO: refactor realm.lua so that it can generate realms of non-block-aligned sizes
                         new_realm = Realm:New(realm_name, realm_size)
@@ -455,7 +455,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     end
 
                     if context.selected_realm_type == Realm.CAT_KEY.INSTANCED then
-                        new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, context.selected_schematic, true)
+                        new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, context.selected_schematic, false)
                     else
                         new_realm = Realm:NewFromSchematic(realm_name, context.selected_schematic)
                     end
