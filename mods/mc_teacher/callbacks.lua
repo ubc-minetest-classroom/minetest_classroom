@@ -96,24 +96,31 @@ end)
 -- Log all chat messages
 minetest.register_on_chat_message(mc_teacher.log_chat_message)
 
-local function get_players_to_update(player, context)
+local function get_players_to_update(player, context, override)
     local list = {}
+    local has_server_privs = mc_core.checkPrivs(player, {server = true})
+
+    -- Additional checks added to ensure that only admins can modify roles/privs of other teachers
     if context.selected_p_mode == mc_teacher.PMODE.SELECTED then
         local selected_player = context.p_list[context.selected_p_player]
-        if selected_player then table.insert(list, selected_player) end
+        if selected_player and (override or has_server_privs or mc_teacher.students[selected_player]) then
+            table.insert(list, selected_player)
+        end
     elseif context.selected_p_mode == mc_teacher.PMODE.TAB then
-        -- TODO: separate students and teachers
         for _,p in pairs(context.p_list) do
-            table.insert(list, p)
+            if override or has_server_privs or mc_teacher.students[p] then
+                table.insert(list, p)
+            end
         end
     elseif context.selected_p_mode == mc_teacher.PMODE.ALL then
         for student,_ in pairs(mc_teacher.students) do
             table.insert(list, student)
         end
-        -- TODO: add check for server perms
-        --[[for teacher,_ in pairs(mc_teacher.teachers) do
-            table.insert(list, teacher)
-        end]]
+        if override or has_server_privs then
+            for teacher,_ in pairs(mc_teacher.teachers) do
+                table.insert(list, teacher)
+            end
+        end
     end
     return list
 end
@@ -479,28 +486,23 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
         if fields.classroomlist then
             local event = minetest.explode_textlist_event(fields.classroomlist)
-            if event.type == "CHG" and mc_core.checkPrivs(player,{teacher = true}) then
-                -- We should not use the index here because the realm could be deleted while the formspec is active
-                -- So return the actual realm.ID to avoid unexpected behaviour
-                local counter = 0
-                for _,thisRealm in pairs(Realm.realmDict) do
-                    counter = counter + 1
-                    if counter == tonumber(event.index) then
-                        context.selected_realm_id = thisRealm.ID
-                    end
-                end
+            if event.type == "CHG" and mc_core.checkPrivs(player, {teacher = true}) then
+                context.selected_realm = tonumber(event.index)
+				if not Realm.GetRealm(context.realm_i_to_id[context.selected_realm]) then
+					context.selected_realm = 1
+				end
                 reload = true
             end
         elseif fields.teleportrealm then
             -- Still a remote possibility that the realm is deleted in the time that the callback is executed
             -- So always check that the requested realm exists and the realm category allows the player to join
             -- Check that the player selected something from the textlist, otherwise default to spawn realm
-            if not context.selected_realm_id then context.selected_realm_id = mc_worldManager.spawnRealmID end
-            local realm = Realm.GetRealm(context.selected_realm_id)
+            if not context.selected_realm then context.selected_realm = 1 end
+            local realm = Realm.GetRealm(context.realm_i_to_id[context.selected_realm])
             if realm then
                 if not mc_teacher.is_frozen(player) then
                     realm:TeleportPlayer(player)
-                    context.selected_realm_id = nil
+                    context.selected_realm = 1
                 else
                     minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not move while frozen."))
                 end
@@ -509,14 +511,21 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
             reload = true
         elseif fields.deleterealm then
-            local realm = Realm.GetRealm(tonumber(context.selected_realm_id))
-            if realm and tonumber(context.selected_realm_id) ~= mc_worldManager.spawnRealmID then
+            local realm = Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm]))
+            if not realm then
+                minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] This realm has already been deleted."))
+            elseif tonumber(context.realm_i_to_id[context.selected_realm]) == mc_worldManager.spawnRealmID then
+                minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not delete the spawn realm."))
+            else
+                -- TODO: change to "hide"
                 realm:Delete()
             end
             reload = true
         elseif fields.editrealm then
-            if not context.selected_realm_id then context.selected_realm_id = mc_worldManager.spawnRealmID end
-            return mc_teacher.show_edit_popup(player, context.selected_realm_id)
+            if not context.selected_realm then context.selected_realm = 1 end
+            if context.realm_i_to_id[context.selected_realm] then
+                return mc_teacher.show_edit_popup(player, context.realm_i_to_id[context.selected_realm])
+            end
         end
 
         if fields.music then
@@ -588,7 +597,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
 
         if fields.p_priv_update or fields.p_priv_reset then
-            local players_to_update = get_players_to_update(player, context)
+            local players_to_update = get_players_to_update(player, context, true)
             local realm = Realm.GetRealmFromPlayer(player)
             if realm and #players_to_update > 0 then
                 realm.PermissionsOverride = realm.PermissionsOverride or {}
@@ -987,17 +996,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
                 reload = true
             elseif fields.server_whitelist_remove then
-                local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
-                local ip_whitelist = {}
-                for ipv4,_ in pairs(ipv4_whitelist or {}) do
-                    table.insert(ip_whitelist, ipv4)
-                end
-                table.sort(ip_whitelist, networking.ipv4_compare)
-
-                local ip_to_remove = ip_whitelist[tonumber(context.selected_ip_range)]
+                local ip_to_remove = context.ip_whitelist[tonumber(context.selected_ip_range)]
                 if ip_to_remove then
-                    ipv4_whitelist[ip_to_remove] = nil
-                    networking.storage:set_string("ipv4_whitelist", minetest.serialize(ipv4_whitelist))
+                    networking.modify_ipv4(player, ip_to_remove, nil, nil)
+                else
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This IP has already been removed from the whitelist."))
                 end
                 reload = true
             elseif fields.server_whitelist_toggle then

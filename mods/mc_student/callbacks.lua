@@ -31,26 +31,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		if fields.classroomlist then
 			local event = minetest.explode_textlist_event(fields.classroomlist)
 			if event.type == "CHG" then
-				-- We should not use the index here because the realm could be deleted while the formspec is active
-				-- So return the actual realm.ID to avoid unexpected behaviour
-				local counter = 0
-				for _,thisRealm in pairs(Realm.realmDict) do
-					if mc_core.checkPrivs(player,{teacher = true}) then
-						counter = counter + 1
-						if counter == tonumber(event.index) then
-							context.selected_realm = thisRealm.ID
-						end
-					else
-						counter = counter + 1
-						-- check the category
-						local realmCategory = thisRealm:getCategory()
-						local joinable, reason = realmCategory.joinable(thisRealm, player)
-						if joinable then
-							if counter == tonumber(event.index) then
-								context.selected_realm = thisRealm.ID
-							end
-						end
-					end
+				context.selected_realm = tonumber(event.index)
+				if not Realm.GetRealm(context.realm_i_to_id[context.selected_realm]) then
+					context.selected_realm = 1
 				end
 				mc_student.show_notebook_fs(player, mc_student.TABS.CLASSROOMS)
 			end
@@ -58,11 +41,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			-- Still a remote possibility that the realm is deleted in the time that the callback is executed
 			-- So always check that the requested realm exists and the realm category allows the player to join
 			-- Check that the player selected something from the textlist, otherwise default to spawn realm
-			if not context.selected_realm then context.selected_realm = mc_worldManager.spawnRealmID end
-			local realm = Realm.GetRealm(tonumber(context.selected_realm))
+			if not context.selected_realm then context.selected_realm = 1 end
+			local realm = Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm]))
 			if realm then
 				realm:TeleportPlayer(player)
-				context.selected_realm = nil
+				context.selected_realm = 1
 			else
 				minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
 			end

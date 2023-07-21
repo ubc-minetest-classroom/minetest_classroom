@@ -402,17 +402,15 @@ function mc_teacher.show_controller_fs(player, tab)
             end,
             [mc_teacher.TABS.CLASSROOMS] = function()
                 local classroom_list = {}
-                local realm_count = 1
                 local options_height = (context.selected_mode == mc_teacher.MODES.EMPTY and get_options_height(context)) or 1.3
                 local FACTOR = 0.1
-                context.realm_id_to_i = {}
+                context.realm_i_to_id = {}
 
                 Realm.ScanForPlayerRealms()
                 for id, realm in pairs(Realm.realmDict or {}) do
                     local playerCount = tonumber(realm:GetPlayerCount())
                     table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
-                    context.realm_id_to_i[tostring(id)] = realm_count
-                    realm_count = realm_count + 1
+                    table.insert(context.realm_i_to_id, id)
                 end
 
                 local fs = {
@@ -425,7 +423,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Available Classrooms]",
-                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.realm_id_to_i and context.realm_id_to_i[tostring(context.selected_realm_id)] or 1, ";false]",
+                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.selected_realm or 1, ";false]",
                     "button[", spacer, ",9;2.3,0.8;teleportrealm;Teleport]",
                     "button[", spacer + 2.4, ",9;2.3,0.8;editrealm;Edit]",
                     "button[", spacer + 4.8, ",9;2.3,0.8;deleterealm;Delete]",
@@ -922,23 +920,23 @@ function mc_teacher.show_controller_fs(player, tab)
                 local chat_msg = minetest.deserialize(mc_teacher.meta:get_string("chat_log"))
                 local direct_msg = minetest.deserialize(mc_teacher.meta:get_string("dm_log"))
                 local server_msg = minetest.deserialize(mc_teacher.meta:get_string("server_log"))
-                local indexed_chat_players = {}
                 local add_server = false
+                context.indexed_chat_players = {}
 
                 for uname,_ in pairs(chat_msg or {}) do
-                    if not mc_core.tableHas(indexed_chat_players, uname) then
-                        table.insert(indexed_chat_players, uname)
+                    if not mc_core.tableHas(context.indexed_chat_players, uname) then
+                        table.insert(context.indexed_chat_players, uname)
                     end
                 end
                 for uname,_ in pairs(direct_msg or {}) do
-                    if not mc_core.tableHas(indexed_chat_players, uname) then
-                        table.insert(indexed_chat_players, uname)
+                    if not mc_core.tableHas(context.indexed_chat_players, uname) then
+                        table.insert(context.indexed_chat_players, uname)
                     end
                 end
                 for uname, msg_list in pairs(server_msg or {}) do
                     if has_server_privs then
-                        if not mc_core.tableHas(indexed_chat_players, uname) then
-                            table.insert(indexed_chat_players, uname)
+                        if not mc_core.tableHas(context.indexed_chat_players, uname) then
+                            table.insert(context.indexed_chat_players, uname)
                         end
                     else
                         local add_player = false
@@ -954,14 +952,14 @@ function mc_teacher.show_controller_fs(player, tab)
                                 break
                             end
                         end
-                        if not mc_core.tableHas(indexed_chat_players, uname) and add_player then
-                            table.insert(indexed_chat_players, uname)
+                        if not mc_core.tableHas(context.indexed_chat_players, uname) and add_player then
+                            table.insert(context.indexed_chat_players, uname)
                         end
                     end
                 end
 
                 if add_server then
-                    table.insert(indexed_chat_players, mc_core.SERVER_USER)
+                    table.insert(context.indexed_chat_players, mc_core.SERVER_USER)
                     local server_messages = {}
                     for _, msg_list in pairs(server_msg or {}) do
                         for _,msg_table in pairs(msg_list) do
@@ -972,13 +970,12 @@ function mc_teacher.show_controller_fs(player, tab)
                     end
                     server_msg[mc_core.SERVER_USER] = server_messages
                 end
-                context.indexed_chat_players = indexed_chat_players
 
-                if #indexed_chat_players > 0 then
-                    if not context.player_chat_index or not indexed_chat_players[context.player_chat_index] then
+                if #context.indexed_chat_players > 0 then
+                    if not context.player_chat_index or not context.indexed_chat_players[context.player_chat_index] then
                         context.player_chat_index = 1
                     end
-                    local selected = indexed_chat_players[context.player_chat_index]
+                    local selected = context.indexed_chat_players[context.player_chat_index]
                     local stamps = {}
                     local stamp_to_key = {}
 
@@ -1004,12 +1001,8 @@ function mc_teacher.show_controller_fs(player, tab)
                     end
                     table.sort(stamps)
 
-                    local player_log = {}
                     context.log_i_to_key = {}
-                    local chat_col = "#CCFFFF"
-                    local dm_col = "#FFFFCC"
-                    local serv_col = "#FFCCFF"
-
+                    local player_log = {}
                     -- build main message list
                     for i, stamp in ipairs(stamps) do
                         local key = stamp_to_key[stamp] or "null:0"
@@ -1017,13 +1010,13 @@ function mc_teacher.show_controller_fs(player, tab)
                         local index = tonumber(split_key[2] or "0")
                         if split_key[1] == "chat" and index ~= 0 then
                             local msg_table = chat_msg[selected][index]
-                            table.insert(player_log, chat_col..minetest.formspec_escape(table.concat({"[", stamp, "] ", msg_table.message})))
+                            table.insert(player_log, "#CCFFFF"..minetest.formspec_escape(table.concat({"[", stamp, "] ", msg_table.message})))
                         elseif split_key[1] == "dm" and index ~= 0 then
                             local msg_table = direct_msg[selected][index]
-                            table.insert(player_log, dm_col..minetest.formspec_escape(table.concat({"[", stamp, "] DM to ", msg_table.recipient, ": ", msg_table.message})))
+                            table.insert(player_log, "#FFFFCC"..minetest.formspec_escape(table.concat({"[", stamp, "] DM to ", msg_table.recipient, ": ", msg_table.message})))
                         elseif split_key[1] == "serv" and index ~= 0 then
                             local msg_table = server_msg[selected][index]
-                            table.insert(player_log, serv_col..minetest.formspec_escape(table.concat({"[", stamp, "] ", mc_core.SERVER_USER, " to ", msg_table.recipient, ": ", msg_table.message})))
+                            table.insert(player_log, "#FFCCFF"..minetest.formspec_escape(table.concat({"[", stamp, "] ", mc_core.SERVER_USER, " to ", msg_table.recipient, ": ", msg_table.message})))
                         end
                         table.insert(context.log_i_to_key, key)
                     end
@@ -1049,7 +1042,7 @@ function mc_teacher.show_controller_fs(player, tab)
 
                     table.insert(fs, table.concat({
                         "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Message Logs]",
-                        "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",5.5;mod_log_players;", table.concat(indexed_chat_players, ","), ";", context.player_chat_index, ";false]",
+                        "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",5.5;mod_log_players;", table.concat(context.indexed_chat_players, ","), ";", context.player_chat_index, ";false]",
                     }))
 
                     if selected == mc_core.SERVER_USER then
@@ -1222,11 +1215,11 @@ function mc_teacher.show_controller_fs(player, tab)
                 end
 
                 local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
-                local ip_whitelist = {}
+                context.ip_whitelist = {}
                 for ipv4,_ in pairs(ipv4_whitelist) do
-                    table.insert(ip_whitelist, ipv4)
+                    table.insert(context.ip_whitelist, ipv4)
                 end
-                table.sort(ip_whitelist, networking.ipv4_compare)
+                table.sort(context.ip_whitelist, networking.ipv4_compare)
 
                 table.insert(fs, table.concat({
                     "dropdown[", spacer, ",6.7;", panel_width - 2*spacer, ",0.8;server_shutdown_timer;", table.concat(time_options, ","), ";", context.time_index or 1, ";false]",
@@ -1237,7 +1230,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     "button[", spacer + 3.6, ",9;3.5,0.8;server_edit_rules;Server rules]",
 
                     "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Whitelisted IPv4 Addresses]",
-                    "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.9;server_whitelist;", table.concat(ip_whitelist, ","), ";", context.selected_ip_range or 1, ";false]",
+                    "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.9;server_whitelist;", table.concat(context.ip_whitelist, ","), ";", context.selected_ip_range or 1, ";false]",
                     "button[", panel_width + spacer, ",6.4;3.5,0.8;server_whitelist_toggle;", whitelist_state and "DISABLE" or "ENABLE", " whitelist]",
                     "button[", panel_width + spacer + 3.6, ",6.4;3.5,0.8;server_whitelist_remove;Delete range]",
                     "textarea[", panel_width + text_spacer, ",7.4;", panel_width - 2*text_spacer, ",1;;;Modify Whitelist]",

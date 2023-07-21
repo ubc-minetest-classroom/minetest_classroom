@@ -109,16 +109,14 @@ function mc_student.show_notebook_fs(player, tab)
 			end,
 			[mc_student.TABS.CLASSROOMS] = function() -- CLASSROOMS + ONLINE PLAYERS
 				local classroom_list = {}
-				local realm_count = 1
-                context.realm_id_to_i = {}
+                context.realm_i_to_id = {}
                 Realm.ScanForPlayerRealms()
 				
                 for id, realm in pairs(Realm.realmDict) do
 					if mc_core.checkPrivs(player, {teacher = true}) or player_can_join_realm(player, realm) then
 						local playerCount = tonumber(realm:GetPlayerCount())
 						table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
-						context.realm_id_to_i[id] = realm_count
-						realm_count = realm_count + 1
+						table.insert(context.realm_i_to_id, id)
 					end
                 end
 
@@ -132,7 +130,7 @@ function mc_student.show_notebook_fs(player, tab)
 
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
 					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Available Classrooms]",
-					"textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.realm_id_to_i and context.realm_id_to_i[context.selected_realm] or "1", ";false]",
+					"textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.selected_realm or "1", ";false]",
 					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 					"button[", spacer, ",9;", panel_width - 2*spacer, ",0.8;teleportrealm;Teleport]",
 				}

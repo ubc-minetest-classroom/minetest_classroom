@@ -146,7 +146,7 @@ function networking.modify_ipv4(player, startRange, endRange, add)
                     for oct4 = tonumber(startOctets[4]), (lastOct4 and tonumber(endOctets[4]) or 255), 1 do
                         local address = tostring(oct1).."."..tostring(oct2).."."..tostring(oct3).."."..tostring(oct4)
                         total = total + 1
-                        if address == "127.0.0.1" then
+                        if address == "127.0.0.1" and not add then
                             minetest.chat_send_player(pname, "[Networking] IP address \'127.0.0.1\' can not be removed from the whitelist.")
                         elseif ipv4_whitelist[address] ~= add then
                             ipv4_whitelist[address] = add
@@ -168,7 +168,7 @@ function networking.modify_ipv4(player, startRange, endRange, add)
     else
         local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
         local address = tostring(tonumber(startOctets[1])).."."..tostring(tonumber(startOctets[2])).."."..tostring(tonumber(startOctets[3])).."."..tostring(tonumber(startOctets[4]))
-        if address == "127.0.0.1" then
+        if address == "127.0.0.1" and not add then
             minetest.chat_send_player(pname, "[Networking] IP address \'127.0.0.1\' can not be removed from the whitelist.")
             return false
         elseif ipv4_whitelist[address] ~= add then

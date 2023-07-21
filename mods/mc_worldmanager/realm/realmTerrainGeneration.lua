@@ -80,6 +80,9 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
         vegetationDecorator(self.StartPos, self.EndPos, area, data, heightMapTable, decoratorData, seed, seaLevel, paramTable)
     end
 
+    -- Create barriers
+    self:CreateBarriers()
+
     -- Set our new spawnpoint
     local spawnPos = self.SpawnPoint
     local surfaceLevel = ptable.get2D(heightMapTable, { x = spawnPos.x, y = spawnPos.z })
