@@ -113,8 +113,8 @@ function mc_student.show_notebook_fs(player, tab)
 				context.selected_c_tab = context.selected_c_tab or mc_teacher.CTAB.PUBLIC
 
                 Realm.ScanForPlayerRealms()
-                for id, realm in pairs(Realm.realmDict) do
-					if mc_core.checkPrivs(player, {teacher = true}) or player_can_join_realm(player, realm) then
+                for id, realm in pairs(Realm.realmDict or {}) do
+					if not realm:isDeleted() and (mc_core.checkPrivs(player, {teacher = true}) or player_can_join_realm(player, realm)) then
 						local playerCount = tonumber(realm:GetPlayerCount())
 						local cat = realm:getCategory().key
 
@@ -137,8 +137,12 @@ function mc_student.show_notebook_fs(player, tab)
 					"tabheader[", spacer, ",1.4;", panel_width - 2*spacer, ",0.5;c_list_header;Public,Private;", context.selected_c_tab, ";false;true]",
 					"textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.selected_realm or "1", ";false]",
 					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-					"button[", spacer, ",9;", panel_width - 2*spacer, ",0.8;c_teleport;Teleport]",
 				}
+
+				if #classroom_list == 0 then
+                    table.insert(fs, "style[c_teleport;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.blocked.."]")
+                end
+				table.insert(fs, table.concat({"button[", spacer, ",9;", panel_width - 2*spacer, ",0.8;c_teleport;Teleport]"}))
 
 				local fsy = 1
 				local Y_SHIFT = 0.5

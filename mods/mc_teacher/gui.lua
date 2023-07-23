@@ -409,13 +409,15 @@ function mc_teacher.show_controller_fs(player, tab)
 
                 Realm.ScanForPlayerRealms()
                 for id, realm in pairs(Realm.realmDict or {}) do
-                    local playerCount = tonumber(realm:GetPlayerCount())
-                    local cat = realm:getCategory().key
+                    if not realm:isDeleted() then
+                        local playerCount = tonumber(realm:GetPlayerCount())
+                        local cat = realm:getCategory().key
 
-                    if (realm:isHidden() and context.selected_c_tab == mc_teacher.CTAB.HIDDEN) or (not realm:isHidden() and
-                    ((context.selected_c_tab == mc_teacher.CTAB.PUBLIC and cat ~= Realm.CAT_MAP[Realm.CAT_KEY.INSTANCED]) or (context.selected_c_tab == mc_teacher.CTAB.PRIVATE and cat == Realm.CAT_MAP[Realm.CAT_KEY.INSTANCED]))) then
-                        table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
-                        table.insert(context.realm_i_to_id, id)
+                        if (realm:isHidden() and context.selected_c_tab == mc_teacher.CTAB.HIDDEN) or (not realm:isHidden() and
+                        ((context.selected_c_tab == mc_teacher.CTAB.PUBLIC and cat ~= Realm.CAT_MAP[Realm.CAT_KEY.INSTANCED]) or (context.selected_c_tab == mc_teacher.CTAB.PRIVATE and cat == Realm.CAT_MAP[Realm.CAT_KEY.INSTANCED]))) then
+                            table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
+                            table.insert(context.realm_i_to_id, id)
+                        end
                     end
                 end
 
@@ -432,6 +434,10 @@ function mc_teacher.show_controller_fs(player, tab)
                     "tabheader[", spacer, ",1.4;", panel_width - 2*spacer, ",0.5;c_list_header;Public,Private,Hidden;", context.selected_c_tab, ";false;true]",
                 }
                 
+                if #classroom_list == 0 then
+                    table.insert(fs, "style[c_teleport,c_edit,c_hide,c_hidden_restore,c_hidden_delete,c_hidden_deleteall;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.blocked.."]")
+                end
+
                 if context.selected_c_tab == mc_teacher.CTAB.HIDDEN then
                     table.insert(fs, table.concat({
                         "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",", has_server_privs and 6.2 or 7.5, ";classroomlist;", table.concat(classroom_list, ","), ";", context.selected_realm or 1, ";false]",
@@ -440,7 +446,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     }))
                     if has_server_privs then
                         table.insert(fs, table.concat({
-                            "textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Realm Cleanup]",
+                            "textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Classroom Cleanup]",
                             "button[", spacer, ",9;3.5,0.8;c_hidden_delete;Delete selected]",
                             "button[", spacer + 3.6, ",9;3.5,0.8;c_hidden_deleteall;Delete all]",
                         }))

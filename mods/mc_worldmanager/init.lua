@@ -71,7 +71,7 @@ end
 
 function mc_worldManager.GetRealmByName(realmName)
     for _, realm in pairs(Realm.realmDict) do
-        if (realm.Name == realmName) then
+        if (realm.Name == realmName and not realm:isDeleted()) then
             return realm
         end
     end

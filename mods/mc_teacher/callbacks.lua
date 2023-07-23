@@ -484,14 +484,34 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         end
 
-        if fields.c_delete then
+        if fields.c_hidden_delete then
             local realm = Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm]))
             if not realm then
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This realm has already been deleted."))
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom has already been deleted."))
+            elseif realm:isDeleted() then
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom is currently being deleted."))
             elseif tonumber(context.realm_i_to_id[context.selected_realm]) == mc_worldManager.spawnRealmID then
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not delete the spawn realm."))
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not delete the spawn classroom."))
             else
+                -- TODO: show popup
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom will be deleted in 15 seconds."))
                 realm:Delete()
+            end
+            reload = true
+        elseif fields.c_hidden_deleteall then
+            local deletion_active = false
+            for _,id in pairs(context.realm_i_to_id) do
+                local realm = Realm.GetRealm(tonumber(id))
+                if realm and not realm:isDeleted() and tonumber(id) ~= mc_worldManager.spawnRealmID then
+                    -- TODO: convert to popup
+                    realm:Delete()
+                    deletion_active = true
+                end
+            end
+            if deletion_active then
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Classrooms will begin being deleted in 15 seconds."))
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] No classrooms are available to delete."))
             end
             reload = true
         elseif fields.c_edit then
@@ -499,14 +519,18 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if context.realm_i_to_id[context.selected_realm] and Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm])) then
                 return mc_teacher.show_edit_popup(player, context.realm_i_to_id[context.selected_realm])
             else
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available."))
             end
         elseif fields.c_hide or fields.c_hidden_restore then
             local realm = Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm]))
             if realm then
-                realm:setHidden(fields.c_hide and true)
+                if tonumber(context.realm_i_to_id[context.selected_realm]) == mc_worldManager.spawnRealmID then
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not hide the spawn classroom."))
+                else
+                    realm:setHidden(fields.c_hide and true)
+                end
             else
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available."))
             end
             reload = true
         end

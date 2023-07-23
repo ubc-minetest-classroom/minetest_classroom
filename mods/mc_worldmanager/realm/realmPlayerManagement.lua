@@ -116,7 +116,7 @@ function Realm.GetRealmFromPlayer(player)
     local pmeta = player:get_meta()
     local playerRealmID = pmeta:get_int("realm")
 
-    local realm = Realm.realmDict[playerRealmID]
+    local realm = Realm.GetRealm(playerRealmID)
     return realm
 end
 
