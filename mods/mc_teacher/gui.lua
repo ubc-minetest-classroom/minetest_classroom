@@ -405,12 +405,18 @@ function mc_teacher.show_controller_fs(player, tab)
                 local options_height = (context.selected_mode == mc_teacher.MODES.EMPTY and get_options_height(context)) or 1.3
                 local FACTOR = 0.1
                 context.realm_i_to_id = {}
+                context.selected_c_tab = context.selected_c_tab or mc_teacher.CTAB.PUBLIC
 
                 Realm.ScanForPlayerRealms()
                 for id, realm in pairs(Realm.realmDict or {}) do
                     local playerCount = tonumber(realm:GetPlayerCount())
-                    table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
-                    table.insert(context.realm_i_to_id, id)
+                    local cat = realm:getCategory().key
+
+                    if (realm:isHidden() and context.selected_c_tab == mc_teacher.CTAB.HIDDEN) or (not realm:isHidden() and
+                    ((context.selected_c_tab == mc_teacher.CTAB.PUBLIC and cat ~= Realm.CAT_MAP[Realm.CAT_KEY.INSTANCED]) or (context.selected_c_tab == mc_teacher.CTAB.PRIVATE and cat == Realm.CAT_MAP[Realm.CAT_KEY.INSTANCED]))) then
+                        table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
+                        table.insert(context.realm_i_to_id, id)
+                    end
                 end
 
                 local fs = {
@@ -419,17 +425,36 @@ function mc_teacher.show_controller_fs(player, tab)
                     "tooltip[exit;Exit;#404040;#ffffff]",
                     "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Classrooms</b></center></style>]",
                     "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Build a Classroom</b></center></style>]",
-
+                    
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-                    "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Available Classrooms]",
-                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.selected_realm or 1, ";false]",
-                    "button[", spacer, ",9;2.3,0.8;teleportrealm;Teleport]",
-                    "button[", spacer + 2.4, ",9;2.3,0.8;editrealm;Edit]",
-                    "button[", spacer + 4.8, ",9;2.3,0.8;deleterealm;Delete]",
-
-                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;requestrealm;Generate Classroom]",
-
+                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;c_newrealm;Generate Classroom]",
+                    "tabheader[", spacer, ",1.4;", panel_width - 2*spacer, ",0.5;c_list_header;Public,Private,Hidden;", context.selected_c_tab, ";false;true]",
+                }
+                
+                if context.selected_c_tab == mc_teacher.CTAB.HIDDEN then
+                    table.insert(fs, table.concat({
+                        "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",", has_server_privs and 6.2 or 7.5, ";classroomlist;", table.concat(classroom_list, ","), ";", context.selected_realm or 1, ";false]",
+                        "button[", spacer, ",", has_server_privs and 7.7 or 9, ";3.5,0.8;c_teleport;Teleport]",
+                        "button[", spacer + 3.6, ",", has_server_privs and 7.7 or 9, ";3.5,0.8;c_hidden_restore;Restore]",
+                    }))
+                    if has_server_privs then
+                        table.insert(fs, table.concat({
+                            "textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Realm Cleanup]",
+                            "button[", spacer, ",9;3.5,0.8;c_hidden_delete;Delete selected]",
+                            "button[", spacer + 3.6, ",9;3.5,0.8;c_hidden_deleteall;Delete all]",
+                        }))
+                    end
+                else
+                    table.insert(fs, table.concat({
+                        "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.selected_realm or 1, ";false]",
+                        "button[", spacer, ",9;2.3,0.8;c_teleport;Teleport]",
+                        "button[", spacer + 2.4, ",9;2.3,0.8;c_edit;Edit]",
+                        "button[", spacer + 4.8, ",9;2.3,0.8;c_hide;Hide]",
+                    }))   
+                end
+                
+                table.insert(fs, table.concat({
                     "style_type[field;font=mono;textcolor=#ffffff]",
                     "scrollbaroptions[min=0;max=", (options_height - 0.7)/FACTOR, ";smallstep=", 0.6/FACTOR, ";largestep=", 3.6/FACTOR, ";thumbsize=", 0.6/FACTOR, "]",
                     "scrollbar[", controller_width - 0.3, ",1;0.3,", controller_height - 2.5, ";vertical;class_opt_scroll;", context.class_opt_scroll or 0, "]",
@@ -442,7 +467,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     "dropdown[", spacer, ",1.7;3.5,0.8;realmcategory;Default,Spawn,Classroom,Private" or "", ";", context.selected_realm_type or 1, ";true]",
                     "textarea[", text_spacer + 3.6, ",1.25;3.6,1;;;Generation]",
                     "dropdown[", spacer + 3.6, ",1.7;3.5,0.8;mode;Empty World,Schematic,Digital Twin" or "", ";", context.selected_mode or 1, ";true]",
-                }
+                }))
 
                 if context.selected_mode == mc_teacher.MODES.EMPTY then
                     table.insert(fs, table.concat({

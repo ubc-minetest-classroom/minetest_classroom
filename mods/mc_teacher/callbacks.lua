@@ -379,7 +379,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
         end
         
-        if fields.requestrealm then
+        if fields.c_newrealm then
             if mc_core.checkPrivs(player,{teacher = true}) then
                 local realm_name = fields.realmname or context.realmname or ""
                 local new_realm
@@ -484,48 +484,31 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         end
 
-        if fields.classroomlist then
-            local event = minetest.explode_textlist_event(fields.classroomlist)
-            if event.type == "CHG" and mc_core.checkPrivs(player, {teacher = true}) then
-                context.selected_realm = tonumber(event.index)
-				if not Realm.GetRealm(context.realm_i_to_id[context.selected_realm]) then
-					context.selected_realm = 1
-				end
-                reload = true
-            end
-        elseif fields.teleportrealm then
-            -- Still a remote possibility that the realm is deleted in the time that the callback is executed
-            -- So always check that the requested realm exists and the realm category allows the player to join
-            -- Check that the player selected something from the textlist, otherwise default to spawn realm
-            if not context.selected_realm then context.selected_realm = 1 end
-            local realm = Realm.GetRealm(context.realm_i_to_id[context.selected_realm])
-            if realm then
-                if not mc_teacher.is_frozen(player) then
-                    realm:TeleportPlayer(player)
-                    context.selected_realm = 1
-                else
-                    minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not move while frozen."))
-                end
-            else
-                minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
-            end
-            reload = true
-        elseif fields.deleterealm then
+        if fields.c_delete then
             local realm = Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm]))
             if not realm then
-                minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] This realm has already been deleted."))
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This realm has already been deleted."))
             elseif tonumber(context.realm_i_to_id[context.selected_realm]) == mc_worldManager.spawnRealmID then
-                minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not delete the spawn realm."))
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not delete the spawn realm."))
             else
-                -- TODO: change to "hide"
                 realm:Delete()
             end
             reload = true
-        elseif fields.editrealm then
+        elseif fields.c_edit then
             if not context.selected_realm then context.selected_realm = 1 end
-            if context.realm_i_to_id[context.selected_realm] then
+            if context.realm_i_to_id[context.selected_realm] and Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm])) then
                 return mc_teacher.show_edit_popup(player, context.realm_i_to_id[context.selected_realm])
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
             end
+        elseif fields.c_hide or fields.c_hidden_restore then
+            local realm = Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm]))
+            if realm then
+                realm:setHidden(fields.c_hide and true)
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
+            end
+            reload = true
         end
 
         if fields.music then
@@ -543,7 +526,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             context.realm_biome = fields.realm_biome
         end
 
-        --  CLASSROOMS + PLAYERS
+        ---------------------------
+        --  CLASSROOMS + PLAYERS --
+        ---------------------------
         if fields.allowpriv_interact or fields.denypriv_interact or fields.ignorepriv_interact then
             context.selected_privs.interact = (fields.allowpriv_interact and true) or (fields.ignorepriv_interact and "nil") or false
             reload = true
@@ -1043,9 +1028,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     end
 end)
 
-----------------------------------------------------
--- MAP (common to both mc_teacher and mc_student) --
-----------------------------------------------------
+----------------------------------------
+-- COMMON (mc_teacher and mc_student) --
+----------------------------------------
 minetest.register_on_player_receive_fields(function(player, formname, fields)
     local pmeta = player:get_meta()
     local context
@@ -1064,6 +1049,45 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     local reload = false
 
     if formname == "mc_student:notebook_fs" or formname == "mc_teacher:controller_fs" then
+        ----------------
+        -- CLASSROOMS --
+        ----------------
+        if fields.c_list_header and context.selected_c_tab ~= fields.c_list_header then
+            context.selected_c_tab = fields.c_list_header
+            context.selected_realm = 1
+            reload = true
+        end
+        if fields.classroomlist then
+            local event = minetest.explode_textlist_event(fields.classroomlist)
+            if event.type == "CHG" then
+                context.selected_realm = tonumber(event.index)
+                if not Realm.GetRealm(context.realm_i_to_id[context.selected_realm]) then
+                    context.selected_realm = 1
+                end
+                reload = true
+            end
+        elseif fields.c_teleport then
+            -- Still a remote possibility that the realm is deleted in the time that the callback is executed
+            -- So always check that the requested realm exists and the realm category allows the player to join
+            -- Check that the player selected something from the textlist, otherwise default to spawn realm
+            if not context.selected_realm then context.selected_realm = 1 end
+            local realm = Realm.GetRealm(context.realm_i_to_id[context.selected_realm])
+            if realm then
+                if not mc_teacher.is_frozen(player) then
+                    realm:TeleportPlayer(player)
+                    context.selected_realm = 1
+                else
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not move while frozen."))
+                end
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available."))
+            end
+            reload = true
+        end
+
+        ---------
+        -- MAP --
+        ---------
         if fields.record and fields.note ~= "" then
             mc_core.record_coordinates(player, fields.note)
             reload = true
@@ -1239,9 +1263,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
         if reload == true then
             if formname == "mc_student:notebook_fs" then
-                mc_student.show_notebook_fs(player, mc_student.TABS.MAP)
+                mc_student.show_notebook_fs(player, context.tab)
             elseif formname == "mc_teacher:controller_fs" then
-                mc_teacher.show_controller_fs(player, mc_teacher.TABS.MAP)
+                mc_teacher.show_controller_fs(player, context.tab)
             end
         end
     end

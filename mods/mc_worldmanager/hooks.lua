@@ -69,7 +69,7 @@ minetest.register_on_leaveplayer(function(player, timed_out)
     mc_worldManager.RemoveHud(player)
 
     local realm = Realm.GetRealmFromPlayer(player)
-    if (realm:getCategory() == "instanced") then
+    if (realm:getCategory() == "instanced") then -- NOTE: this will always be false
         mc_worldManager.GetSpawnRealm():TeleportPlayer(player)
     end
 

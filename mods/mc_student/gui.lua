@@ -110,13 +110,18 @@ function mc_student.show_notebook_fs(player, tab)
 			[mc_student.TABS.CLASSROOMS] = function() -- CLASSROOMS + ONLINE PLAYERS
 				local classroom_list = {}
                 context.realm_i_to_id = {}
+				context.selected_c_tab = context.selected_c_tab or mc_teacher.CTAB.PUBLIC
+
                 Realm.ScanForPlayerRealms()
-				
                 for id, realm in pairs(Realm.realmDict) do
 					if mc_core.checkPrivs(player, {teacher = true}) or player_can_join_realm(player, realm) then
 						local playerCount = tonumber(realm:GetPlayerCount())
-						table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
-						table.insert(context.realm_i_to_id, id)
+						local cat = realm:getCategory().key
+
+						if not realm:isHidden() and ((context.selected_c_tab == mc_teacher.CTAB.PUBLIC and cat ~= Realm.CAT_MAP[Realm.CAT_KEY.INSTANCED]) or (context.selected_c_tab == mc_teacher.CTAB.PRIVATE and cat == Realm.CAT_MAP[Realm.CAT_KEY.INSTANCED])) then
+							table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
+							table.insert(context.realm_i_to_id, id)
+						end
 					end
                 end
 
@@ -129,10 +134,10 @@ function mc_student.show_notebook_fs(player, tab)
 					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Online Players</b></center></style>]",
 
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
-					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Available Classrooms]",
+					"tabheader[", spacer, ",1.4;", panel_width - 2*spacer, ",0.5;c_list_header;Public,Private;", context.selected_c_tab, ";false;true]",
 					"textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.selected_realm or "1", ";false]",
 					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-					"button[", spacer, ",9;", panel_width - 2*spacer, ",0.8;teleportrealm;Teleport]",
+					"button[", spacer, ",9;", panel_width - 2*spacer, ",0.8;c_teleport;Teleport]",
 				}
 
 				local fsy = 1

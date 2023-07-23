@@ -11,46 +11,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 	if formname == "mc_student:notebook_fs" then
 		if fields.record_nav then
-            mc_student.fs_context.tab = fields.record_nav
-            mc_student.show_notebook_fs(player, mc_student.fs_context.tab)
+            context.tab = fields.record_nav
+            mc_student.show_notebook_fs(player, context.tab)
 		end
 		if fields.default_tab then
-			pmeta:set_string("default_student_tab", mc_student.fs_context.tab)
-			mc_student.show_notebook_fs(player, mc_student.fs_context.tab)
-		end
-		if fields.realms then
-			local event = minetest.explode_textlist_event(fields.realms)
-			if event.type == "CHG" then
-				selectedClassroom = event.index
-			end
-		elseif fields.join then
-			local realm = classroomRealms[selectedClassroom]
-			realm:TeleportPlayer(player)
+			pmeta:set_string("default_student_tab", context.tab)
+			mc_student.show_notebook_fs(player, context.tab)
 		end
 
-		if fields.classroomlist then
-			local event = minetest.explode_textlist_event(fields.classroomlist)
-			if event.type == "CHG" then
-				context.selected_realm = tonumber(event.index)
-				if not Realm.GetRealm(context.realm_i_to_id[context.selected_realm]) then
-					context.selected_realm = 1
-				end
-				mc_student.show_notebook_fs(player, mc_student.TABS.CLASSROOMS)
-			end
-		elseif fields.teleportrealm then
-			-- Still a remote possibility that the realm is deleted in the time that the callback is executed
-			-- So always check that the requested realm exists and the realm category allows the player to join
-			-- Check that the player selected something from the textlist, otherwise default to spawn realm
-			if not context.selected_realm then context.selected_realm = 1 end
-			local realm = Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm]))
-			if realm then
-				realm:TeleportPlayer(player)
-				context.selected_realm = 1
-			else
-				minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
-			end
-			mc_student.show_notebook_fs(player, mc_student.TABS.CLASSROOMS)
-		elseif fields.submitreport then
+		if fields.submitreport then
 			if not fields.report or fields.report == "" then
 				minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please add a message to your report."))
 				return

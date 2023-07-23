@@ -525,5 +525,22 @@ function Realm:ContainsCoordinate(coordinate)
     return true
 end
 
+function Realm:setHidden(state)
+    if state then
+        self:set_data("hidden", "true")
+    else
+        self:set_data("hidden", nil)
+    end
+end
+
+function Realm:isHidden()
+    local state = self:get_data("hidden")
+    if state == "true" or state == nil then
+        return state == "true"
+    else
+        return nil
+    end
+end
+
 Realm.LoadDataFromStorage()
 Realm.consolidateEmptySpace()
