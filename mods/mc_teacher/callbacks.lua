@@ -170,6 +170,42 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The report log has been cleared."))
         end
         mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_hidden_delete" and has_server_privs then
+        ------------------
+        -- DELETE POPUP --
+        ------------------
+        if fields.confirm then
+            local realm = Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm]))
+            if not realm or realm:isDeleted() then
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom has already been deleted."))
+            elseif tonumber(context.realm_i_to_id[context.selected_realm]) == mc_worldManager.spawnRealmID then
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not delete the spawn classroom."))
+            else
+                realm:Delete()
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom will be deleted in 15 seconds."))
+            end
+        end
+        mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_hidden_deleteall" and has_server_privs then
+        ----------------------
+        -- DELETE ALL POPUP --
+        ----------------------
+        if fields.confirm then
+            local deletion_active = false
+            for _,id in pairs(context.realm_i_to_id) do
+                local realm = Realm.GetRealm(tonumber(id))
+                if realm and not realm:isDeleted() and tonumber(id) ~= mc_worldManager.spawnRealmID then
+                    realm:Delete()
+                    deletion_active = true
+                end
+            end
+            if deletion_active then
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Classrooms will begin being deleted in 15 seconds."))
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] No classrooms are available to delete."))
+            end
+        end
+        mc_teacher.show_controller_fs(player, context.tab)
     elseif formname == "mc_teacher:ban_manager" and has_server_privs then
         -----------------
         -- BAN MANAGER --
@@ -493,23 +529,25 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             elseif tonumber(context.realm_i_to_id[context.selected_realm]) == mc_worldManager.spawnRealmID then
                 minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not delete the spawn classroom."))
             else
-                -- TODO: show popup
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom will be deleted in 15 seconds."))
-                realm:Delete()
+                return mc_teacher.show_confirm_popup(player, "confirm_hidden_delete", {
+                    action = "Are you sure you want to delete this classroom?\nClassroom deletion is irreversible, may take a while to complete, and can cause the server to become unresponsive.",
+                    button = "Delete"
+                }, {x = 9.2, y = 4.3})
             end
-            reload = true
         elseif fields.c_hidden_deleteall then
             local deletion_active = false
             for _,id in pairs(context.realm_i_to_id) do
                 local realm = Realm.GetRealm(tonumber(id))
                 if realm and not realm:isDeleted() and tonumber(id) ~= mc_worldManager.spawnRealmID then
-                    -- TODO: convert to popup
-                    realm:Delete()
                     deletion_active = true
+                    break
                 end
             end
             if deletion_active then
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Classrooms will begin being deleted in 15 seconds."))
+                return mc_teacher.show_confirm_popup(player, "confirm_hidden_deleteall", {
+                    action = "Are you sure you want to delete all of these classrooms?\nClassroom deletion is irreversible, may take a while to complete, and can cause the server to become unresponsive.",
+                    button = "Delete all"
+                }, {x = 9, y = 4.3})
             else
                 minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] No classrooms are available to delete."))
             end
