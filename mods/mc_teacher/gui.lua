@@ -162,27 +162,52 @@ function mc_teacher.show_confirm_popup(player, fs_name, action, size)
     minetest.show_formspec(pname, "mc_teacher:"..fs_name, table.concat(fs, ""))
 end
 
-function mc_teacher.show_ban_popup(player)
+function mc_teacher.show_whitelist_popup(player)
     local spacer = mc_teacher.fs_spacer
     local text_spacer = mc_teacher.fs_t_spacer
-    local width = 7.5
-    local height = 7.5
-    local button_width = (width - 2*spacer - 0.1)/2
+    local width = 12.2
+    local height = 7.4
+    local content_width = 5.3
+    local text_width = content_width + 2*(spacer - text_spacer)
+    local button_width = (content_width - 0.1)/2
 
     local pname = player:get_player_name()
     local context = mc_teacher.get_fs_context(player)
 
+    local whitelist_state = minetest.deserialize(networking.storage:get_string("enabled"))
+    local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+    context.ip_whitelist = {}
+    for ipv4,_ in pairs(ipv4_whitelist) do
+        table.insert(context.ip_whitelist, ipv4)
+    end
+    table.sort(context.ip_whitelist, networking.ipv4_compare)
+
     local fs = {
         mc_core.draw_note_fs(width, height, {bg = "#baf5a2", accent = "#e0fccf"}),
         "style_type[textarea;font=mono,bold;textcolor=#000000]",
-        "style_type[textlist;font=mono]",
+        "style_type[textlist,field;font=mono]",
         "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-        "textarea[", text_spacer, ",0.5;", width - 2*text_spacer, ",1;;;Banned Players]",
-        "textlist[", spacer, ",0.9;", width - 2*spacer, ",", height - 2.4, ";ban_list;", minetest.get_ban_list() or "", ";", context.selected_ban or 1, ";false]",
-        "button[", spacer, ",", height - 1.4, ";", button_width, ",0.8;exit;Exit]",
-        "button[", spacer + 0.1 + button_width, ",", height - 1.4, ";", button_width, ",0.8;unban;Unban player]",
+
+        "textarea[", text_spacer, ",0.5;", content_width + 2*(spacer - text_spacer), ",1;;;Whitelisted IPv4 Addresses]",
+        "textlist[", spacer, ",0.9;", content_width, ",5.9;whitelist;", table.concat(context.ip_whitelist, ","), ";", context.selected_ip_range or 1, ";false]",
+        "button[", content_width + spacer + 0.4, ",4.2;", content_width, ",0.8;toggle;", whitelist_state and "DISABLE" or "ENABLE", " whitelist]",
+        "button[", content_width + spacer + 0.4, ",5.1;", content_width, ",0.8;remove;Delete selected]",
+        "textarea[", content_width + text_spacer + 0.4, ",0.5;", text_width, ",1;;;Start IPv4]",
+        "textarea[", content_width + text_spacer + 0.4, ",1.7;", text_width, ",1;;;End IPv4 (optional)]",
+        "field[", content_width + spacer + 0.4, ",0.9;", content_width, ",0.8;ip_start;;", context.start_ip or "0.0.0.0", "]",
+        "field[", content_width + spacer + 0.4, ",2.1;", content_width, ",0.8;ip_end;;", context.end_ip or "", "]",
+        "button[", content_width + spacer + 0.4, ",3;", button_width, ",0.8;ip_add;Add range]",
+        "button[", content_width + spacer + 3.1, ",3;", button_width, ",0.8;ip_remove;Remove range]",
+        "button[", content_width + spacer + 0.4, ",6;", content_width, ",0.8;exit;Return]",
+
+        "tooltip[ip_start;First IPv4 address in the desired range;", mc_core.col.b.default, ";#ffffff]",
+        "tooltip[ip_end;Last IPv4 address in the desired range (optional);", mc_core.col.b.default, ";#ffffff]",
+        "tooltip[whitelist_remove;Removes the selected IP range from the whitelist;", mc_core.col.b.default, ";#ffffff]",
+        "tooltip[ip_add;Adds the typed range of IPs to the whitelist;", mc_core.col.b.default, ";#ffffff]",
+        "tooltip[ip_remove;Removes the typed range of IPs from the whitelist;", mc_core.col.b.default, ";#ffffff]",
+        "tooltip[toggle;Whitelist is currently ", whitelist_state and "ENABLED" or "DISABLED", ";", mc_core.col.b.default, ";#ffffff]",
     }
-    minetest.show_formspec(pname, "mc_teacher:ban_manager", table.concat(fs, ""))
+    minetest.show_formspec(pname, "mc_teacher:whitelist", table.concat(fs, ""))
 end
 
 function mc_teacher.show_edit_popup(player, realmID)
@@ -494,7 +519,6 @@ function mc_teacher.show_controller_fs(player, tab)
                         "field_close_on_enter[realm_z_size;false]",
                     }))
 
-                    -- TODO: link generators, decorators, BEC biomes to realm generation
                     if options_height >= 3.9 then
                         table.insert(fs, table.concat({
                             "textarea[", text_spacer, ",5.2;3.6,1;;;Seed]",
@@ -1214,76 +1238,84 @@ function mc_teacher.show_controller_fs(player, tab)
                 return fs
             end,
             [mc_teacher.TABS.SERVER] = function()
-                -- TODO: Implement ban manager
-                local whitelist_state = minetest.deserialize(networking.storage:get_string("enabled"))
+                local time_options = {}
+                for t, t_table in pairs(mc_teacher.T_INDEX) do
+                    time_options[t_table.i] = t
+                end
+                local version = minetest.get_version()
+                local uptime = minetest.get_server_uptime()
+                context.selected_s_tab = context.selected_s_tab or mc_teacher.STAB.BANNED
 
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
                     "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
                     "tooltip[exit;Exit;#404040;#ffffff]",
                     "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Server Management</b></center></style>]",
-                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Server Whitelist</b></center></style>]",
+                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Server Information</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Global Messenger]",
                     "style_type[textarea,field;font=mono]",
-                    "textarea[", spacer, ",1.4;", panel_width - 2*spacer, ",2.1;server_message;;", context.server_message or "", "]",
+                    "textarea[", spacer, ",1.4;", panel_width - 2*spacer, ",2.3;server_message;;", context.server_message or "", "]",
                     "style_type[textarea;font=mono,bold]",
-                    "textarea[", text_spacer, ",3.6;", panel_width - 2*text_spacer, ",1;;;Send as:]",
-                    "dropdown[", spacer, ",4.0;", panel_width - 2*spacer, ",0.8;server_message_type;General server message,Server message from yourself,Chat message from yourself;", context.server_message_type or mc_teacher.M.MODE.SERVER_ANON, ";true]",
+                    "textarea[", text_spacer, ",3.7;", panel_width - 2*text_spacer, ",1;;;Send as:]",
+                    "dropdown[", spacer, ",4.1;", panel_width - 2*spacer, ",0.8;server_message_type;General server message,Server message from yourself,Chat message from yourself;", context.server_message_type or mc_teacher.M.MODE.SERVER_ANON, ";true]",
                     "textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",1;;;Send to:]",
                     "button[", spacer, ",5.3;1.7,0.8;server_send_teachers;Teachers]",
                     "button[", spacer + 1.8, ",5.3;1.7,0.8;server_send_students;Students]",
                     "button[", spacer + 3.6, ",5.3;1.7,0.8;server_send_admins;Admins]",
                     "button[", spacer + 5.4, ",5.3;1.7,0.8;server_send_all;Everyone]",
+
                     "textarea[", text_spacer, ",6.3;", panel_width - 2*text_spacer, ",1;;;Schedule Server Shutdown]",
-                }
-
-                local time_options = {}
-                for t, t_table in pairs(mc_teacher.T_INDEX) do
-                    time_options[t_table.i] = t
-                end
-
-                local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
-                context.ip_whitelist = {}
-                for ipv4,_ in pairs(ipv4_whitelist) do
-                    table.insert(context.ip_whitelist, ipv4)
-                end
-                table.sort(context.ip_whitelist, networking.ipv4_compare)
-
-                table.insert(fs, table.concat({
                     "dropdown[", spacer, ",6.7;", panel_width - 2*spacer, ",0.8;server_shutdown_timer;", table.concat(time_options, ","), ";", context.time_index or 1, ";false]",
                     "button[", spacer, ",7.6;3.5,0.8;server_shutdown_", mc_teacher.restart_scheduled.timer and "cancel" or "schedule", ";", mc_teacher.restart_scheduled.timer and "Cancel shutdown" or "Schedule", "]",
                     "button[", spacer + 3.6, ",7.6;3.5,0.8;server_shutdown_now;Shutdown now]",
-                    "textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Misc. actions]",
-                    "button[", spacer, ",9;3.5,0.8;server_ban_manager;Ban manager]",
-                    "button[", spacer + 3.6, ",9;3.5,0.8;server_edit_rules;Server rules]",
 
-                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Whitelisted IPv4 Addresses]",
-                    "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.9;server_whitelist;", table.concat(context.ip_whitelist, ","), ";", context.selected_ip_range or 1, ";false]",
-                    "button[", panel_width + spacer, ",6.4;3.5,0.8;server_whitelist_toggle;", whitelist_state and "DISABLE" or "ENABLE", " whitelist]",
-                    "button[", panel_width + spacer + 3.6, ",6.4;3.5,0.8;server_whitelist_remove;Delete range]",
-                    "textarea[", panel_width + text_spacer, ",7.4;", panel_width - 2*text_spacer, ",1;;;Modify Whitelist]",
-                    "style_type[textarea;font_size=*0.85]",
-                    "textarea[", panel_width + text_spacer, ",8.6;3.6,0.8;;;Start IPv4]",
-                    "textarea[", panel_width + text_spacer + 3.6, ",8.6;3.6,0.8;;;End IPv4]",
-                    "field[", panel_width + spacer, ",7.8;3.5,0.8;server_ip_start;;", context.start_ip or "0.0.0.0", "]",
-                    "field[", panel_width + spacer + 3.6, ",7.8;3.5,0.8;server_ip_end;;", context.end_ip or "", "]",
-                    "field_close_on_enter[server_ip_start;false]",
-                    "field_close_on_enter[server_ip_end;false]",
-                    "button[", panel_width + spacer, ",9;3.5,0.8;server_ip_add;Add range]",
-                    "button[", panel_width + spacer + 3.6, ",9;3.5,0.8;server_ip_remove;Remove range]",
+                    "textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Server Actions]",
+                    "button[", spacer, ",9;3.5,0.8;server_edit_rules;Server rules]",
+                    "button[", spacer + 3.6, ",9;3.5,0.8;server_whitelist;Whitelist]",
 
+                    "textarea[", text_spacer + panel_width, ",1;", panel_width - 2*text_spacer, ",1;;;Game Information]",
+                    "style_type[textarea;font=mono]",
+                    "textarea[", text_spacer + panel_width, ",1.4;", panel_width - 2*text_spacer, ",1.2;;;",
+                    version.project or "Minetest", " version", version.string and ": "..version.string or " unknown", "\nServer uptime: ", mc_core.expand_time(uptime or 0), "]",
+                    "style_type[textarea;font=mono,bold]",
+
+                    "tabheader[", spacer + panel_width, ",3.2;", panel_width - 2*spacer, ",0.5;server_dyn_header;Banned,Online,Installed Mods;1;false;true]",
+                }
+
+                if context.selected_s_tab == mc_teacher.STAB.ONLINE then
+                    context.server_dyn_list = {}
+                    for _, p in pairs(minetest.get_connected_players()) do
+                        if p and p:is_player() then
+                            table.insert(context.server_dyn_list, p:get_player_name())
+                        end
+                    end
+
+                    table.insert(fs, table.concat({
+                        "textlist[", spacer + panel_width, ",3.2;", panel_width - 2*spacer, ",6.8;server_dyn;", table.concat(context.server_dyn_list, ""), ";", context.selected_s_dyn or 1, ";false]",
+                        -- TODO: add kick/ban buttons?
+                        --"button[", spacer + panel_width, ",9;", panel_width - 2*spacer, ",0.8;server_unban;Unban]"
+                    }))
+                elseif context.selected_s_tab == mc_teacher.STAB.MODS then
+                    context.server_dyn_list = minetest.get_modnames() or {}
+                    table.insert(fs, table.concat({
+                        "textlist[", spacer + panel_width, ",3.2;", panel_width - 2*spacer, ",6.8;server_dyn;", table.concat(context.server_dyn_list, ""), ";", context.selected_s_dyn or 1, ";false]",
+                    }))
+                else
+                    context.server_dyn_list = minetest.get_ban_list() or ""
+                    table.insert(fs, table.concat({
+                        "textlist[", spacer + panel_width, ",3.2;", panel_width - 2*spacer, ",5.7;server_dyn;", context.server_dyn_list, ";", context.selected_s_dyn or 1, ";false]",
+                        "button[", spacer + panel_width, ",9;", panel_width - 2*spacer, ",0.8;server_unban;Unban]",
+                    }))
+                end
+
+                table.insert(fs, table.concat({
                     "tooltip[server_message;Type your message here!;#404040;#ffffff]",
                     "tooltip[server_ban_manager;View and manage banned players;#404040;#ffffff]",
                     "tooltip[server_edit_rules;Edit server rules;#404040;#ffffff]",
-                    "tooltip[server_ip_start;First IPv4 address in the desired range;#404040;#ffffff]",
-                    "tooltip[server_ip_end;Last IPv4 address in the desired range (optional);#404040;#ffffff]",
-                    "tooltip[server_whitelist_remove;Removes the selected IP range from the whitelist;#404040;#ffffff]",
-                    "tooltip[server_ip_add;Adds the typed range of IPs to the whitelist;#404040;#ffffff]",
-                    "tooltip[server_ip_remove;Removes the typed range of IPs from the whitelist;#404040;#ffffff]",
-                    "tooltip[server_whitelist_toggle;Whitelist is currently ", whitelist_state and "ENABLED" or "DISABLED", ";#404040;#ffffff]",
+                    "tooltip[server_whitelist;Manage server whitelist;#404040;#ffffff]",
                 }))
 
                 return fs
@@ -1589,32 +1621,26 @@ box[0,0;16.6,0.5;#737373]
 box[8.275,0;0.05,10.4;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.1,1;;;Server Management]
-textarea[8.85,0.1;7.1,1;;;Server Whitelist]
+textarea[8.85,0.1;7.1,1;;;Server Information]
 textarea[0.55,1;7.2,1;;;Global Messenger]
-textarea[0.6,1.4;7.1,2.1;server_message;;]
-textarea[0.55,3.6;7.2,1;;;Send as:]
-dropdown[0.6,4;7.1,0.8;server_message_type;Anonymous server message,Server message from yourself,Chat message from yourself;1;true]
-textarea[0.55,4.9;7.2,1;;;Send to:]
-button[0.6,5.3;1.7,0.8;server_send_teachers;Teachers]
-button[2.4,5.3;1.7,0.8;server_send_students;Students]
+textarea[0.6,1.4;7.1,2.3;server_message;;]
+textarea[0.6,3.7;7.2,1;;;Send as:]
+dropdown[0.6,4.1;7.1,0.8;server_message_type;Anonymous server message,Server message from yourself,Chat message from yourself;1;true]
+textarea[0.6,4.9;7.2,1;;;Send to:]
+button[2.4,5.3;1.7,0.8;server_send_teachers;Teachers]
+button[0.6,5.3;1.7,0.8;server_send_students;Students]
 button[4.2,5.3;1.7,0.8;server_send_admins;Admins]
 button[6,5.3;1.7,0.8;server_send_all;Everyone]
-textarea[0.55,6.3;7.2,1;;;Schedule Server Shutdown]
+textarea[0.6,6.3;7.2,1;;;Schedule Server Shutdown]
 dropdown[0.6,6.7;7.1,0.8;server_shutdown_timer;;1;false]
 button[0.6,7.6;3.5,0.8;server_shutdown_schedule;Schedule]
 button[4.2,7.6;3.5,0.8;server_shutdown_now;Shutdown now]
-textarea[0.55,8.6;7.2,1;;;Misc. actions]
-button[0.6,9;3.5,0.8;server_ban_manager;Banned players]
-button[4.2,9;3.5,0.8;server_edit_rules;Server rules]
-textarea[8.85,1;7.2,1;;;Whitelisted IPv4 Addresses]
-textlist[8.9,1.4;7.1,4.9;server_whitelist;;1;false]
-button[8.9,6.4;3.5,0.8;server_whitelist_toggle;ENABLE whitelist]
-button[12.5,6.4;3.5,0.8;server_whitelist_remove;Delete range]
-textarea[8.85,7.4;7.2,1;;;Modify Whitelist]
-textarea[8.85,8.6;3.6,1;;;Start IPv4]
-textarea[12.45,8.6;3.6,1;;;End IPv4 (optional)]
-field[8.9,7.8;3.5,0.8;server_ip_start;;0.0.0.0]
-field[12.5,7.8;3.5,0.8;server_ip_end;;]
-button[8.9,9;3.5,0.8;server_ip_add;Add range]
-button[12.5,9;3.5,0.8;sever_ip_remove;Remove range]
+textarea[0.55,8.6;7.2,1;;;Server Actions]
+button[0.6,9;3.5,0.8;server_edit_rules;Server rules]
+button[4.2,9;3.5,0.8;server_whitelist;Whitelist]
+textarea[8.85,1;7.2,1;;;Game Information]
+textarea[8.85,1.4;7.2,1.4;;;Minetest version: x.x.x -- Server uptime: time]
+textarea[8.85,2.5;7.2,1;;;Online/Banned/Mods]
+textlist[8.9,2.9;7.1,6;server_dynamic;;1;false]
+button[8.9,9;7.1,0.8;;Unban]
 ]]

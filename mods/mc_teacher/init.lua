@@ -21,6 +21,7 @@ mc_teacher = {
     },
     CTAB = {PUBLIC = "1", PRIVATE = "2", HIDDEN = "3"},
     PTAB = {STUDENTS = "1", TEACHERS = "2", CLASSROOM = "3"},
+    STAB = {BANNED = "1", ONLINE = "2", MODS = "3"},
     ROLES = {
         NONE = "roleless",
         STUDENT = "student",

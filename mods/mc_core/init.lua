@@ -255,3 +255,29 @@ function mc_core.clean_key(key)
 	local match = string.match(tostring(key), "K?E?Y?_?KEY_(.-)$")
     return (match == "LBUTTON" and "LEFT CLICK") or (match == "RBUTTON" and "RIGHT CLICK") or match or key
 end
+
+---@public
+---Converts a time in seconds to a human-readable time
+---@param t Time in seconds
+---@returns string, table
+function mc_core.expand_time(t)
+    if t <= 0 then
+        return "0 seconds", {s = 0, m = 0, h = 0, d = 0}
+    end
+
+    local t_temp = mc_core.round(t, 0)
+    local sec = math.fmod(t_temp, 60)
+    t_temp = (t_temp - sec)/60
+    local min = math.fmod(t_temp, 60)
+    t_temp = (t_temp - min)/60
+    local hour = math.fmod(t_temp, 24)
+    local day = (t_temp - hour)/24
+
+    local t_string = {}
+    if day > 0 then table.insert(t_string, day.." day"..(day == 1 and "" or "s")) end
+    if hour > 0 then table.insert(t_string, hour.." hour"..(hour == 1 and "" or "s")) end
+    if min > 0 then table.insert(t_string, min.." minute"..(min == 1 and "" or "s")) end
+    if sec > 0 then table.insert(t_string, sec.." second"..(sec == 1 and "" or "s")) end
+    
+    return table.concat(t_string, ", "), {s = sec, m = min, h = hour, d = day}
+end

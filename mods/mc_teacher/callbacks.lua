@@ -206,26 +206,50 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         end
         mc_teacher.show_controller_fs(player, context.tab)
-    elseif formname == "mc_teacher:ban_manager" and has_server_privs then
-        -----------------
-        -- BAN MANAGER --
-        -----------------
-        if fields.ban_list then
-            local event = minetest.explode_textlist_event(fields.ban_list)
+    elseif formname == "mc_teacher:whitelist" and has_server_privs then
+        ---------------
+        -- WHITELIST --
+        ---------------
+        local reload = false
+        if fields.whitelist then
+            local event = minetest.explode_textlist_event(fields.whitelist)
             if event.type == "CHG" then
-                context.selected_ban = event.index
+                context.selected_ip_range = event.index
             end
         end
-        if fields.unban then
-            context.selected_ban = context.selected_ban or 1
-            local ban_string = minetest.get_ban_list() or ""
-            local bans = mc_core.split(ban_string, ",")
-            if bans[context.selected_ban] then
-                minetest.unban_player_or_ip(bans[context.selected_ban])
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player unbanned!"))
+
+        if fields.ip_add or fields.ip_remove then
+            if fields.ip_start and fields.ip_start ~= "" then
+                local add_cond = (fields.ip_remove == nil) or nil
+                if not fields.ip_end or fields.ip_end == "" then
+                    networking.modify_ipv4(player, fields.ip_start, nil, add_cond)
+                else
+                    local ips_ordered = networking.ipv4_compare(fields.ip_start, fields.ip_end)
+                    local start_ip = ips_ordered and fields.ip_start or fields.ip_end
+                    local end_ip = ips_ordered and fields.ip_end or fields.ip_start
+                    networking.modify_ipv4(player, start_ip, end_ip, add_cond)
+                end
             end
+            reload = true
+        elseif fields.remove then
+            local ip_to_remove = context.ip_whitelist[tonumber(context.selected_ip_range)]
+            if ip_to_remove then
+                networking.modify_ipv4(player, ip_to_remove, nil, nil)
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This IP has already been removed from the whitelist."))
+            end
+            reload = true
+        elseif fields.toggle then
+            networking.toggle_whitelist(player)
+            reload = true
         elseif fields.quit or fields.exit then
-            mc_teacher.show_controller_fs(player, context.tab)
+            return mc_teacher.show_controller_fs(player, context.tab)
+        end
+
+        if reload then
+            if fields.ip_start then context.start_ip = minetest.formspec_escape(fields.ip_start) end
+            if fields.ip_end then context.end_ip = minetest.formspec_escape(fields.ip_end) end
+            mc_teacher.show_whitelist_popup(player)
         end
     elseif formname == "mc_teacher:role_change_"..mc_teacher.ROLES.NONE or formname == "mc_teacher:role_change_"..mc_teacher.ROLES.STUDENT
     or (has_server_privs and (formname == "mc_teacher:role_change_"..mc_teacher.ROLES.TEACHER or formname == "mc_teacher:role_change_"..mc_teacher.ROLES.ADMIN)) then
@@ -955,14 +979,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         ----------------------------------------
         -- SERVER (ADDITIONAL PRIVS REQUIRED) --
         ----------------------------------------
-        if has_server_privs then
-            if fields.server_whitelist then
-                local event = minetest.explode_textlist_event(fields.server_whitelist)
-                if event.type == "CHG" then
-                    context.selected_ip_range = event.index
-                end
-            end
-                
+        if has_server_privs then       
             if fields.server_send_students or fields.server_send_teachers or fields.server_send_admins or fields.server_send_all then
                 if fields.server_message ~= "" then
                     local message_map = {
@@ -1029,32 +1046,24 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             elseif fields.server_shutdown_now then
                 mc_teacher.cancel_shutdown()
                 mc_teacher.shutdown_server(true)
-            elseif fields.server_ip_add or fields.server_ip_remove then
-                if fields.server_ip_start and fields.server_ip_start ~= "" then
-                    local add_cond = (fields.server_ip_remove == nil) or nil
-                    if not fields.server_ip_end or fields.server_ip_end == "" then
-                        networking.modify_ipv4(player, fields.server_ip_start, nil, add_cond)
-                    else
-                        local ips_ordered = networking.ipv4_compare(fields.server_ip_start, fields.server_ip_end)
-                        local start_ip = ips_ordered and fields.server_ip_start or fields.server_ip_end
-                        local end_ip = ips_ordered and fields.server_ip_end or fields.server_ip_start
-                        networking.modify_ipv4(player, start_ip, end_ip, add_cond)
-                    end
+            elseif fields.server_dyn then
+                local event = minetest.explode_textlist_event(fields.server_dyn)
+                if event.type == "CHG" then
+                    context.selected_s_dyn = event.index
                 end
                 reload = true
-            elseif fields.server_whitelist_remove then
-                local ip_to_remove = context.ip_whitelist[tonumber(context.selected_ip_range)]
-                if ip_to_remove then
-                    networking.modify_ipv4(player, ip_to_remove, nil, nil)
+            elseif fields.unban then
+                context.selected_s_dyn = context.selected_s_dyn or 1
+                local bans = mc_core.split(ban_string, ",")
+                if bans[context.selected_s_dyn] then
+                    minetest.unban_player_or_ip(bans[context.selected_s_dyn])
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player unbanned!"))
                 else
-                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This IP has already been removed from the whitelist."))
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player could not be unbanned."))
                 end
                 reload = true
-            elseif fields.server_whitelist_toggle then
-                networking.toggle_whitelist(player)
-                reload = true
-            elseif fields.server_ban_manager then
-                return mc_teacher.show_ban_popup(player)
+            elseif fields.server_whitelist then
+                return mc_teacher.show_whitelist_popup(player)
             end
             
             -- SERVER + OVERVIEW
@@ -1079,8 +1088,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             -- server
             if fields.server_message then context.server_message = minetest.formspec_escape(fields.server_message) end
             if fields.server_message_type then context.server_message_type = fields.server_message_type end
-            if fields.server_ip_start then context.start_ip = minetest.formspec_escape(fields.server_ip_start) end
-            if fields.server_ip_end then context.end_ip = minetest.formspec_escape(fields.server_ip_end) end
             if fields.server_shutdown_timer then
                 context.time_index = mc_teacher.T_INDEX[fields.server_shutdown_timer] and mc_teacher.T_INDEX[fields.server_shutdown_timer].i
             end
