@@ -281,3 +281,27 @@ function mc_core.expand_time(t)
     
     return table.concat(t_string, ", "), {s = sec, m = min, h = hour, d = day}
 end
+
+---@public
+---Calls on_priv_grant callbacks as if granter had granted priv to name
+---@param name Name of player privileges were granted to
+---@param granter Name of player who granted privileges
+---@param priv Privilege granted
+function mc_core.call_priv_grant_callbacks(name, granter, priv)
+    for _,func in ipairs(minetest.registered_on_priv_grant) do
+        local res = func(name, granter, priv)
+        if not res then break end
+    end
+end
+
+---@public
+---Calls on_priv_rekove callbacks as if revoker had revoked priv from name
+---@param name Name of player privileges were revoked from
+---@param revoker Name of player who revoked privileges
+---@param priv Privilege revoked
+function mc_core.call_priv_revoke_callbacks(name, revoker, priv)
+    for _,func in ipairs(minetest.registered_on_priv_revoke) do
+        local res = func(name, revoker, priv)
+        if not res then break end
+    end
+end

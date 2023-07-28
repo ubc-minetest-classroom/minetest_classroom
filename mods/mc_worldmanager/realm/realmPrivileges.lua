@@ -120,7 +120,44 @@ function Realm:ApplyPrivileges(player)
             privs[k] = nil
         end
     end
+
+    -- Track changed privs
+    local oldPrivs = minetest.get_player_privs(name)
+    local granted = {}
+    local revoked = {}
+
+    -- First track pass: get all possible grants/removals
+    for k, _ in pairs(minetest.registered_privileges) do
+        if oldPrivs[k] ~= privs[k] then
+            if privs[k] then
+                table.insert(granted, k)
+            else
+                table.insert(revoked, k)
+            end
+        end
+    end
     minetest.set_player_privs(name, privs)
+
+    -- Second track pass: check if granted/removed privs were left unchanged due to other factors
+    local newPrivs = minetest.get_player_privs(name)
+    for i, priv in ipairs(granted) do
+        if not newPrivs[priv] then
+            granted[i] = nil
+        end
+    end
+    for i, priv in ipairs(revoked) do
+        if newPrivs[priv] then
+            revoked[i] = nil
+        end
+    end
+
+    -- Call priv change callbacks (done manually since minetest.set_player_privs was used)
+    for _,priv in pairs(granted) do
+        mc_core.call_priv_grant_callbacks(name, nil, priv)
+    end
+    for _,priv in pairs(revoked) do
+        mc_core.call_priv_revoke_callbacks(name, nil, priv)
+    end
 end
 
 if (mc_core.fileExists(worldRealmPrivWhitelist)) then

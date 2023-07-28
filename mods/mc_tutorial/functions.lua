@@ -346,10 +346,17 @@ function mc_tutorial.completed_action(player, g_index)
                 mc_worldManager.grantUniversalPriv(player, pdata.active.on_completion.privs)
             end
             -- grant privs
+            local granted = {}
             for _,priv in pairs(pdata.active.on_completion.privs) do
+                if player_privs[priv] ~= true then
+                    table.insert(granted, priv)
+                end
                 player_privs[priv] = true
             end
             minetest.set_player_privs(pname, player_privs)
+            for _,priv in pairs(granted) do
+                mc_core.call_priv_grant_callbacks(pname, nil, priv)
+            end
 
             table.insert(pdata.completed, mc_tutorial.active[pname])
         end

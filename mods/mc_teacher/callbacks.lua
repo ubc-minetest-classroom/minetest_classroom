@@ -262,27 +262,32 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             for _,p in pairs(players_to_update) do
                 if p == pname then
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not change your own server role."))
-                end
-                local p_obj = minetest.get_player_by_name(p)
-                if not p_obj or not p_obj:is_player() then
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of player "..tostring(p).." (they are probably offline)."))
-                end
-                if formname == "mc_teacher:role_change_"..mc_teacher.ROLES.NONE then
-                    mc_worldManager.revokeUniversalPriv(p_obj, {"student", "teacher", "server"})
-                    mc_teacher.register_student(p)
-                elseif formname == "mc_teacher:role_change_"..mc_teacher.ROLES.STUDENT then
-                    mc_worldManager.grantUniversalPriv(p_obj, {"student"})
-                    mc_worldManager.revokeUniversalPriv(p_obj, {"teacher", "server"})
-                    mc_teacher.register_student(p)
-                elseif has_server_privs and formname == "mc_teacher:role_change_"..mc_teacher.ROLES.TEACHER then
-                    mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher"})
-                    mc_worldManager.revokeUniversalPriv(p_obj, {"server"})
-                    mc_teacher.register_teacher(p)
-                elseif has_server_privs and formname == "mc_teacher:role_change_"..mc_teacher.ROLES.ADMIN then
-                    mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher", "server"})
-                    mc_teacher.register_teacher(p)
                 else
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of player "..tostring(p).."."))
+                    local p_obj = minetest.get_player_by_name(p)
+                    if not p_obj or not p_obj:is_player() then
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of player "..tostring(p).." (they are probably offline)."))
+                    else
+                        if formname == "mc_teacher:role_change_"..mc_teacher.ROLES.NONE then
+                            mc_worldManager.revokeUniversalPriv(p_obj, {"student", "teacher", "server"})
+                            mc_teacher.register_student(p)
+                        elseif formname == "mc_teacher:role_change_"..mc_teacher.ROLES.STUDENT then
+                            mc_worldManager.grantUniversalPriv(p_obj, {"student"})
+                            mc_worldManager.revokeUniversalPriv(p_obj, {"teacher", "server"})
+                            mc_teacher.register_student(p)
+                        elseif has_server_privs and formname == "mc_teacher:role_change_"..mc_teacher.ROLES.TEACHER then
+                            mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher"})
+                            mc_worldManager.revokeUniversalPriv(p_obj, {"server"})
+                            mc_teacher.register_teacher(p)
+                        elseif has_server_privs and formname == "mc_teacher:role_change_"..mc_teacher.ROLES.ADMIN then
+                            mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher", "server"})
+                            mc_teacher.register_teacher(p)
+                        end
+
+                        local realm = Realm.GetRealmFromPlayer(p_obj)
+                        if realm then
+                            realm:ApplyPrivileges(p_obj)
+                        end
+                    end
                 end
             end
             minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server role changes applied!"))
