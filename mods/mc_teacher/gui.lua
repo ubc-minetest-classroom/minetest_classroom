@@ -174,8 +174,8 @@ function mc_teacher.show_whitelist_popup(player)
     local pname = player:get_player_name()
     local context = mc_teacher.get_fs_context(player)
 
-    local whitelist_state = minetest.deserialize(networking.storage:get_string("enabled"))
-    local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+    local whitelist_state = networking.get_whitelist_enabled()
+    local ipv4_whitelist = networking.get_whitelist()
     context.ip_whitelist = {}
     for ipv4,_ in pairs(ipv4_whitelist) do
         table.insert(context.ip_whitelist, ipv4)
@@ -188,10 +188,28 @@ function mc_teacher.show_whitelist_popup(player)
         "style_type[textlist,field;font=mono]",
         "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 
-        "textarea[", text_spacer, ",0.5;", content_width + 2*(spacer - text_spacer), ",1;;;Whitelisted IPv4 Addresses]",
-        "textlist[", spacer, ",0.9;", content_width, ",5.9;whitelist;", table.concat(context.ip_whitelist, ","), ";", context.selected_ip_range or 1, ";false]",
+        "textarea[", text_spacer, ",0.5;", text_width, ",1;;;Whitelisted IPv4 Addresses]",
+    }
+
+    if context.show_whitelist then
+        table.insert(fs, table.concat({
+            "textlist[", spacer, ",0.9;", content_width, ",5.9;whitelist;", table.concat(context.ip_whitelist, ","), ";", context.selected_ip_range or 1, ";false]",
+        }))
+    else
+        local length = networking.get_whitelist_length()
+        table.insert(fs, table.concat({
+            "style_type[textarea;font=mono]",
+            "textarea[", text_spacer, ",0.9;", text_width, ",5;;;", length, " IPv4 address", length == 1 and "" or "es", " in whitelist (including 127.0.0.1)\n\n",
+            "Whitelisted IP addresses are hidden by default for performance, since loading large whitelists can cause lag when opening this popup.]",
+            "style_type[textarea;font=mono,bold]",
+            "button[", spacer, ",6;", content_width, ",0.8;whitelist_show;Show IP addresses]",
+        }))
+    end
+
+    table.insert(fs, table.concat({
+        "style[blocked_remove;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
         "button[", content_width + spacer + 0.4, ",4.2;", content_width, ",0.8;toggle;", whitelist_state and "DISABLE" or "ENABLE", " whitelist]",
-        "button[", content_width + spacer + 0.4, ",5.1;", content_width, ",0.8;remove;Delete selected]",
+        "button[", content_width + spacer + 0.4, ",5.1;", content_width, ",0.8;", context.show_whitelist and "" or "blocked_", "remove;Delete selected]",
         "textarea[", content_width + text_spacer + 0.4, ",0.5;", text_width, ",1;;;Start IPv4]",
         "textarea[", content_width + text_spacer + 0.4, ",1.7;", text_width, ",1;;;End IPv4 (optional)]",
         "field[", content_width + spacer + 0.4, ",0.9;", content_width, ",0.8;ip_start;;", context.start_ip or "0.0.0.0", "]",
@@ -206,9 +224,32 @@ function mc_teacher.show_whitelist_popup(player)
         "tooltip[ip_add;Adds the typed range of IPs to the whitelist;", mc_core.col.b.default, ";#ffffff]",
         "tooltip[ip_remove;Removes the typed range of IPs from the whitelist;", mc_core.col.b.default, ";#ffffff]",
         "tooltip[toggle;Whitelist is currently ", whitelist_state and "ENABLED" or "DISABLED", ";", mc_core.col.b.default, ";#ffffff]",
-    }
+    }))
     minetest.show_formspec(pname, "mc_teacher:whitelist", table.concat(fs, ""))
 end
+
+--[[ WHITELIST POPUP (LIST SHOWN)
+formspec_version[6]
+size[12.2,7.4]
+textarea[0.55,0.5;5.4,1;;;Whitelisted IPv4 Addresses]
+textlist[0.6,0.9;5.3,5.9;whitelist;;1;false]
+button[6.3,4.2;5.3,0.8;toggle;ENABLE whitelist]
+button[6.3,5.1;5.3,0.8;remove;Delete selected]
+textarea[6.25,0.5;5.4,1;;;Start IPv4]
+textarea[6.25,1.7;5.4,1;;;End IPv4 (optional)]
+field[6.3,0.9;5.3,0.8;ip_start;;0.0.0.0]
+field[6.3,2.1;5.3,0.8;ip_end;;]
+button[6.3,3;2.6,0.8;ip_add;Add range]
+button[9,3;2.6,0.8;ip_remove;Remove range]
+button[6.3,6;5.3,0.8;exit;Return]
+
+-- (LIST HIDDEN)
+formspec_version[6]
+size[12.2,7.4]
+textarea[0.55,0.5;5.4,1;;;Whitelisted IPv4 Addresses]
+textarea[0.55,0.9;5.4,5;;;X IPv4 addresses in whitelist (including 127.0.0.1) - Whitelisted IP addresses are hidden by default to prevent lag when opening the whitelist popup when the whitelist is very large ]
+button[0.6,6;5.3,0.8;show_list;Show IP addresses]
+]]
 
 function mc_teacher.show_edit_popup(player, realmID)
     local spacer = mc_teacher.fs_spacer
@@ -310,7 +351,7 @@ function mc_teacher.show_edit_popup(player, realmID)
     minetest.show_formspec(pname, "mc_teacher:edit_realm", table.concat(fs, ""))
 end
 
---[[ EDIT FORMSPEC
+--[[ EDIT POPUP
 formspec_version[6]
 size[8.3,9.5]
 textarea[0.55,0.5;7.2,1;;;Name]

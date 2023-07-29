@@ -7,6 +7,16 @@ if not minetest.deserialize(networking.storage:get_string("ipv4_whitelist")) the
     -- Initialize and set default whitelist ipv4 address 127.0.0.1 for singleplayer
     local ipv4_whitelist = {["127.0.0.1"] = true}
     networking.storage:set_string("ipv4_whitelist", minetest.serialize(ipv4_whitelist))
+    networking.storage:set_int("ipv4_length", 1)
+end
+if not networking.storage:get("ipv4_length") then
+    -- Calculate + save length of whitelist
+    local whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+    local count = 0
+    for _ in pairs(whitelist) do
+        count = count + 1
+    end
+    networking.storage:set_int("ipv4_length", count)
 end
 
 minetest.register_on_joinplayer(function(player) 
@@ -158,6 +168,7 @@ function networking.modify_ipv4(player, startRange, endRange, add)
         end
 
         networking.storage:set_string("ipv4_whitelist", minetest.serialize(ipv4_whitelist))
+        networking.storage:set_int("ipv4_length", networking.storage:get_int("ipv4_length") + (add and 1 or -1)*count)
         if counter > 0 then
             minetest.chat_send_player(pname, "[Networking] SUCCESS: "..tostring(counter).." out of "..tostring(total).." IP addresses in the range \'"..startRange.."\' to \'"..endRange.."\' were "..(add and "added to" or "removed from").." the whitelist.")
             return true
@@ -174,6 +185,7 @@ function networking.modify_ipv4(player, startRange, endRange, add)
         elseif ipv4_whitelist[address] ~= add then
             ipv4_whitelist[address] = add
             networking.storage:set_string("ipv4_whitelist", minetest.serialize(ipv4_whitelist))
+            networking.storage:set_int("ipv4_length", networking.storage:get_int("ipv4_length") + (add and 1 or -1))
             minetest.chat_send_player(pname, "[Networking] SUCCESS: IP address \'"..startRange.."\' was "..(add and "added to" or "removed from").." the whitelist.")
             return true
         else
@@ -200,6 +212,18 @@ function networking.toggle_whitelist(player)
 			minetest.chat_send_player(pname, "[Networking] Whitelist is now enabled.")
 		end
     end
+end
+
+function networking.get_whitelist()
+    return minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
+end
+
+function networking.get_whitelist_length()
+    return networking.storage:get_int("ipv4_length")
+end
+
+function networking.get_whitelist_enabled()
+    return minetest.deserialize(networking.storage:get_string("enabled"))
 end
 
 -- Register chat commands

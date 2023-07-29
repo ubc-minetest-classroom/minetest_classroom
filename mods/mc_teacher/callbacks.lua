@@ -231,6 +231,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
             end
             reload = true
+        elseif fields.whitelist_show then
+            context.show_whitelist = true
+            reload = true
         elseif fields.remove then
             local ip_to_remove = context.ip_whitelist[tonumber(context.selected_ip_range)]
             if ip_to_remove then
@@ -243,6 +246,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             networking.toggle_whitelist(player)
             reload = true
         elseif fields.quit or fields.exit then
+            context.show_whitelist = nil
             return mc_teacher.show_controller_fs(player, context.tab)
         end
 
@@ -1061,8 +1065,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 context.selected_s_dyn = context.selected_s_dyn or 1
                 local bans = mc_core.split(ban_string, ",")
                 if bans[context.selected_s_dyn] then
-                    minetest.unban_player_or_ip(bans[context.selected_s_dyn])
-                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player unbanned!"))
+                    local ban_split = mc_core.split(bans[context.selected_s_dyn], "|")
+                    if ban_split and ban_split[1] then
+                        minetest.unban_player_or_ip(ban_split[1])
+                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player unbanned!"))
+                    else
+                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player could not be unbanned. Please unban this player by using the /unban command instead."))
+                    end
                 else
                     minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player could not be unbanned."))
                 end
