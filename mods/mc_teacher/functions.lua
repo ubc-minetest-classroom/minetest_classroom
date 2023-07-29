@@ -7,6 +7,7 @@ function mc_teacher.cancel_shutdown()
         for _,timer in pairs(mc_teacher.restart_scheduled) do
             timer:cancel()
         end
+        mc_teacher.restart_scheduled = {}
         mc_teacher.clear_restart_time()
     end
 end

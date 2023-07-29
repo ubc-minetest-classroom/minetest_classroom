@@ -170,6 +170,69 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The report log has been cleared."))
         end
         mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_player_kick" then
+        -----------------------
+        -- PLAYER KICK POPUP --
+        -----------------------
+        if fields.confirm then
+            local players_to_update = get_players_to_update(player, context)
+            local pname = player:get_player_name()
+            for _,p in pairs(players_to_update) do
+                if p ~= pname then
+                    local success = minetest.kick_player(p)
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..(success and "Successfully kicked player " or "Could not kick player ")..p.." from the server."))
+                else
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not kick yourself from the server."))
+                end
+            end
+        end
+        mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_player_ban" then
+        ----------------------
+        -- PLAYER BAN POPUP --
+        ----------------------
+        if fields.confirm then
+            local players_to_update = get_players_to_update(player, context)
+            local pname = player:get_player_name()
+            for _,p in pairs(players_to_update) do
+                if p ~= pname then
+                    local success = minetest.ban_player(p)
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..(success and "Successfully banned player " or "Could not ban player ")..p.." from the server."))
+                else
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not ban yourself from the server."))
+                end
+            end
+        end
+        mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_shutdown_schedule" and has_server_privs then
+        -----------------------------
+        -- SCHEDULE SHUTDOWN POPUP --
+        -----------------------------
+        if fields.confirm then
+            mc_teacher.cancel_shutdown()
+            local warn = {600, 540, 480, 420, 360, 300, 240, 180, 120, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 4, 3, 2, 1}
+            local time = mc_teacher.T_INDEX[context.server_shutdown_timer].t
+            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server shutdown successfully scheduled!"))
+            minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] The server will be restarting in "..context.server_shutdown_timer..". Classrooms will be saved prior to the restart."))
+            mc_teacher.restart_scheduled.timer = minetest.after(time, mc_teacher.shutdown_server, true)
+            for _,t in pairs(warn) do
+                if time >= t then
+                    mc_teacher.restart_scheduled["warn"..tostring(t)] = minetest.after(time - t, mc_teacher.display_restart_time, t)
+                end
+            end
+            reload = true
+        end
+        context.server_shutdown_timer = nil
+        mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_shutdown_now" and has_server_privs then
+        ------------------------
+        -- SHUTDOWN NOW POPUP --
+        ------------------------
+        if fields.confirm then
+            mc_teacher.cancel_shutdown()
+            mc_teacher.shutdown_server(true)
+        end
+        mc_teacher.show_controller_fs(player, context.tab)
     elseif formname == "mc_teacher:confirm_hidden_delete" and has_server_privs then
         ------------------
         -- DELETE POPUP --
@@ -204,6 +267,48 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             else
                 minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] No classrooms are available to delete."))
             end
+        end
+        mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:role_change_"..mc_teacher.ROLES.NONE or formname == "mc_teacher:role_change_"..mc_teacher.ROLES.STUDENT
+    or (has_server_privs and (formname == "mc_teacher:role_change_"..mc_teacher.ROLES.TEACHER or formname == "mc_teacher:role_change_"..mc_teacher.ROLES.ADMIN)) then
+        -----------------------
+        -- ROLE CHANGE POPUP --
+        -----------------------
+        if fields.confirm then
+            local players_to_update = get_players_to_update(player, context)
+            local pname = player:get_player_name()
+            for _,p in pairs(players_to_update) do
+                if p == pname then
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not change your own server role."))
+                else
+                    local p_obj = minetest.get_player_by_name(p)
+                    if not p_obj or not p_obj:is_player() then
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of player "..tostring(p).." (they are probably offline)."))
+                    else
+                        if formname == "mc_teacher:role_change_"..mc_teacher.ROLES.NONE then
+                            mc_worldManager.revokeUniversalPriv(p_obj, {"student", "teacher", "server"})
+                            mc_teacher.register_student(p)
+                        elseif formname == "mc_teacher:role_change_"..mc_teacher.ROLES.STUDENT then
+                            mc_worldManager.grantUniversalPriv(p_obj, {"student"})
+                            mc_worldManager.revokeUniversalPriv(p_obj, {"teacher", "server"})
+                            mc_teacher.register_student(p)
+                        elseif has_server_privs and formname == "mc_teacher:role_change_"..mc_teacher.ROLES.TEACHER then
+                            mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher"})
+                            mc_worldManager.revokeUniversalPriv(p_obj, {"server"})
+                            mc_teacher.register_teacher(p)
+                        elseif has_server_privs and formname == "mc_teacher:role_change_"..mc_teacher.ROLES.ADMIN then
+                            mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher", "server"})
+                            mc_teacher.register_teacher(p)
+                        end
+
+                        local realm = Realm.GetRealmFromPlayer(p_obj)
+                        if realm then
+                            realm:ApplyPrivileges(p_obj)
+                        end
+                    end
+                end
+            end
+            minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server role changes applied!"))
         end
         mc_teacher.show_controller_fs(player, context.tab)
     elseif formname == "mc_teacher:whitelist" and has_server_privs then
@@ -255,48 +360,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if fields.ip_end then context.end_ip = minetest.formspec_escape(fields.ip_end) end
             mc_teacher.show_whitelist_popup(player)
         end
-    elseif formname == "mc_teacher:role_change_"..mc_teacher.ROLES.NONE or formname == "mc_teacher:role_change_"..mc_teacher.ROLES.STUDENT
-    or (has_server_privs and (formname == "mc_teacher:role_change_"..mc_teacher.ROLES.TEACHER or formname == "mc_teacher:role_change_"..mc_teacher.ROLES.ADMIN)) then
-        -----------------------
-        -- ROLE CHANGE POPUP --
-        -----------------------
-        if fields.confirm then
-            local players_to_update = get_players_to_update(player, context)
-            local pname = player:get_player_name()
-            for _,p in pairs(players_to_update) do
-                if p == pname then
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not change your own server role."))
-                else
-                    local p_obj = minetest.get_player_by_name(p)
-                    if not p_obj or not p_obj:is_player() then
-                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of player "..tostring(p).." (they are probably offline)."))
-                    else
-                        if formname == "mc_teacher:role_change_"..mc_teacher.ROLES.NONE then
-                            mc_worldManager.revokeUniversalPriv(p_obj, {"student", "teacher", "server"})
-                            mc_teacher.register_student(p)
-                        elseif formname == "mc_teacher:role_change_"..mc_teacher.ROLES.STUDENT then
-                            mc_worldManager.grantUniversalPriv(p_obj, {"student"})
-                            mc_worldManager.revokeUniversalPriv(p_obj, {"teacher", "server"})
-                            mc_teacher.register_student(p)
-                        elseif has_server_privs and formname == "mc_teacher:role_change_"..mc_teacher.ROLES.TEACHER then
-                            mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher"})
-                            mc_worldManager.revokeUniversalPriv(p_obj, {"server"})
-                            mc_teacher.register_teacher(p)
-                        elseif has_server_privs and formname == "mc_teacher:role_change_"..mc_teacher.ROLES.ADMIN then
-                            mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher", "server"})
-                            mc_teacher.register_teacher(p)
-                        end
-
-                        local realm = Realm.GetRealmFromPlayer(p_obj)
-                        if realm then
-                            realm:ApplyPrivileges(p_obj)
-                        end
-                    end
-                end
-            end
-            minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server role changes applied!"))
-        end
-        mc_teacher.show_controller_fs(player, context.tab)
     elseif formname == "mc_teacher:edit_realm" then
         ------------------
         -- REALM EDITOR --
@@ -703,26 +766,27 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player privileges updated!"))
             reload = true
         elseif fields.p_kick then
+            -- TODO: add custom kick message to popup
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
-            for _,p in pairs(players_to_update) do
-                if p ~= pname then
-                    local success = minetest.kick_player(p)
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Successfully kicked player "..(success and p.." from the server." or "Could not kick "..p.." from the server.")))
-                else
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not kick yourself from the server."))
-                end
+            if #players_to_update <= 0 then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
+            elseif #players_to_update == 1 and players_to_update[1] == pname then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not kick yourself from the server."))
+            else
+                local p_count_string = (#players_to_update == 1 and "this player" or "these "..tostring(#players_to_update).." players")
+                return mc_teacher.show_confirm_popup(player, "confirm_player_kick", {action = "Are you sure you want to kick "..p_count_string.." from the server?"}, {y = 3})
             end
         elseif fields.p_ban then
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
-            for _,p in pairs(players_to_update) do
-                if p ~= pname then
-                    local success = minetest.ban_player(p)
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Successfully banned player "..(success and p.." from the server." or "Could not ban "..p.." from the server.")))
-                else
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not ban yourself from the server."))
-                end
+            if #players_to_update <= 0 then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
+            elseif #players_to_update == 1 and players_to_update[1] == pname then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not ban yourself from the server."))
+            else
+                local p_count_string = (#players_to_update == 1 and "this player" or "these "..tostring(#players_to_update).." players")
+                return mc_teacher.show_confirm_popup(player, "confirm_player_ban", {action = "Are you sure you want to ban "..p_count_string.." from the server?\nThis can only be undone by a server administrator."}, {y = 3.8})
             end
         elseif fields.p_teleport then
             local pname = player:get_player_name()
@@ -854,7 +918,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 local role_string = fields.p_role_admin and mc_teacher.ROLES.ADMIN or mc_teacher.ROLES.TEACHER
                 return mc_teacher.show_confirm_popup(player, "role_change_"..role_string,
                     {action = "Are you sure you want "..p_count_string.." to be "..pluralize(#players_to_update, role_string).."?\nThis will give them access to tools which can be used to modify the server."},
-                    {y = 4.2}
+                    {y = 4.3}
                 )
             end
         end
@@ -1040,21 +1104,17 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] The scheduled server restart has been cancelled."))
                 reload = true
             elseif fields.server_shutdown_schedule then
-                mc_teacher.cancel_shutdown()
-                local warn = {600, 540, 480, 420, 360, 300, 240, 180, 120, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 4, 3, 2, 1}
-                local time = mc_teacher.T_INDEX[fields.server_shutdown_timer].t
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server restart successfully scheduled!"))
-                minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] The server will be restarting in "..fields.server_shutdown_timer..". Classrooms will be saved prior to the restart."))
-                mc_teacher.restart_scheduled.timer = minetest.after(time, mc_teacher.shutdown_server, true)
-                for _,t in pairs(warn) do
-                    if time >= t then
-                        mc_teacher.restart_scheduled["warn"..tostring(t)] = minetest.after(time - t, mc_teacher.display_restart_time, t)
-                    end
-                end
-                reload = true
+                -- TODO: make popup
+                context.server_shutdown_timer = fields.server_shutdown_timer
+                return mc_teacher.show_confirm_popup(player, "confirm_shutdown_schedule", {
+                    action = "Are you sure you want to schedule a server shutdown in "..context.server_shutdown_timer.." from now?\nClassrooms will be saved prior to the shutdown.",
+                    button = "Schedule"
+                }, {x = 9.2, y = 4.3})
             elseif fields.server_shutdown_now then
-                mc_teacher.cancel_shutdown()
-                mc_teacher.shutdown_server(true)
+                -- TODO: make popup
+                return mc_teacher.show_confirm_popup(player, "confirm_shutdown_now", {
+                    action = "Are you sure you want to perform a server shutdown right now?\nClassrooms will be saved prior to the shutdown."
+                }, {x = 9.2, y = 3.8})
             elseif fields.server_dyn then
                 local event = minetest.explode_textlist_event(fields.server_dyn)
                 if event.type == "CHG" then
