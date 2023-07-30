@@ -90,20 +90,20 @@ function mc_student.show_notebook_fs(player, tab)
 
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
 					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Welcome to Minetest Classroom!]",
-					"textarea[", text_spacer, ",4.4;", panel_width - 2*text_spacer, ",1;;;Server Rules]",
+					"textarea[", text_spacer, ",4.6;", panel_width - 2*text_spacer, ",1;;;Server Rules]",
 					"style_type[textarea;font=mono]",
-					"textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",2.6;;;", minetest.formspec_escape("This is the Student Notebook, your tool for accessing classrooms and other features."),
+					"textarea[", text_spacer, ",1.4;", panel_width - 2*text_spacer, ",3;;;", minetest.formspec_escape("This is the Student Notebook, your tool for accessing classrooms and other features."),
 					"\n", minetest.formspec_escape("You cannot drop or delete the Student Notebook, so you will never lose it. However, you can move it out of your hotbar and into your inventory or the toolbox."), "]",
-					"textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",4.9;;;", minetest.formspec_escape(rules), "]",
+					"textarea[", text_spacer, ",5;", panel_width - 2*text_spacer, ",4.8;;;", minetest.formspec_escape(rules), "]",
 
+					"hypertext[", panel_width + spacer + 1.8, ",0.9;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Classrooms</b>\n", minetest.formspec_escape("View classrooms and players"), "]",
 					"image_button[", panel_width + spacer, ",1.0;", button_width, ",", button_height, ";mc_teacher_classrooms.png;classrooms;;false;false]",
+					"hypertext[", panel_width + spacer + 1.8, ",2.7;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "]",
 					"image_button[", panel_width + spacer, ",2.8;", button_width, ",", button_height, ";mc_teacher_map.png;map;;false;false]",
+					"hypertext[", panel_width + spacer + 1.8, ",4.5;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Appearance</b>\n", minetest.formspec_escape("Personalize your avatar"), "]",
 					"image_button[", panel_width + spacer, ",4.6;", button_width, ",", button_height, ";mc_teacher_appearance.png;appearance;;false;false]",
+					"hypertext[", panel_width + spacer + 1.8, ",6.3;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Help</b>\n", minetest.formspec_escape("View guides and report issues"), "]",
 					"image_button[", panel_width + spacer, ",6.4;", button_width, ",", button_height, ";mc_teacher_help.png;help;;false;false]",
-					"hypertext[", panel_width + spacer + 1.8, ",1.3;5.35,1.6;;<style color=#000000><b>Classrooms</b>\n", minetest.formspec_escape("Find classrooms or players"), "</style>]",
-					"hypertext[", panel_width + spacer + 1.8, ",3.1;5.35,1.6;;<style color=#000000><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "</style>]",
-					"hypertext[", panel_width + spacer + 1.8, ",4.9;5.35,1.6;;<style color=#000000><b>Appearance</b>\n", minetest.formspec_escape("Personalize your avatar"), "</style>]",
-					"hypertext[", panel_width + spacer + 1.8, ",6.7;5.35,1.6;;<style color=#000000><b>Help</b>\n", minetest.formspec_escape("Report a player or server issue"), "</style>]",
 				}
 				return fs
 			end,
@@ -144,8 +144,8 @@ function mc_student.show_notebook_fs(player, tab)
                 end
 				table.insert(fs, table.concat({"button[", spacer, ",9;", panel_width - 2*spacer, ",0.8;c_teleport;Teleport]"}))
 
-				local fsy = 1
-				local Y_SHIFT = 0.5
+				local fsy = 0.9
+				local Y_SHIFT = 0.45
 				local player_lists = {
 					teacher = {},
 					student = {}
@@ -414,17 +414,17 @@ image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.2,1;;;Overview]
 textarea[8.75,0.1;7.2,1;;;Dashboard]
 textarea[0.55,1;7.1,1;;;Welcome to Minetest Classroom!]
-textarea[0.55,1.5;7.2,2.8;;;This is the Student Notebook\, your tool for accessing classrooms and other features. You cannot drop or delete the Student Notebook\, so you will never lose it\, but you can move it out of your hotbar and into your inventory or the toolbox.]
-textarea[0.55,4.4;7.2,1;;;Server Rules]
-textarea[0.55,4.9;7.2,4.9;;;These are the server rules!]
+textarea[0.55,1.4;7.2,3;;;This is the student notebook!]
+textarea[0.55,4.6;7.2,1;;;Server Rules]
+textarea[0.55,5;7.2,4.8;;;These are the server rules!]
+textarea[10.7,0.9;5.3,1.8;;;Classrooms View classrooms and players]
 image_button[8.9,1;1.7,1.6;mc_teacher_classrooms.png;classrooms;;false;true]
+textarea[10.7,2.7;5.3,1.8;;;Map Record and share locations]
 image_button[8.9,2.8;1.7,1.6;mc_teacher_map.png;map;;false;true]
+textarea[10.7,4.5;5.3,1.8;;;Appearance Personalize your avatar]
 image_button[8.9,4.6;1.7,1.6;mc_teacher_appearance.png;appearance;;false;true]
+textarea[10.7,6.3;5.3,1.8;;;Help View guides and report issues]
 image_button[8.9,6.4;1.7,1.6;mc_teacher_help.png;help;;false;true]
-textarea[10.7,1.3;5.25,1.6;;;Classrooms\nfind classrooms or players]
-textarea[10.7,3.1;5.25,1.6;;;Map\nrecord and share locations]
-textarea[10.7,4.9;5.25,1.6;;;Appearance\npersonalize your avatar]
-textarea[10.7,6.7;5.25,1.6;;;Help\nReport a player or server issue]
 image[16,-0.25;0.5,0.8;mc_student_bookmark.png]
 
 CLASSROOMS + ONLINE PLAYERS:

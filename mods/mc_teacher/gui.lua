@@ -34,7 +34,7 @@ local function get_saved_coords(player)
 end
 
 local function get_options_height(context)
-    if (not context.realm_gen or context.realm_gen == mc_teacher.R.GEN.NONE) and (not context.realm_dec or context.realm_dec == mc_teacher.R.DEC.NONE) then
+    if (not context.realm_gen or context.realm_gen == mc_teacher.R.GEN.NONE) then
         return 2.6
     elseif context.realm_dec == mc_teacher.R.DEC.BIOME then
         return 5.2
@@ -431,35 +431,35 @@ function mc_teacher.show_controller_fs(player, tab)
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Welcome to Minetest Classroom!]",
-                    "textarea[", text_spacer, ",4.4;", panel_width - 2*text_spacer, ",1;;;Server Rules]",
+                    "textarea[", text_spacer, ",4.6;", panel_width - 2*text_spacer, ",1;;;Server Rules]",
                     "style_type[textarea;font=mono]",
-                    "textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",2.6;;;", minetest.formspec_escape("This is the Teacher Controller, your tool for managing classrooms, player privileges, and server settings."),
+                    "textarea[", text_spacer, ",1.4;", panel_width - 2*text_spacer, ",3;;;", minetest.formspec_escape("This is the Teacher Controller, your tool for managing classrooms, player privileges, and server settings."),
                     "\n", minetest.formspec_escape("You cannot drop this tool, so you will never lose it. However, you can move it out of your hotbar and into your inventory or the toolbox."), "]",
-                    "textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",", has_server_privs and 4 or 4.9, ";;;", minetest.formspec_escape(rules), "]",
+                    "textarea[", text_spacer, ",5.0;", panel_width - 2*text_spacer, ",", has_server_privs and 3.9 or 4.8, ";;;", minetest.formspec_escape(rules), "]",
                     has_server_privs and "button[0.6,9;7,0.8;server_edit_rules;Edit server rules]" or "",
 
                     "scrollbaroptions[min=0;max=", (11.6 + (has_server_privs and 1.7 or 0) - Y_SIZE)/FACTOR, ";smallstep=", 0.8/FACTOR, ";largestep=", 4.8/FACTOR, ";thumbsize=", 1/FACTOR, "]",
                     "scrollbar[", controller_width - 0.3, ",0.5;0.3,", Y_SIZE, ";vertical;overviewscroll;", context.overviewscroll or 0, "]",
                     "scroll_container[", panel_width, ",0.5;", panel_width - 0.3, ",", Y_SIZE, ";overviewscroll;vertical;", FACTOR, "]",
 
+                    "hypertext[", spacer + 1.8, ",0.4;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Classrooms</b>\n", minetest.formspec_escape("Create and manage classrooms"), "]",
                     "image_button[", spacer, ",0.5;", button_width, ",", button_height, ";mc_teacher_classrooms.png;classrooms;;false;false]",
-                    "hypertext[", spacer + 1.8, ",0.8;5.35,1.6;;<style color=#000000><b>Classrooms</b>\n", minetest.formspec_escape("Create and manage classrooms"), "</style>]",
+                    "hypertext[", spacer + 1.8, ",2.2;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "]",
                     "image_button[", spacer, ",2.3;", button_width, ",", button_height, ";mc_teacher_map.png;map;;false;false]",
-                    "hypertext[", spacer + 1.8, ",2.6;5.35,1.6;;<style color=#000000><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "</style>]",
+                    "hypertext[", spacer + 1.8, ",4.0;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Players</b>\n", minetest.formspec_escape("Manage player privileges"), "]",
                     "image_button[", spacer, ",4.1;", button_width, ",", button_height, ";mc_teacher_players.png;players;;false;false]",
-                    "hypertext[", spacer + 1.8, ",4.4;5.35,1.6;;<style color=#000000><b>Players</b>\n", minetest.formspec_escape("Manage player privileges"), "</style>]",
+                    "hypertext[", spacer + 1.8, ",5.8;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Moderation</b>\n", minetest.formspec_escape("View player chat logs"), "]",
                     "image_button[", spacer, ",5.9;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;moderation;;false;false]",
-                    "hypertext[", spacer + 1.8, ",6.2;5.35,1.6;;<style color=#000000><b>Moderation</b>\n", minetest.formspec_escape("View player chat logs"), "</style>]",
+                    "hypertext[", spacer + 1.8, ",7.6;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Reports</b>\n", minetest.formspec_escape("View player reports"), "]",
                     "image_button[", spacer, ",7.7;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;reports;;false;false]",
-                    "hypertext[", spacer + 1.8, ",8;5.35,1.6;;<style color=#000000><b>Reports</b>\n", minetest.formspec_escape("View and resolve player reports"), "</style>]",
+                    "hypertext[", spacer + 1.8, ",9.4;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Help</b>\n", minetest.formspec_escape("View guides and report issues"), "</style>]",
                     "image_button[", spacer, ",9.5;", button_width, ",", button_height, ";mc_teacher_help.png;help;;false;false]",
-                    "hypertext[", spacer + 1.8, ",9.8;5.35,1.6;;<style color=#000000><b>Help</b>\n", minetest.formspec_escape("View guides and resources"), "</style>]",
                 }
 
                 if has_server_privs then
                     table.insert(fs, table.concat({
+                        "hypertext[", spacer + 1.8, ",11.2;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Server</b>\n", minetest.formspec_escape("Manage server settings"), "]",
                         "image_button[", spacer, ",11.3;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;server;;false;false]",
-                        "hypertext[", spacer + 1.8, ",11.6;5.35,1.6;;<style color=#000000><b>Server</b>\n", minetest.formspec_escape("Manage server settings"), "</style>]",
                     }))
                 end
                 table.insert(fs, "scroll_container_end[]")
@@ -496,7 +496,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;c_newrealm;Generate Classroom]",
+                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;c_newrealm;Generate classroom]",
                     "tabheader[", spacer, ",1.4;", panel_width - 2*spacer, ",0.5;c_list_header;Public,Private,Hidden;", context.selected_c_tab, ";false;true]",
                 }
                 
@@ -1434,20 +1434,20 @@ image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.2,1;;;Overview]
 textarea[8.85,0.1;7.2,1;;;Dashboard]
 textarea[0.55,1;7.2,1;;;Welcome to Minetest Classroom!]
-textarea[0.55,1.5;7.2,2.8;;;This is the Teacher Controller\, your tool for managing classrooms\, player privileges\, and server settings. You cannot drop or delete this tool\, so you will never lose it\, but you can move it out of your hotbar and into your inventory or the toolbox.]
-textarea[0.55,4.4;7.2,1;;;Server Rules]
-textarea[0.55,4.9;7.2,4;;;These are the server rules!]
+textarea[0.55,1.4;7.2,3;;;This is the teacher controller!]
+textarea[0.55,4.6;7.2,1;;;Server Rules]
+textarea[0.55,5;7.2,3.9;;;These are the server rules!]
 button[0.6,9;7.1,0.8;modifyrules;Edit Server Rules]
+textarea[10.7,0.9;5.4,1.8;;;Classrooms Find classrooms or players]
 image_button[8.9,1;1.7,1.6;mc_teacher_classrooms.png;classrooms;;false;false]
+textarea[10.7,2.7;5.4,1.8;;;Map Record and share locations]
 image_button[8.9,2.8;1.7,1.6;mc_teacher_map.png;map;;false;false]
+textarea[10.7,4.5;5.4,1.8;;;Players Manage player privileges]
 image_button[8.9,4.6;1.7,1.6;mc_teacher_players.png;players;;false;false]
+textarea[10.7,6.3;5.4,1.8;;;Moderation View player chat logs]
 image_button[8.9,6.4;1.7,1.6;mc_teacher_isometric.png;help;;false;false]
+textarea[10.7,8.1;5.4,1.8;;;Reports View player reports]
 image_button[8.9,8.2;1.7,1.6;mc_teacher_isometric.png;help;;false;false]
-textarea[10.7,1.3;5.35,1.6;;;ClassroomsnFind classrooms or players]
-textarea[10.7,3.1;5.35,1.6;;;MapnRecord and share locations]
-textarea[10.7,4.9;5.35,1.6;;;PlayersnManage player privileges]
-textarea[10.7,6.7;5.35,1.6;;;ModerationnView player chat logs]
-textarea[10.7,8.5;5.35,1.6;;;ReportsnView player reports]
 image[16,-0.25;0.5,0.8;mc_teacher_bookmark.png]
 
 CLASSROOMS:
@@ -1506,7 +1506,7 @@ textarea[8.85,7;7.2,1;;;Background Music]
 dropdown[8.9,7.4;7.1,0.8;bgmusic;;1;true]
 textarea[8.85,8.3;7.2,1;;;Skybox]
 dropdown[8.9,8.7;7.1,0.8;;;1;true]
-button[8.9,9;7.1,0.8;requestrealm;Generate Classroom]
+button[8.9,9;7.1,0.8;requestrealm;Generate classroom]
 
 MAP + COORDINATES:
 formspec_version[6]
