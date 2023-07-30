@@ -1106,13 +1106,13 @@ function mc_teacher.show_controller_fs(player, tab)
                         local index = tonumber(split_key[2] or "0")
                         if split_key[1] == "chat" and index ~= 0 then
                             local msg_table = chat_msg[selected][index]
-                            table.insert(player_log, "#CCFFFF"..minetest.formspec_escape(table.concat({"[", stamp, "] ", msg_table.message})))
+                            table.insert(player_log, "#CCFFFF"..minetest.formspec_escape(table.concat({"[", stamp, "] ", mc_core.trim(string.gsub(msg_table.message, "\n+", " "))}))) 
                         elseif split_key[1] == "dm" and index ~= 0 then
                             local msg_table = direct_msg[selected][index]
-                            table.insert(player_log, "#FFFFCC"..minetest.formspec_escape(table.concat({"[", stamp, "] DM to ", msg_table.recipient, ": ", msg_table.message})))
+                            table.insert(player_log, "#FFFFCC"..minetest.formspec_escape(table.concat({"[", stamp, "] DM to ", msg_table.recipient, ": ", mc_core.trim(string.gsub(msg_table.message, "\n+", " "))})))
                         elseif split_key[1] == "serv" and index ~= 0 then
                             local msg_table = server_msg[selected][index]
-                            table.insert(player_log, "#FFCCFF"..minetest.formspec_escape(table.concat({"[", stamp, "] ", mc_core.SERVER_USER, " to ", msg_table.recipient, ": ", msg_table.message})))
+                            table.insert(player_log, "#FFCCFF"..minetest.formspec_escape(table.concat({"[", stamp, "] ", mc_core.SERVER_USER, " to ", msg_table.recipient, ": ", mc_core.trim(string.gsub(msg_table.message, "\n+", " "))})))
                         end
                         table.insert(context.log_i_to_key, key)
                     end
@@ -1266,14 +1266,21 @@ function mc_teacher.show_controller_fs(player, tab)
                     "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
                     "tooltip[exit;Exit;#404040;#ffffff]",
                     "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Help</b></center></style>]",
-                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Getting Started</b></center></style>]",
+                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Submit a Report</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Game controls]",
+                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Need to report an issue?]",
+                    "textarea[", panel_width + text_spacer, ",5.6;", panel_width - 2*text_spacer, ",1;;;Report type]",
+                    "textarea[", panel_width + text_spacer, ",6.9;", panel_width - 2*text_spacer, ",1;;;Report message]",
                     "style_type[textarea;font=mono]",
-                    "textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;", mc_core.get_controls_info(true), "]",
+                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 
-                    "style_type[textarea;font=mono,bold]",
-                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;More help coming soon!]",
+                    "textarea[", text_spacer, ",1.4;", panel_width - 2*text_spacer, ",8.4;;;", mc_core.get_controls_info(true), "]",
+                    "textarea[", panel_width + text_spacer, ",1.4;", panel_width - 2*text_spacer, ",4.1;;;", minetest.formspec_escape("If you need to report a server issue or player, you can write a message in the box below."), "\n\n",
+					minetest.formspec_escape("Your report message will be logged in the report log and be visible to all teachers, so don't include any personal information in it. The server will also automatically log the current date and time, your classroom, and your world position in the report, so you don't need to include that information in your report message."), "]",
+                    "dropdown[", panel_width + spacer, ",6.0;", panel_width - 2*spacer, ",0.8;report_type;Server Issue,Misbehaving Player,Question,Suggestion,Other;1;false]",
+                    "textarea[", panel_width + spacer, ",7.3;", panel_width - 2*spacer, ",1.6;report_body;;]",
+                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;submit_report;Submit report]",
                 }
 
                 return fs
@@ -1651,9 +1658,16 @@ box[0,0;16.6,0.5;#737373]
 box[8.275,0;0.05,10.4;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.1,1;;;Help]
-textarea[8.85,0.1;7.1,1;;;Getting Started]
+textarea[8.85,0.1;7.1,1;;;Submit a Report]
 textarea[0.55,1;7.2,1;;;Controls]
-textarea[0.55,1.5;7.2,8.3;;;Add controls here!]
+textarea[0.55,1.4;7.2,8.4;;;Add controls here!]
+textarea[8.85,1;7.2,1;;;Need to report an issue?]
+textarea[8.85,1.4;7.2,4.1;;;Add info about reporting here!]
+textarea[8.85,5.6;7.2,1;;;Report type]
+dropdown[8.9,6;7.1,0.8;report_type;Server Issue,Misbehaving Player,Question,Suggestion,Other;1;false]
+textarea[8.85,6.9;7.2,1;;;Report message]
+textarea[8.9,7.3;7.1,1.6;report_body;;]
+button[8.9,9;7.1,0.8;submit_report;Submit report]
 
 SERVER:
 formspec_version[6]

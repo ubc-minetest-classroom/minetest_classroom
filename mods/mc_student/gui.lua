@@ -342,18 +342,18 @@ function mc_student.show_notebook_fs(player, tab)
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
 					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Game controls]",
 					"textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Need to report an issue?]",
-					"textarea[", panel_width + text_spacer, ",6.1;", panel_width - 2*text_spacer, ",1;;;Report message]",
-					"textarea[", panel_width + text_spacer, ",4.8;", panel_width - 2*text_spacer, ",1;;;Report type]",
+					"textarea[", panel_width + text_spacer, ",5.6;", panel_width - 2*text_spacer, ",1;;;Report type]",
+					"textarea[", panel_width + text_spacer, ",6.9;", panel_width - 2*text_spacer, ",1;;;Report message]",
 					"style_type[textarea;font=mono]",
 					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 
-					"textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;", mc_core.get_controls_info(false), "]",
-					"textarea[", panel_width + text_spacer, ",1.5;", panel_width - 2*text_spacer, ",3;;;", minetest.formspec_escape("If you need to report a server issue or player, you can write a message in the box below that will be privately sent to "), 
-					next(mc_teacher.teachers) ~= nil and "all teachers that are currently online" or "the first teacher that joins the server", ".\n",
+					"textarea[", text_spacer, ",1.4;", panel_width - 2*text_spacer, ",8.4;;;", mc_core.get_controls_info(false), "]",
+					"textarea[", panel_width + text_spacer, ",1.4;", panel_width - 2*text_spacer, ",4.1;;;", minetest.formspec_escape("If you need to report a server issue or player, you can write a message in the box below that will be privately sent to "), 
+					next(mc_teacher.teachers) ~= nil and "all teachers that are currently online" or "the first teacher that joins the server", ".\n\n",
 					minetest.formspec_escape("Your report message will be logged and visible to all teachers, so don't include any personal information in it. The server will also automatically log the current date and time, your classroom, and your world position in the report, so you don't need to include that information in your report message."), "]",
-					"dropdown[", panel_width + spacer, ",5.2;", panel_width - 2*spacer, ",0.7;reporttype;", table.concat(mc_student.REPORT_TYPE, ","), ";1;false]",
-					"textarea[", panel_width + spacer, ",6.5;", panel_width - 2*spacer, ",2.4;report;;]",
-					"button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;submitreport;Submit Report]",
+                    "dropdown[", panel_width + spacer, ",6.0;", panel_width - 2*spacer, ",0.8;report_type;Server Issue,Misbehaving Player,Question,Suggestion,Other;1;false]",
+                    "textarea[", panel_width + spacer, ",7.3;", panel_width - 2*spacer, ",1.6;report_body;;]",
+                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;submit_report;Submit report]",
 				}
 
 				return fs
@@ -496,14 +496,14 @@ image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.1,1;;;Help]
 textarea[8.85,0.1;7.1,1;;;Reports]
 textarea[0.55,1;7.2,1;;;Controls]
+textarea[0.55,1.4;7.2,8.4;;;Add controls here!]
 textarea[8.85,1;7.2,1;;;Need to report an issue?]
-textarea[8.85,6.1;7.2,1;;;Report message]
-textarea[8.85,4.8;7.2,1;;;Report type]
-textarea[0.55,1.5;7.2,8.3;;;Add controls here!]
-textarea[8.9,1.5;7.1,3;a;;Add info about reporting here!]
-dropdown[8.9,5.2;7.1,0.8;reporttype;Server Issue,Misbehaving Player,Question,Suggestion,Other;1;false]
-textarea[8.9,6.5;7.1,2.4;report;;]
-button[8.9,9;7.1,0.8;submitreport;Submit Report]
+textarea[8.85,1.4;7.2,4.1;;;Add info about reporting here!]
+textarea[8.85,5.6;7.2,1;;;Report type]
+dropdown[8.9,6;7.1,0.8;report_type;Server Issue,Misbehaving Player,Question,Suggestion,Other;1;false]
+textarea[8.85,6.9;7.2,1;;;Report message]
+textarea[8.9,7.3;7.1,1.6;report_body;;]
+button[8.9,9;7.1,0.8;submit_report;Submit report]
 
 ACCEPTED EMOJI CHARS
 - ✔

@@ -19,58 +19,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			mc_student.show_notebook_fs(player, context.tab)
 		end
 
-		if fields.submitreport then
-			if not fields.report or fields.report == "" then
-				minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please add a message to your report."))
-				return
-			end
-
-			local pname = player:get_player_name() or "unknown"
-			local pos = player:get_pos() or {x = 0, y = 0, z = 0}
-			local realm = Realm.GetRealmFromPlayer(player) or {Name = "Unknown", ID = 0}
-			local clean_report = minetest.formspec_escape(fields.report)
-			local report_type = fields.reporttype or "Other"
-			local timestamp = tostring(os.date("%Y-%m-%d %H:%M:%S"))
-
-			if next(mc_teacher.teachers) ~= nil then
-				local details = "  DETAILS: "
-				if realm.ID ~= 0 then
-					local loc = {
-						x = tostring(math.round(pos.x - realm.StartPos.x)),
-						y = tostring(math.round(pos.y - realm.StartPos.y)),
-						z = tostring(math.round(pos.z - realm.StartPos.z)),
-					}
-					details = details.."Realm #"..realm.ID.." ("..realm.Name..") at position (x="..loc.x..", y="..loc.y..", z="..loc.z..")"
-				else
-					details = details.."Unknown realm at position (x="..pos.x..", y="..pos.y..", z="..pos.z..")"
-				end
-				for teacher,_ in pairs(mc_teacher.teachers) do
-					minetest.chat_send_player(teacher, minetest.colorize(mc_core.col.log, table.concat({
-						"[Minetest Classroom] NEW REPORT: ", timestamp, " by ", pname, "\n",
-						"  ", string.upper(report_type), ": ", fields.report, "\n", details,
-					})))
-				end
-			else
-				local report_reminder = mc_teacher.meta:get_int("report_reminder")
-				report_reminder = report_reminder + 1
-				mc_teacher.meta:set_int("report_reminder", report_reminder)
-			end
-
-			local reports = minetest.deserialize(mc_teacher.meta:get_string("report_log")) or {}
-			table.insert(reports, {
-				player = pname,
-				timestamp = timestamp,
-				pos = pos,
-				realm = realm.ID,
-				message = clean_report,
-				type = report_type
-			})
-			mc_teacher.meta:set_string("report_log", minetest.serialize(reports))
-
-			chatlog.write_log(pname, "[REPORT] " .. clean_report)
-			minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your report has been received."))
-			mc_student.show_notebook_fs(player, mc_student.TABS.HELP)
-		elseif fields.classrooms then
+		if fields.classrooms then
 			mc_student.show_notebook_fs(player, mc_student.TABS.CLASSROOMS)
 		elseif fields.map then
 			mc_student.show_notebook_fs(player, mc_student.TABS.MAP)

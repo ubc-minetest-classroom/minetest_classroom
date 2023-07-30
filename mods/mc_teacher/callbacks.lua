@@ -1231,9 +1231,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         ---------
         -- MAP --
         ---------
-        if fields.record and fields.note ~= "" then
-            mc_core.record_coordinates(player, fields.note)
-            reload = true
+        if fields.record and fields.note then
+            local clean_note = mc_core.trim(string.gsub(fields.note, "\n+", " "))
+            if clean_note ~= "" then 
+                mc_core.record_coordinates(player, clean_note)
+                reload = true
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not record a location without a note."))
+            end
         elseif fields.coordlist then
             local event = minetest.explode_textlist_event(fields.coordlist)
             if event.type == "CHG" then
@@ -1403,6 +1408,61 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             pmeta:set_string("positionHudMode", "")
             mc_worldManager.RemoveHud(player)
         end
+
+        -------------
+        -- REPORTS --
+        -------------
+        if fields.submit_report then
+			if not fields.report_body or fields.report_body == "" then
+				return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please add a message to your report."))
+			end
+
+			local pname = player:get_player_name() or "unknown"
+			local pos = player:get_pos() or {x = 0, y = 0, z = 0}
+			local realm = Realm.GetRealmFromPlayer(player) or {Name = "Unknown", ID = 0}
+			local clean_report = minetest.formspec_escape(fields.report_body)
+			local report_type = fields.report_type or "Other"
+			local timestamp = tostring(os.date("%Y-%m-%d %H:%M:%S"))
+
+			if next(mc_teacher.teachers) ~= nil then
+				local details = "  DETAILS: "
+				if realm.ID ~= 0 then
+					local loc = {
+						x = tostring(math.round(pos.x - realm.StartPos.x)),
+						y = tostring(math.round(pos.y - realm.StartPos.y)),
+						z = tostring(math.round(pos.z - realm.StartPos.z)),
+					}
+					details = details.."Realm #"..realm.ID.." ("..realm.Name..") at position (x="..loc.x..", y="..loc.y..", z="..loc.z..")"
+				else
+					details = details.."Unknown realm at position (x="..pos.x..", y="..pos.y..", z="..pos.z..")"
+				end
+				for teacher,_ in pairs(mc_teacher.teachers) do
+					minetest.chat_send_player(teacher, minetest.colorize(mc_core.col.log, table.concat({
+						"[Minetest Classroom] NEW REPORT: ", timestamp, " by ", pname, "\n",
+						"  ", string.upper(report_type), ": ", fields.report_body, "\n", details,
+					})))
+				end
+			else
+				local report_reminder = mc_teacher.meta:get_int("report_reminder")
+				report_reminder = report_reminder + 1
+				mc_teacher.meta:set_int("report_reminder", report_reminder)
+			end
+
+			local reports = minetest.deserialize(mc_teacher.meta:get_string("report_log")) or {}
+			table.insert(reports, {
+				player = pname,
+				timestamp = timestamp,
+				pos = pos,
+				realm = realm.ID,
+				message = clean_report,
+				type = report_type
+			})
+			mc_teacher.meta:set_string("report_log", minetest.serialize(reports))
+
+			chatlog.write_log(pname, "[REPORT] " .. clean_report)
+			minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your report has been received."))
+            reload = true
+		end
 
         if reload == true then
             if formname == "mc_student:notebook_fs" then
