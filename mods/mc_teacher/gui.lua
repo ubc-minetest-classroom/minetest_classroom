@@ -171,6 +171,29 @@ function mc_teacher.show_confirm_popup(player, fs_name, action, size)
     minetest.show_formspec(pname, "mc_teacher:"..fs_name, table.concat(fs, ""))
 end
 
+function mc_teacher.show_kick_popup(player, p_count)
+    local spacer = mc_teacher.fs_spacer
+    local text_spacer = mc_teacher.fs_t_spacer
+    local width = 7.5
+    local height = 5.1
+    local button_width = (width - 2*spacer - 0.1)/2
+
+    local pname = player:get_player_name()
+    local p_count_string = (p_count == 1 and "this player" or "these "..tostring(#players_to_update).." players")
+    
+    local fs = {
+        mc_core.draw_note_fs(width, height, {bg = "#f2aeec", accent = "#f9c8fa"}),
+        "style_type[textarea;font=mono,bold;textcolor=#000000]",
+        "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+        "textarea[", text_spacer, ",0.5;", width - 2*text_spacer, ",", height - 3.3, ";;;Are you sure you want to kick "..p_count_string.." from the server?\nIf so, you can add an optional reason below.]",
+        "style_type[textarea;font=mono]",
+        "textarea[", spacer, ",", height - 2.7, ";", width - 2*spacer, ",1.2;reason;;]",
+        "button[", spacer, ",", height - 1.4, ";", button_width, ",0.8;confirm;Kick player", p_count == 1 and "" or "s", "]",
+        "button[", spacer + 0.1 + button_width, ",", height - 1.4, ";", button_width, ",0.8;cancel;Cancel]",
+    }
+    minetest.show_formspec(pname, "mc_teacher:confirm_player_kick", table.concat(fs, ""))
+end
+
 function mc_teacher.show_whitelist_popup(player)
     local spacer = mc_teacher.fs_spacer
     local text_spacer = mc_teacher.fs_t_spacer

@@ -177,9 +177,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.confirm then
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
+            local reason = fields.reason and mc_core.trim(fields.reason)
             for _,p in pairs(players_to_update) do
                 if p ~= pname then
-                    local success = minetest.kick_player(p)
+                    local success = minetest.kick_player(p, reason ~= "" and reason)
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..(success and "Successfully kicked player " or "Could not kick player ")..p.." from the server."))
                 else
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not kick yourself from the server."))
@@ -777,8 +778,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             elseif #players_to_update == 1 and players_to_update[1] == pname then
                 minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not kick yourself from the server."))
             else
-                local p_count_string = (#players_to_update == 1 and "this player" or "these "..tostring(#players_to_update).." players")
-                return mc_teacher.show_confirm_popup(player, "confirm_player_kick", {action = "Are you sure you want to kick "..p_count_string.." from the server?"}, {y = 3})
+                return mc_teacher.show_kick_popup(player, #players_to_update)
             end
         elseif fields.p_ban then
             local players_to_update = get_players_to_update(player, context)
@@ -789,7 +789,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not ban yourself from the server."))
             else
                 local p_count_string = (#players_to_update == 1 and "this player" or "these "..tostring(#players_to_update).." players")
-                return mc_teacher.show_confirm_popup(player, "confirm_player_ban", {action = "Are you sure you want to ban "..p_count_string.." from the server?\nThis can only be undone by a server administrator."}, {y = 3.8})
+                return mc_teacher.show_confirm_popup(player, "confirm_player_ban", {
+                    action = "Are you sure you want to ban "..p_count_string.." from the server?\nThis can only be undone by a server administrator.",
+                    button = "Ban player"..(#players_to_update == 1 and "" or "s")
+                }, {y = 3.8})
             end
         elseif fields.p_teleport then
             local pname = player:get_player_name()
