@@ -296,7 +296,7 @@ function mc_teacher.show_edit_popup(player, realmID)
 
     if not realmID or not realm then
         return minetest.show_formspec(pname, "mc_teacher:edit_realm", table.concat({
-            mc_core.draw_note_fs(6, 2.5),
+            mc_core.draw_note_fs(6, 2.5, {bg = "#96e1fa", accent = "#c2e9fc"}),
             "style_type[textarea;font=mono;textcolor=#000000]",
             "textarea[0.55,0.5;4.9,1;;;Classroom not found!]",
             "button[0.6,1.1;4.8,0.8;cancel;Return]",
@@ -319,7 +319,7 @@ function mc_teacher.show_edit_popup(player, realmID)
     end
 
     local fs = {
-        mc_core.draw_note_fs(width, height),
+        mc_core.draw_note_fs(width, height, {bg = "#96e1fa", accent = "#c2e9fc"}),
         "style_type[textarea;font=mono,bold;textcolor=#000000]",
         "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
         "style_type[field;font=mono;textcolor=#ffffff]",
@@ -341,10 +341,10 @@ function mc_teacher.show_edit_popup(player, realmID)
         "textarea[", text_spacer + button_width + 1.4, ",4.7;2.3,1;;;give]",
         "style_type[textarea;font=mono,bold]",
 
-        "image[", text_spacer, ",3.5;0.4,0.4;mc_teacher_check.png]",
+        "image[", text_spacer, ",3.5;0.4,0.4;mc_teacher_check.png^[colorize:#56bf5f:alpha]",
         "image[", text_spacer + 0.4, ",3.5;0.4,0.4;mc_teacher_ignore.png]",
         "image[", text_spacer + 0.8, ",3.5;0.4,0.4;mc_teacher_delete.png]",
-        "image[", text_spacer + button_width + 0.1, ",3.5;0.4,0.4;mc_teacher_check.png]",
+        "image[", text_spacer + button_width + 0.1, ",3.5;0.4,0.4;mc_teacher_check.png^[colorize:#56bf5f:alpha]",
         "image[", text_spacer + button_width + 0.5, ",3.5;0.4,0.4;mc_teacher_ignore.png]",
         "image[", text_spacer + button_width + 0.9, ",3.5;0.4,0.4;mc_teacher_delete.png]",
         "tooltip[", text_spacer, ",3.5;0.4,0.4;ALLOW: Privilege will be granted\n(does NOT override universal privileges);#404040;#ffffff]",
