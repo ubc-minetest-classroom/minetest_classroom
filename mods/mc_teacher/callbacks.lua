@@ -1058,7 +1058,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         ----------------------------------------
         -- SERVER (ADDITIONAL PRIVS REQUIRED) --
         ----------------------------------------
-        if has_server_privs then       
+        if has_server_privs then
+            if fields.server_dyn_header and context.selected_s_tab ~= fields.server_dyn_header then
+                context.selected_s_tab = fields.server_dyn_header
+                reload = true
+            end
+
             if fields.server_send_students or fields.server_send_teachers or fields.server_send_admins or fields.server_send_all then
                 if fields.server_message ~= "" then
                     local message_map = {
