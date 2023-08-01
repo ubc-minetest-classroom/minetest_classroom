@@ -79,6 +79,59 @@ function Realm:UpdateRealmPrivilege(privilegeTable)
     return true, invalidPrivs
 end
 
+function Realm:UpdateRealmPrivilegeOverride(privilegeTable, pname)
+    local invalidPrivs = {}
+
+    if (self.PermissionsOverride == nil) then
+        self.PermissionsOverride = {}
+    end
+
+    if not self.PermissionsOverride[pname] then
+        self.PermissionsOverride[pname] = {}
+    end
+
+    for k, v in pairs(privilegeTable) do
+        if (v == true or v == "true") then
+            if (Realm.whitelistedPrivs[k] ~= true) then
+                table.insert(invalidPrivs, k)
+            else
+                self.PermissionsOverride[pname][k] = true
+            end
+        elseif (v == false or v == "false") then
+            if (Realm.whitelistedPrivs[k] ~= true) then
+                table.insert(invalidPrivs, k)
+            else
+                self.PermissionsOverride[pname][k] = false
+            end
+        else
+            self.PermissionsOverride[pname][k] = nil
+        end
+    end
+
+    if (#invalidPrivs > 0) then
+        return false, invalidPrivs
+    end
+
+    return true, invalidPrivs
+end
+
+function Realm:ClearRealmPrivilegeOverride(pname)
+    if (self.PermissionsOverride == nil) then
+        self.PermissionsOverride = {}
+    end
+
+    self.PermissionsOverride[pname] = nil
+    return true
+end
+
+function Realm:GetRealmPrivilegeOverride(pname)
+    if (self.PermissionsOverride == nil) then
+        self.PermissionsOverride = {}
+    end
+
+    return self.PermissionsOverride[pname] or {}
+end
+
 function Realm:ApplyPrivileges(player)
     local name = player:get_player_name()
     local pmeta = player:get_meta()

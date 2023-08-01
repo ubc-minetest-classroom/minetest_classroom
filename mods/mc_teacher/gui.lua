@@ -91,6 +91,15 @@ local function generate_player_table(p_list, p_priv_list)
     return table.concat(combined_list, ",")
 end
 
+local function priv_state_to_sel_privs(priv_table)
+    local privs_to_check = {"shout", "interact", "fast", "fly", "noclip", "give"}
+    local new_table = {}
+    for _,priv in pairs(privs_to_check) do
+        new_table[priv] = (priv_table[priv] == nil and "nil") or priv_table[priv]
+    end
+    return new_table
+end
+
 local function get_priv_button_states(p_list, p_priv_list)
     local states = {}
     local privs_to_check = {shout = true, interact = true}
@@ -791,6 +800,7 @@ function mc_teacher.show_controller_fs(player, tab)
                 return fs
             end,
             [mc_teacher.TABS.PLAYERS] = function()
+                local this_realm = Realm.GetRealmFromPlayer(player)
                 context.selected_p_tab = context.selected_p_tab or "1"
                 context.selected_p_player = context.selected_p_player or 1
                 context.selected_p_mode = context.selected_p_mode or mc_teacher.PMODE.SELECTED
@@ -806,7 +816,6 @@ function mc_teacher.show_controller_fs(player, tab)
                             table.insert(context.p_list, teacher)
                         end
                     elseif context.selected_p_tab == "3" then
-                        local this_realm = Realm.GetRealmFromPlayer(player)
                         if this_realm then
                             for _,p in pairs(this_realm:GetPlayersAsArray() or {}) do
                                 local p_obj = minetest.get_player_by_name(p)
@@ -825,7 +834,7 @@ function mc_teacher.show_controller_fs(player, tab)
                 local selected_player = context.p_list[context.selected_p_player]
 
                 local player_privs = {interact = true, shout = true, fast = true, fly = true, noclip = true, give = true}
-                if selected_player then
+                if this_realm and selected_player then
                     local _,missing = minetest.check_player_privs(selected_player, player_privs)
                     if type(missing) == "string" then missing = {missing} end
 
@@ -835,7 +844,18 @@ function mc_teacher.show_controller_fs(player, tab)
                 else
                     player_privs = {}
                 end
-                local priv_b_state = get_priv_button_states(context.p_list, p_priv_list)
+
+                local priv_b_state, priv_override_state
+                if context.selected_p_mode == mc_teacher.PMODE.SELECTED and selected_player then
+                    priv_b_state = get_priv_button_states({selected_player}, {p_priv_list[context.selected_p_player]})
+                else
+                    priv_b_state = get_priv_button_states(context.p_list, p_priv_list)
+                end
+                if this_realm and selected_player then
+                    priv_override_state = this_realm:GetRealmPrivilegeOverride(selected_player)
+                else
+                    priv_override_state = {}
+                end
 
                 local img = {
                     shout = "mc_teacher_shout",
@@ -898,28 +918,39 @@ function mc_teacher.show_controller_fs(player, tab)
                     "image[", panel_width + text_spacer + 3.6, ",2.7;0.4,0.4;mc_teacher_check.png]",
                     "image[", panel_width + text_spacer + 4.0, ",2.7;0.4,0.4;mc_teacher_ignore.png]",
                     "image[", panel_width + text_spacer + 4.4, ",2.7;0.4,0.4;mc_teacher_delete.png]",
+
+                    "image[", panel_width + spacer - 0.05 + ((priv_override_state.interact == true and 0) or (priv_override_state.interact == false and 0.8) or 0.4), ",3.1;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer - 0.05 + ((priv_override_state.shout    == true and 0) or (priv_override_state.shout    == false and 0.8) or 0.4), ",3.5;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer - 0.05 + ((priv_override_state.fast     == true and 0) or (priv_override_state.fast     == false and 0.8) or 0.4), ",3.9;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer + 3.55 + ((priv_override_state.fly      == true and 0) or (priv_override_state.fly      == false and 0.8) or 0.4), ",3.1;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer + 3.55 + ((priv_override_state.noclip   == true and 0) or (priv_override_state.noclip   == false and 0.8) or 0.4), ",3.5;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer + 3.55 + ((priv_override_state.give     == true and 0) or (priv_override_state.give     == false and 0.8) or 0.4), ",3.9;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
                 }
 
-                -- TODO: reimplement images behind checkboxes
-                --[[if player_privs.interact then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05, ",2.85;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                if not context.selected_privs then
+                    context.selected_privs = priv_override_state or {interact = "nil", shout = "nil", fast = "nil", fly = "nil", noclip = "nil", give = "nil"}
                 end
-                if player_privs.shout then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05, ",3.25;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                context.selected_privs = priv_state_to_sel_privs(context.selected_privs)
+
+                if player_privs.interact ~= nil then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05 + (player_privs.interact and 0 or 0.8), ",3.1;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
                 end
-                if player_privs.fast then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer + 2.35, ",2.85;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                if player_privs.shout ~= nil then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05 + (player_privs.shout and 0 or 0.8), ",3.5;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
                 end
-                if player_privs.fly then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer + 2.35, ",3.25;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                if player_privs.fast ~= nil then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05 + (player_privs.fast and 0 or 0.8), ",3.9;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
                 end
-                if player_privs.noclip then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer + 4.75, ",2.85;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                if player_privs.fly ~= nil then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer + 3.55 + (player_privs.fly and 0 or 0.8), ",3.1;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
                 end
-                if player_privs.give then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer + 4.75, ",3.25;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
-                end]]
-                
+                if player_privs.noclip ~= nil then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer + 3.55 + (player_privs.noclip and 0 or 0.8), ",3.5;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
+                end
+                if player_privs.give ~= nil then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer + 3.55 + (player_privs.give and 0 or 0.8), ",3.9;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
+                end
+
                 table.insert(fs, table.concat({
                     "checkbox[", panel_width + spacer, ",3.3;allowpriv_interact;;", tostring(context.selected_privs.interact == true), "]",
                     "checkbox[", panel_width + spacer, ",3.7;allowpriv_shout;;", tostring(context.selected_privs.shout == true), "]",
@@ -966,8 +997,8 @@ function mc_teacher.show_controller_fs(player, tab)
                     table.insert(fs, "style["..role_to_fs_elem(mc_teacher.get_server_role(selected_player), has_server_privs)..";bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.selected.."]")
                 end
                 table.insert(fs, table.concat({
-                    "image[", panel_width + spacer, ",8.8;3.5,1;mc_pixel.png^[multiply:#acabff]",
-                    "image[", panel_width + spacer + 3.6, ",8.8;3.5,1;mc_pixel.png^[multiply:#f5c987]", --#ffd699
+                    "image[", panel_width + spacer, ",8.8;3.5,1;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]",
+                    "image[", panel_width + spacer + 3.6, ",8.8;3.5,1;mc_pixel.png^[multiply:", mc_core.col.t.orange, "]",
                     "button[", panel_width + spacer + 0.1, ",8.9;1.6,0.8;p_role_none;None]",
                     "button[", panel_width + spacer + 1.8, ",8.9;1.6,0.8;p_role_student;Student]",
                     "button[", panel_width + spacer + 3.7, ",8.9;1.6,0.8;", has_server_privs and "p_role_teacher" or "blocked_role_teacher", ";Teacher]",
@@ -995,8 +1026,8 @@ function mc_teacher.show_controller_fs(player, tab)
                     "tooltip[p_unfreeze;Re-enables player movement;#404040;#ffffff]",
                     "tooltip[p_teleport;Teleports you to the selected player;#404040;#ffffff]",
                     "tooltip[p_bring;Teleports players to your position;#404040;#ffffff]",
-                    "tooltip[p_audience;Teleports players to you, standing in a semicircle facing you;#404040;#ffffff]",
-                    "tooltip[p_timeout;Teleports players to spawn and\nprevents them from joining classrooms;#404040;#ffffff]",
+                    "tooltip[p_audience;This action has not been implemented yet!;#404040;#ffffff]" --[[Teleports players to you, standing in a semicircle facing you;#404040;#ffffff]"]],
+                    "tooltip[p_timeout;This action has not been implemented yet!;#404040;#ffffff]" --[[Teleports players to spawn and\nprevents them from joining classrooms;#404040;#ffffff]"]],
                     "tooltip[p_untimeout;Allows players to join classrooms again;#404040;#ffffff]",
                 }))
 

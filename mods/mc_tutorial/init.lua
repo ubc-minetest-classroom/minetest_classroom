@@ -1145,11 +1145,11 @@ function mc_tutorial.show_tutorials(player)
                 local col = ""
                 local tutorial_info = minetest.deserialize(mc_tutorial.tutorials:get(tostring(id)))
                 if mc_tutorial.active[pname] == id then
-                    col = "#acabff"
+                    col = mc_core.col.t.blue
                 elseif not check_dependencies(pdata, tutorial_info.dependencies) then
-                    col = "#f5627d"
+                    col = mc_core.col.t.red
                 elseif mc_core.tableHas(pdata.completed, id) then
-                    col = "#71eba8"
+                    col = mc_core.col.t.green
                 end
                 table.insert(titles, col..tutorial_info.title)
             end

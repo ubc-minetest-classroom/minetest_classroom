@@ -14,7 +14,15 @@ mc_core = {
             selected = "#055C22",
             red = "#590C0C",
             orange = "#6E5205",
-        }
+            green = "#055C22",
+        },
+        t = {
+            selected = "#59A63A",
+            red = "#F5627D",
+            orange = "#F5C987",
+            green = "#71EBA8",
+            blue = "#ACABFF",
+        },
     },
     SERVER_USER = "Server",
 }

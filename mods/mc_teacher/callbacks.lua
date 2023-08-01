@@ -688,27 +688,33 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         --  CLASSROOMS + PLAYERS --
         ---------------------------
         if fields.allowpriv_interact or fields.denypriv_interact or fields.ignorepriv_interact then
-            context.selected_privs.interact = (fields.allowpriv_interact and true) or (fields.ignorepriv_interact and "nil") or false
+            local change = fields.allowpriv_interact or fields.denypriv_interact or fields.ignorepriv_interact
+            context.selected_privs.interact = (change == "false" and "nil") or (fields.allowpriv_interact and true) or (fields.ignorepriv_interact and "nil") or false
             reload = true
         end
         if fields.allowpriv_shout or fields.denypriv_shout or fields.ignorepriv_shout then
-            context.selected_privs.shout = (fields.allowpriv_shout and true) or (fields.ignorepriv_shout and "nil") or false
+            local change = fields.allowpriv_shout or fields.denypriv_shout or fields.ignorepriv_shout
+            context.selected_privs.shout = (change == "false" and "nil") or (fields.allowpriv_shout and true) or (fields.ignorepriv_shout and "nil") or false
             reload = true
         end
         if fields.allowpriv_fast or fields.denypriv_fast or fields.ignorepriv_fast then
-            context.selected_privs.fast = (fields.allowpriv_fast and true) or (fields.ignorepriv_fast and "nil") or false
+            local change = fields.allowpriv_fast or fields.denypriv_fast or fields.ignorepriv_fast
+            context.selected_privs.fast = (change == "false" and "nil") or (fields.allowpriv_fast and true) or (fields.ignorepriv_fast and "nil") or false
             reload = true
         end
         if fields.allowpriv_fly or fields.denypriv_fly or fields.ignorepriv_fly then
-            context.selected_privs.fly = (fields.allowpriv_fly and true) or (fields.ignorepriv_fly and "nil") or false
+            local change = fields.allowpriv_fly or fields.denypriv_fly or fields.ignorepriv_fly
+            context.selected_privs.fly = (change == "false" and "nil") or (fields.allowpriv_fly and true) or (fields.ignorepriv_fly and "nil") or false
             reload = true
         end
         if fields.allowpriv_noclip or fields.denypriv_noclip or fields.ignorepriv_noclip then
-            context.selected_privs.noclip = (fields.allowpriv_noclip and true) or (fields.ignorepriv_noclip and "nil") or false
+            local change = fields.allowpriv_noclip or fields.denypriv_noclip or fields.ignorepriv_noclip
+            context.selected_privs.noclip = (change == "false" and "nil") or (fields.allowpriv_noclip and true) or (fields.ignorepriv_noclip and "nil") or false
             reload = true
         end
         if fields.allowpriv_give or fields.denypriv_give or fields.ignorepriv_give then
-            context.selected_privs.give = (fields.allowpriv_give and true) or (fields.ignorepriv_give and "nil") or false
+            local change = fields.allowpriv_give or fields.denypriv_give or fields.ignorepriv_give
+            context.selected_privs.give = (change == "false" and "nil") or (fields.allowpriv_give and true) or (fields.ignorepriv_give and "nil") or false
             reload = true
         end
 
@@ -718,6 +724,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.p_list_header and context.selected_p_tab ~= fields.p_list_header then
             context.selected_p_tab = fields.p_list_header
             context.selected_p_player = 1
+            context.selected_privs = nil
             context.p_list = nil
             reload = true
         end
@@ -725,6 +732,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             local event = minetest.explode_table_event(fields.p_list)
             if event.type == "CHG" and context.selected_p_player ~= event.row then
                 context.selected_p_player = tonumber(event.row)
+                context.selected_privs = nil
                 reload = true
             end
         end
@@ -743,24 +751,19 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             local players_to_update = get_players_to_update(player, context, true)
             local realm = Realm.GetRealmFromPlayer(player)
             if realm and #players_to_update > 0 then
-                realm.PermissionsOverride = realm.PermissionsOverride or {}
                 for _,p in pairs(players_to_update) do
-                    if fields.p_priv_update then
-                        realm.PermissionsOverride[p] = realm.PermissionsOverride[p] or {}
-                        for priv, v in pairs(context.selected_privs) do
-                            if v ~= "nil" then
-                                realm.PermissionsOverride[p][priv] = v
-                            else
-                                realm.PermissionsOverride[p][priv] = nil
-                            end
-                        end
+                    if fields.p_priv_reset then
+                        realm:ClearRealmPrivilegeOverride(p)
                     else
-                        realm.PermissionsOverride[p] = nil
+                        realm:UpdateRealmPrivilegeOverride(context.selected_privs or {}, p)
                     end
                     local p_obj = minetest.get_player_by_name(p)
                     if p_obj and p_obj:is_player() then
                         realm:ApplyPrivileges(p_obj)
                     end
+                end
+                if fields.p_priv_reset then
+                    context.selected_privs = nil
                 end
             end
             minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player privileges updated!"))
@@ -1146,9 +1149,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         end
 
-        -- GENERAL: RELOAD
-        if reload then
-            -- classroom
+        -------------
+        -- GENERAL --
+        -------------
+        if fields.exit or fields.quit then
+            if context.selected_privs_mode == mc_teacher.TABS.PLAYERS then
+                context.selected_privs = nil
+            end
+            context.tab = nil
+        elseif reload then
+            -- CLASSROOM --
             if fields.realmname then context.realmname = minetest.formspec_escape(fields.realmname) end
             if fields.realm_x_size then context.realm_x = fields.realm_x_size end
             if fields.realm_y_size then context.realm_y = fields.realm_y_size end
@@ -1156,16 +1166,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if fields.realm_seed then context.realm_seed = fields.realm_seed end
             if fields.realm_sealevel then context.realm_sealevel = fields.realm_sealevel end
             if fields.realm_chill then context.realm_chill = fields.realm_chill end
-            -- moderation + reports
+            -- MODERATION --
             if fields.mod_message then context.mod_message = minetest.formspec_escape(fields.mod_message) end
+            -- REPORTS --
             if fields.report_message then context.report_message = minetest.formspec_escape(fields.report_message) end
-            -- server
+            -- SERVER --
             if fields.server_message then context.server_message = minetest.formspec_escape(fields.server_message) end
             if fields.server_message_type then context.server_message_type = fields.server_message_type end
             if fields.server_shutdown_timer then
                 context.time_index = mc_teacher.T_INDEX[fields.server_shutdown_timer] and mc_teacher.T_INDEX[fields.server_shutdown_timer].i
             end
-            -- reload
             mc_teacher.show_controller_fs(player, context.tab)
         end
     end
