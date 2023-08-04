@@ -11,6 +11,7 @@ dofile(minetest.get_modpath("mc_worldmanager") .. "/hud.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/universalPrivilege.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/teleporterNode.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/WorldGen.lua")
+dofile(minetest.get_modpath("mc_worldmanager") .. "/worldgen/version3.lua")
 
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm_extensions/realmExtensions.lua")
 
