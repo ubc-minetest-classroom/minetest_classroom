@@ -15,7 +15,6 @@ local function makePlayerMortal(player)
     player:set_armor_groups(groups)
 end
 
-
 -- on first player spawn, we assign them to the world spawn realm
 -- and set their position to that spawnpoint .
 minetest.register_on_newplayer(function(player)
@@ -56,6 +55,12 @@ minetest.register_on_joinplayer(function(player, last_login)
     mc_worldManager.UpdateRealmHud(player)
 
     local realm = Realm.GetRealmFromPlayer(player)
+    -- don't allow players to enter realms they no longer have access to when joining
+    if (not realm or not realm:getCategory().joinable(realm, player)) then
+        realm = mc_worldManager.GetSpawnRealm()
+        pmeta:set_int("realm", realm.ID)
+    end
+
     if (realm ~= nil) then
         realm:RegisterPlayer(player)
         realm:RunTeleportInFunctions(player)
@@ -68,12 +73,14 @@ end)
 minetest.register_on_leaveplayer(function(player, timed_out)
     mc_worldManager.RemoveHud(player)
 
+    --[[ NOTE: instanced realms are no longer required to be temporary, so this block is obsolete for the time being
+         TODO: add some way to differentiate temporary instances and "long term" instances (i.e. private realms)
     local realm = Realm.GetRealmFromPlayer(player)
-    if (realm:getCategory() == "instanced") then -- NOTE: this will always be false
+    if (realm:getCategory().key == "instanced") then
         mc_worldManager.GetSpawnRealm():TeleportPlayer(player)
-    end
+    end]]
 
-    realm = Realm.GetRealmFromPlayer(player)
+    local realm = Realm.GetRealmFromPlayer(player)
     if (realm ~= nil) then
         realm:DeregisterPlayer(player)
         realm:RunTeleportOutFunctions(player)

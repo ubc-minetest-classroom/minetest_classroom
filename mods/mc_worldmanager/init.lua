@@ -48,7 +48,6 @@ function mc_worldManager.GetSpawnRealm()
         spawnRealm:setCategoryKey("spawn")
         mc_worldManager.spawnRealmID = spawnRealm.ID
         mc_worldManager.save_data()
-        --Debug.log("Saving spawn realm information")
     end
     return spawnRealm
 end
