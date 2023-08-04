@@ -170,9 +170,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             fields.no_cat_override = true
         end
         mc_teacher.save_realm(player, context, fields)
-        if fields.confirm then
+        if fields.confirm and tonumber(mc_worldManager.spawnRealmID) == tonumber(context.edit_realm.id) then
             mc_worldManager.spawnRealmID = nil
-            mc_worldManager.GetSpawnRealm()
+            mc_worldManager.GetSpawnRealm() -- this will generate a new spawn realm
         end
 
         context.edit_realm = nil
@@ -409,7 +409,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if fields.save_realm then
                 local realm = Realm.GetRealm(context.edit_realm.id)
                 if realm then
-                    if realm:getCategory().key == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.SPAWN] and context.edit_realm.type ~= mc_teacher.R.CAT_KEY.SPAWN then
+                    if realm:getCategory().key == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.SPAWN] and context.edit_realm.type ~= mc_teacher.R.CAT_KEY.SPAWN and tonumber(realm.ID) == tonumber(mc_worldManager.spawnRealmID) then
                         context.edit_realm.name = fields.erealm_name
                         return mc_teacher.show_confirm_popup(player, "spawn_type_change", {
                             action = "Are you sure you want to change the current spawn classroom into a "..(context.edit_realm.type == mc_teacher.R.CAT_KEY.INSTANCED and "private" or "standard").." classroom?\nThis will generate a new spawn classroom.",
