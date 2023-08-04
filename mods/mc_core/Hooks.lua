@@ -1,3 +1,11 @@
+-- Privilege registration
+minetest.register_privilege("teacher", {
+    give_to_singleplayer = true
+})
+minetest.register_privilege("student", {
+    give_to_singleplayer = true
+})
+
 -- Ensures that we can use the server and Server usernames
 minetest.register_on_prejoinplayer(function(name, ip)
     if (string.lower(name) == "server") then

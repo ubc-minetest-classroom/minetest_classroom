@@ -1,11 +1,3 @@
--- Privileges
-minetest.register_privilege("teacher", {
-    give_to_singleplayer = true
-})
-minetest.register_privilege("student", {
-    give_to_singleplayer = true
-})
-
 -- Frozen players
 minetest.register_entity("mc_teacher:frozen_player", {
 	-- This entity needs to be visible otherwise the frozen player won't be visible.
@@ -182,7 +174,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             mc_worldManager.spawnRealmID = nil
             mc_worldManager.GetSpawnRealm()
         end
-        
+
         context.edit_realm = nil
         mc_teacher.show_controller_fs(player, context.tab)
     elseif formname == "mc_teacher:confirm_player_kick" then
