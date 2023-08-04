@@ -177,6 +177,24 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
         context.edit_realm = nil
         mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_hide_occupied" then
+        ----------------------
+        -- HIDE REALM POPUP --
+        ----------------------
+        if fields.confirm then
+            local realm = Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm]))
+            if realm then
+                local spawn = mc_worldManager.GetSpawnRealm()
+                for p, v in pairs(realm:GetPlayers() or {}) do
+                    if v == true then
+                        spawn:TeleportPlayer(minetest.get_player_by_name(p))
+                        minetest.chat_send_player(p, minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you were in was hidden, so you were brought back to the server spawn."))
+                    end
+                end
+                realm:setHidden(true)
+            end
+        end
+        mc_teacher.show_controller_fs(player, context.tab)
     elseif formname == "mc_teacher:confirm_player_kick" then
         -----------------------
         -- PLAYER KICK POPUP --
@@ -676,7 +694,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 if tonumber(context.realm_i_to_id[context.selected_realm]) == mc_worldManager.spawnRealmID then
                     minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not hide the spawn classroom."))
                 else
-                    realm:setHidden(fields.c_hide and true)
+                    Realm.ScanForPlayerRealms()
+                    if fields.c_hide and realm:GetPlayerCount() > 0 then
+                        return mc_teacher.show_confirm_popup(player, "confirm_hide_occupied", {
+                            action = "There are currently players in this classroom. Are you sure you want to hide it?\nAny players inside the classroom will be teleported to the server spawn if it gets hidden.",
+                            button = "Hide classroom"
+                        }, {x = 9, y = 4.3})
+                    else
+                        realm:setHidden(fields.c_hide and true)
+                    end
                 end
             else
                 minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available."))
@@ -1134,12 +1160,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 return mc_teacher.show_confirm_popup(player, "confirm_shutdown_schedule", {
                     action = "Are you sure you want to schedule a server shutdown in "..context.server_shutdown_timer.." from now?\nClassrooms will be saved prior to the shutdown.",
                     button = "Schedule"
-                }, {x = 9.2, y = 4.3})
+                }, {x = 9.2, y = 3.9})
             elseif fields.server_shutdown_now then
                 -- TODO: make popup
                 return mc_teacher.show_confirm_popup(player, "confirm_shutdown_now", {
                     action = "Are you sure you want to perform a server shutdown right now?\nClassrooms will be saved prior to the shutdown."
-                }, {x = 9.2, y = 3.8})
+                }, {x = 9.2, y = 3.5})
             elseif fields.server_dyn then
                 local event = minetest.explode_textlist_event(fields.server_dyn)
                 if event.type == "CHG" then
