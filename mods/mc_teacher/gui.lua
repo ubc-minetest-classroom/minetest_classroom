@@ -166,7 +166,7 @@ function mc_teacher.show_confirm_popup(player, fs_name, action, size)
         "textarea[", text_spacer, ",0.5;", width - 2*text_spacer, ",", height - 2, ";;;", action and action.action or "Are you sure you want to perform this action?",
         action.irreversible and "\nThis action is irreversible." or "", "]",
         "button[", spacer, ",", height - 1.4, ";", button_width, ",0.8;confirm;", action and action.button or "Confirm", "]",
-        "button[", spacer + 0.1 + button_width, ",", height - 1.4, ";", button_width, ",0.8;cancel;Cancel]",
+        "button[", spacer + 0.1 + button_width, ",", height - 1.4, ";", button_width, ",0.8;cancel;", action and action.cancel or "Cancel", "]",
     }
     minetest.show_formspec(pname, "mc_teacher:"..fs_name, table.concat(fs, ""))
 end
@@ -193,6 +193,15 @@ function mc_teacher.show_kick_popup(player, p_count)
     }
     minetest.show_formspec(pname, "mc_teacher:confirm_player_kick", table.concat(fs, ""))
 end
+
+--[[ KICK POPUP
+formspec_version[6]
+size[7.5,5.1]
+textarea[0.55,0.5;6.4,1.8;;;Are you sure you want to kick these 0 players from the server?]
+textarea[0.6,2.4;6.3,1.2;reason;;]
+button[0.6,3.7;3.1,0.8;confirm;Kick players]
+button[3.8,3.7;3.1,0.8;cancel;Cancel]
+]]
 
 function mc_teacher.show_whitelist_popup(player)
     local spacer = mc_teacher.fs_spacer
@@ -307,7 +316,7 @@ function mc_teacher.show_edit_popup(player, realmID)
         local cat = realm:getCategory()
         context.edit_realm = {
             name = realm.Name or "",
-            type = cat and Realm.CAT_RMAP[cat.key] or Realm.CAT_KEY.DEFAULT,
+            type = cat and mc_teacher.R.CAT_RMAP[cat.key] or mc_teacher.R.CAT_KEY.CLASSROOM,
             privs = {interact = "nil", shout = "nil", fast = "nil", fly = "nil", noclip = "nil", give = "nil"},
             id = realmID,
         }
@@ -327,7 +336,7 @@ function mc_teacher.show_edit_popup(player, realmID)
         "field[", spacer, " ,0.9;", width - 2*spacer, ",0.8;erealm_name;;", minetest.formspec_escape(context.edit_realm.name), "]",
         "field_close_on_enter[erealm_name;false]",
         "textarea[", text_spacer, ",1.8;", button_width + 0.1, ",1;;;Type]",
-        "dropdown[", spacer, " ,2.2;", button_width, ",0.8;erealm_cat;Default,Spawn,Classroom,Private;", context.edit_realm.type, ";true]",
+        "dropdown[", spacer, " ,2.2;", button_width, ",0.8;erealm_cat;Classroom,Spawn,Private;", context.edit_realm.type, ";true]",
         "hypertext[", text_spacer + button_width + 0.1, ",1.82;", button_width + 0.1, ",1;;<global font=mono halign=center color=#000000><b>Internal ID</b>]",
         "hypertext[", text_spacer + button_width + 0.1, ",2.22;", button_width + 0.1, ",2;;<global font=mono halign=center color=#000000><b><bigger>#", realmID, "</bigger></b>]",
 
@@ -389,7 +398,7 @@ size[8.3,9.5]
 textarea[0.55,0.5;7.2,1;;;Name]
 field[0.6,0.9;7.1,0.8;realmname;;]
 textarea[0.55,1.8;3.6,1;;;Type]
-dropdown[0.6,2.2;3.5,0.8;realmcategory;Default,Spawn,Classroom,Private;1;true]
+dropdown[0.6,2.2;3.5,0.8;realmcategory;Classroom,Spawn,Private;1;true]
 textarea[4.15,1.8;3.6,1;;;Internal ID]
 textarea[0.55,3.1;7.2,1;;;Default Privileges]
 textarea[1.85,3.9;2.3,1;;;interact]
@@ -512,7 +521,7 @@ function mc_teacher.show_controller_fs(player, tab)
                         local cat = realm:getCategory().key
 
                         if (realm:isHidden() and context.selected_c_tab == mc_teacher.CTAB.HIDDEN) or (not realm:isHidden() and
-                        ((context.selected_c_tab == mc_teacher.CTAB.PUBLIC and cat ~= Realm.CAT_MAP[Realm.CAT_KEY.INSTANCED]) or (context.selected_c_tab == mc_teacher.CTAB.PRIVATE and cat == Realm.CAT_MAP[Realm.CAT_KEY.INSTANCED]))) then
+                        ((context.selected_c_tab == mc_teacher.CTAB.PUBLIC and cat ~= mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.INSTANCED]) or (context.selected_c_tab == mc_teacher.CTAB.PRIVATE and cat == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.INSTANCED]))) then
                             table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
                             table.insert(context.realm_i_to_id, id)
                         end
@@ -568,7 +577,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     "field[", spacer, ",0.4;7.1,0.8;realmname;;", context.realmname or "", "]",
                     "field_close_on_enter[realmname;false]",
                     "textarea[", text_spacer, ",1.25;3.6,1;;;Type]",
-                    "dropdown[", spacer, ",1.7;3.5,0.8;realmcategory;Default,Spawn,Classroom,Private" or "", ";", context.selected_realm_type or 1, ";true]",
+                    "dropdown[", spacer, ",1.7;3.5,0.8;realmcategory;Classroom,Spawn,Private" or "", ";", context.selected_realm_type or 1, ";true]",
                     "textarea[", text_spacer + 3.6, ",1.25;3.6,1;;;Generation]",
                     "dropdown[", spacer + 3.6, ",1.7;3.5,0.8;mode;Empty World,Schematic,Digital Twin" or "", ";", context.selected_mode or 1, ";true]",
                 }))
@@ -1522,7 +1531,7 @@ button[5.4,9;2.3,0.8;deleterealm;Delete]
 textarea[8.85,1;7.2,1;;;Name]
 field[8.9,1.4;7.1,0.8;realmname;;]
 textarea[8.85,2.3;3.6,1;;;Type]
-dropdown[8.9,2.7;3.5,0.8;realmcategory;Default,Spawn,Classroom,Private;1;true]
+dropdown[8.9,2.7;3.5,0.8;realmcategory;Classroom,Spawn,Private;1;true]
 textarea[12.45,2.3;3.6,1;;;Generation]
 dropdown[12.5,2.7;3.5,0.8;mode;Empty World,Schematic,Digital Twin;1;true]
 textarea[8.85,3.6;7.2,1;;;OPTIONS]

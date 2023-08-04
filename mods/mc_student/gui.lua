@@ -118,7 +118,7 @@ function mc_student.show_notebook_fs(player, tab)
 						local playerCount = tonumber(realm:GetPlayerCount())
 						local cat = realm:getCategory().key
 
-						if not realm:isHidden() and ((context.selected_c_tab == mc_teacher.CTAB.PUBLIC and cat ~= Realm.CAT_MAP[Realm.CAT_KEY.INSTANCED]) or (context.selected_c_tab == mc_teacher.CTAB.PRIVATE and cat == Realm.CAT_MAP[Realm.CAT_KEY.INSTANCED])) then
+						if not realm:isHidden() and ((context.selected_c_tab == mc_teacher.CTAB.PUBLIC and cat ~= mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.INSTANCED]) or (context.selected_c_tab == mc_teacher.CTAB.PRIVATE and cat == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.INSTANCED])) then
 							table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
 							table.insert(context.realm_i_to_id, id)
 						end

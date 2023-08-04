@@ -196,3 +196,33 @@ function mc_teacher.is_frozen(player)
     local pmeta = player and player:is_player() and player:get_meta()
 	return pmeta and minetest.deserialize(pmeta:get("mc_teacher:frozen")) or false
 end
+
+function mc_teacher.save_realm(player, context, fields)
+    local realm = Realm.GetRealm(context.edit_realm.id)
+    if realm then
+        if not fields.no_cat_override then
+            if context.edit_realm.type == mc_teacher.R.CAT_KEY.SPAWN then
+                if realm:isHidden() or realm:isDeleted() then
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom is currently "..(realm:isHidden() and "hidden" or "being deleted"..", so it could not be set as the server's spawn classroom.")))
+                else
+                    mc_worldManager.SetSpawnRealm(realm)
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server spawn classroom updated!"))
+                end
+            else
+                realm:setCategoryKey(mc_teacher.R.CAT_MAP[context.edit_realm.type or mc_teacher.R.CAT_KEY.CLASSROOM])
+            end
+        end
+        realm.Name = (mc_core.trim(fields.erealm_name or "") ~= "" and fields.erealm_name) or (mc_core.trim(context.edit_realm.name or "") ~= "" and context.edit_realm.name) or "Unnamed classroom"
+        realm:UpdateRealmPrivilege(context.edit_realm.privs or {})
+
+        -- update players in realm
+        local players_in_realm = realm:GetPlayersAsArray()
+        for _,p in pairs(players_in_realm) do
+            local p_obj = minetest.get_player_by_name(p)
+            if p_obj then
+                realm:ApplyPrivileges(p_obj)
+            end
+        end
+        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Classroom updated!"))
+    end
+end

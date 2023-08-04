@@ -170,6 +170,21 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The report log has been cleared."))
         end
         mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:spawn_type_change" then
+        ------------------------
+        -- SPAWN CHANGE POPUP --
+        ------------------------
+        if not fields.confirm then
+            fields.no_cat_override = true
+        end
+        mc_teacher.save_realm(player, context, fields)
+        if fields.confirm then
+            mc_worldManager.spawnRealmID = nil
+            mc_worldManager.GetSpawnRealm()
+        end
+        
+        context.edit_realm = nil
+        mc_teacher.show_controller_fs(player, context.tab)
     elseif formname == "mc_teacher:confirm_player_kick" then
         -----------------------
         -- PLAYER KICK POPUP --
@@ -313,9 +328,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
         mc_teacher.show_controller_fs(player, context.tab)
     elseif formname == "mc_teacher:whitelist" and has_server_privs then
-        ---------------
-        -- WHITELIST --
-        ---------------
+        ---------------------
+        -- WHITELIST POPUP --
+        ---------------------
         local reload = false
         if fields.whitelist then
             local event = minetest.explode_textlist_event(fields.whitelist)
@@ -362,31 +377,37 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             mc_teacher.show_whitelist_popup(player)
         end
     elseif formname == "mc_teacher:edit_realm" then
-        ------------------
-        -- REALM EDITOR --
-        ------------------
+        ----------------------
+        -- REALM EDIT POPUP --
+        ----------------------
         if fields.allowpriv_interact or fields.denypriv_interact or fields.ignorepriv_interact then
-            context.edit_realm.privs.interact = (fields.allowpriv_interact and true) or (fields.ignorepriv_interact and "nil") or false
+            local change = fields.allowpriv_interact or fields.denypriv_interact or fields.ignorepriv_interact
+            context.edit_realm.privs.interact = (change == "false" and "nil") or (fields.allowpriv_interact and true) or (fields.ignorepriv_interact and "nil") or false
             reload = true
         end
         if fields.allowpriv_shout or fields.denypriv_shout or fields.ignorepriv_shout then
-            context.edit_realm.privs.shout = (fields.allowpriv_shout and true) or (fields.ignorepriv_shout and "nil") or false
+            local change = fields.allowpriv_shout or fields.denypriv_shout or fields.ignorepriv_shout
+            context.edit_realm.privs.shout = (change == "false" and "nil") or (fields.allowpriv_shout and true) or (fields.ignorepriv_shout and "nil") or false
             reload = true
         end
         if fields.allowpriv_fast or fields.denypriv_fast or fields.ignorepriv_fast then
-            context.edit_realm.privs.fast = (fields.allowpriv_fast and true) or (fields.ignorepriv_fast and "nil") or false
+            local change = fields.allowpriv_fast or fields.denypriv_fast or fields.ignorepriv_fast
+            context.edit_realm.privs.fast = (change == "false" and "nil") or (fields.allowpriv_fast and true) or (fields.ignorepriv_fast and "nil") or false
             reload = true
         end
         if fields.allowpriv_fly or fields.denypriv_fly or fields.ignorepriv_fly then
-            context.edit_realm.privs.fly = (fields.allowpriv_fly and true) or (fields.ignorepriv_fly and "nil") or false
+            local change = fields.allowpriv_fly or fields.denypriv_fly or fields.ignorepriv_fly
+            context.edit_realm.privs.fly = (change == "false" and "nil") or (fields.allowpriv_fly and true) or (fields.ignorepriv_fly and "nil") or false
             reload = true
         end
         if fields.allowpriv_noclip or fields.denypriv_noclip or fields.ignorepriv_noclip then
-            context.edit_realm.privs.noclip = (fields.allowpriv_noclip and true) or (fields.ignorepriv_noclip and "nil") or false
+            local change = fields.allowpriv_noclip or fields.denypriv_noclip or fields.ignorepriv_noclip
+            context.edit_realm.privs.noclip = (change == "false" and "nil") or (fields.allowpriv_noclip and true) or (fields.ignorepriv_noclip and "nil") or false
             reload = true
         end
         if fields.allowpriv_give or fields.denypriv_give or fields.ignorepriv_give then
-            context.edit_realm.privs.give = (fields.allowpriv_give and true) or (fields.ignorepriv_give and "nil") or false
+            local change = fields.allowpriv_give or fields.denypriv_give or fields.ignorepriv_give
+            context.edit_realm.privs.give = (change == "false" and "nil") or (fields.allowpriv_give and true) or (fields.ignorepriv_give and "nil") or false
             reload = true
         end
 
@@ -396,19 +417,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if fields.save_realm then
                 local realm = Realm.GetRealm(context.edit_realm.id)
                 if realm then
-                    realm.Name = fields.erealm_name or context.edit_realm.name or "Unnamed classroom"
-                    realm:setCategoryKey(Realm.CAT_MAP[context.edit_realm.type or Realm.CAT_KEY.DEFAULT])
-                    realm:UpdateRealmPrivilege(context.edit_realm.privs or {})
-
-                    -- update players in realm
-                    local players_in_realm = realm:GetPlayersAsArray()
-                    for _,p in pairs(players_in_realm) do
-                        local p_obj = minetest.get_player_by_name(p)
-                        if p_obj then
-                            realm:ApplyPrivileges(p_obj)
-                        end
+                    if realm:getCategory().key == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.SPAWN] and context.edit_realm.type ~= mc_teacher.R.CAT_KEY.SPAWN then
+                        context.edit_realm.name = fields.erealm_name
+                        return mc_teacher.show_confirm_popup(player, "spawn_type_change", {
+                            action = "Are you sure you want to change the current spawn classroom into a "..(context.edit_realm.type == mc_teacher.R.CAT_KEY.INSTANCED and "private" or "standard").." classroom?\nThis will generate a new spawn classroom.",
+                            button = "Save new type", cancel = "Keep current type",
+                        }, {x = 9.9, y = 3.8})
+                    else
+                        mc_teacher.save_realm(player, context, fields)
                     end
-                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Classroom updated!"))
                 else
                     minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom could not be found, so no changes were made to it."))
                 end
@@ -481,15 +498,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.mode and fields.mode ~= context.selected_mode then
             context.selected_mode = fields.mode
             -- digital twins are currently incompatible with instanced realms
-            if context.selected_mode == mc_teacher.MODES.TWIN and context.selected_realm_type == Realm.CAT_KEY.INSTANCED then
-                context.selected_realm_type = Realm.CAT_KEY.DEFAULT
+            if context.selected_mode == mc_teacher.MODES.TWIN and context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
+                context.selected_realm_type = mc_teacher.R.CAT_KEY.CLASSROOM
             end
             reload = true
         end
         if fields.realmcategory and fields.realmcategory ~= context.selected_realm_type then
             context.selected_realm_type = fields.realmcategory
             -- digital twins are currently incompatible with instanced realms
-            if context.selected_mode == mc_teacher.MODES.TWIN and context.selected_realm_type == Realm.CAT_KEY.INSTANCED then
+            if context.selected_mode == mc_teacher.MODES.TWIN and context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
                 context.selected_mode = mc_teacher.MODES.SCHEMATIC
             end
             reload = true
@@ -547,7 +564,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
                     end
 
-                    if context.selected_realm_type == Realm.CAT_KEY.INSTANCED then
+                    if context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
                         new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, nil, false, realm_size)
                     else
                         -- TODO: refactor realm.lua so that it can generate realms of non-block-aligned sizes
@@ -587,7 +604,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
                     end
 
-                    if context.selected_realm_type == Realm.CAT_KEY.INSTANCED then
+                    if context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
                         new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, context.selected_schematic, false)
                     else
                         new_realm = Realm:NewFromSchematic(realm_name, context.selected_schematic)
@@ -610,7 +627,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
 
                 new_realm:set_data("owner", player:get_player_name())
-                new_realm:setCategoryKey(Realm.CAT_MAP[context.selected_realm_type or "1"])
+                if context.selected_realm_type == mc_teacher.R.CAT_KEY.SPAWN then
+                    mc_worldManager.SetSpawnRealm(new_realm)
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server spawn classroom updated!"))
+                else
+                    new_realm:setCategoryKey(mc_teacher.R.CAT_MAP[context.selected_realm_type or mc_teacher.R.CAT_KEY.CLASSROOM])
+                end
                 new_realm:UpdateRealmPrivilege(context.selected_privs)
                 minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your requested classroom was successfully created."))
                 reload = true

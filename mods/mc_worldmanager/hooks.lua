@@ -180,3 +180,15 @@ end)
 minetest.register_on_shutdown(function()
     Realm.SaveDataToStorage()
 end)
+
+minetest.register_on_mods_loaded(function()
+    -- Ensure that there is only one spawn realm
+    for id,realm in pairs(Realm.realmDict) do
+        local cat = realm:getCategory().key
+        if cat == "spawn" and tonumber(id) ~= tonumber(mc_worldManager.spawnRealmID) then
+            realm:setCategoryKey("default")
+        elseif cat ~= "spawn" and tonumber(id) == tonumber(mc_worldManager.spawnRealmID) then
+            realm:setCategoryKey("spawn")
+        end
+    end
+end)
