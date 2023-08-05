@@ -42,11 +42,12 @@ minetest.register_on_joinplayer(function(player)
     local pname = player:get_player_name()
     local pmeta = player:get_meta()
 
-    if not pmeta:get("priv_format") then
-        local privs = minetest.get_player_privs(pname)
-        privs["student"] = true
-        minetest.set_player_privs(pname, privs)
-        pmeta:set_int("priv_format", 2)
+    local priv_format = pmeta:get_int("priv_format")
+    if not priv_format or priv_format < 3 then
+        mc_worldManager.grantUniversalPriv(player, {"student"})
+        pmeta:set_int("priv_format", 3)
+        local realm = Realm.GetRealmFromPlayer(player)
+        if realm then realm:ApplyPrivileges(player) end
     end
 
     if minetest.check_player_privs(player, {teacher = true}) then
@@ -212,6 +213,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
             end
         end
+        context.p_list = nil
         mc_teacher.show_controller_fs(player, context.tab)
     elseif formname == "mc_teacher:confirm_player_ban" then
         ----------------------
@@ -229,6 +231,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
             end
         end
+        context.p_list = nil
         mc_teacher.show_controller_fs(player, context.tab)
     elseif formname == "mc_teacher:confirm_shutdown_schedule" and has_server_privs then
         -----------------------------
@@ -336,6 +339,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
             minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server role changes applied!"))
         end
+        context.p_list = nil
         mc_teacher.show_controller_fs(player, context.tab)
     elseif formname == "mc_teacher:whitelist" and has_server_privs then
         ---------------------
@@ -530,7 +534,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             context.selected_dem = fields.realterrain
             reload = true
         end
-        if fields.realm_generator and fields.realm_generator ~= context.realm_gen then
+        if fields.realm_generator and fields.realm_generator ~= context.realm_gen and fields.realm_generator ~= mc_teacher.R.GEN.DNR then
             context.realm_gen = fields.realm_generator
             reload = true
         end
@@ -779,12 +783,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
         if fields.p_mode_selected then
             context.selected_p_mode = mc_teacher.PMODE.SELECTED
+            context.p_list = nil
             reload = true
         elseif fields.p_mode_tab then
             context.selected_p_mode = mc_teacher.PMODE.TAB
+            context.p_list = nil
             reload = true
         elseif fields.p_mode_all then
             context.selected_p_mode = mc_teacher.PMODE.ALL
+            context.p_list = nil
             reload = true
         end
 
@@ -808,6 +815,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
             end
             minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player privileges updated!"))
+            context.p_list = nil
             reload = true
         elseif fields.p_kick then
             -- TODO: add custom kick message to popup
@@ -855,6 +863,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             else
                 minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not find the selected player!"))
             end
+            context.p_list = nil
             reload = true
         elseif fields.p_bring then
             local players_to_update = get_players_to_update(player, context)
@@ -862,9 +871,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             local destination = player:get_pos()
             local destRealm = Realm.GetRealmFromPlayer(player)
             if destRealm then
-                for _,p in pairs(players_to_update) do
+                if #players_to_update <= 0 then
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
+                end
+                for _, p in pairs(players_to_update) do
                     local p_obj = minetest.get_player_by_name(p)
-                    if p_obj and destRealm:getCategory().joinable(destRealm, player) then
+                    if p_obj and destRealm:getCategory().joinable(destRealm, player) and (not destRealm:isHidden() or minetest.check_player_privs(p, {teacher = true})) then
                         destRealm:TeleportPlayer(p_obj)
                         p_obj:set_pos(destination)
                     else
@@ -874,9 +886,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             else
                 minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your current classroom could not be found! Please ask a server administrator to check that this classroom exists."))
             end
+            context.p_list = nil
+            reload = true
         elseif fields.p_mute or fields.p_unmute then
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
+            if #players_to_update <= 0 then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
+            end
             for _,p in pairs(players_to_update) do
                 if p ~= pname then
                     local p_obj = minetest.get_player_by_name(p)
@@ -895,10 +912,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_mute and "" or "un").."mute yourself."))
                 end
             end
+            context.p_list = nil
             reload = true
         elseif fields.p_freeze or fields.p_unfreeze then
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
+            if #players_to_update <= 0 then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
+            end
             for _,p in pairs(players_to_update) do
                 if p ~= pname then
                     local p_obj = minetest.get_player_by_name(p)
@@ -915,18 +936,22 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_freeze and "" or "un").."freeze yourself."))
                 end
             end
+            context.p_list = nil
             reload = true
         elseif fields.p_deactivate or fields.p_reactivate then
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
+            if #players_to_update <= 0 then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
+            end
             for _,p in pairs(players_to_update) do
                 if p ~= pname then
                     local p_obj = minetest.get_player_by_name(p)
                     if p_obj then
-                        if fields.p_mute then
-                            mc_worldManager.denyUniversalPriv(p_obj, {"interact"})
+                        if fields.p_deactivate then
+                            mc_worldManager.denyUniversalPriv(p_obj, {"fly"})
                         else
-                            mc_worldManager.grantUniversalPriv(p_obj, {"interact"})
+                            mc_worldManager.grantUniversalPriv(p_obj, {"fly"})
                         end
                         local realm = Realm.GetRealmFromPlayer(p_obj)
                         if realm then realm:ApplyPrivileges(p_obj) end
@@ -937,6 +962,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_deactivate and "de" or "re").."activate yourself."))
                 end
             end
+            context.p_list = nil
             reload = true
         elseif fields.p_role_none or fields.p_role_student then
             local players_to_update = get_players_to_update(player, context)

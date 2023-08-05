@@ -593,7 +593,7 @@ function mc_teacher.show_controller_fs(player, tab)
                         "field[", spacer + 5.7, ",3;1.3,0.8;realm_z_size;;", context.realm_z or 80, "]",
                         "textarea[", text_spacer, ",3.9;3.6,1;;;Terrain]",
                         "textarea[", text_spacer + 3.6, ",3.9;3.6,1;;;Foliage]",
-                        "dropdown[", spacer, ",4.3;3.5,0.8;realm_generator;None,Version 1,Version 2,DNR;", context.realm_gen or 1, ";true]",
+                        "dropdown[", spacer, ",4.3;3.5,0.8;realm_generator;None,Version 1,Version 2;", context.realm_gen or 1, ";true]",
                         "dropdown[", spacer + 3.6, ",4.3;3.5,0.8;realm_decorator;None,Version 1,Version 2,Biomegen;", context.realm_dec or 1, ";true]",
                     
                         "field_close_on_enter[realm_x_size;false]",
