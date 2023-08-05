@@ -50,7 +50,7 @@ minetest.register_on_joinplayer(function(player)
         if realm then realm:ApplyPrivileges(player) end
     end
 
-    if minetest.check_player_privs(player, {teacher = true}) then
+    if mc_core.checkPrivs(player, {teacher = true}) then
         mc_teacher.register_teacher(pname)
     else
         mc_teacher.register_student(pname)
@@ -850,7 +850,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 if not mc_teacher.is_frozen(player) then
                     local destination = sel_pobj:get_pos()
                     local realm = Realm.GetRealmFromPlayer(sel_pobj)
-                    if realm and realm:getCategory().joinable(realm, player) then
+                    if realm and not realm:isDeleted() and realm:getCategory().joinable(realm, player) then
                         realm:TeleportPlayer(player)
                         player:set_pos(destination)
                         minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Teleported to player "..tostring(sel_pname).."!"))
@@ -870,13 +870,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             local pname = player:get_player_name()
             local destination = player:get_pos()
             local destRealm = Realm.GetRealmFromPlayer(player)
-            if destRealm then
+            if destRealm and not destRealm:isDeleted() then
                 if #players_to_update <= 0 then
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
                 end
                 for _, p in pairs(players_to_update) do
                     local p_obj = minetest.get_player_by_name(p)
-                    if p_obj and destRealm:getCategory().joinable(destRealm, player) and (not destRealm:isHidden() or minetest.check_player_privs(p, {teacher = true})) then
+                    if p_obj and destRealm:getCategory().joinable(destRealm, player) (not destRealm:isHidden() or mc_core.checkPrivs(p_obj, {teacher = true})) then
                         destRealm:TeleportPlayer(p_obj)
                         p_obj:set_pos(destination)
                     else
@@ -949,9 +949,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     local p_obj = minetest.get_player_by_name(p)
                     if p_obj then
                         if fields.p_deactivate then
-                            mc_worldManager.denyUniversalPriv(p_obj, {"fly"})
+                            mc_worldManager.denyUniversalPriv(p_obj, {"interact"})
                         else
-                            mc_worldManager.grantUniversalPriv(p_obj, {"fly"})
+                            mc_worldManager.grantUniversalPriv(p_obj, {"interact"})
                         end
                         local realm = Realm.GetRealmFromPlayer(p_obj)
                         if realm then realm:ApplyPrivileges(p_obj) end
@@ -1299,7 +1299,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             -- Check that the player selected something from the textlist, otherwise default to spawn realm
             if not context.selected_realm then context.selected_realm = 1 end
             local realm = Realm.GetRealm(context.realm_i_to_id[context.selected_realm])
-            if realm then
+            if realm and not realm:isDeleted() and (not realm:isHidden() or mc_core.checkPrivs(player, {teacher = true})) then
                 if not mc_teacher.is_frozen(player) then
                     realm:TeleportPlayer(player)
                     context.selected_realm = 1
@@ -1356,7 +1356,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     local note_i = pdata.note_map[note_name]
                     local realm = Realm.GetRealm(pdata.realms[note_i])
                     if realm then
-                        if realm:getCategory().joinable(realm, player) then
+                        if realm:getCategory().joinable(realm, player) and (not destRealm:isHidden() or mc_core.checkPrivs(player, {teacher = true})) then
                             realm:TeleportPlayer(player)
                             player:set_pos(pdata.coords[note_i])
                         else
@@ -1385,7 +1385,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     for _,p_obj in pairs(minetest.get_connected_players()) do
                         if p_obj:get_player_name() ~= player:get_player_name() or not mc_teacher.is_frozen(p_obj) then
                             local p_realm = Realm.GetRealmFromPlayer(p_obj)
-                            if p_realm and p_realm.ID == tonumber(pdata.realms[note_i]) and realm:getCategory().joinable(realm, p_obj) then
+                            if p_realm and p_realm.ID == tonumber(pdata.realms[note_i]) and realm:getCategory().joinable(realm, p_obj) and (not destRealm:isHidden() or mc_core.checkPrivs(player, {teacher = true})) then
                                 realm:TeleportPlayer(p_obj)
                                 p_obj:set_pos(pdata.coords[note_i])
                             end
