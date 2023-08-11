@@ -53,7 +53,7 @@ local function get_privs(player)
             privs[k] = (privs[k] and "overridden") or false
         end
     end
-    if mc_teacher.is_frozen(player) then
+    if mc_core.is_frozen(player) then
         privs["fast"] = "alt_deny"
     end
     return privs
@@ -119,7 +119,7 @@ local function get_priv_button_states(p_list, p_priv_list)
         local p_obj = minetest.get_player_by_name(player)
         -- freeze
         if states["frozen"] ~= "mixed" and p_obj then
-            if mc_teacher.is_frozen(p_obj) then
+            if mc_core.is_frozen(p_obj) then
                 states["frozen"] = (states[priv] == true and "mixed") or false
             else
                 states["frozen"] = (states[priv] == false and "mixed") or true

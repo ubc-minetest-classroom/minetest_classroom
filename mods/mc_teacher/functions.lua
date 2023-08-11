@@ -163,40 +163,6 @@ function mc_teacher.get_server_role(player)
     end
 end
 
-function mc_teacher.freeze(player)
-    local pmeta = player and player:is_player() and player:get_meta()
-    if pmeta then
-	    pmeta:set_string("mc_teacher:frozen", minetest.serialize(true))
-        local parent = player:get_attach()
-        if parent and parent:get_luaentity() and parent:get_luaentity().set_frozen_player then
-            return
-        end
-        local obj = minetest.add_entity(player:get_pos(), "mc_teacher:frozen_player")
-        obj:get_luaentity():set_frozen_player(player)
-    end
-end
-
-function mc_teacher.unfreeze(player)
-    local pmeta = player and player:is_player() and player:get_meta()
-    if pmeta then
-	    pmeta:set_string("mc_teacher:frozen", "")
-
-        local pname = player:get_player_name()
-        local objects = minetest.get_objects_inside_radius(player:get_pos(), 2)
-        for _,obj in pairs(objects) do
-            local entity = obj:get_luaentity()
-            if entity and entity.set_frozen_player and entity.pname == pname then
-                obj:remove()
-            end
-        end
-    end
-end
-
-function mc_teacher.is_frozen(player)
-    local pmeta = player and player:is_player() and player:get_meta()
-	return pmeta and minetest.deserialize(pmeta:get("mc_teacher:frozen")) or false
-end
-
 function mc_teacher.save_realm(player, context, fields)
     local realm = Realm.GetRealm(context.edit_realm.id)
     if realm then

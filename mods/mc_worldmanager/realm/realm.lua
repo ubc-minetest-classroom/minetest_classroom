@@ -454,7 +454,8 @@ function Realm:Delete()
     if (players ~= nil) then
         for k, v in pairs(players) do
             if v == true then
-                spawn:TeleportPlayer(minetest.get_player_by_name(k))
+                local player = minetest.get_player_by_name(k)
+                mc_core.run_unfrozen(player, spawn.TeleportPlayer, spawn, player)
             end
         end
     end

@@ -26,7 +26,7 @@ mc_core = {
     },
     SERVER_USER = "Server",
 }
--- for compatibility with older mods
+-- for compatibility with older versions of mods
 mc_helpers = mc_core
 
 -- Required MT version
@@ -57,6 +57,7 @@ dofile(mc_core.path.."/PointTable.lua")
 dofile(mc_core.path.."/Hooks.lua")
 dofile(mc_core.path.."/gui.lua")
 dofile(mc_core.path.."/coordinates.lua")
+dofile(mc_core.path.."/freeze.lua")
 
 ---@public
 ---checkPrivs

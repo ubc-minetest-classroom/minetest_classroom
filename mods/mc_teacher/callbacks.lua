@@ -1,29 +1,3 @@
--- Frozen players
-minetest.register_entity("mc_teacher:frozen_player", {
-	-- This entity needs to be visible otherwise the frozen player won't be visible.
-	initial_properties = {
-		visual = "sprite",
-		visual_size = { x = 0, y = 0 },
-		textures = {"blank.png"},
-		physical = false, -- Disable collision
-		pointable = false, -- Disable selection box
-		makes_footstep_sound = false,
-	},
-
-	on_step = function(self, dtime)
-		local player = self.pname and minetest.get_player_by_name(self.pname)
-		if not player or not mc_teacher.is_frozen(player) then
-			self.object:remove()
-			return
-		end
-	end,
-
-	set_frozen_player = function(self, player)
-		self.pname = player:get_player_name()
-		player:set_attach(self.object, "", {x = 0, y = 0, z = 0 }, { x = 0, y = 0, z = 0 })
-	end,
-})
-
 minetest.register_on_priv_grant(function(name, granter, priv)
     if priv == "teacher" then
         mc_teacher.register_teacher(name)
@@ -50,6 +24,11 @@ minetest.register_on_joinplayer(function(player)
         if realm then realm:ApplyPrivileges(player) end
     end
 
+    if minetest.deserialize(pmeta:get_string("mc_teacher:frozen")) then
+        mc_core.freeze_player(player)
+        pmeta:set_string("mc_teacher:frozen", "")
+    end
+
     if mc_core.checkPrivs(player, {teacher = true}) then
         mc_teacher.register_teacher(pname)
     else
@@ -63,10 +42,6 @@ minetest.register_on_joinplayer(function(player)
         end
         minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, table.concat({"[Minetest Classroom] ", #teachers, " teacher", #teachers == 1 and "" or "s", " currently online: ", table.concat(teachers, ", ")})))
     end
-
-    if mc_teacher.is_frozen(player) then
-		mc_teacher.freeze(player)
-	end
 end)
 
 minetest.register_on_leaveplayer(function(player)
@@ -188,7 +163,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 local spawn = mc_worldManager.GetSpawnRealm()
                 for p, v in pairs(realm:GetPlayers() or {}) do
                     if v == true then
-                        spawn:TeleportPlayer(minetest.get_player_by_name(p))
+                        local p_obj = minetest.get_player_by_name(p)
+                        mc_core.run_unfrozen(p_obj, spawn.TeleportPlayer, spawn, p_obj)
                         minetest.chat_send_player(p, minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you were in was hidden, so you were brought back to the server spawn."))
                     end
                 end
@@ -847,7 +823,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             local sel_pname = context.p_list[context.selected_p_player]
             local sel_pobj = minetest.get_player_by_name(sel_pname or "")
             if sel_pname and sel_pobj then
-                if not mc_teacher.is_frozen(player) then
+                if not mc_core.is_frozen(player) then
                     local destination = sel_pobj:get_pos()
                     local realm = Realm.GetRealmFromPlayer(sel_pobj)
                     if realm and not realm:isDeleted() and realm:getCategory().joinable(realm, player) then
@@ -877,7 +853,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 for _, p in pairs(players_to_update) do
                     local p_obj = minetest.get_player_by_name(p)
                     if p_obj and destRealm:getCategory().joinable(destRealm, player) (not destRealm:isHidden() or mc_core.checkPrivs(p_obj, {teacher = true})) then
-                        destRealm:TeleportPlayer(p_obj)
+                        mc_core.run_unfrozen(p_obj, destRealm.TeleportPlayer, destRealm, player)
                         p_obj:set_pos(destination)
                     else
                         minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player "..tostring(p).." does not have access to your current classroom. Please check your current classroom's category and try again."))
@@ -925,9 +901,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     local p_obj = minetest.get_player_by_name(p)
                     if p_obj then
                         if fields.p_freeze then
-                            mc_teacher.freeze(p_obj)
+                            mc_core.freeze(p_obj)
                         else
-                            mc_teacher.unfreeze(p_obj)
+                            mc_core.unfreeze(p_obj)
                         end
                     else
                         minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_freeze and "" or "un").."freeze player "..tostring(p).." (they are probably offline)."))
@@ -1300,7 +1276,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if not context.selected_realm then context.selected_realm = 1 end
             local realm = Realm.GetRealm(context.realm_i_to_id[context.selected_realm])
             if realm and not realm:isDeleted() and (not realm:isHidden() or mc_core.checkPrivs(player, {teacher = true})) then
-                if not mc_teacher.is_frozen(player) then
+                if not mc_core.is_frozen(player) then
                     realm:TeleportPlayer(player)
                     context.selected_realm = 1
                 else
@@ -1346,7 +1322,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You do not have sufficient privileges to mark coordinates."))
             end
         elseif fields.go then
-            if not mc_teacher.is_frozen(player) then
+            if not mc_core.is_frozen(player) then
                 local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
                 if pdata and pdata.note_map then
                     if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
@@ -1383,7 +1359,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 local realm = Realm.GetRealm(pdata.realms[note_i])
                 if realm then
                     for _,p_obj in pairs(minetest.get_connected_players()) do
-                        if p_obj:get_player_name() ~= player:get_player_name() or not mc_teacher.is_frozen(p_obj) then
+                        if p_obj:get_player_name() ~= player:get_player_name() or not mc_core.is_frozen(p_obj) then
                             local p_realm = Realm.GetRealmFromPlayer(p_obj)
                             if p_realm and p_realm.ID == tonumber(pdata.realms[note_i]) and realm:getCategory().joinable(realm, p_obj) and (not destRealm:isHidden() or mc_core.checkPrivs(player, {teacher = true})) then
                                 realm:TeleportPlayer(p_obj)
