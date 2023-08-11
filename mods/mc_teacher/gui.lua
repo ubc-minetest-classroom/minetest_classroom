@@ -117,12 +117,18 @@ local function get_priv_button_states(p_list, p_priv_list)
     end
     for _,player in pairs(p_list) do
         local p_obj = minetest.get_player_by_name(player)
-        -- freeze
         if states["frozen"] ~= "mixed" and p_obj then
             if mc_core.is_frozen(p_obj) then
-                states["frozen"] = (states[priv] == true and "mixed") or false
+                states["frozen"] = (states["frozen"] == true and "mixed") or false
             else
-                states["frozen"] = (states[priv] == false and "mixed") or true
+                states["frozen"] = (states["frozen"] == false and "mixed") or true
+            end
+        end
+        if states["timeout"] ~= "mixed" and p_obj then
+            if mc_teacher.is_in_timeout(p_obj) then
+                states["timeout"] = (states["timeout"] == true and "mixed") or false
+            else
+                states["timeout"] = (states["timeout"] == false and "mixed") or true
             end
         end
     end
@@ -912,7 +918,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     -- TODO: re-implement groups
                     "style[p_group_new,p_group_edit,p_group_delete;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     -- TODO: re-impelment remaining actions
-                    "style[p_audience,p_timeout;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
+                    "style[p_audience;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     "style[p_mode_", context.selected_p_mode == mc_teacher.PMODE.ALL and "all" or context.selected_p_mode == mc_teacher.PMODE.TAB and "tab" or "selected", ";bgimg=mc_pixel.png^[multiply:", mc_core.col.b.selected, "]",
                     context.selected_p_mode ~= mc_teacher.PMODE.SELECTED and "style[p_teleport;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.orange.."]" or "",
                     
@@ -1017,7 +1023,8 @@ function mc_teacher.show_controller_fs(player, tab)
                     {[true] = "Deactivate", [false] = "Reactivate", default = "Activate"}, priv_b_state.interact),
                     create_state_button(panel_width + spacer + 4.8, 6.6, 2.3, 0.8, {[true] = "p_freeze", [false] = "p_unfreeze"},
                     {[true] = "Freeze", [false] = "Unfreeze", default = "Freeze"}, priv_b_state.frozen),
-                    "button[", panel_width + spacer, ",7.5;2.3,0.8;p_timeout;Timeout]",
+                    create_state_button(panel_width + spacer, 7.5, 2.3, 0.8, {[true] = "p_timeout", [false] = "p_endtimeout"},
+                    {[true] = "Timeout", [false] = "End timeout", default = "Timeout"}, priv_b_state.timeout),
                     
                     "textarea[", panel_width + text_spacer, ",8.4;", panel_width - 2*text_spacer, ",1;;;Server Role]",
                 }))
@@ -1058,9 +1065,9 @@ function mc_teacher.show_controller_fs(player, tab)
                     "tooltip[p_unfreeze;Re-enables player movement;#404040;#ffffff]",
                     "tooltip[p_teleport;Teleports you to the selected player;#404040;#ffffff]",
                     "tooltip[p_bring;Teleports players to your position;#404040;#ffffff]",
-                    "tooltip[p_audience;This action has not been implemented yet!;#404040;#ffffff]" --[[Teleports players to you, standing in a semicircle facing you;#404040;#ffffff]"]],
-                    "tooltip[p_timeout;This action has not been implemented yet!;#404040;#ffffff]" --[[Teleports players to spawn and\nprevents them from joining classrooms;#404040;#ffffff]"]],
-                    "tooltip[p_untimeout;Allows players to join classrooms again;#404040;#ffffff]",
+                    "tooltip[p_audience;This action has not been implemented yet!;#404040;#ffffff]", --[[Teleports players to you, standing in a semicircle facing you;#404040;#ffffff]"]]
+                    "tooltip[p_timeout;Teleports players to spawn and\nprevents them from joining classrooms;#404040;#ffffff]",
+                    "tooltip[p_endtimeout;Allows players to join classrooms again;#404040;#ffffff]",
                 }))
 
                 return fs

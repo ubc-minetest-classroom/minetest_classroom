@@ -827,9 +827,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     local destination = sel_pobj:get_pos()
                     local realm = Realm.GetRealmFromPlayer(sel_pobj)
                     if realm and not realm:isDeleted() and realm:getCategory().joinable(realm, player) then
-                        realm:TeleportPlayer(player)
-                        player:set_pos(destination)
-                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Teleported to player "..tostring(sel_pname).."!"))
+                        if mc_teacher.is_in_timeout(player) and realm.ID ~= (Realm.GetRealmFromPlayer(player) or {ID = 0}).ID then
+                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not join other classrooms while in timeout."))
+                        else
+                            realm:TeleportPlayer(player)
+                            player:set_pos(destination)
+                            minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Teleported to player "..tostring(sel_pname).."!"))
+                        end
                     else
                         minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport to player "..tostring(sel_pname).."."))
                     end
@@ -910,6 +914,30 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     end
                 else
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_freeze and "" or "un").."freeze yourself."))
+                end
+            end
+            context.p_list = nil
+            reload = true
+        elseif fields.p_timeout or fields.p_endtimeout then
+            local players_to_update = get_players_to_update(player, context)
+            local pname = player:get_player_name()
+            if #players_to_update <= 0 then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
+            end
+            for _,p in pairs(players_to_update) do
+                if p ~= pname then
+                    local p_obj = minetest.get_player_by_name(p)
+                    if p_obj then
+                        if fields.p_timeout then
+                            mc_teacher.timeout(p_obj)
+                        else
+                            mc_teacher.end_timeout(p_obj)
+                        end
+                    else
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_timeout and "timeout" or "end timeout for").." player "..tostring(p).." (they are probably offline)."))
+                    end
+                else
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_timeout and "put yourself in timeout" or "end your own timeout").."."))
                 end
             end
             context.p_list = nil
@@ -1276,11 +1304,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if not context.selected_realm then context.selected_realm = 1 end
             local realm = Realm.GetRealm(context.realm_i_to_id[context.selected_realm])
             if realm and not realm:isDeleted() and (not realm:isHidden() or mc_core.checkPrivs(player, {teacher = true})) then
-                if not mc_core.is_frozen(player) then
+                if mc_core.is_frozen(player) then
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not move while frozen."))
+                elseif mc_teacher.is_in_timeout(player) then
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not join other classrooms while in timeout."))
+                else
                     realm:TeleportPlayer(player)
                     context.selected_realm = 1
-                else
-                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not move while frozen."))
                 end
             else
                 minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available."))
@@ -1332,7 +1362,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     local note_i = pdata.note_map[note_name]
                     local realm = Realm.GetRealm(pdata.realms[note_i])
                     if realm then
-                        if realm:getCategory().joinable(realm, player) and (not destRealm:isHidden() or mc_core.checkPrivs(player, {teacher = true})) then
+                        if realm:getCategory().joinable(realm, player) and (not realm:isHidden() or mc_core.checkPrivs(player, {teacher = true})) then
                             realm:TeleportPlayer(player)
                             player:set_pos(pdata.coords[note_i])
                         else

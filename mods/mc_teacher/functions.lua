@@ -192,3 +192,28 @@ function mc_teacher.save_realm(player, context, fields)
         minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Classroom updated!"))
     end
 end
+
+function mc_teacher.timeout(player)
+    local pmeta = player and player:is_player() and player:get_meta()
+    if pmeta then
+        local realm = Realm.GetRealmFromPlayer(player) or {ID = 0}
+        local spawn = mc_worldManager.GetSpawnRealm()
+        if realm.ID ~= spawn.ID then
+            local freeze_func = mc_core.temp_unfreeze_and_run or mc_core.run_unfrozen
+            freeze_func(player, spawn.TeleportPlayer, spawn, player)
+        end
+	    pmeta:set_string("mc_teacher:timeout", minetest.serialize(true))
+    end
+end
+
+function mc_teacher.end_timeout(player)
+    local pmeta = player and player:is_player() and player:get_meta()
+    if pmeta then
+	    pmeta:set_string("mc_teacher:timeout", "")
+    end
+end
+
+function mc_teacher.is_in_timeout(player)
+    local pmeta = player and player:is_player() and player:get_meta()
+	return pmeta and minetest.deserialize(pmeta:get("mc_teacher:timeout")) or false
+end
