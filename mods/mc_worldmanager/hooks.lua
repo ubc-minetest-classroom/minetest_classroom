@@ -32,9 +32,9 @@ minetest.register_on_respawnplayer(function(player)
     local realm = Realm.GetRealmFromPlayer(player)
 
     if (realm ~= nil) then
-        player:set_pos(realm.SpawnPoint)
+        mc_core.run_unfrozen(player, player.set_pos, player, realm.SpawnPoint)
     else
-        player:set_pos(mc_worldManager.GetSpawnRealm().SpawnPoint)
+        mc_core.run_unfrozen(player, player.set_pos, player, mc_worldManager.GetSpawnRealm().SpawnPoint)
     end
 
     makePlayerImmortal(player)

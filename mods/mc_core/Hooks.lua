@@ -1,6 +1,6 @@
 -- Privilege registration
 minetest.register_privilege("teacher", {
-    give_to_singleplayer = false--true
+    give_to_singleplayer = true
 })
 minetest.register_privilege("student", {
     give_to_singleplayer = true
@@ -18,6 +18,12 @@ minetest.register_on_joinplayer(function(player)
     if mc_core.markers[pname] then
         mc_core.remove_marker(pname)
     end
+    if mc_core.is_frozen(player) then
+		mc_core.freeze(player)
+	end
+end)
+
+minetest.register_on_respawnplayer(function(player)
     if mc_core.is_frozen(player) then
 		mc_core.freeze(player)
 	end
