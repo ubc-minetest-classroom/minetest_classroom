@@ -164,6 +164,24 @@ Rounds a number to a given number of decimal places
 - Returns:
   - *`number`*: `x` rounded to `n` decimal places
 
+### `mc_core.call_priv_grant_callbacks(name, granter, priv)`
+
+Calls `on_priv_grant` callbacks as if `granter` had granted `priv` to `name`
+
+- Parameters:
+  - `name` (*`string`*): Name of player privileges were granted to
+  - `granter` (*`string`*):  Name of player who granted privileges
+  - `priv` (*`string`*): Privilege granted
+
+### `mc_core.call_priv_revoke_callbacks(name, revoker, priv)`
+
+Calls `on_priv_rekove` callbacks as if `revoker` had revoked `priv` from `name`
+
+- Parameters:
+  - `name` (*`string`*): Name of player privileges were revoked from
+  - `revoker` (*`string`*):  Name of player who revoked privileges
+  - `priv` (*`string`*): Privilege revoked
+
 ## GUI Templates ([`gui.lua`](gui.lua))
 
 ### `mc_core.draw_book_fs(width, height, options)  -->  formspec string`
@@ -186,6 +204,66 @@ The created formspec will exceed the bounds of the content area (0.5 units left,
     ```
 - Returns:
   - *`formspec string`*: Blank notebook formspec template
+
+### `mc_core.draw_note_fs(width, height, options)  -->  formspec string`
+
+Creates a sticky note formspec with a content area of the given width and height  
+The created formspec will contain the `no_prepend[]` element
+
+- Parameters:
+  - `width` (*`number`*): Content area width
+  - `height` (*`number`*): Content area height
+  - `options` (*`table`*): Formspec options
+    ```lua
+    {
+        bg = "#325140",       -- primary sticky note colour
+        accent = "#164326"    -- secondary sticky note colour
+    }
+    ```
+- Returns:
+  - *`formspec string`*: Blank sticky note formspec template
+
+## Player Freezing ([`freeze.lua`](freeze.lua))
+
+*Adapted from `freeze.lua` in rubenwardy's `classroom` mod*  
+*Copyright (c) 2018-2022 rubenwardy, licensed under the MIT license*  
+*Source: [https://gitlab.com/rubenwardy/classroom/-/blob/master/freeze.lua](https://gitlab.com/rubenwardy/classroom/-/blob/master/freeze.lua)*
+
+### `mc_core.freeze(player)`
+
+Freezes a player, preventing them from moving on their own
+
+- Parameters:
+  - `player` (*`ObjectRef`*): Player to freeze
+
+### `mc_core.unfreeze(player)`
+
+Unfreezes a player, allowing them to move on their own
+
+- Parameters:
+  - `player` (*`ObjectRef`*): Player to unfreeze
+
+### `mc_core.is_frozen(player)  -->  boolean`
+
+Returns `true` if the player is frozen, `false` otherwise
+
+- Parameters:
+  - `player` (*`ObjectRef`*): Player to check
+- Returns:
+  - *`boolean`*: `true` if `player` is frozen, `false` otherwise
+
+### `mc_core.run_unfrozen(player, func, ...)`
+
+Runs a function on player, temporarily unfreezing them while the function runs if they are frozen. If player is not frozen, the function will be run normally  
+Optional arguments after `func` will be passed into `func` when it runs (similarly to how `minetest.after` passes arguments)  
+`player` will not be passed into `func` by default, so it should be added to the argument list in the appropriate position  
+
+- Parameters:
+  - `player` (*`ObjectRef`*): Player to treat as unfrozen
+  - `func` (*`function`*): Function to run
+  - `...` (*`vararg`*): Arguments to `func`
+- Returns:
+  - *`vararg`*: Returns from `func`
 
 ## Compression ([`lualzw.lua`](lualzw.lua))
 

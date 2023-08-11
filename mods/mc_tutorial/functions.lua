@@ -340,17 +340,27 @@ function mc_tutorial.completed_action(player, g_index)
                 end
             end
 
-            local player_privs = minetest.get_player_privs(pname)
-            -- add granted privs to universal priv table
+            -- Grant priv rewards
             if minetest.get_modpath("mc_worldmanager") then
+                -- Grant as universal privs via mc_worldmanager
                 mc_worldManager.grantUniversalPriv(player, pdata.active.on_completion.privs)
+                local realm = Realm.GetRealmFromPlayer(player)
+                if realm then realm:ApplyPrivileges(player) end
+            else
+                -- Grant generally
+                local player_privs = minetest.get_player_privs(pname)
+                local granted = {}
+                for _,priv in pairs(pdata.active.on_completion.privs) do
+                    if player_privs[priv] ~= true then
+                        table.insert(granted, priv)
+                    end
+                    player_privs[priv] = true
+                end
+                minetest.set_player_privs(pname, player_privs)
+                for _,priv in pairs(granted) do
+                    mc_core.call_priv_grant_callbacks(pname, nil, priv)
+                end
             end
-            -- grant privs
-            for _,priv in pairs(pdata.active.on_completion.privs) do
-                player_privs[priv] = true
-            end
-            minetest.set_player_privs(pname, player_privs)
-
             table.insert(pdata.completed, mc_tutorial.active[pname])
         end
 

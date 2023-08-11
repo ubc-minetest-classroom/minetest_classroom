@@ -19,6 +19,9 @@ mc_teacher = {
         HELP = "7",
         SERVER = "8", -- TODO: make dynamic for easier modification of notebook
     },
+    CTAB = {PUBLIC = "1", PRIVATE = "2", HIDDEN = "3"},
+    PTAB = {STUDENTS = "1", TEACHERS = "2", CLASSROOM = "3"},
+    STAB = {BANNED = "1", ONLINE = "2", MODS = "3"},
     ROLES = {
         NONE = "roleless",
         STUDENT = "student",
@@ -41,6 +44,9 @@ mc_teacher = {
         DEC = {NONE = "1", V1 = "2", V2 = "3", BIOME = "4"},
         GEN_MAP = {["1"] = "nil", ["2"] = "v1", ["3"] = "v2", ["4"] = "dnr"},
         DEC_MAP = {["1"] = "nil", ["2"] = "v1", ["3"] = "v2", ["4"] = "biomegen"},
+        CAT_KEY = {CLASSROOM = "1", SPAWN = "2", INSTANCED = "3"},
+        CAT_MAP = {["1"] = "default", ["2"] = "spawn", ["3"] = "instanced"},
+        CAT_RMAP = {default = "1", spawn = "2", instanced = "3"},
     },
     T_INDEX = {
         ["30 seconds"] = {i = 1, t = 30},

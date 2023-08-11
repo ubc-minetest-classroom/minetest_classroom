@@ -14,11 +14,19 @@ mc_core = {
             selected = "#055C22",
             red = "#590C0C",
             orange = "#6E5205",
-        }
+            green = "#055C22",
+        },
+        t = {
+            selected = "#59A63A",
+            red = "#F5627D",
+            orange = "#F5C987",
+            green = "#71EBA8",
+            blue = "#ACABFF",
+        },
     },
     SERVER_USER = "Server",
 }
--- for compatibility with older mods
+-- for compatibility with older versions of mods
 mc_helpers = mc_core
 
 -- Required MT version
@@ -49,6 +57,7 @@ dofile(mc_core.path.."/PointTable.lua")
 dofile(mc_core.path.."/Hooks.lua")
 dofile(mc_core.path.."/gui.lua")
 dofile(mc_core.path.."/coordinates.lua")
+dofile(mc_core.path.."/freeze.lua")
 
 ---@public
 ---checkPrivs
@@ -254,4 +263,54 @@ end
 function mc_core.clean_key(key)
 	local match = string.match(tostring(key), "K?E?Y?_?KEY_(.-)$")
     return (match == "LBUTTON" and "LEFT CLICK") or (match == "RBUTTON" and "RIGHT CLICK") or match or key
+end
+
+---@public
+---Converts a time in seconds to a human-readable time
+---@param t Time in seconds
+---@returns string, table
+function mc_core.expand_time(t)
+    if t <= 0 then
+        return "0 seconds", {s = 0, m = 0, h = 0, d = 0}
+    end
+
+    local t_temp = mc_core.round(t, 0)
+    local sec = math.fmod(t_temp, 60)
+    t_temp = (t_temp - sec)/60
+    local min = math.fmod(t_temp, 60)
+    t_temp = (t_temp - min)/60
+    local hour = math.fmod(t_temp, 24)
+    local day = (t_temp - hour)/24
+
+    local t_string = {}
+    if day > 0 then table.insert(t_string, day.." day"..(day == 1 and "" or "s")) end
+    if hour > 0 then table.insert(t_string, hour.." hour"..(hour == 1 and "" or "s")) end
+    if min > 0 then table.insert(t_string, min.." minute"..(min == 1 and "" or "s")) end
+    if sec > 0 then table.insert(t_string, sec.." second"..(sec == 1 and "" or "s")) end
+    
+    return table.concat(t_string, ", "), {s = sec, m = min, h = hour, d = day}
+end
+
+---@public
+---Calls on_priv_grant callbacks as if granter had granted priv to name
+---@param name Name of player privileges were granted to
+---@param granter Name of player who granted privileges
+---@param priv Privilege granted
+function mc_core.call_priv_grant_callbacks(name, granter, priv)
+    for _,func in ipairs(minetest.registered_on_priv_grant) do
+        local res = func(name, granter, priv)
+        if not res then break end
+    end
+end
+
+---@public
+---Calls on_priv_rekove callbacks as if revoker had revoked priv from name
+---@param name Name of player privileges were revoked from
+---@param revoker Name of player who revoked privileges
+---@param priv Privilege revoked
+function mc_core.call_priv_revoke_callbacks(name, revoker, priv)
+    for _,func in ipairs(minetest.registered_on_priv_revoke) do
+        local res = func(name, revoker, priv)
+        if not res then break end
+    end
 end

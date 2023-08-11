@@ -90,35 +90,38 @@ function mc_student.show_notebook_fs(player, tab)
 
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
 					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Welcome to Minetest Classroom!]",
-					"textarea[", text_spacer, ",4.4;", panel_width - 2*text_spacer, ",1;;;Server Rules]",
+					"textarea[", text_spacer, ",4.6;", panel_width - 2*text_spacer, ",1;;;Server Rules]",
 					"style_type[textarea;font=mono]",
-					"textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",2.6;;;", minetest.formspec_escape("This is the Student Notebook, your tool for accessing classrooms and other features."),
+					"textarea[", text_spacer, ",1.4;", panel_width - 2*text_spacer, ",3;;;", minetest.formspec_escape("This is the Student Notebook, your tool for accessing classrooms and other features."),
 					"\n", minetest.formspec_escape("You cannot drop or delete the Student Notebook, so you will never lose it. However, you can move it out of your hotbar and into your inventory or the toolbox."), "]",
-					"textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",4.9;;;", minetest.formspec_escape(rules), "]",
+					"textarea[", text_spacer, ",5;", panel_width - 2*text_spacer, ",4.8;;;", minetest.formspec_escape(rules), "]",
 
+					"hypertext[", panel_width + spacer + 1.8, ",0.9;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Classrooms</b>\n", minetest.formspec_escape("View classrooms and players"), "]",
 					"image_button[", panel_width + spacer, ",1.0;", button_width, ",", button_height, ";mc_teacher_classrooms.png;classrooms;;false;false]",
+					"hypertext[", panel_width + spacer + 1.8, ",2.7;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "]",
 					"image_button[", panel_width + spacer, ",2.8;", button_width, ",", button_height, ";mc_teacher_map.png;map;;false;false]",
+					"hypertext[", panel_width + spacer + 1.8, ",4.5;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Appearance</b>\n", minetest.formspec_escape("Personalize your avatar"), "]",
 					"image_button[", panel_width + spacer, ",4.6;", button_width, ",", button_height, ";mc_teacher_appearance.png;appearance;;false;false]",
+					"hypertext[", panel_width + spacer + 1.8, ",6.3;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Help</b>\n", minetest.formspec_escape("View guides and report issues"), "]",
 					"image_button[", panel_width + spacer, ",6.4;", button_width, ",", button_height, ";mc_teacher_help.png;help;;false;false]",
-					"hypertext[", panel_width + spacer + 1.8, ",1.3;5.35,1.6;;<style color=#000000><b>Classrooms</b>\n", minetest.formspec_escape("Find classrooms or players"), "</style>]",
-					"hypertext[", panel_width + spacer + 1.8, ",3.1;5.35,1.6;;<style color=#000000><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "</style>]",
-					"hypertext[", panel_width + spacer + 1.8, ",4.9;5.35,1.6;;<style color=#000000><b>Appearance</b>\n", minetest.formspec_escape("Personalize your avatar"), "</style>]",
-					"hypertext[", panel_width + spacer + 1.8, ",6.7;5.35,1.6;;<style color=#000000><b>Help</b>\n", minetest.formspec_escape("Report a player or server issue"), "</style>]",
 				}
 				return fs
 			end,
 			[mc_student.TABS.CLASSROOMS] = function() -- CLASSROOMS + ONLINE PLAYERS
 				local classroom_list = {}
-				local realm_count = 1
-                context.realm_id_to_i = {}
+                context.realm_i_to_id = {}
+				context.selected_c_tab = context.selected_c_tab or mc_teacher.CTAB.PUBLIC
+
                 Realm.ScanForPlayerRealms()
-				
-                for id, realm in pairs(Realm.realmDict) do
-					if mc_core.checkPrivs(player, {teacher = true}) or player_can_join_realm(player, realm) then
+                for id, realm in pairs(Realm.realmDict or {}) do
+					if not realm:isDeleted() and (mc_core.checkPrivs(player, {teacher = true}) or player_can_join_realm(player, realm)) then
 						local playerCount = tonumber(realm:GetPlayerCount())
-						table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
-						context.realm_id_to_i[id] = realm_count
-						realm_count = realm_count + 1
+						local cat = realm:getCategory().key
+
+						if not realm:isHidden() and ((context.selected_c_tab == mc_teacher.CTAB.PUBLIC and cat ~= mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.INSTANCED]) or (context.selected_c_tab == mc_teacher.CTAB.PRIVATE and cat == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.INSTANCED])) then
+							table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
+							table.insert(context.realm_i_to_id, id)
+						end
 					end
                 end
 
@@ -131,14 +134,18 @@ function mc_student.show_notebook_fs(player, tab)
 					"hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Online Players</b></center></style>]",
 
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
-					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Available Classrooms]",
-					"textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.realm_id_to_i and context.realm_id_to_i[context.selected_realm] or "1", ";false]",
+					"tabheader[", spacer, ",1.4;", panel_width - 2*spacer, ",0.5;c_list_header;Public,Private;", context.selected_c_tab, ";false;true]",
+					"textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.selected_realm or "1", ";false]",
 					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-					"button[", spacer, ",9;", panel_width - 2*spacer, ",0.8;teleportrealm;Teleport]",
 				}
 
-				local fsy = 1
-				local Y_SHIFT = 0.5
+				if #classroom_list == 0 then
+                    table.insert(fs, "style[c_teleport;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.blocked.."]")
+                end
+				table.insert(fs, table.concat({"button[", spacer, ",9;", panel_width - 2*spacer, ",0.8;c_teleport;Teleport]"}))
+
+				local fsy = 0.9
+				local Y_SHIFT = 0.45
 				local player_lists = {
 					teacher = {},
 					student = {}
@@ -335,18 +342,18 @@ function mc_student.show_notebook_fs(player, tab)
 					"style_type[textarea;font=mono,bold;textcolor=#000000]",
 					"textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Game controls]",
 					"textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Need to report an issue?]",
-					"textarea[", panel_width + text_spacer, ",6.1;", panel_width - 2*text_spacer, ",1;;;Report message]",
-					"textarea[", panel_width + text_spacer, ",4.8;", panel_width - 2*text_spacer, ",1;;;Report type]",
+					"textarea[", panel_width + text_spacer, ",5.6;", panel_width - 2*text_spacer, ",1;;;Report type]",
+					"textarea[", panel_width + text_spacer, ",6.9;", panel_width - 2*text_spacer, ",1;;;Report message]",
 					"style_type[textarea;font=mono]",
 					"style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 
-					"textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;", mc_core.get_controls_info(false), "]",
-					"textarea[", panel_width + text_spacer, ",1.5;", panel_width - 2*text_spacer, ",3;;;", minetest.formspec_escape("If you need to report a server issue or player, you can write a message in the box below that will be privately sent to "), 
-					next(mc_teacher.teachers) ~= nil and "all teachers that are currently online" or "the first teacher that joins the server", ".\n",
+					"textarea[", text_spacer, ",1.4;", panel_width - 2*text_spacer, ",8.4;;;", mc_core.get_controls_info(false), "]",
+					"textarea[", panel_width + text_spacer, ",1.4;", panel_width - 2*text_spacer, ",4.1;;;", minetest.formspec_escape("If you need to report a server issue or player, you can write a message in the box below that will be privately sent to "), 
+					next(mc_teacher.teachers) ~= nil and "all teachers that are currently online" or "the first teacher that joins the server", ".\n\n",
 					minetest.formspec_escape("Your report message will be logged and visible to all teachers, so don't include any personal information in it. The server will also automatically log the current date and time, your classroom, and your world position in the report, so you don't need to include that information in your report message."), "]",
-					"dropdown[", panel_width + spacer, ",5.2;", panel_width - 2*spacer, ",0.7;reporttype;", table.concat(mc_student.REPORT_TYPE, ","), ";1;false]",
-					"textarea[", panel_width + spacer, ",6.5;", panel_width - 2*spacer, ",2.4;report;;]",
-					"button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;submitreport;Submit Report]",
+                    "dropdown[", panel_width + spacer, ",6.0;", panel_width - 2*spacer, ",0.8;report_type;Server Issue,Misbehaving Player,Question,Suggestion,Other;1;false]",
+                    "textarea[", panel_width + spacer, ",7.3;", panel_width - 2*spacer, ",1.6;report_body;;]",
+                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;submit_report;Submit report]",
 				}
 
 				return fs
@@ -407,17 +414,17 @@ image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.2,1;;;Overview]
 textarea[8.75,0.1;7.2,1;;;Dashboard]
 textarea[0.55,1;7.1,1;;;Welcome to Minetest Classroom!]
-textarea[0.55,1.5;7.2,2.8;;;This is the Student Notebook\, your tool for accessing classrooms and other features. You cannot drop or delete the Student Notebook\, so you will never lose it\, but you can move it out of your hotbar and into your inventory or the toolbox.]
-textarea[0.55,4.4;7.2,1;;;Server Rules]
-textarea[0.55,4.9;7.2,4.9;;;These are the server rules!]
+textarea[0.55,1.4;7.2,3;;;This is the student notebook!]
+textarea[0.55,4.6;7.2,1;;;Server Rules]
+textarea[0.55,5;7.2,4.8;;;These are the server rules!]
+textarea[10.7,0.9;5.3,1.8;;;Classrooms View classrooms and players]
 image_button[8.9,1;1.7,1.6;mc_teacher_classrooms.png;classrooms;;false;true]
+textarea[10.7,2.7;5.3,1.8;;;Map Record and share locations]
 image_button[8.9,2.8;1.7,1.6;mc_teacher_map.png;map;;false;true]
+textarea[10.7,4.5;5.3,1.8;;;Appearance Personalize your avatar]
 image_button[8.9,4.6;1.7,1.6;mc_teacher_appearance.png;appearance;;false;true]
+textarea[10.7,6.3;5.3,1.8;;;Help View guides and report issues]
 image_button[8.9,6.4;1.7,1.6;mc_teacher_help.png;help;;false;true]
-textarea[10.7,1.3;5.25,1.6;;;Classrooms\nfind classrooms or players]
-textarea[10.7,3.1;5.25,1.6;;;Map\nrecord and share locations]
-textarea[10.7,4.9;5.25,1.6;;;Appearance\npersonalize your avatar]
-textarea[10.7,6.7;5.25,1.6;;;Help\nReport a player or server issue]
 image[16,-0.25;0.5,0.8;mc_student_bookmark.png]
 
 CLASSROOMS + ONLINE PLAYERS:
@@ -489,14 +496,14 @@ image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.1,1;;;Help]
 textarea[8.85,0.1;7.1,1;;;Reports]
 textarea[0.55,1;7.2,1;;;Controls]
+textarea[0.55,1.4;7.2,8.4;;;Add controls here!]
 textarea[8.85,1;7.2,1;;;Need to report an issue?]
-textarea[8.85,6.1;7.2,1;;;Report message]
-textarea[8.85,4.8;7.2,1;;;Report type]
-textarea[0.55,1.5;7.2,8.3;;;Add controls here!]
-textarea[8.9,1.5;7.1,3;a;;Add info about reporting here!]
-dropdown[8.9,5.2;7.1,0.8;reporttype;Server Issue,Misbehaving Player,Question,Suggestion,Other;1;false]
-textarea[8.9,6.5;7.1,2.4;report;;]
-button[8.9,9;7.1,0.8;submitreport;Submit Report]
+textarea[8.85,1.4;7.2,4.1;;;Add info about reporting here!]
+textarea[8.85,5.6;7.2,1;;;Report type]
+dropdown[8.9,6;7.1,0.8;report_type;Server Issue,Misbehaving Player,Question,Suggestion,Other;1;false]
+textarea[8.85,6.9;7.2,1;;;Report message]
+textarea[8.9,7.3;7.1,1.6;report_body;;]
+button[8.9,9;7.1,0.8;submit_report;Submit report]
 
 ACCEPTED EMOJI CHARS
 - ✔
