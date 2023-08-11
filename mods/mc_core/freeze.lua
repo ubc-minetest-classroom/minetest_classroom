@@ -72,20 +72,25 @@ end
 ---@public
 ---Returns true if the player is frozen, false otherwise
 ---@param player ObjectRef to check
+---@return boolean
 function mc_core.is_frozen(player)
     local pmeta = player and player:is_player() and player:get_meta()
 	return pmeta and minetest.deserialize(pmeta:get("mc_core:frozen")) or false
 end
 
 ---@public
----Runs a function on player, temporarily unfreezing them while the function runs if they are frozen
----Arguments after the function definition will be passed into in, similar to minetest.after 
+---Runs a function on player, temporarily unfreezing them while the function runs if they are frozen. If player is not frozen, the function will be run normally
+---Arguments after the func will be passed into func when it runs (similarly to how minetest.after passes arguments)
 ---The player argument will not be passed into func by default, so it should be added to the argument list in the appropriate position
 ---@param player ObjectRef to treat as unfrozen
 ---@param func Function to run
+---@return returns from func
 function mc_core.run_unfrozen(player, func, ...)
     local frozen = mc_core.is_frozen(player)
     if frozen then unfreeze_player(player) end
-    func(...)
+    -- store func's returns
+    local res = {func(...)}
     if frozen then freeze_player(player) end
+    -- return func's returns
+    if table.unpack then return table.unpack(res) else return unpack(res) end
 end
