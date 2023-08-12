@@ -16,154 +16,6 @@ Global table used by various mods to store Minetest Classroom data
 
 ## General Helpers ([`init.lua`](init.lua))
 
-### `mc_core.checkPrivs(player, privs_table)  -->  boolean, table`
-
-Checks if a player has specific privileges
-
-- Parameters:
-  - `privs_table` (*`table`*): Table of privileges to check (defaults to `{teacher = true}`)
-  - `player` (*`ObjectRef`*) Minetest player object
-- Returns:
-  - *`boolean`*: `true` if `player` has all privileges provided in `privs_table`, `false` if not
-  - *`table`*:  All privileges in `privs_table` that `player` does not have
-
-### `mc_core.stringToColor(name)  -->  table`
-
-Returns a random color based on input seed  
-Note: this function is not guaranteed to be the same on all systems
-
-- Parameters:
-  - `name` (*`string`*): Seed string
-- Returns:
-  - *`table`*: Randomly generated colour
-    ```lua
-    {
-        a = 255,    -- alpha channel of colour
-        r = 255,    -- red channel of colour
-        g = 255,    -- green channel of colour
-        b = 255,    -- blue channel of colour
-    }
-    ```
-
-### `mc_core.stringToNumber(name)  -->  number`
-
-Returns a number based input seed  
-Note: this function is not guaranteed to be the same on all systems
-
-- Parameters:
-  - `name` (*`string`*): Seed string
-- Returns:
-  - *`number`*: Corresponding numerical seed
-
-### `mc_core.fileExists(path)  -->  boolean`
-
-Checks whether or not a file exists
-
-- Parameters:
-  - `path` (*`string`*): Path to file
-- Returns:
-  - *`boolean`*: `true` if a file at `path` exists, `false` if not
-
-### `mc_core.tableHas(table, val)  -->  boolean`
-
-Checks if any of the keys or values in the given table match the value provided
-
-- Parameters:
-  - `table` (*`table`*): Table to check
-  - `val` (*`any`*): Value to check for
-- Returns:
-  - *`boolean`*: `true` if `val` exists in `table`, `false` if not
-
-### `mc_core.split(s, delimiter)  -->  table`
-
-Splits a string at each instance of the provided delimiter, then returns a table containing the split parts of the string
-
-- Parameters:
-  - `s` (*`string`*): String to split
-  - `delimiter` (*`string`*): Delimeter to split `s` at
-- Returns:
-  - *`table`*: Split string
-
-### `mc_core.pairsByKeys(t, f)  -->  function`
-
-First sorts the keys into an array, and then iterates on the array  
-At each step, it returns the key and value from the original table  
-*Adapted from [https://www.lua.org/pil/19.3.html](https://www.lua.org/pil/19.3.html)*
-
-- Parameters:
-  - `t` (*`table`*): Table to iterate over
-  - `f` (*`function`*): Optional sorting function
-- Returns:
-  - *`function`*: Iterator over `t`
-
-### `mc_core.isNumber(str)  -->  boolean`
-
-Determines if a string is actually a number stored as a string
-
-- Parameters:
-  - `str` (*`string`*): String to check
-- Returns:
-  - *`boolean`*: `true` if `str` is a number stored as a string, `false` if not
-
-### `mc_core.trim(s)  -->  string`
-
-Trims whitespace characters from the beginning and end of a string
-
-- Parameters:
-  - `s` (*`string`*): String to trim
-- Returns:
-  - *`string`*: Trimmed string
-
-### `mc_core.starts(String, Start)  -->  boolean`
-
-Determines if a string starts with another string
-
-- Parameters:
-  - `String` (*`string`*): String to check
-  - `Start` (*`string`*): String to check against
-- Returns:
-  - *`boolean`*: `true` if `String` starts with `Start`, `false` if not
-
-### `mc_core.shallowCopy(table)  -->  table`
-
-Creates a shallow copy of the provided table
-
-- Parameters:
-  - `table` (*`table`*): Table to copy
-- Returns:
-  - *`table`*: Shallow copy of original table
-
-### `mc_core.deepCopy(table)  -->  table`
-
-Creates a deep copy of the provided table
-
-- Parameters:
-  - `table` (*`table`*): Table to copy
-- Returns:
-  - *`table`*: Deep copy of original table
-
-### `mc_core.getInventoryItemLocation(inv, itemstack)  -->  string`
-
-Finds the first inventory list that contains the given item, returning its name if found
-
-- Parameters:
-  - `inv` (*`InvRef`*): Inventory to search
-  - `itemstack` (*`ItemStack`*): Item to look for
-- Returns:
-  - *`string`*: Name of inventory list containing `itemstack`  
-  *OR*
-  - `nil` if `itemstack` was not found
-
-### `mc_core.round(x, n)  -->  number`
-
-Rounds a number to a given number of decimal places
-
-- Parameters:
-  - `x` (*`number`*): Number to round
-  - `n` (*`number`*): Number of decimal places to round to
-- Returns:
-  - *`number`*: `x` rounded to `n` decimal places
-
 ### `mc_core.call_priv_grant_callbacks(name, granter, priv)`
 
 Calls `on_priv_grant` callbacks as if `granter` had granted `priv` to `name`
@@ -181,6 +33,190 @@ Calls `on_priv_rekove` callbacks as if `revoker` had revoked `priv` from `name`
   - `name` (*`string`*): Name of player privileges were revoked from
   - `revoker` (*`string`*):  Name of player who revoked privileges
   - `priv` (*`string`*): Privilege revoked
+
+### `mc_core.checkPrivs(player, privs_table)  -->  boolean, table`
+
+Checks if a player has specific privileges
+
+- Parameters:
+  - `privs_table` (*`table`*): Table of privileges to check (defaults to `{teacher = true}`)
+  - `player` (*`ObjectRef`*) Minetest player object
+- Returns:
+  - *`boolean`*: `true` if `player` has all privileges provided in `privs_table`, `false` if not
+  - *`table`*:  All privileges in `privs_table` that `player` does not have
+
+### `mc_core.clean_key(key)  -->  string`
+
+Removes `KEY_` from the front of key names
+
+- Parameters:
+  - `key` (*`string`*): Key to clean
+- Returns:
+  - *`string`*: Cleaned key string
+
+### `mc_core.deepCopy(table)  -->  table`
+
+Creates a deep copy of the provided table
+
+- Parameters:
+  - `table` (*`table`*): Table to copy
+- Returns:
+  - *`table`*: Deep copy of original table
+
+### `mc_core.shallowCopy(table)  -->  table`
+
+Creates a shallow copy of the provided table
+
+- Parameters:
+  - `table` (*`table`*): Table to copy
+- Returns:
+  - *`table`*: Shallow copy of original table
+
+### `mc_core.expand_time(t)  -->  string, table`
+
+Converts a time in seconds to a human-readable time
+
+- Parameters:
+  - `t` (*`number`*): Time in seconds
+- Returns:
+  - *`string`*: Time string
+  - *`table`*: Time in days, hours, minutes, and seconds
+    ```lua
+    {
+        s = 0,  -- seconds
+        m = 0,  -- minutes
+        h = 0,  -- hours
+        d = 0,  -- days
+    }
+    ```
+
+### `mc_core.fileExists(path)  -->  boolean`
+
+Checks whether or not a file exists
+
+- Parameters:
+  - `path` (*`string`*): Path to file
+- Returns:
+  - *`boolean`*: `true` if a file at `path` exists, `false` if not
+
+### `mc_core.getInventoryItemLocation(inv, itemstack)  -->  string`
+
+Finds the first inventory list that contains the given item, returning its name if found
+
+- Parameters:
+  - `inv` (*`InvRef`*): Inventory to search
+  - `itemstack` (*`ItemStack`*): Item to look for
+- Returns:
+  - *`string`*: Name of inventory list containing `itemstack`  
+  *OR*
+  - `nil` if `itemstack` was not found
+
+### `mc_core.hex_string_to_num(hex)  -->  number`
+
+Returns a hexadecimal string as a number
+
+- Parameters:
+  - `hex` (*`string`*): Hexadecimal string
+- Returns:
+  - *`number`*: `hex` as an number
+
+### `mc_core.isNumber(str)  -->  boolean`
+
+Determines if a string is actually a number stored as a string
+
+- Parameters:
+  - `str` (*`string`*): String to check
+- Returns:
+  - *`boolean`*: `true` if `str` is a number stored as a string, `false` if not
+
+### `mc_core.pairsByKeys(t, f)  -->  function`
+
+First sorts the keys into an array, and then iterates on the array  
+At each step, it returns the key and value from the original table  
+*Adapted from [https://www.lua.org/pil/19.3.html](https://www.lua.org/pil/19.3.html)*
+
+- Parameters:
+  - `t` (*`table`*): Table to iterate over
+  - `f` (*`function`*): Optional sorting function
+- Returns:
+  - *`function`*: Iterator over `t`
+
+### `mc_core.round(x, n)  -->  number`
+
+Rounds a number to a given number of decimal places
+
+- Parameters:
+  - `x` (*`number`*): Number to round
+  - `n` (*`number`*): Number of decimal places to round to
+- Returns:
+  - *`number`*: `x` rounded to `n` decimal places
+
+### `mc_core.split(s, delimiter)  -->  table`
+
+Splits a string at each instance of the provided delimiter, then returns a table containing the split parts of the string
+
+- Parameters:
+  - `s` (*`string`*): String to split
+  - `delimiter` (*`string`*): Delimeter to split `s` at
+- Returns:
+  - *`table`*: Split string
+
+### `mc_core.starts(string, start)  -->  boolean`
+
+Determines if a string starts with another string
+
+- Parameters:
+  - `string` (*`string`*): String to check
+  - `start` (*`string`*): Start of string to check for
+- Returns:
+  - *`boolean`*: `true` if `string` starts with `start`, `false` if not
+
+### `mc_core.stringToColor(name)  -->  table`
+
+Returns a random color based on input seed  
+This function is not guaranteed to be the same on all systems
+
+- Parameters:
+  - `name` (*`string`*): Seed string
+- Returns:
+  - *`table`*: Randomly generated colour
+    ```lua
+    {
+        a = 255,    -- alpha channel of colour
+        r = 255,    -- red channel of colour
+        g = 255,    -- green channel of colour
+        b = 255,    -- blue channel of colour
+    }
+    ```
+
+### `mc_core.stringToNumber(name)  -->  number`
+
+Returns a number based input seed  
+This function is not guaranteed to be the same on all systems
+
+- Parameters:
+  - `name` (*`string`*): Seed string
+- Returns:
+  - *`number`*: Corresponding numerical seed
+
+### `mc_core.tableHas(table, val)  -->  boolean`
+
+Checks if any of the keys or values in the given table match the value provided
+
+- Parameters:
+  - `table` (*`table`*): Table to check
+  - `val` (*`any`*): Value to check for
+- Returns:
+  - *`boolean`*: `true` if `val` exists in `table`, `false` if not
+
+### `mc_core.trim(s)  -->  string`
+
+Trims whitespace characters from the beginning and end of a string
+
+- Parameters:
+  - `s` (*`string`*): String to trim
+- Returns:
+  - *`string`*: Trimmed string
 
 ## GUI Templates ([`gui.lua`](gui.lua))
 
@@ -252,16 +288,16 @@ Returns `true` if the player is frozen, `false` otherwise
 - Returns:
   - *`boolean`*: `true` if `player` is frozen, `false` otherwise
 
-### `mc_core.run_unfrozen(player, func, ...)`
+### `mc_core.temp_unfreeze_and_run(player, func, ...)`
 
-Runs a function on player, temporarily unfreezing them while the function runs if they are frozen. If player is not frozen, the function will be run normally  
-Optional arguments after `func` will be passed into `func` when it runs (similarly to how `minetest.after` passes arguments)  
-`player` will not be passed into `func` by default, so it should be added to the argument list in the appropriate position  
+Temporarily unfreezes `player` if they are frozen, runs `func`, then refreezes `player` if they should be frozen
+This should be used when applying forced movement to a player, since frozen players can not be teleported normally
+Optional arguments after `func` will be passed into `func` when it runs (similarly to how `minetest.after` passes arguments)
 
 - Parameters:
   - `player` (*`ObjectRef`*): Player to treat as unfrozen
   - `func` (*`function`*): Function to run
-  - `...` (*`vararg`*): Arguments to `func`
+  - `...` (*`vararg`*): Optional comma-separated arguments for `func`
 - Returns:
   - *`vararg`*: Returns from `func`
 

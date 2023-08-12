@@ -194,6 +194,10 @@ function mc_core.pairsByKeys (t, f)
     return iter
 end
 
+---@public
+---Returns true if str is a number stored as a string, false otherwise
+---@param str String to check
+---@return boolean
 function mc_core.isNumber(str)
     if (str == nil) then
         return false
@@ -201,15 +205,27 @@ function mc_core.isNumber(str)
     return not (str == "" or str:match("%D"))
 end
 
+---@public
+---Trims whitespace characters from the beginning and end of a string
+---@param s String to trim
+---@return string
 function mc_core.trim(s)
     return s:match( "^%s*(.-)%s*$" )
 end
 
-function mc_core.starts(String,Start)
-    return string.sub(String,1,string.len(Start))==Start
+---@public
+---Returns true if string starts with start, false otherwise
+---@param string String to check
+---@param start Start of string to check for
+---@return boolean
+function mc_core.starts(string, start)
+    return string.sub(string, 1, string.len(start)) == start
 end
 
-
+---@public
+---Creates a shallow copy of table
+---@param table Table to copy
+---@return table
 function mc_core.shallowCopy(table)
     local copy = {}
     for k, v in pairs(table) do
@@ -218,6 +234,10 @@ function mc_core.shallowCopy(table)
     return copy
 end
 
+---@public
+---Creates a deep copy of table
+---@param table Table to copy
+---@return table
 function mc_core.deepCopy(table)
     local copy = {}
     for k, v in pairs(table) do
@@ -244,10 +264,19 @@ function mc_core.getInventoryItemLocation(inv, itemstack)
     return nil
 end
 
+---@public
+---Rounds a number to a given number of decimal places
+---@param x Number to round
+---@param n Number of decimal places to round to
+---@return number
 function mc_core.round(x, n)
     return tonumber(string.format("%." .. n .. "f", x))
 end
 
+---@public
+---Returns a hexadecimal string as a number
+---@param hex Hexadecimal string
+---@return number
 function mc_core.hex_string_to_num(hex)
     if string.sub(hex, 1, 1) == "#" then
         return tonumber(string.sub(hex, 2), 16)
