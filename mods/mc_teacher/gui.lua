@@ -326,6 +326,24 @@ function mc_teacher.show_edit_popup(player, realmID)
             privs = {interact = "nil", shout = "nil", fast = "nil", fly = "nil", noclip = "nil", give = "nil"},
             id = realmID,
         }
+
+        if not context.skyboxes then
+            context.skyboxes = {}
+            for _,sky in pairs(skybox.get_skies()) do
+                local sky_name = sky[1]
+                if sky_name then
+                    table.insert(context.skyboxes, sky_name)
+                end
+            end
+            table.sort(context.skyboxes)
+            table.insert(context.skyboxes, "None")
+        end
+        local sky_name_to_i = {}
+        for i, sky in pairs(context.skyboxes) do
+            sky_name_to_i[sky] = i
+        end
+        context.edit_realm.skybox = sky_name_to_i[realm:GetSkybox() or skybox.get_default_sky()] or 1
+
         for priv,v in pairs(realm.Permissions or {interact = true, shout = true, fast = true}) do
             if context.edit_realm.privs[priv] ~= nil then
                 context.edit_realm.privs[priv] = v
@@ -391,7 +409,7 @@ function mc_teacher.show_edit_popup(player, realmID)
         "textarea[", text_spacer, ",5.2;", width - 2*text_spacer, ",1;;;Background Music]",
         "dropdown[", spacer, " ,5.6;", width - 2*spacer, ",0.8;erealm_bgmusic;;1;true]",
         "textarea[", text_spacer, ",6.5;", width - 2*text_spacer, ",1;;;Skybox]",
-        "dropdown[", spacer, ",6.9;", width - 2*spacer, ",0.8;erealm_skybox;;1;true]",
+        "dropdown[", spacer, ",6.9;", width - 2*spacer, ",0.8;erealm_skybox;", table.concat(context.skyboxes, ","), ";", context.edit_realm.skybox, ";true]",
         "button[", spacer, " ,8.1;", button_width, ",0.8;save_realm;Save changes]",
         "button[4.2,8.1;", button_width, ",0.8;cancel;Cancel]",
     }
@@ -732,7 +750,12 @@ function mc_teacher.show_controller_fs(player, tab)
                     end
                     table.sort(context.skyboxes)
                     table.insert(context.skyboxes, "None")
-                    context.selected_skybox = 1
+
+                    local sky_name_to_i = {}
+                    for i, sky in pairs(context.skyboxes) do
+                        sky_name_to_i[sky] = i
+                    end
+                    context.selected_skybox = sky_name_to_i[skybox.get_default_sky()] or 1
                 end
 
                 table.insert(fs, table.concat({

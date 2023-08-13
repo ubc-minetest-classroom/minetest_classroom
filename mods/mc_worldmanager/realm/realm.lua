@@ -599,5 +599,12 @@ function Realm:UpdateSkybox(sky)
     return true
 end
 
+---@public
+---Gets the skybox of a realm.
+---@return string
+function Realm:GetSkybox()
+    return self:get_data("skybox")
+end
+
 Realm.LoadDataFromStorage()
 Realm.consolidateEmptySpace()

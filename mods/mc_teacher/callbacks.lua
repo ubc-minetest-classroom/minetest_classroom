@@ -403,6 +403,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
         if fields.erealm_cat and fields.erealm_cat ~= context.edit_realm.type then
             context.edit_realm.type = fields.erealm_cat
+        elseif fields.erealm_skybox and tonumber(fields.erealm_skybox) ~= tonumber(context.edit_realm.skybox) then
+            context.edit_realm.skybox = tonumber(fields.erealm_skybox)
         elseif fields.save_realm or fields.cancel or fields.quit then
             if fields.save_realm then
                 local realm = Realm.GetRealm(context.edit_realm.id)
@@ -1238,6 +1240,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if context.selected_privs_mode == mc_teacher.TABS.PLAYERS then
                 context.selected_privs = nil
             end
+            context.skyboxes = nil
             context.tab = nil
         elseif reload then
             -- CLASSROOM --

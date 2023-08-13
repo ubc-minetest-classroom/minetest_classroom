@@ -167,7 +167,7 @@ function mc_teacher.save_realm(player, context, fields)
     local realm = Realm.GetRealm(context.edit_realm.id)
     if realm then
         if not fields.no_cat_override then
-            if context.edit_realm.type == mc_teacher.R.CAT_KEY.SPAWN then
+            if context.edit_realm.type == mc_teacher.R.CAT_KEY.SPAWN and realm.ID ~= mc_worldManager.GetSpawnRealm().ID then
                 if realm:isHidden() or realm:isDeleted() then
                     minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom is currently "..(realm:isHidden() and "hidden" or "being deleted"..", so it could not be set as the server's spawn classroom.")))
                 else
@@ -180,6 +180,7 @@ function mc_teacher.save_realm(player, context, fields)
         end
         realm.Name = (mc_core.trim(fields.erealm_name or "") ~= "" and fields.erealm_name) or (mc_core.trim(context.edit_realm.name or "") ~= "" and context.edit_realm.name) or "Unnamed classroom"
         realm:UpdateRealmPrivilege(context.edit_realm.privs or {})
+        realm:UpdateSkybox(context.skyboxes[context.edit_realm.skybox])
 
         -- update players in realm
         local players_in_realm = realm:GetPlayersAsArray()
@@ -187,6 +188,7 @@ function mc_teacher.save_realm(player, context, fields)
             local p_obj = minetest.get_player_by_name(p)
             if p_obj then
                 realm:ApplyPrivileges(p_obj)
+                realm:ApplySkybox(p_obj)
             end
         end
         minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Classroom updated!"))

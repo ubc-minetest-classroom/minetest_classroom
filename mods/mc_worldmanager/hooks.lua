@@ -201,7 +201,7 @@ minetest.register_on_mods_loaded(function()
         end
 
         -- Apply old default skybox to realms with undefined skyboxes
-        local sky = realm:get_data("skybox")
+        local sky = realm:GetSkybox()
         if not sky then
             realm:UpdateSkybox(skybox.get_default_sky())
         end
