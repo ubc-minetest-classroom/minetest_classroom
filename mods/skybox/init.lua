@@ -15,9 +15,23 @@ of the license, or (at your option) any later version.
 --
 
 local skies = {
+	{"DarkStormy", "#1f2226", 0.5, { density = 0.5, color = "#aaaaaae0", ambient = "#000000",
+		height = 64, thickness = 32, speed = {x = 6, y = -6},}},
+	{"CloudyLightRays", "#5f5f5e", 0.9, { density = 0.4, color = "#efe3d5d0", ambient = "#000000",
+		height = 96, thickness = 24, speed = {x = 4, y = 0},}},
+	{"FullMoon", "#24292c", 0.2, { density = 0.25, color = "#ffffff80", ambient = "#404040",
+		height = 140, thickness = 8, speed = {x = -2, y = 2},}},
+	{"SunSet", "#72624d", 0.4, { density = 0.2, color = "#f8d8e8e0", ambient = "#000000",
+		height = 120, thickness = 16, speed = {x = 0, y = -2},}},
+	{"ThickCloudsWater", "#a57850", 0.8, { density = 0.35, color = "#ebe4ddfb", ambient = "#000000",
+		height = 80, thickness = 32, speed = {x = 4, y = 3},}},
 	{"TropicalSunnyDay", "#f1f4ee", 1.0, { density = 0.25, color = "#fffffffb", ambient = "#000000",
 		height = 120, thickness = 8, speed = {x = -2, y = 0},}},
 }
+local skymap = {["None"] = 0}
+for i, def in pairs(skies) do
+	skymap[def[1]] = i
+end
 
 --
 -- API
@@ -53,7 +67,7 @@ skybox.set = function(player, number)
 			player:set_sky(sky[2], "skybox", textures, true)
 		end
 		player:set_clouds(sky[4])
-		player:set_attribute("skybox:skybox", sky[1])
+		player:get_meta():set_string("skybox:skybox", sky[1])
 	end
 end
 
@@ -72,20 +86,26 @@ skybox.clear = function(player)
 		thickness = 16,
 		speed = {x = 0, y = -2},
 	})
-	player:set_sun({visible = true, sunrise_visible = true})
-	player:set_moon({visible = true})
+	player:set_sun({visible = true, sunrise_visible = true, texture = ""})
+	player:set_moon({visible = true, texture = ""})
 	player:set_stars({visible = true})
 
-	player:set_attribute("skybox:skybox", "off")
+	player:get_meta():set_string("skybox:skybox", "off")
 end
 
---
--- registrations and load/save code
---
+skybox.add = function(def)
+	table.insert(skies, def)
+	skymap[def[1]] = #skies
+end
 
-minetest.register_on_joinplayer(function(player)
-	local sky = player:get_attribute("skybox:skybox")
-	-- Default to TropicalSunnyDay onjoin
-	skybox.clear(player)
-	skybox.set(player, 1)
-end)
+skybox.get_skies = function()
+	return table.copy(skies)
+end
+
+skybox.get_sky_number = function(name)
+	return skymap[name]
+end
+
+skybox.get_default_sky = function()
+	return skies[6][1]
+end

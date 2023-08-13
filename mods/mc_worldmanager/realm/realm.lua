@@ -589,5 +589,15 @@ function Realm:isDeleted()
     return self:get_tmpData("deleted") == true
 end
 
+---@public
+---Updates and saves the skybox of a realm.
+---@param skybox string Name of skybox
+---@return boolean Whether the operation succeeded.
+function Realm:UpdateSkybox(sky)
+    self:set_data("skybox", sky)
+    Realm.SaveDataToStorage()
+    return true
+end
+
 Realm.LoadDataFromStorage()
 Realm.consolidateEmptySpace()

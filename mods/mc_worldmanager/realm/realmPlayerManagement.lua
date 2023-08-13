@@ -31,6 +31,7 @@ function Realm:TeleportPlayer(player)
     -- We register the player with the new realm, and apply their realm-specific privileges.
     self:RegisterPlayer(player)
     self:ApplyPrivileges(player)
+    self:ApplySkybox(player)
 
     -- We run the teleport functions of the new realm. These are added by non-core features, other mods, and realms.
     self:RunTeleportInFunctions(player)
@@ -150,4 +151,12 @@ function Realm:GetPlayerCount()
     else
         return 0
     end
+end
+
+---@public
+---Applies this realm's skybox to a player
+---@param player
+function Realm:ApplySkybox(player)
+    local sky = self:get_data("skybox")
+    skybox.set(player, skybox.get_sky_number(sky or skybox.get_default_sky()))
 end

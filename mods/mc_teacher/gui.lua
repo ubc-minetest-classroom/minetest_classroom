@@ -720,12 +720,27 @@ function mc_teacher.show_controller_fs(player, tab)
                     "checkbox[", spacer + 4.4, ",1.4;denypriv_noclip;;",     tostring(context.selected_privs.noclip   == false), "]",
                     "checkbox[", spacer + 4.4, ",1.8;denypriv_give;;",       tostring(context.selected_privs.give     == false), "]",
                     "container_end[]",
+                }))
 
+                if not context.skyboxes then
+                    context.skyboxes = {}
+                    for _,sky in pairs(skybox.get_skies()) do
+                        local sky_name = sky[1]
+                        if sky_name then
+                            table.insert(context.skyboxes, sky_name)
+                        end
+                    end
+                    table.sort(context.skyboxes)
+                    table.insert(context.skyboxes, "None")
+                    context.selected_skybox = 1
+                end
+
+                table.insert(fs, table.concat({
                     "style_type[textarea;font=mono,bold]",
                     "textarea[", text_spacer, ",", 4.7 + options_height, ";", panel_width - 2*text_spacer, ",1;;;Background Music]",
-                    "dropdown[", spacer, ",", 5.1 + options_height, ";", panel_width - 2*spacer, ",0.8;bgmusic;None;1;false]",
+                    "dropdown[", spacer, ",", 5.1 + options_height, ";", panel_width - 2*spacer, ",0.8;realm_music;None;1;false]",
                     "textarea[", text_spacer, ",", 6 + options_height, ";", panel_width - 2*text_spacer, ",1;;;Skybox]",
-                    "dropdown[", spacer, ",", 6.4 + options_height, ";", panel_width - 2*spacer, ",0.8;skybox;Default;1;false]",
+                    "dropdown[", spacer, ",", 6.4 + options_height, ";", panel_width - 2*spacer, ",0.8;realm_skybox;", table.concat(context.skyboxes, ","), ";", context.selected_skybox, ";true]",
                     "scroll_container_end[]",
                 }))
 
@@ -1127,7 +1142,7 @@ function mc_teacher.show_controller_fs(player, tab)
                 if add_server then
                     table.insert(context.indexed_chat_players, mc_core.SERVER_USER)
                     local server_messages = {}
-                    for _, msg_list in pairs(server_msg or {}) do
+                    for _,msg_list in pairs(server_msg or {}) do
                         for _,msg_table in pairs(msg_list) do
                             if msg_table.anonymous and msg_table.recipient ~= mc_teacher.M.RECIP.ADMIN then
                                 table.insert(server_messages, msg_table)
@@ -1405,7 +1420,7 @@ function mc_teacher.show_controller_fs(player, tab)
 
                 if context.selected_s_tab == mc_teacher.STAB.ONLINE then
                     context.server_dyn_list = {}
-                    for _, p in pairs(minetest.get_connected_players()) do
+                    for _,p in pairs(minetest.get_connected_players()) do
                         if p and p:is_player() then
                             table.insert(context.server_dyn_list, p:get_player_name())
                         end

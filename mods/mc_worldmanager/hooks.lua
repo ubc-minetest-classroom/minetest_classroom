@@ -66,6 +66,7 @@ minetest.register_on_joinplayer(function(player, last_login)
         realm:RegisterPlayer(player)
         realm:RunTeleportInFunctions(player)
         realm:ApplyPrivileges(player)
+        realm:ApplySkybox(player)
         mc_core.update_marker_visibility(player:get_player_name(), realm.ID)
     end
 end)
@@ -190,13 +191,19 @@ minetest.register_on_shutdown(function()
 end)
 
 minetest.register_on_mods_loaded(function()
-    -- Ensure that there is only one spawn realm
     for id,realm in pairs(Realm.realmDict) do
+        -- Ensure that there is only one spawn realm
         local cat = realm:getCategory().key
         if cat == "spawn" and tonumber(id) ~= tonumber(mc_worldManager.spawnRealmID) then
             realm:setCategoryKey("default")
         elseif cat ~= "spawn" and tonumber(id) == tonumber(mc_worldManager.spawnRealmID) then
             realm:setCategoryKey("spawn")
+        end
+
+        -- Apply old default skybox to realms with undefined skyboxes
+        local sky = realm:get_data("skybox")
+        if not sky then
+            realm:UpdateSkybox(skybox.get_default_sky())
         end
     end
 end)

@@ -518,9 +518,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             context.realm_dec = fields.realm_decorator
             reload = true
         end
+        if fields.realm_skybox and tonumber(fields.realm_skybox) ~= tonumber(context.selected_skybox) then
+            context.selected_skybox = tonumber(fields.realm_skybox)
+        end
         
         if fields.c_newrealm then
-            if mc_core.checkPrivs(player,{teacher = true}) then
+            if mc_core.checkPrivs(player, {teacher = true}) then
                 local realm_name = fields.realmname or context.realmname or ""
                 local new_realm
                 local errors = {}
@@ -624,6 +627,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     new_realm:setCategoryKey(mc_teacher.R.CAT_MAP[context.selected_realm_type or mc_teacher.R.CAT_KEY.CLASSROOM])
                 end
                 new_realm:UpdateRealmPrivilege(context.selected_privs)
+                new_realm:UpdateSkybox(context.skyboxes[context.selected_skybox])
                 minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your requested classroom was successfully created."))
                 reload = true
             end
