@@ -1,19 +1,29 @@
 Realm.categories = {}
-Realm.CAT_KEY = {DEFAULT = "1", SPAWN = "2", CLASSROOM = "3", INSTANCED = "4"}
-Realm.CAT_MAP = {["1"] = "default", ["2"] = "spawn", ["3"] = "classroom", ["4"] = "instanced"}
 
+---@public
+---RegisterCategory
+---Registers a new realm category.
+---@param categoryDefinition table @The category definition.
 function Realm.RegisterCategory(categoryDefinition)
     Realm.categories[string.lower(categoryDefinition.key)] = categoryDefinition
 end
 
-function Realm:setCategoryKey(category)
-    if (category == nil or category == "nil" or category == "") then
+---@public
+---setCategoryKey
+---Sets the category of a realm using the categories corresponding key.
+---@param categoryKey string the category key to apply to the realm.
+function Realm:setCategoryKey(categoryKey)
+    if (categoryKey == nil or categoryKey == "nil" or categoryKey == "") then
         self:set_data("category", "default")
     else
-        self:set_data("category", category)
+        self:set_data("category", categoryKey)
     end
 end
 
+---@public
+---getCategoryKey
+---Returns the category key assigned to a realm.
+---@return string @The category key.
 function Realm:getCategory()
     local category = self:get_data("category")
     if (category == nil or category == "") then
@@ -25,10 +35,18 @@ function Realm:getCategory()
     return categoryObject
 end
 
+---@public
+---getRegisteredCategories
+---Returns a list of all registered realm categories.
+---@return table @The list of realm categories.
 function Realm.getRegisteredCategories()
     return Realm.categories
 end
 
+---@public
+---AddOwner
+---Adds a new owner to a realm.
+---@param owner string @The owner to add.
 function Realm:AddOwner(ownerName)
     local owners = self:get_data("owner")
     if (owners == nil) then
@@ -43,6 +61,10 @@ function Realm:AddOwner(ownerName)
     end
 end
 
+---@public
+---RemoveOwner
+---Removes an owner from a realm.
+---@param owner string @The owner to remove.
 function Realm:RemoveOwner(ownerName)
     local owners = self:get_data("owner")
     if (owners == nil) then
@@ -111,6 +133,8 @@ Realm.RegisterCategory({
             return true, "You are a student in this realm."
         elseif (realm:get_data("owner")[player:get_player_name()] ~= nil) then
             return true, "You are an owner of this realm."
+        elseif (minetest.check_player_privs(player, { teacher = true })) then
+            return true, "All realms are joinable by teachers."
         else
             return false, "You are not a student in this realm."
         end
@@ -139,6 +163,8 @@ Realm.RegisterCategory({
 
         if (realm:get_data("owner")[player:get_player_name()] ~= nil) then
             return true, "You are an owner of this realm."
+        elseif (minetest.check_player_privs(player, { teacher = true })) then
+            return true, "All realms are joinable by teachers."
         end
         return false
     end

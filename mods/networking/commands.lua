@@ -111,12 +111,13 @@ minetest.register_chatcommand("clear_whitelist", {
 	func = function(pname, _)
         local ipv4_whitelist = {["127.0.0.1"] = true}
         networking.storage:set_string("ipv4_whitelist", minetest.serialize(ipv4_whitelist))
+        networking.storage:set_int("ipv4_length", 1)
         minetest.chat_send_player(pname, "[Networking] SUCCESS: Removed all IPv4 addresses from the whitelist.")
 	end
 })
 
 minetest.register_chatcommand("dump_whitelist", {
-	description = "Dumps all whitelisted IPV4s into chat.",
+	description = "Dumps all whitelisted IPv4 addresses into chat.",
 	privs = {server = true},
 	func = function(pname, _)
         local whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))

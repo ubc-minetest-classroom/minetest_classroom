@@ -34,7 +34,7 @@ local function get_saved_coords(player)
 end
 
 local function get_options_height(context)
-    if (not context.realm_gen or context.realm_gen == mc_teacher.R.GEN.NONE) and (not context.realm_dec or context.realm_dec == mc_teacher.R.DEC.NONE) then
+    if (not context.realm_gen or context.realm_gen == mc_teacher.R.GEN.NONE) then
         return 2.6
     elseif context.realm_dec == mc_teacher.R.DEC.BIOME then
         return 5.2
@@ -52,6 +52,9 @@ local function get_privs(player)
         if v == false then
             privs[k] = (privs[k] and "overridden") or false
         end
+    end
+    if mc_core.is_frozen(player) then
+        privs["fast"] = "alt_deny"
     end
     return privs
 end
@@ -77,6 +80,8 @@ local function generate_player_table(p_list, p_priv_list)
                 table.insert(combined_list, 2)
             elseif p_priv_list[i][priv] == "overridden" then
                 table.insert(combined_list, 3)
+            elseif p_priv_list[i][priv] == "alt_deny" then
+                table.insert(combined_list, 4)
             else
                 table.insert(combined_list, 0)
             end
@@ -84,6 +89,15 @@ local function generate_player_table(p_list, p_priv_list)
         table.insert(combined_list, player)
     end
     return table.concat(combined_list, ",")
+end
+
+local function priv_state_to_sel_privs(priv_table)
+    local privs_to_check = {"shout", "interact", "fast", "fly", "noclip", "give"}
+    local new_table = {}
+    for _,priv in pairs(privs_to_check) do
+        new_table[priv] = (priv_table[priv] == nil and "nil") or priv_table[priv]
+    end
+    return new_table
 end
 
 local function get_priv_button_states(p_list, p_priv_list)
@@ -98,6 +112,17 @@ local function get_priv_button_states(p_list, p_priv_list)
             end
             if states[priv] == "mixed" then
                 privs_to_check[priv] = nil
+            end
+        end
+    end
+    for _,player in pairs(p_list) do
+        local p_obj = minetest.get_player_by_name(player)
+        -- freeze
+        if states["frozen"] ~= "mixed" and p_obj then
+            if mc_core.is_frozen(p_obj) then
+                states["frozen"] = (states[priv] == true and "mixed") or false
+            else
+                states["frozen"] = (states[priv] == false and "mixed") or true
             end
         end
     end
@@ -130,46 +155,289 @@ function mc_teacher.show_confirm_popup(player, fs_name, action, size)
     local text_spacer = mc_teacher.fs_t_spacer
     local width = math.max(size and size.x or 7.5, 1.5)
     local height = math.max(size and size.y or 3.4, 2.1)
-    local button_width = (width - 1.3)/2
+    local button_width = (width - 2*spacer - 0.1)/2
 
     local pname = player:get_player_name()
     
     local fs = {
-        "formspec_version[6]",
-        "size[", width, ",", height, "]",
-        "style_type[textarea;font=mono]",
+        mc_core.draw_note_fs(width, height, {bg = "#f2aeec", accent = "#f9c8fa"}),
+        "style_type[textarea;font=mono,bold;textcolor=#000000]",
         "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
         "textarea[", text_spacer, ",0.5;", width - 2*text_spacer, ",", height - 2, ";;;", action and action.action or "Are you sure you want to perform this action?",
         action.irreversible and "\nThis action is irreversible." or "", "]",
         "button[", spacer, ",", height - 1.4, ";", button_width, ",0.8;confirm;", action and action.button or "Confirm", "]",
-        "button[", spacer + 0.1 + button_width, ",", height - 1.4, ";", button_width, ",0.8;cancel;Cancel]",
+        "button[", spacer + 0.1 + button_width, ",", height - 1.4, ";", button_width, ",0.8;cancel;", action and action.cancel or "Cancel", "]",
     }
     minetest.show_formspec(pname, "mc_teacher:"..fs_name, table.concat(fs, ""))
 end
 
-function mc_teacher.show_ban_popup(player)
+function mc_teacher.show_kick_popup(player, p_count)
     local spacer = mc_teacher.fs_spacer
     local text_spacer = mc_teacher.fs_t_spacer
     local width = 7.5
-    local height = 7.5
-    local button_width = (width - 1.3)/2
+    local height = 5.1
+    local button_width = (width - 2*spacer - 0.1)/2
+
+    local pname = player:get_player_name()
+    local p_count_string = (p_count == 1 and "this player" or "these "..tostring(#players_to_update).." players")
+    
+    local fs = {
+        mc_core.draw_note_fs(width, height, {bg = "#f2aeec", accent = "#f9c8fa"}),
+        "style_type[textarea;font=mono,bold;textcolor=#000000]",
+        "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+        "textarea[", text_spacer, ",0.5;", width - 2*text_spacer, ",", height - 3.3, ";;;Are you sure you want to kick "..p_count_string.." from the server?\nIf so, you can add an optional reason below.]",
+        "style_type[textarea;font=mono]",
+        "textarea[", spacer, ",", height - 2.7, ";", width - 2*spacer, ",1.2;reason;;]",
+        "button[", spacer, ",", height - 1.4, ";", button_width, ",0.8;confirm;Kick player", p_count == 1 and "" or "s", "]",
+        "button[", spacer + 0.1 + button_width, ",", height - 1.4, ";", button_width, ",0.8;cancel;Cancel]",
+    }
+    minetest.show_formspec(pname, "mc_teacher:confirm_player_kick", table.concat(fs, ""))
+end
+
+--[[ KICK POPUP
+formspec_version[6]
+size[7.5,5.1]
+textarea[0.55,0.5;6.4,1.8;;;Are you sure you want to kick these 0 players from the server?]
+textarea[0.6,2.4;6.3,1.2;reason;;]
+button[0.6,3.7;3.1,0.8;confirm;Kick players]
+button[3.8,3.7;3.1,0.8;cancel;Cancel]
+]]
+
+function mc_teacher.show_whitelist_popup(player)
+    local spacer = mc_teacher.fs_spacer
+    local text_spacer = mc_teacher.fs_t_spacer
+    local width = 12.2
+    local height = 7.4
+    local content_width = 5.3
+    local text_width = content_width + 2*(spacer - text_spacer)
+    local button_width = (content_width - 0.1)/2
 
     local pname = player:get_player_name()
     local context = mc_teacher.get_fs_context(player)
 
+    local whitelist_state = networking.get_whitelist_enabled()
+    local ipv4_whitelist = networking.get_whitelist()
+    context.ip_whitelist = {}
+    for ipv4,_ in pairs(ipv4_whitelist) do
+        table.insert(context.ip_whitelist, ipv4)
+    end
+    table.sort(context.ip_whitelist, networking.ipv4_compare)
+
     local fs = {
-        "formspec_version[6]",
-        "size[", width, ",", height, "]",
-        "style_type[textarea;font=mono,bold]",
-        "style_type[textlist;font=mono]",
+        mc_core.draw_note_fs(width, height, {bg = "#baf5a2", accent = "#e0fccf"}),
+        "style_type[textarea;font=mono,bold;textcolor=#000000]",
+        "style_type[textlist,field;font=mono]",
         "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-        "textarea[", text_spacer, ",0.5;", width - 2*text_spacer, ",1;;;Banned Players]",
-        "textlist[", spacer, ",0.9;", width - 2*spacer, ",", height - 2.4, ";ban_list;", minetest.get_ban_list() or "", ";", context.selected_ban or 1, ";false]",
-        "button[", spacer, ",", height - 1.4, ";", button_width, ",0.8;exit;Exit]",
-        "button[", spacer + 0.1 + button_width, ",", height - 1.4, ";", button_width, ",0.8;unban;Unban player]",
+
+        "textarea[", text_spacer, ",0.5;", text_width, ",1;;;Whitelisted IPv4 Addresses]",
     }
-    minetest.show_formspec(pname, "mc_teacher:ban_manager", table.concat(fs, ""))
+
+    if context.show_whitelist then
+        table.insert(fs, table.concat({
+            "textlist[", spacer, ",0.9;", content_width, ",5.9;whitelist;", table.concat(context.ip_whitelist, ","), ";", context.selected_ip_range or 1, ";false]",
+        }))
+    else
+        local length = networking.get_whitelist_length()
+        table.insert(fs, table.concat({
+            "style_type[textarea;font=mono]",
+            "textarea[", text_spacer, ",0.9;", text_width, ",5;;;", length, " IPv4 address", length == 1 and "" or "es", " in whitelist (including 127.0.0.1)\n\n",
+            "Whitelisted IP addresses are hidden by default for performance, since loading large whitelists can cause lag when opening this popup.]",
+            "style_type[textarea;font=mono,bold]",
+            "button[", spacer, ",6;", content_width, ",0.8;whitelist_show;Show IP addresses]",
+        }))
+    end
+
+    table.insert(fs, table.concat({
+        "style[blocked_remove;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
+        "button[", content_width + spacer + 0.4, ",4.2;", content_width, ",0.8;toggle;", whitelist_state and "DISABLE" or "ENABLE", " whitelist]",
+        "button[", content_width + spacer + 0.4, ",5.1;", content_width, ",0.8;", context.show_whitelist and "" or "blocked_", "remove;Delete selected]",
+        "textarea[", content_width + text_spacer + 0.4, ",0.5;", text_width, ",1;;;Start IPv4]",
+        "textarea[", content_width + text_spacer + 0.4, ",1.7;", text_width, ",1;;;End IPv4 (optional)]",
+        "field[", content_width + spacer + 0.4, ",0.9;", content_width, ",0.8;ip_start;;", context.start_ip or "0.0.0.0", "]",
+        "field[", content_width + spacer + 0.4, ",2.1;", content_width, ",0.8;ip_end;;", context.end_ip or "", "]",
+        "button[", content_width + spacer + 0.4, ",3;", button_width, ",0.8;ip_add;Add range]",
+        "button[", content_width + spacer + 3.1, ",3;", button_width, ",0.8;ip_remove;Remove range]",
+        "button[", content_width + spacer + 0.4, ",6;", content_width, ",0.8;exit;Return]",
+
+        "tooltip[ip_start;First IPv4 address in the desired range;", mc_core.col.b.default, ";#ffffff]",
+        "tooltip[ip_end;Last IPv4 address in the desired range (optional);", mc_core.col.b.default, ";#ffffff]",
+        "tooltip[whitelist_remove;Removes the selected IP range from the whitelist;", mc_core.col.b.default, ";#ffffff]",
+        "tooltip[ip_add;Adds the typed range of IPs to the whitelist;", mc_core.col.b.default, ";#ffffff]",
+        "tooltip[ip_remove;Removes the typed range of IPs from the whitelist;", mc_core.col.b.default, ";#ffffff]",
+        "tooltip[toggle;Whitelist is currently ", whitelist_state and "ENABLED" or "DISABLED", ";", mc_core.col.b.default, ";#ffffff]",
+    }))
+    minetest.show_formspec(pname, "mc_teacher:whitelist", table.concat(fs, ""))
 end
+
+--[[ WHITELIST POPUP (LIST SHOWN)
+formspec_version[6]
+size[12.2,7.4]
+textarea[0.55,0.5;5.4,1;;;Whitelisted IPv4 Addresses]
+textlist[0.6,0.9;5.3,5.9;whitelist;;1;false]
+button[6.3,4.2;5.3,0.8;toggle;ENABLE whitelist]
+button[6.3,5.1;5.3,0.8;remove;Delete selected]
+textarea[6.25,0.5;5.4,1;;;Start IPv4]
+textarea[6.25,1.7;5.4,1;;;End IPv4 (optional)]
+field[6.3,0.9;5.3,0.8;ip_start;;0.0.0.0]
+field[6.3,2.1;5.3,0.8;ip_end;;]
+button[6.3,3;2.6,0.8;ip_add;Add range]
+button[9,3;2.6,0.8;ip_remove;Remove range]
+button[6.3,6;5.3,0.8;exit;Return]
+
+-- (LIST HIDDEN)
+formspec_version[6]
+size[12.2,7.4]
+textarea[0.55,0.5;5.4,1;;;Whitelisted IPv4 Addresses]
+textarea[0.55,0.9;5.4,5;;;X IPv4 addresses in whitelist (including 127.0.0.1) - Whitelisted IP addresses are hidden by default to prevent lag when opening the whitelist popup when the whitelist is very large ]
+button[0.6,6;5.3,0.8;show_list;Show IP addresses]
+]]
+
+function mc_teacher.show_edit_popup(player, realmID)
+    local spacer = mc_teacher.fs_spacer
+    local text_spacer = mc_teacher.fs_t_spacer
+    local width = 8.3
+    local height = 9.5
+    local button_width = (width - 2*spacer - 0.1)/2
+
+    local pname = player:get_player_name()
+    local context = mc_teacher.get_fs_context(player)
+    local realm = Realm.GetRealm(realmID)
+
+    if not realmID or not realm then
+        return minetest.show_formspec(pname, "mc_teacher:edit_realm", table.concat({
+            mc_core.draw_note_fs(6, 2.5, {bg = "#96e1fa", accent = "#c2e9fc"}),
+            "style_type[textarea;font=mono;textcolor=#000000]",
+            "textarea[0.55,0.5;4.9,1;;;Classroom not found!]",
+            "button[0.6,1.1;4.8,0.8;cancel;Return]",
+        }, ""))
+    end
+
+    if not context.edit_realm then
+        local cat = realm:getCategory()
+        context.edit_realm = {
+            name = realm.Name or "",
+            type = cat and mc_teacher.R.CAT_RMAP[cat.key] or mc_teacher.R.CAT_KEY.CLASSROOM,
+            privs = {interact = "nil", shout = "nil", fast = "nil", fly = "nil", noclip = "nil", give = "nil"},
+            id = realmID,
+        }
+        for priv,v in pairs(realm.Permissions or {interact = true, shout = true, fast = true}) do
+            if context.edit_realm.privs[priv] ~= nil then
+                context.edit_realm.privs[priv] = v
+            end
+        end
+    end
+
+    local fs = {
+        mc_core.draw_note_fs(width, height, {bg = "#96e1fa", accent = "#c2e9fc"}),
+        "style_type[textarea;font=mono,bold;textcolor=#000000]",
+        "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+        "style_type[field;font=mono;textcolor=#ffffff]",
+        "textarea[", text_spacer, ",0.5;", width - 2*text_spacer, ",1;;;Name]",
+        "field[", spacer, " ,0.9;", width - 2*spacer, ",0.8;erealm_name;;", minetest.formspec_escape(context.edit_realm.name), "]",
+        "field_close_on_enter[erealm_name;false]",
+        "textarea[", text_spacer, ",1.8;", button_width + 0.1, ",1;;;Type]",
+        "dropdown[", spacer, " ,2.2;", button_width, ",0.8;erealm_cat;Classroom,Spawn,Private;", context.edit_realm.type, ";true]",
+        "hypertext[", text_spacer + button_width + 0.1, ",1.82;", button_width + 0.1, ",1;;<global font=mono halign=center color=#000000><b>Internal ID</b>]",
+        "hypertext[", text_spacer + button_width + 0.1, ",2.22;", button_width + 0.1, ",2;;<global font=mono halign=center color=#000000><b><bigger>#", realmID, "</bigger></b>]",
+
+        "textarea[", text_spacer, ",3.1;", width - 2*text_spacer, ",1;;;Default Privileges]",
+        "style_type[textarea;font=mono]",
+        "textarea[", text_spacer + 1.3, ",3.9;2.3,1;;;interact]",
+        "textarea[", text_spacer + 1.3, ",4.3;2.3,1;;;shout]",
+        "textarea[", text_spacer + 1.3, ",4.7;2.3,1;;;fast]",
+        "textarea[", text_spacer + button_width + 1.4, ",3.9;2.3,1;;;fly]",
+        "textarea[", text_spacer + button_width + 1.4, ",4.3;2.3,1;;;noclip]",
+        "textarea[", text_spacer + button_width + 1.4, ",4.7;2.3,1;;;give]",
+        "style_type[textarea;font=mono,bold]",
+
+        "image[", text_spacer, ",3.5;0.4,0.4;mc_teacher_check.png^[colorize:#56bf5f:alpha]",
+        "image[", text_spacer + 0.4, ",3.5;0.4,0.4;mc_teacher_ignore.png]",
+        "image[", text_spacer + 0.8, ",3.5;0.4,0.4;mc_teacher_delete.png]",
+        "image[", text_spacer + button_width + 0.1, ",3.5;0.4,0.4;mc_teacher_check.png^[colorize:#56bf5f:alpha]",
+        "image[", text_spacer + button_width + 0.5, ",3.5;0.4,0.4;mc_teacher_ignore.png]",
+        "image[", text_spacer + button_width + 0.9, ",3.5;0.4,0.4;mc_teacher_delete.png]",
+        "tooltip[", text_spacer, ",3.5;0.4,0.4;ALLOW: Privilege will be granted\n(does NOT override universal privileges);#404040;#ffffff]",
+        "tooltip[", text_spacer + 0.4, ",3.5;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
+        "tooltip[", text_spacer + 0.8, ",3.5;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
+        "tooltip[", text_spacer + 3.6, ",3.5;0.4,0.4;ALLOW: Privilege will be granted\n(does NOT override universal privileges);#404040;#ffffff]",
+        "tooltip[", text_spacer + 4.0, ",3.5;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
+        "tooltip[", text_spacer + 4.4, ",3.5;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
+
+        "checkbox[", spacer, ",4.1;allowpriv_interact;;",        tostring(context.edit_realm.privs.interact == true), "]",
+        "checkbox[", spacer, ",4.5;allowpriv_shout;;",           tostring(context.edit_realm.privs.shout    == true), "]",
+        "checkbox[", spacer, ",4.9;allowpriv_fast;;",            tostring(context.edit_realm.privs.fast     == true), "]",
+        "checkbox[", spacer + 0.4, ",4.1;ignorepriv_interact;;", tostring(context.edit_realm.privs.interact == "nil"), "]",
+        "checkbox[", spacer + 0.4, ",4.5;ignorepriv_shout;;",    tostring(context.edit_realm.privs.shout    == "nil"), "]",
+        "checkbox[", spacer + 0.4, ",4.9;ignorepriv_fast;;",     tostring(context.edit_realm.privs.fast     == "nil"), "]",
+        "checkbox[", spacer + 0.8, ",4.1;denypriv_interact;;",   tostring(context.edit_realm.privs.interact == false), "]",
+        "checkbox[", spacer + 0.8, ",4.5;denypriv_shout;;",      tostring(context.edit_realm.privs.shout    == false), "]",
+        "checkbox[", spacer + 0.8, ",4.9;denypriv_fast;;",       tostring(context.edit_realm.privs.fast     == false), "]",
+        "checkbox[", spacer + button_width + 0.1, ",4.1;allowpriv_fly;;",     tostring(context.edit_realm.privs.fly    == true), "]",
+        "checkbox[", spacer + button_width + 0.1, ",4.5;allowpriv_noclip;;",  tostring(context.edit_realm.privs.noclip == true), "]",
+        "checkbox[", spacer + button_width + 0.1, ",4.9;allowpriv_give;;",    tostring(context.edit_realm.privs.give   == true), "]",
+        "checkbox[", spacer + button_width + 0.5, ",4.1;ignorepriv_fly;;",    tostring(context.edit_realm.privs.fly    == "nil"), "]",
+        "checkbox[", spacer + button_width + 0.5, ",4.5;ignorepriv_noclip;;", tostring(context.edit_realm.privs.noclip == "nil"), "]",
+        "checkbox[", spacer + button_width + 0.5, ",4.9;ignorepriv_give;;",   tostring(context.edit_realm.privs.give   == "nil"), "]",
+        "checkbox[", spacer + button_width + 0.9, ",4.1;denypriv_fly;;",      tostring(context.edit_realm.privs.fly    == false), "]",
+        "checkbox[", spacer + button_width + 0.9, ",4.5;denypriv_noclip;;",   tostring(context.edit_realm.privs.noclip == false), "]",
+        "checkbox[", spacer + button_width + 0.9, ",4.9;denypriv_give;;",     tostring(context.edit_realm.privs.give   == false), "]",
+        
+        "textarea[", text_spacer, ",5.2;", width - 2*text_spacer, ",1;;;Background Music]",
+        "dropdown[", spacer, " ,5.6;", width - 2*spacer, ",0.8;erealm_bgmusic;;1;true]",
+        "textarea[", text_spacer, ",6.5;", width - 2*text_spacer, ",1;;;Skybox]",
+        "dropdown[", spacer, ",6.9;", width - 2*spacer, ",0.8;erealm_skybox;;1;true]",
+        "button[", spacer, " ,8.1;", button_width, ",0.8;save_realm;Save changes]",
+        "button[4.2,8.1;", button_width, ",0.8;cancel;Cancel]",
+    }
+    minetest.show_formspec(pname, "mc_teacher:edit_realm", table.concat(fs, ""))
+end
+
+--[[ EDIT POPUP
+formspec_version[6]
+size[8.3,9.5]
+textarea[0.55,0.5;7.2,1;;;Name]
+field[0.6,0.9;7.1,0.8;realmname;;]
+textarea[0.55,1.8;3.6,1;;;Type]
+dropdown[0.6,2.2;3.5,0.8;realmcategory;Classroom,Spawn,Private;1;true]
+textarea[4.15,1.8;3.6,1;;;Internal ID]
+textarea[0.55,3.1;7.2,1;;;Default Privileges]
+textarea[1.85,3.9;2.3,1;;;interact]
+textarea[1.85,4.3;2.3,1;;;shout]
+textarea[1.85,4.7;2.3,1;;;fast]
+textarea[5.45,3.9;2.3,1;;;fly]
+textarea[5.45,4.3;2.3,1;;;noclip]
+textarea[5.45,4.7;2.3,1;;;give]
+image[0.6,3.5;0.4,0.4;mc_teacher_check.png]
+image[1,3.5;0.4,0.4;mc_teacher_ignore.png]
+image[1.4,3.5;0.4,0.4;mc_teacher_delete.png]
+image[4.2,3.5;0.4,0.4;mc_teacher_check.png]
+image[4.6,3.5;0.4,0.4;mc_teacher_ignore.png]
+image[5,3.5;0.4,0.4;mc_teacher_delete.png]
+checkbox[0.6,4.1;allowpriv_interact;;true]
+checkbox[0.6,4.5;allowpriv_shout;;true]
+checkbox[0.6,4.9;allowpriv_fast;;true]
+checkbox[1,4.1;ignorepriv_interact;;false]
+checkbox[1,4.5;ignorepriv_shout;;false]
+checkbox[1,4.9;ignorepriv_fast;;false]
+checkbox[1.4,4.1;denypriv_interact;;false]
+checkbox[1.4,4.5;denypriv_shout;;false]
+checkbox[1.4,4.9;denypriv_fast;;false]
+checkbox[4.2,4.1;allowpriv_fly;;false]
+checkbox[4.2,4.5;allowpriv_noclip;;false]
+checkbox[4.2,4.9;allowpriv_give;;false]
+checkbox[4.6,4.1;ignorepriv_fly;;true]
+checkbox[4.6,4.5;ignorepriv_noclip;;true]
+checkbox[4.6,4.9;ignorepriv_give;;true]
+checkbox[5,4.1;denypriv_fly;;false]
+checkbox[5,4.5;denypriv_noclip;;false]
+checkbox[5,4.9;denypriv_give;;false]
+textarea[0.55,5.2;7.2,1;;;Background Music]
+dropdown[0.6,5.6;7.1,0.8;bgmusic;;1;true]
+textarea[0.55,6.5;7.2,1;;;Skybox]
+dropdown[0.6,6.9;7.1,0.8;;;1;true]
+button[0.6,8.1;3.5,0.8;save_realm;Save changes]
+button[4.2,8.1;3.5,0.8;cancel;Cancel]
+]]
 
 function mc_teacher.show_controller_fs(player, tab)
     local controller_width = 16.6
@@ -204,35 +472,35 @@ function mc_teacher.show_controller_fs(player, tab)
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Welcome to Minetest Classroom!]",
-                    "textarea[", text_spacer, ",4.4;", panel_width - 2*text_spacer, ",1;;;Server Rules]",
+                    "textarea[", text_spacer, ",4.6;", panel_width - 2*text_spacer, ",1;;;Server Rules]",
                     "style_type[textarea;font=mono]",
-                    "textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",2.6;;;", minetest.formspec_escape("This is the Teacher Controller, your tool for managing classrooms, player privileges, and server settings."),
+                    "textarea[", text_spacer, ",1.4;", panel_width - 2*text_spacer, ",3;;;", minetest.formspec_escape("This is the Teacher Controller, your tool for managing classrooms, player privileges, and server settings."),
                     "\n", minetest.formspec_escape("You cannot drop this tool, so you will never lose it. However, you can move it out of your hotbar and into your inventory or the toolbox."), "]",
-                    "textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",", has_server_privs and 4 or 4.9, ";;;", minetest.formspec_escape(rules), "]",
+                    "textarea[", text_spacer, ",5.0;", panel_width - 2*text_spacer, ",", has_server_privs and 3.9 or 4.8, ";;;", minetest.formspec_escape(rules), "]",
                     has_server_privs and "button[0.6,9;7,0.8;server_edit_rules;Edit server rules]" or "",
 
                     "scrollbaroptions[min=0;max=", (11.6 + (has_server_privs and 1.7 or 0) - Y_SIZE)/FACTOR, ";smallstep=", 0.8/FACTOR, ";largestep=", 4.8/FACTOR, ";thumbsize=", 1/FACTOR, "]",
                     "scrollbar[", controller_width - 0.3, ",0.5;0.3,", Y_SIZE, ";vertical;overviewscroll;", context.overviewscroll or 0, "]",
                     "scroll_container[", panel_width, ",0.5;", panel_width - 0.3, ",", Y_SIZE, ";overviewscroll;vertical;", FACTOR, "]",
 
+                    "hypertext[", spacer + 1.8, ",0.4;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Classrooms</b>\n", minetest.formspec_escape("Create and manage classrooms"), "]",
                     "image_button[", spacer, ",0.5;", button_width, ",", button_height, ";mc_teacher_classrooms.png;classrooms;;false;false]",
-                    "hypertext[", spacer + 1.8, ",0.8;5.35,1.6;;<style color=#000000><b>Classrooms</b>\n", minetest.formspec_escape("Create and manage classrooms"), "</style>]",
+                    "hypertext[", spacer + 1.8, ",2.2;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "]",
                     "image_button[", spacer, ",2.3;", button_width, ",", button_height, ";mc_teacher_map.png;map;;false;false]",
-                    "hypertext[", spacer + 1.8, ",2.6;5.35,1.6;;<style color=#000000><b>Map</b>\n", minetest.formspec_escape("Record and share locations"), "</style>]",
+                    "hypertext[", spacer + 1.8, ",4.0;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Players</b>\n", minetest.formspec_escape("Manage player privileges"), "]",
                     "image_button[", spacer, ",4.1;", button_width, ",", button_height, ";mc_teacher_players.png;players;;false;false]",
-                    "hypertext[", spacer + 1.8, ",4.4;5.35,1.6;;<style color=#000000><b>Players</b>\n", minetest.formspec_escape("Manage player privileges"), "</style>]",
+                    "hypertext[", spacer + 1.8, ",5.8;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Moderation</b>\n", minetest.formspec_escape("View player chat logs"), "]",
                     "image_button[", spacer, ",5.9;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;moderation;;false;false]",
-                    "hypertext[", spacer + 1.8, ",6.2;5.35,1.6;;<style color=#000000><b>Moderation</b>\n", minetest.formspec_escape("View player chat logs"), "</style>]",
+                    "hypertext[", spacer + 1.8, ",7.6;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Reports</b>\n", minetest.formspec_escape("View player reports"), "]",
                     "image_button[", spacer, ",7.7;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;reports;;false;false]",
-                    "hypertext[", spacer + 1.8, ",8;5.35,1.6;;<style color=#000000><b>Reports</b>\n", minetest.formspec_escape("View and resolve player reports"), "</style>]",
+                    "hypertext[", spacer + 1.8, ",9.4;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Help</b>\n", minetest.formspec_escape("View guides and report issues"), "</style>]",
                     "image_button[", spacer, ",9.5;", button_width, ",", button_height, ";mc_teacher_help.png;help;;false;false]",
-                    "hypertext[", spacer + 1.8, ",9.8;5.35,1.6;;<style color=#000000><b>Help</b>\n", minetest.formspec_escape("View guides and resources"), "</style>]",
                 }
 
                 if has_server_privs then
                     table.insert(fs, table.concat({
+                        "hypertext[", spacer + 1.8, ",11.2;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Server</b>\n", minetest.formspec_escape("Manage server settings"), "]",
                         "image_button[", spacer, ",11.3;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;server;;false;false]",
-                        "hypertext[", spacer + 1.8, ",11.6;5.35,1.6;;<style color=#000000><b>Server</b>\n", minetest.formspec_escape("Manage server settings"), "</style>]",
                     }))
                 end
                 table.insert(fs, "scroll_container_end[]")
@@ -241,17 +509,23 @@ function mc_teacher.show_controller_fs(player, tab)
             end,
             [mc_teacher.TABS.CLASSROOMS] = function()
                 local classroom_list = {}
-                local realm_count = 1
                 local options_height = (context.selected_mode == mc_teacher.MODES.EMPTY and get_options_height(context)) or 1.3
                 local FACTOR = 0.1
-                context.realm_id_to_i = {}
+                context.realm_i_to_id = {}
+                context.selected_c_tab = context.selected_c_tab or mc_teacher.CTAB.PUBLIC
 
                 Realm.ScanForPlayerRealms()
                 for id, realm in pairs(Realm.realmDict or {}) do
-                    local playerCount = tonumber(realm:GetPlayerCount())
-                    table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
-                    context.realm_id_to_i[tostring(id)] = realm_count
-                    realm_count = realm_count + 1
+                    if not realm:isDeleted() then
+                        local playerCount = tonumber(realm:GetPlayerCount())
+                        local cat = realm:getCategory().key
+
+                        if (realm:isHidden() and context.selected_c_tab == mc_teacher.CTAB.HIDDEN) or (not realm:isHidden() and
+                        ((context.selected_c_tab == mc_teacher.CTAB.PUBLIC and cat ~= mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.INSTANCED]) or (context.selected_c_tab == mc_teacher.CTAB.PRIVATE and cat == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.INSTANCED]))) then
+                            table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
+                            table.insert(context.realm_i_to_id, id)
+                        end
+                    end
                 end
 
                 local fs = {
@@ -260,16 +534,40 @@ function mc_teacher.show_controller_fs(player, tab)
                     "tooltip[exit;Exit;#404040;#ffffff]",
                     "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Classrooms</b></center></style>]",
                     "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Build a Classroom</b></center></style>]",
-
+                    
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-                    "style[editrealm;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
-                    "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Available Classrooms]",
-                    "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.realm_id_to_i and context.realm_id_to_i[context.selected_realm_id] or 1, ";false]",
-                    "button[", spacer, ",9;2.3,0.8;teleportrealm;Teleport]",
-                    "button[", spacer + 2.4, ",9;2.3,0.8;editrealm;Edit]",
-                    "button[", spacer + 4.8, ",9;2.3,0.8;deleterealm;Delete]",
+                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;c_newrealm;Generate classroom]",
+                    "tabheader[", spacer, ",1.4;", panel_width - 2*spacer, ",0.5;c_list_header;Public,Private,Hidden;", context.selected_c_tab, ";false;true]",
+                }
+                
+                if #classroom_list == 0 then
+                    table.insert(fs, "style[c_teleport,c_edit,c_hide,c_hidden_restore,c_hidden_delete,c_hidden_deleteall;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.blocked.."]")
+                end
 
+                if context.selected_c_tab == mc_teacher.CTAB.HIDDEN then
+                    table.insert(fs, table.concat({
+                        "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",", has_server_privs and 6.2 or 7.5, ";classroomlist;", table.concat(classroom_list, ","), ";", context.selected_realm or 1, ";false]",
+                        "button[", spacer, ",", has_server_privs and 7.7 or 9, ";3.5,0.8;c_teleport;Teleport]",
+                        "button[", spacer + 3.6, ",", has_server_privs and 7.7 or 9, ";3.5,0.8;c_hidden_restore;Restore]",
+                    }))
+                    if has_server_privs then
+                        table.insert(fs, table.concat({
+                            "textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Classroom Cleanup]",
+                            "button[", spacer, ",9;3.5,0.8;c_hidden_delete;Delete selected]",
+                            "button[", spacer + 3.6, ",9;3.5,0.8;c_hidden_deleteall;Delete all]",
+                        }))
+                    end
+                else
+                    table.insert(fs, table.concat({
+                        "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;classroomlist;", table.concat(classroom_list, ","), ";", context.selected_realm or 1, ";false]",
+                        "button[", spacer, ",9;2.3,0.8;c_teleport;Teleport]",
+                        "button[", spacer + 2.4, ",9;2.3,0.8;c_edit;Edit]",
+                        "button[", spacer + 4.8, ",9;2.3,0.8;c_hide;Hide]",
+                    }))   
+                end
+                
+                table.insert(fs, table.concat({
                     "style_type[field;font=mono;textcolor=#ffffff]",
                     "scrollbaroptions[min=0;max=", (options_height - 0.7)/FACTOR, ";smallstep=", 0.6/FACTOR, ";largestep=", 3.6/FACTOR, ";thumbsize=", 0.6/FACTOR, "]",
                     "scrollbar[", controller_width - 0.3, ",1;0.3,", controller_height - 2.5, ";vertical;class_opt_scroll;", context.class_opt_scroll or 0, "]",
@@ -279,10 +577,10 @@ function mc_teacher.show_controller_fs(player, tab)
                     "field[", spacer, ",0.4;7.1,0.8;realmname;;", context.realmname or "", "]",
                     "field_close_on_enter[realmname;false]",
                     "textarea[", text_spacer, ",1.25;3.6,1;;;Type]",
-                    "dropdown[", spacer, ",1.7;3.5,0.8;realmcategory;Default,Spawn,Classroom,Instanced" or "", ";", context.selected_realm_type or 1, ";true]",
+                    "dropdown[", spacer, ",1.7;3.5,0.8;realmcategory;Classroom,Spawn,Private" or "", ";", context.selected_realm_type or 1, ";true]",
                     "textarea[", text_spacer + 3.6, ",1.25;3.6,1;;;Generation]",
                     "dropdown[", spacer + 3.6, ",1.7;3.5,0.8;mode;Empty World,Schematic,Digital Twin" or "", ";", context.selected_mode or 1, ";true]",
-                }
+                }))
 
                 if context.selected_mode == mc_teacher.MODES.EMPTY then
                     table.insert(fs, table.concat({
@@ -293,9 +591,9 @@ function mc_teacher.show_controller_fs(player, tab)
                         "field[", spacer + 0.9, ",3;1.3,0.8;realm_x_size;;", context.realm_x or 80, "]",
                         "field[", spacer + 3.3, ",3;1.3,0.8;realm_y_size;;", context.realm_y or 80, "]",
                         "field[", spacer + 5.7, ",3;1.3,0.8;realm_z_size;;", context.realm_z or 80, "]",
-                        "textarea[", text_spacer, ",3.9;3.6,1;;;Terrain Generator]",
-                        "textarea[", text_spacer + 3.6, ",3.9;3.6,1;;;Terrain Decorator]",
-                        "dropdown[", spacer, ",4.3;3.5,0.8;realm_generator;None,Version 1,Version 2,DNR;", context.realm_gen or 1, ";true]",
+                        "textarea[", text_spacer, ",3.9;3.6,1;;;Terrain]",
+                        "textarea[", text_spacer + 3.6, ",3.9;3.6,1;;;Foliage]",
+                        "dropdown[", spacer, ",4.3;3.5,0.8;realm_generator;None,Version 1,Version 2;", context.realm_gen or 1, ";true]",
                         "dropdown[", spacer + 3.6, ",4.3;3.5,0.8;realm_decorator;None,Version 1,Version 2,Biomegen;", context.realm_dec or 1, ";true]",
                     
                         "field_close_on_enter[realm_x_size;false]",
@@ -303,7 +601,6 @@ function mc_teacher.show_controller_fs(player, tab)
                         "field_close_on_enter[realm_z_size;false]",
                     }))
 
-                    -- TODO: link generators, decorators, BEC biomes to realm generation
                     if options_height >= 3.9 then
                         table.insert(fs, table.concat({
                             "textarea[", text_spacer, ",5.2;3.6,1;;;Seed]",
@@ -316,10 +613,18 @@ function mc_teacher.show_controller_fs(player, tab)
                         }))
                     end
                     if options_height >= 5.2 then
+                        local raw_biomes = biomegen.get_biomes()
+                        context.i_to_biome = {}
+                        for biome,_ in pairs(raw_biomes) do
+                            table.insert(context.i_to_biome, biome)
+                        end
+                        table.sort(context.i_to_biome)
+                        context.realm_biome = context.realm_biome or 1
+
                         table.insert(fs, table.concat({
                             "textarea[", text_spacer, ",6.5;3.6,1;;;Biome]",
                             "textarea[", text_spacer + 3.6, ",6.5;3.6,1;;;Chill Coefficient]",
-                            "dropdown[", spacer, ",6.9;3.5,0.8;realm_biome;;1;false]",
+                            "dropdown[", spacer, ",6.9;3.5,0.8;realm_biome;", table.concat(context.i_to_biome, ","), ";", context.realm_biome, ";true]",
                             "field[", spacer + 3.6, ",6.9;3.5,0.8;realm_chill;;", minetest.formspec_escape(context.realm_chill) or "", "]",
 
                             "field_close_on_enter[realm_chill;false]",
@@ -390,24 +695,24 @@ function mc_teacher.show_controller_fs(player, tab)
                     "tooltip[", text_spacer + 4.0, ",0.4;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
                     "tooltip[", text_spacer + 4.4, ",0.4;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
 
-                    "checkbox[", spacer, ",1.0;allowpriv_interact;;", tostring(context.selected_privs.interact == true), "]",
-                    "checkbox[", spacer, ",1.4;allowpriv_shout;;", tostring(context.selected_privs.shout == true), "]",
-                    "checkbox[", spacer, ",1.8;allowpriv_fast;;", tostring(context.selected_privs.fast == true), "]",
+                    "checkbox[", spacer, ",1.0;allowpriv_interact;;",        tostring(context.selected_privs.interact == true), "]",
+                    "checkbox[", spacer, ",1.4;allowpriv_shout;;",           tostring(context.selected_privs.shout    == true), "]",
+                    "checkbox[", spacer, ",1.8;allowpriv_fast;;",            tostring(context.selected_privs.fast     == true), "]",
                     "checkbox[", spacer + 0.4, ",1.0;ignorepriv_interact;;", tostring(context.selected_privs.interact == "nil"), "]",
-                    "checkbox[", spacer + 0.4, ",1.4;ignorepriv_shout;;", tostring(context.selected_privs.shout == "nil"), "]",
-                    "checkbox[", spacer + 0.4, ",1.8;ignorepriv_fast;;", tostring(context.selected_privs.fast == "nil"), "]",
-                    "checkbox[", spacer + 0.8, ",1.0;denypriv_interact;;", tostring(context.selected_privs.interact == false), "]",
-                    "checkbox[", spacer + 0.8, ",1.4;denypriv_shout;;", tostring(context.selected_privs.shout == false), "]",
-                    "checkbox[", spacer + 0.8, ",1.8;denypriv_fast;;", tostring(context.selected_privs.fast == false), "]",
-                    "checkbox[", spacer + 3.6, ",1.0;allowpriv_fly;;", tostring(context.selected_privs.fly == true), "]",
-                    "checkbox[", spacer + 3.6, ",1.4;allowpriv_noclip;;", tostring(context.selected_privs.noclip == true), "]",
-                    "checkbox[", spacer + 3.6, ",1.8;allowpriv_give;;", tostring(context.selected_privs.give == true), "]",
-                    "checkbox[", spacer + 4.0, ",1.0;ignorepriv_fly;;", tostring(context.selected_privs.fly == "nil"), "]",
-                    "checkbox[", spacer + 4.0, ",1.4;ignorepriv_noclip;;", tostring(context.selected_privs.noclip == "nil"), "]",
-                    "checkbox[", spacer + 4.0, ",1.8;ignorepriv_give;;", tostring(context.selected_privs.give == "nil"), "]",
-                    "checkbox[", spacer + 4.4, ",1.0;denypriv_fly;;", tostring(context.selected_privs.fly == false), "]",
-                    "checkbox[", spacer + 4.4, ",1.4;denypriv_noclip;;", tostring(context.selected_privs.noclip == false), "]",
-                    "checkbox[", spacer + 4.4, ",1.8;denypriv_give;;", tostring(context.selected_privs.give == false), "]",
+                    "checkbox[", spacer + 0.4, ",1.4;ignorepriv_shout;;",    tostring(context.selected_privs.shout    == "nil"), "]",
+                    "checkbox[", spacer + 0.4, ",1.8;ignorepriv_fast;;",     tostring(context.selected_privs.fast     == "nil"), "]",
+                    "checkbox[", spacer + 0.8, ",1.0;denypriv_interact;;",   tostring(context.selected_privs.interact == false), "]",
+                    "checkbox[", spacer + 0.8, ",1.4;denypriv_shout;;",      tostring(context.selected_privs.shout    == false), "]",
+                    "checkbox[", spacer + 0.8, ",1.8;denypriv_fast;;",       tostring(context.selected_privs.fast     == false), "]",
+                    "checkbox[", spacer + 3.6, ",1.0;allowpriv_fly;;",       tostring(context.selected_privs.fly      == true), "]",
+                    "checkbox[", spacer + 3.6, ",1.4;allowpriv_noclip;;",    tostring(context.selected_privs.noclip   == true), "]",
+                    "checkbox[", spacer + 3.6, ",1.8;allowpriv_give;;",      tostring(context.selected_privs.give     == true), "]",
+                    "checkbox[", spacer + 4.0, ",1.0;ignorepriv_fly;;",      tostring(context.selected_privs.fly      == "nil"), "]",
+                    "checkbox[", spacer + 4.0, ",1.4;ignorepriv_noclip;;",   tostring(context.selected_privs.noclip   == "nil"), "]",
+                    "checkbox[", spacer + 4.0, ",1.8;ignorepriv_give;;",     tostring(context.selected_privs.give     == "nil"), "]",
+                    "checkbox[", spacer + 4.4, ",1.0;denypriv_fly;;",        tostring(context.selected_privs.fly      == false), "]",
+                    "checkbox[", spacer + 4.4, ",1.4;denypriv_noclip;;",     tostring(context.selected_privs.noclip   == false), "]",
+                    "checkbox[", spacer + 4.4, ",1.8;denypriv_give;;",       tostring(context.selected_privs.give     == false), "]",
                     "container_end[]",
 
                     "style_type[textarea;font=mono,bold]",
@@ -416,8 +721,6 @@ function mc_teacher.show_controller_fs(player, tab)
                     "textarea[", text_spacer, ",", 6 + options_height, ";", panel_width - 2*text_spacer, ",1;;;Skybox]",
                     "dropdown[", spacer, ",", 6.4 + options_height, ";", panel_width - 2*spacer, ",0.8;skybox;Default;1;false]",
                     "scroll_container_end[]",
-
-                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;requestrealm;Generate Classroom]",
                 }))
 
                 return fs
@@ -529,6 +832,7 @@ function mc_teacher.show_controller_fs(player, tab)
                 return fs
             end,
             [mc_teacher.TABS.PLAYERS] = function()
+                local this_realm = Realm.GetRealmFromPlayer(player)
                 context.selected_p_tab = context.selected_p_tab or "1"
                 context.selected_p_player = context.selected_p_player or 1
                 context.selected_p_mode = context.selected_p_mode or mc_teacher.PMODE.SELECTED
@@ -544,12 +848,11 @@ function mc_teacher.show_controller_fs(player, tab)
                             table.insert(context.p_list, teacher)
                         end
                     elseif context.selected_p_tab == "3" then
-                        local this_realm = Realm.GetRealmFromPlayer(player)
-                        for _,p in pairs(minetest.get_connected_players() or {}) do
-                            if p:is_player() then
-                                local p_realm = Realm.GetRealmFromPlayer(p)
-                                if this_realm and p_realm and this_realm.ID == p_realm.ID then
-                                    table.insert(context.p_list, p:get_player_name())
+                        if this_realm then
+                            for _,p in pairs(this_realm:GetPlayersAsArray() or {}) do
+                                local p_obj = minetest.get_player_by_name(p)
+                                if p_obj and p_obj:is_player() then
+                                    table.insert(context.p_list, p)
                                 end
                             end
                         end
@@ -563,7 +866,7 @@ function mc_teacher.show_controller_fs(player, tab)
                 local selected_player = context.p_list[context.selected_p_player]
 
                 local player_privs = {interact = true, shout = true, fast = true, fly = true, noclip = true, give = true}
-                if selected_player then
+                if this_realm and selected_player then
                     local _,missing = minetest.check_player_privs(selected_player, player_privs)
                     if type(missing) == "string" then missing = {missing} end
 
@@ -573,7 +876,18 @@ function mc_teacher.show_controller_fs(player, tab)
                 else
                     player_privs = {}
                 end
-                local priv_b_state = get_priv_button_states(context.p_list, p_priv_list)
+
+                local priv_b_state, priv_override_state
+                if context.selected_p_mode == mc_teacher.PMODE.SELECTED and selected_player then
+                    priv_b_state = get_priv_button_states({selected_player}, {p_priv_list[context.selected_p_player]})
+                else
+                    priv_b_state = get_priv_button_states(context.p_list, p_priv_list)
+                end
+                if this_realm and selected_player then
+                    priv_override_state = this_realm:GetRealmPrivilegeOverride(selected_player)
+                else
+                    priv_override_state = {}
+                end
 
                 local img = {
                     shout = "mc_teacher_shout",
@@ -598,14 +912,14 @@ function mc_teacher.show_controller_fs(player, tab)
                     -- TODO: re-implement groups
                     "style[p_group_new,p_group_edit,p_group_delete;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     -- TODO: re-impelment remaining actions
-                    "style[p_audience,p_freeze,p_timeout;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
+                    "style[p_audience,p_timeout;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     "style[p_mode_", context.selected_p_mode == mc_teacher.PMODE.ALL and "all" or context.selected_p_mode == mc_teacher.PMODE.TAB and "tab" or "selected", ";bgimg=mc_pixel.png^[multiply:", mc_core.col.b.selected, "]",
                     context.selected_p_mode ~= mc_teacher.PMODE.SELECTED and "style[p_teleport;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.orange.."]" or "",
                     
                     "tabheader[", spacer, ",1.4;", panel_width - 2*spacer - 0.35, ",0.5;p_list_header;Students,Teachers,Classroom;", context.selected_p_tab, ";false;true]",
                     "tablecolumns[image,align=center,padding=0.1,tooltip=shout,",    "0=", img.shout,    img.e, img.r, img.o, ",1=", img.shout,    img.e, img.r, ",2=", img.shout,    img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.shout,    "_o", img.e, img.r, ";",
                                  "image,align=center,padding=0.1,tooltip=interact,", "0=", img.interact, img.e, img.r, img.o, ",1=", img.interact, img.e, img.r, ",2=", img.interact, img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.interact, "_o", img.e, img.r, ";",
-                                 "image,align=center,padding=0.1,tooltip=fast,",     "0=", img.fast,     img.e, img.r, img.o, ",1=", img.fast,     img.e, img.r, ",2=", img.fast,     img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.fast,     "_o", img.e, img.r, ";",
+                                 "image,align=center,padding=0.1,tooltip=fast,",     "0=", img.fast,     img.e, img.r, img.o, ",1=", img.fast,     img.e, img.r, ",2=", img.fast,     img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.fast,     "_o", img.e, img.r, ",4=mc_teacher_freeze", img.e, img.r, ";",
                                  "image,align=center,padding=0.1,tooltip=fly,",      "0=", img.fly,      img.e, img.r, img.o, ",1=", img.fly,      img.e, img.r, ",2=", img.fly,      img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.fly,      "_o", img.e, img.r, ";",
                                  "image,align=center,padding=0.1,tooltip=noclip,",   "0=", img.noclip,   img.e, img.r, img.o, ",1=", img.noclip,   img.e, img.r, ",2=", img.noclip,   img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.noclip,   "_o", img.e, img.r, ";",
                                  "image,align=center,padding=0.1,tooltip=give,",     "0=", img.give,     img.e, img.r, img.o, ",1=", img.give,     img.e, img.r, ",2=", img.give,     img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.give,     "_o", img.e, img.r, ";",
@@ -636,28 +950,39 @@ function mc_teacher.show_controller_fs(player, tab)
                     "image[", panel_width + text_spacer + 3.6, ",2.7;0.4,0.4;mc_teacher_check.png]",
                     "image[", panel_width + text_spacer + 4.0, ",2.7;0.4,0.4;mc_teacher_ignore.png]",
                     "image[", panel_width + text_spacer + 4.4, ",2.7;0.4,0.4;mc_teacher_delete.png]",
+
+                    "image[", panel_width + spacer - 0.05 + ((priv_override_state.interact == true and 0) or (priv_override_state.interact == false and 0.8) or 0.4), ",3.1;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer - 0.05 + ((priv_override_state.shout    == true and 0) or (priv_override_state.shout    == false and 0.8) or 0.4), ",3.5;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer - 0.05 + ((priv_override_state.fast     == true and 0) or (priv_override_state.fast     == false and 0.8) or 0.4), ",3.9;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer + 3.55 + ((priv_override_state.fly      == true and 0) or (priv_override_state.fly      == false and 0.8) or 0.4), ",3.1;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer + 3.55 + ((priv_override_state.noclip   == true and 0) or (priv_override_state.noclip   == false and 0.8) or 0.4), ",3.5;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer + 3.55 + ((priv_override_state.give     == true and 0) or (priv_override_state.give     == false and 0.8) or 0.4), ",3.9;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
                 }
 
-                -- TODO: reimplement images behind checkboxes
-                --[[if player_privs.interact then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05, ",2.85;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                if not context.selected_privs then
+                    context.selected_privs = priv_override_state or {interact = "nil", shout = "nil", fast = "nil", fly = "nil", noclip = "nil", give = "nil"}
                 end
-                if player_privs.shout then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05, ",3.25;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                context.selected_privs = priv_state_to_sel_privs(context.selected_privs)
+
+                if player_privs.interact ~= nil then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05 + (player_privs.interact and 0 or 0.8), ",3.1;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
                 end
-                if player_privs.fast then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer + 2.35, ",2.85;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                if player_privs.shout ~= nil then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05 + (player_privs.shout and 0 or 0.8), ",3.5;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
                 end
-                if player_privs.fly then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer + 2.35, ",3.25;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                if player_privs.fast ~= nil then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05 + (player_privs.fast and 0 or 0.8), ",3.9;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
                 end
-                if player_privs.noclip then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer + 4.75, ",2.85;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
+                if player_privs.fly ~= nil then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer + 3.55 + (player_privs.fly and 0 or 0.8), ",3.1;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
                 end
-                if player_privs.give then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer + 4.75, ",3.25;0.4,0.4;mc_pixel.png^[multiply:#59a63a]"}))
-                end]]
-                
+                if player_privs.noclip ~= nil then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer + 3.55 + (player_privs.noclip and 0 or 0.8), ",3.5;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
+                end
+                if player_privs.give ~= nil then
+                    table.insert(fs, table.concat({"image[", panel_width + spacer + 3.55 + (player_privs.give and 0 or 0.8), ",3.9;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
+                end
+
                 table.insert(fs, table.concat({
                     "checkbox[", panel_width + spacer, ",3.3;allowpriv_interact;;", tostring(context.selected_privs.interact == true), "]",
                     "checkbox[", panel_width + spacer, ",3.7;allowpriv_shout;;", tostring(context.selected_privs.shout == true), "]",
@@ -690,8 +1015,8 @@ function mc_teacher.show_controller_fs(player, tab)
                     {[true] = "Mute", [false] = "Unmute", default = "Mute"}, priv_b_state.shout),
                     create_state_button(panel_width + spacer + 2.4, 6.6, 2.3, 0.8, {[true] = "p_deactivate", [false] = "p_reactivate"},
                     {[true] = "Deactivate", [false] = "Reactivate", default = "Activate"}, priv_b_state.interact),
-                    -- TODO: use state buttons to determine which button to show
-                    "button[", panel_width + spacer + 4.8, ",6.6;2.3,0.8;p_freeze;Freeze]",
+                    create_state_button(panel_width + spacer + 4.8, 6.6, 2.3, 0.8, {[true] = "p_freeze", [false] = "p_unfreeze"},
+                    {[true] = "Freeze", [false] = "Unfreeze", default = "Freeze"}, priv_b_state.frozen),
                     "button[", panel_width + spacer, ",7.5;2.3,0.8;p_timeout;Timeout]",
                     
                     "textarea[", panel_width + text_spacer, ",8.4;", panel_width - 2*text_spacer, ",1;;;Server Role]",
@@ -704,8 +1029,8 @@ function mc_teacher.show_controller_fs(player, tab)
                     table.insert(fs, "style["..role_to_fs_elem(mc_teacher.get_server_role(selected_player), has_server_privs)..";bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.selected.."]")
                 end
                 table.insert(fs, table.concat({
-                    "image[", panel_width + spacer, ",8.8;3.5,1;mc_pixel.png^[multiply:#acabff]",
-                    "image[", panel_width + spacer + 3.6, ",8.8;3.5,1;mc_pixel.png^[multiply:#f5c987]", --#ffd699
+                    "image[", panel_width + spacer, ",8.8;3.5,1;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]",
+                    "image[", panel_width + spacer + 3.6, ",8.8;3.5,1;mc_pixel.png^[multiply:", mc_core.col.t.orange, "]",
                     "button[", panel_width + spacer + 0.1, ",8.9;1.6,0.8;p_role_none;None]",
                     "button[", panel_width + spacer + 1.8, ",8.9;1.6,0.8;p_role_student;Student]",
                     "button[", panel_width + spacer + 3.7, ",8.9;1.6,0.8;", has_server_privs and "p_role_teacher" or "blocked_role_teacher", ";Teacher]",
@@ -733,8 +1058,8 @@ function mc_teacher.show_controller_fs(player, tab)
                     "tooltip[p_unfreeze;Re-enables player movement;#404040;#ffffff]",
                     "tooltip[p_teleport;Teleports you to the selected player;#404040;#ffffff]",
                     "tooltip[p_bring;Teleports players to your position;#404040;#ffffff]",
-                    "tooltip[p_audience;Teleports players to you, standing in a semicircle facing you;#404040;#ffffff]",
-                    "tooltip[p_timeout;Teleports players to spawn and\nprevents them from joining classrooms;#404040;#ffffff]",
+                    "tooltip[p_audience;This action has not been implemented yet!;#404040;#ffffff]" --[[Teleports players to you, standing in a semicircle facing you;#404040;#ffffff]"]],
+                    "tooltip[p_timeout;This action has not been implemented yet!;#404040;#ffffff]" --[[Teleports players to spawn and\nprevents them from joining classrooms;#404040;#ffffff]"]],
                     "tooltip[p_untimeout;Allows players to join classrooms again;#404040;#ffffff]",
                 }))
 
@@ -754,23 +1079,23 @@ function mc_teacher.show_controller_fs(player, tab)
                 local chat_msg = minetest.deserialize(mc_teacher.meta:get_string("chat_log"))
                 local direct_msg = minetest.deserialize(mc_teacher.meta:get_string("dm_log"))
                 local server_msg = minetest.deserialize(mc_teacher.meta:get_string("server_log"))
-                local indexed_chat_players = {}
                 local add_server = false
+                context.indexed_chat_players = {}
 
                 for uname,_ in pairs(chat_msg or {}) do
-                    if not mc_core.tableHas(indexed_chat_players, uname) then
-                        table.insert(indexed_chat_players, uname)
+                    if not mc_core.tableHas(context.indexed_chat_players, uname) then
+                        table.insert(context.indexed_chat_players, uname)
                     end
                 end
                 for uname,_ in pairs(direct_msg or {}) do
-                    if not mc_core.tableHas(indexed_chat_players, uname) then
-                        table.insert(indexed_chat_players, uname)
+                    if not mc_core.tableHas(context.indexed_chat_players, uname) then
+                        table.insert(context.indexed_chat_players, uname)
                     end
                 end
                 for uname, msg_list in pairs(server_msg or {}) do
                     if has_server_privs then
-                        if not mc_core.tableHas(indexed_chat_players, uname) then
-                            table.insert(indexed_chat_players, uname)
+                        if not mc_core.tableHas(context.indexed_chat_players, uname) then
+                            table.insert(context.indexed_chat_players, uname)
                         end
                     else
                         local add_player = false
@@ -786,14 +1111,14 @@ function mc_teacher.show_controller_fs(player, tab)
                                 break
                             end
                         end
-                        if not mc_core.tableHas(indexed_chat_players, uname) and add_player then
-                            table.insert(indexed_chat_players, uname)
+                        if not mc_core.tableHas(context.indexed_chat_players, uname) and add_player then
+                            table.insert(context.indexed_chat_players, uname)
                         end
                     end
                 end
 
                 if add_server then
-                    table.insert(indexed_chat_players, mc_core.SERVER_USER)
+                    table.insert(context.indexed_chat_players, mc_core.SERVER_USER)
                     local server_messages = {}
                     for _, msg_list in pairs(server_msg or {}) do
                         for _,msg_table in pairs(msg_list) do
@@ -804,13 +1129,12 @@ function mc_teacher.show_controller_fs(player, tab)
                     end
                     server_msg[mc_core.SERVER_USER] = server_messages
                 end
-                context.indexed_chat_players = indexed_chat_players
 
-                if #indexed_chat_players > 0 then
-                    if not context.player_chat_index or not indexed_chat_players[context.player_chat_index] then
+                if #context.indexed_chat_players > 0 then
+                    if not context.player_chat_index or not context.indexed_chat_players[context.player_chat_index] then
                         context.player_chat_index = 1
                     end
-                    local selected = indexed_chat_players[context.player_chat_index]
+                    local selected = context.indexed_chat_players[context.player_chat_index]
                     local stamps = {}
                     local stamp_to_key = {}
 
@@ -836,12 +1160,8 @@ function mc_teacher.show_controller_fs(player, tab)
                     end
                     table.sort(stamps)
 
-                    local player_log = {}
                     context.log_i_to_key = {}
-                    local chat_col = "#CCFFFF"
-                    local dm_col = "#FFFFCC"
-                    local serv_col = "#FFCCFF"
-
+                    local player_log = {}
                     -- build main message list
                     for i, stamp in ipairs(stamps) do
                         local key = stamp_to_key[stamp] or "null:0"
@@ -849,13 +1169,13 @@ function mc_teacher.show_controller_fs(player, tab)
                         local index = tonumber(split_key[2] or "0")
                         if split_key[1] == "chat" and index ~= 0 then
                             local msg_table = chat_msg[selected][index]
-                            table.insert(player_log, chat_col..minetest.formspec_escape(table.concat({"[", stamp, "] ", msg_table.message})))
+                            table.insert(player_log, "#CCFFFF"..minetest.formspec_escape(table.concat({"[", stamp, "] ", mc_core.trim(string.gsub(msg_table.message, "\n+", " "))}))) 
                         elseif split_key[1] == "dm" and index ~= 0 then
                             local msg_table = direct_msg[selected][index]
-                            table.insert(player_log, dm_col..minetest.formspec_escape(table.concat({"[", stamp, "] DM to ", msg_table.recipient, ": ", msg_table.message})))
+                            table.insert(player_log, "#FFFFCC"..minetest.formspec_escape(table.concat({"[", stamp, "] DM to ", msg_table.recipient, ": ", mc_core.trim(string.gsub(msg_table.message, "\n+", " "))})))
                         elseif split_key[1] == "serv" and index ~= 0 then
                             local msg_table = server_msg[selected][index]
-                            table.insert(player_log, serv_col..minetest.formspec_escape(table.concat({"[", stamp, "] ", mc_core.SERVER_USER, " to ", msg_table.recipient, ": ", msg_table.message})))
+                            table.insert(player_log, "#FFCCFF"..minetest.formspec_escape(table.concat({"[", stamp, "] ", mc_core.SERVER_USER, " to ", msg_table.recipient, ": ", mc_core.trim(string.gsub(msg_table.message, "\n+", " "))})))
                         end
                         table.insert(context.log_i_to_key, key)
                     end
@@ -881,7 +1201,7 @@ function mc_teacher.show_controller_fs(player, tab)
 
                     table.insert(fs, table.concat({
                         "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Message Logs]",
-                        "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",5.5;mod_log_players;", table.concat(indexed_chat_players, ","), ";", context.player_chat_index, ";false]",
+                        "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",5.5;mod_log_players;", table.concat(context.indexed_chat_players, ","), ";", context.player_chat_index, ";false]",
                     }))
 
                     if selected == mc_core.SERVER_USER then
@@ -1009,89 +1329,106 @@ function mc_teacher.show_controller_fs(player, tab)
                     "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
                     "tooltip[exit;Exit;#404040;#ffffff]",
                     "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Help</b></center></style>]",
-                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Getting Started</b></center></style>]",
+                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Submit a Report</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Game controls]",
+                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Need to report an issue?]",
+                    "textarea[", panel_width + text_spacer, ",5.6;", panel_width - 2*text_spacer, ",1;;;Report type]",
+                    "textarea[", panel_width + text_spacer, ",6.9;", panel_width - 2*text_spacer, ",1;;;Report message]",
                     "style_type[textarea;font=mono]",
-                    "textarea[", text_spacer, ",1.5;", panel_width - 2*text_spacer, ",8.3;;;", mc_core.get_controls_info(true), "]",
+                    "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 
-                    "style_type[textarea;font=mono,bold]",
-                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;More help coming soon!]",
+                    "textarea[", text_spacer, ",1.4;", panel_width - 2*text_spacer, ",8.4;;;", mc_core.get_controls_info(true), "]",
+                    "textarea[", panel_width + text_spacer, ",1.4;", panel_width - 2*text_spacer, ",4.1;;;", minetest.formspec_escape("If you need to report a server issue or player, you can write a message in the box below."), "\n\n",
+					minetest.formspec_escape("Your report message will be logged in the report log and be visible to all teachers, so don't include any personal information in it. The server will also automatically log the current date and time, your classroom, and your world position in the report, so you don't need to include that information in your report message."), "]",
+                    "dropdown[", panel_width + spacer, ",6.0;", panel_width - 2*spacer, ",0.8;report_type;Server Issue,Misbehaving Player,Question,Suggestion,Other;1;false]",
+                    "textarea[", panel_width + spacer, ",7.3;", panel_width - 2*spacer, ",1.6;report_body;;]",
+                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;submit_report;Submit report]",
                 }
 
                 return fs
             end,
             [mc_teacher.TABS.SERVER] = function()
-                -- TODO: Implement ban manager
-                local whitelist_state = minetest.deserialize(networking.storage:get_string("enabled"))
+                local time_options = {}
+                for t, t_table in pairs(mc_teacher.T_INDEX) do
+                    time_options[t_table.i] = t
+                end
+                local version = minetest.get_version()
+                local uptime = minetest.get_server_uptime()
+                context.selected_s_tab = context.selected_s_tab or mc_teacher.STAB.BANNED
 
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
                     "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
                     "tooltip[exit;Exit;#404040;#ffffff]",
                     "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Server Management</b></center></style>]",
-                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Server Whitelist</b></center></style>]",
+                    "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Server Information</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
 
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Global Messenger]",
                     "style_type[textarea,field;font=mono]",
-                    "textarea[", spacer, ",1.4;", panel_width - 2*spacer, ",2.1;server_message;;", context.server_message or "", "]",
+                    "textarea[", spacer, ",1.4;", panel_width - 2*spacer, ",2.3;server_message;;", context.server_message or "", "]",
                     "style_type[textarea;font=mono,bold]",
-                    "textarea[", text_spacer, ",3.6;", panel_width - 2*text_spacer, ",1;;;Send as:]",
-                    "dropdown[", spacer, ",4.0;", panel_width - 2*spacer, ",0.8;server_message_type;General server message,Server message from yourself,Chat message from yourself;", context.server_message_type or mc_teacher.M.MODE.SERVER_ANON, ";true]",
+                    "textarea[", text_spacer, ",3.7;", panel_width - 2*text_spacer, ",1;;;Send as:]",
+                    "dropdown[", spacer, ",4.1;", panel_width - 2*spacer, ",0.8;server_message_type;General server message,Server message from yourself,Chat message from yourself;", context.server_message_type or mc_teacher.M.MODE.SERVER_ANON, ";true]",
                     "textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",1;;;Send to:]",
                     "button[", spacer, ",5.3;1.7,0.8;server_send_teachers;Teachers]",
                     "button[", spacer + 1.8, ",5.3;1.7,0.8;server_send_students;Students]",
                     "button[", spacer + 3.6, ",5.3;1.7,0.8;server_send_admins;Admins]",
                     "button[", spacer + 5.4, ",5.3;1.7,0.8;server_send_all;Everyone]",
+
                     "textarea[", text_spacer, ",6.3;", panel_width - 2*text_spacer, ",1;;;Schedule Server Shutdown]",
-                }
-
-                local time_options = {}
-                for t, t_table in pairs(mc_teacher.T_INDEX) do
-                    time_options[t_table.i] = t
-                end
-
-                local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
-                local ip_whitelist = {}
-                for ipv4,_ in pairs(ipv4_whitelist) do
-                    table.insert(ip_whitelist, ipv4)
-                end
-                table.sort(ip_whitelist, networking.ipv4_compare)
-
-                table.insert(fs, table.concat({
                     "dropdown[", spacer, ",6.7;", panel_width - 2*spacer, ",0.8;server_shutdown_timer;", table.concat(time_options, ","), ";", context.time_index or 1, ";false]",
                     "button[", spacer, ",7.6;3.5,0.8;server_shutdown_", mc_teacher.restart_scheduled.timer and "cancel" or "schedule", ";", mc_teacher.restart_scheduled.timer and "Cancel shutdown" or "Schedule", "]",
                     "button[", spacer + 3.6, ",7.6;3.5,0.8;server_shutdown_now;Shutdown now]",
-                    "textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Misc. actions]",
-                    "button[", spacer, ",9;3.5,0.8;server_ban_manager;Ban manager]",
-                    "button[", spacer + 3.6, ",9;3.5,0.8;server_edit_rules;Server rules]",
 
-                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Whitelisted IPv4 Addresses]",
-                    "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",4.9;server_whitelist;", table.concat(ip_whitelist, ","), ";", context.selected_ip_range or 1, ";false]",
-                    "button[", panel_width + spacer, ",6.4;3.5,0.8;server_whitelist_toggle;", whitelist_state and "DISABLE" or "ENABLE", " whitelist]",
-                    "button[", panel_width + spacer + 3.6, ",6.4;3.5,0.8;server_whitelist_remove;Delete range]",
-                    "textarea[", panel_width + text_spacer, ",7.4;", panel_width - 2*text_spacer, ",1;;;Modify Whitelist]",
-                    "style_type[textarea;font_size=*0.85]",
-                    "textarea[", panel_width + text_spacer, ",8.6;3.6,0.8;;;Start IPv4]",
-                    "textarea[", panel_width + text_spacer + 3.6, ",8.6;3.6,0.8;;;End IPv4]",
-                    "field[", panel_width + spacer, ",7.8;3.5,0.8;server_ip_start;;", context.start_ip or "0.0.0.0", "]",
-                    "field[", panel_width + spacer + 3.6, ",7.8;3.5,0.8;server_ip_end;;", context.end_ip or "", "]",
-                    "field_close_on_enter[server_ip_start;false]",
-                    "field_close_on_enter[server_ip_end;false]",
-                    "button[", panel_width + spacer, ",9;3.5,0.8;server_ip_add;Add range]",
-                    "button[", panel_width + spacer + 3.6, ",9;3.5,0.8;server_ip_remove;Remove range]",
+                    "textarea[", text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Server Actions]",
+                    "button[", spacer, ",9;3.5,0.8;server_edit_rules;Server rules]",
+                    "button[", spacer + 3.6, ",9;3.5,0.8;server_whitelist;Whitelist]",
 
+                    "textarea[", text_spacer + panel_width, ",1;", panel_width - 2*text_spacer, ",1;;;Game Information]",
+                    "style_type[textarea;font=mono]",
+                    "textarea[", text_spacer + panel_width, ",1.4;", panel_width - 2*text_spacer, ",1.2;;;",
+                    version.project or "Minetest", " version", version.string and ": "..version.string or " unknown", "\nServer uptime: ", mc_core.expand_time(uptime or 0), "]",
+                    "style_type[textarea;font=mono,bold]",
+
+                    "tabheader[", spacer + panel_width, ",3.2;", panel_width - 2*spacer, ",0.5;server_dyn_header;Banned,Online,Installed Mods;", context.selected_s_tab, ";false;true]",
+                }
+
+                if context.selected_s_tab == mc_teacher.STAB.ONLINE then
+                    context.server_dyn_list = {}
+                    for _, p in pairs(minetest.get_connected_players()) do
+                        if p and p:is_player() then
+                            table.insert(context.server_dyn_list, p:get_player_name())
+                        end
+                    end
+                    table.sort(context.server_dyn_list)
+
+                    table.insert(fs, table.concat({
+                        "textlist[", spacer + panel_width, ",3.2;", panel_width - 2*spacer, ",6.8;server_dyn;", table.concat(context.server_dyn_list, ","), ";", context.selected_s_dyn or 1, ";false]",
+                        -- TODO: add kick/ban buttons?
+                        --"button[", spacer + panel_width, ",9;", panel_width - 2*spacer, ",0.8;server_unban;Unban]"
+                    }))
+                elseif context.selected_s_tab == mc_teacher.STAB.MODS then
+                    context.server_dyn_list = minetest.get_modnames() or {}
+                    table.sort(context.server_dyn_list)
+                    table.insert(fs, table.concat({
+                        "textlist[", spacer + panel_width, ",3.2;", panel_width - 2*spacer, ",6.8;server_dyn;", table.concat(context.server_dyn_list, ","), ";", context.selected_s_dyn or 1, ";false]",
+                    }))
+                else
+                    context.server_dyn_list = minetest.get_ban_list() or ""
+                    table.insert(fs, table.concat({
+                        "textlist[", spacer + panel_width, ",3.2;", panel_width - 2*spacer, ",5.7;server_dyn;", context.server_dyn_list, ";", context.selected_s_dyn or 1, ";false]",
+                        "button[", spacer + panel_width, ",9;", panel_width - 2*spacer, ",0.8;server_unban;Unban]",
+                    }))
+                end
+
+                table.insert(fs, table.concat({
                     "tooltip[server_message;Type your message here!;#404040;#ffffff]",
                     "tooltip[server_ban_manager;View and manage banned players;#404040;#ffffff]",
                     "tooltip[server_edit_rules;Edit server rules;#404040;#ffffff]",
-                    "tooltip[server_ip_start;First IPv4 address in the desired range;#404040;#ffffff]",
-                    "tooltip[server_ip_end;Last IPv4 address in the desired range (optional);#404040;#ffffff]",
-                    "tooltip[server_whitelist_remove;Removes the selected IP range from the whitelist;#404040;#ffffff]",
-                    "tooltip[server_ip_add;Adds the typed range of IPs to the whitelist;#404040;#ffffff]",
-                    "tooltip[server_ip_remove;Removes the typed range of IPs from the whitelist;#404040;#ffffff]",
-                    "tooltip[server_whitelist_toggle;Whitelist is currently ", whitelist_state and "ENABLED" or "DISABLED", ";#404040;#ffffff]",
+                    "tooltip[server_whitelist;Manage server whitelist;#404040;#ffffff]",
                 }))
 
                 return fs
@@ -1162,20 +1499,20 @@ image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.2,1;;;Overview]
 textarea[8.85,0.1;7.2,1;;;Dashboard]
 textarea[0.55,1;7.2,1;;;Welcome to Minetest Classroom!]
-textarea[0.55,1.5;7.2,2.8;;;This is the Teacher Controller\, your tool for managing classrooms\, player privileges\, and server settings. You cannot drop or delete this tool\, so you will never lose it\, but you can move it out of your hotbar and into your inventory or the toolbox.]
-textarea[0.55,4.4;7.2,1;;;Server Rules]
-textarea[0.55,4.9;7.2,4;;;These are the server rules!]
+textarea[0.55,1.4;7.2,3;;;This is the teacher controller!]
+textarea[0.55,4.6;7.2,1;;;Server Rules]
+textarea[0.55,5;7.2,3.9;;;These are the server rules!]
 button[0.6,9;7.1,0.8;modifyrules;Edit Server Rules]
+textarea[10.7,0.9;5.4,1.8;;;Classrooms Find classrooms or players]
 image_button[8.9,1;1.7,1.6;mc_teacher_classrooms.png;classrooms;;false;false]
+textarea[10.7,2.7;5.4,1.8;;;Map Record and share locations]
 image_button[8.9,2.8;1.7,1.6;mc_teacher_map.png;map;;false;false]
+textarea[10.7,4.5;5.4,1.8;;;Players Manage player privileges]
 image_button[8.9,4.6;1.7,1.6;mc_teacher_players.png;players;;false;false]
+textarea[10.7,6.3;5.4,1.8;;;Moderation View player chat logs]
 image_button[8.9,6.4;1.7,1.6;mc_teacher_isometric.png;help;;false;false]
+textarea[10.7,8.1;5.4,1.8;;;Reports View player reports]
 image_button[8.9,8.2;1.7,1.6;mc_teacher_isometric.png;help;;false;false]
-textarea[10.7,1.3;5.35,1.6;;;ClassroomsnFind classrooms or players]
-textarea[10.7,3.1;5.35,1.6;;;MapnRecord and share locations]
-textarea[10.7,4.9;5.35,1.6;;;PlayersnManage player privileges]
-textarea[10.7,6.7;5.35,1.6;;;ModerationnView player chat logs]
-textarea[10.7,8.5;5.35,1.6;;;ReportsnView player reports]
 image[16,-0.25;0.5,0.8;mc_teacher_bookmark.png]
 
 CLASSROOMS:
@@ -1194,7 +1531,7 @@ button[5.4,9;2.3,0.8;deleterealm;Delete]
 textarea[8.85,1;7.2,1;;;Name]
 field[8.9,1.4;7.1,0.8;realmname;;]
 textarea[8.85,2.3;3.6,1;;;Type]
-dropdown[8.9,2.7;3.5,0.8;realmcategory;Default,Spawn,Classroom,Instanced;1;true]
+dropdown[8.9,2.7;3.5,0.8;realmcategory;Classroom,Spawn,Private;1;true]
 textarea[12.45,2.3;3.6,1;;;Generation]
 dropdown[12.5,2.7;3.5,0.8;mode;Empty World,Schematic,Digital Twin;1;true]
 textarea[8.85,3.6;7.2,1;;;OPTIONS]
@@ -1234,7 +1571,7 @@ textarea[8.85,7;7.2,1;;;Background Music]
 dropdown[8.9,7.4;7.1,0.8;bgmusic;;1;true]
 textarea[8.85,8.3;7.2,1;;;Skybox]
 dropdown[8.9,8.7;7.1,0.8;;;1;true]
-button[8.9,9;7.1,0.8;requestrealm;Generate Classroom]
+button[8.9,9;7.1,0.8;requestrealm;Generate classroom]
 
 MAP + COORDINATES:
 formspec_version[6]
@@ -1386,9 +1723,16 @@ box[0,0;16.6,0.5;#737373]
 box[8.275,0;0.05,10.4;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.1,1;;;Help]
-textarea[8.85,0.1;7.1,1;;;Getting Started]
+textarea[8.85,0.1;7.1,1;;;Submit a Report]
 textarea[0.55,1;7.2,1;;;Controls]
-textarea[0.55,1.5;7.2,8.3;;;Add controls here!]
+textarea[0.55,1.4;7.2,8.4;;;Add controls here!]
+textarea[8.85,1;7.2,1;;;Need to report an issue?]
+textarea[8.85,1.4;7.2,4.1;;;Add info about reporting here!]
+textarea[8.85,5.6;7.2,1;;;Report type]
+dropdown[8.9,6;7.1,0.8;report_type;Server Issue,Misbehaving Player,Question,Suggestion,Other;1;false]
+textarea[8.85,6.9;7.2,1;;;Report message]
+textarea[8.9,7.3;7.1,1.6;report_body;;]
+button[8.9,9;7.1,0.8;submit_report;Submit report]
 
 SERVER:
 formspec_version[6]
@@ -1397,32 +1741,26 @@ box[0,0;16.6,0.5;#737373]
 box[8.275,0;0.05,10.4;#000000]
 image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]
 textarea[0.55,0.1;7.1,1;;;Server Management]
-textarea[8.85,0.1;7.1,1;;;Server Whitelist]
+textarea[8.85,0.1;7.1,1;;;Server Information]
 textarea[0.55,1;7.2,1;;;Global Messenger]
-textarea[0.6,1.4;7.1,2.1;server_message;;]
-textarea[0.55,3.6;7.2,1;;;Send as:]
-dropdown[0.6,4;7.1,0.8;server_message_type;Anonymous server message,Server message from yourself,Chat message from yourself;1;true]
-textarea[0.55,4.9;7.2,1;;;Send to:]
-button[0.6,5.3;1.7,0.8;server_send_teachers;Teachers]
-button[2.4,5.3;1.7,0.8;server_send_students;Students]
+textarea[0.6,1.4;7.1,2.3;server_message;;]
+textarea[0.6,3.7;7.2,1;;;Send as:]
+dropdown[0.6,4.1;7.1,0.8;server_message_type;Anonymous server message,Server message from yourself,Chat message from yourself;1;true]
+textarea[0.6,4.9;7.2,1;;;Send to:]
+button[2.4,5.3;1.7,0.8;server_send_teachers;Teachers]
+button[0.6,5.3;1.7,0.8;server_send_students;Students]
 button[4.2,5.3;1.7,0.8;server_send_admins;Admins]
 button[6,5.3;1.7,0.8;server_send_all;Everyone]
-textarea[0.55,6.3;7.2,1;;;Schedule Server Shutdown]
+textarea[0.6,6.3;7.2,1;;;Schedule Server Shutdown]
 dropdown[0.6,6.7;7.1,0.8;server_shutdown_timer;;1;false]
 button[0.6,7.6;3.5,0.8;server_shutdown_schedule;Schedule]
 button[4.2,7.6;3.5,0.8;server_shutdown_now;Shutdown now]
-textarea[0.55,8.6;7.2,1;;;Misc. actions]
-button[0.6,9;3.5,0.8;server_ban_manager;Banned players]
-button[4.2,9;3.5,0.8;server_edit_rules;Server rules]
-textarea[8.85,1;7.2,1;;;Whitelisted IPv4 Addresses]
-textlist[8.9,1.4;7.1,4.9;server_whitelist;;1;false]
-button[8.9,6.4;3.5,0.8;server_whitelist_toggle;ENABLE whitelist]
-button[12.5,6.4;3.5,0.8;server_whitelist_remove;Delete range]
-textarea[8.85,7.4;7.2,1;;;Modify Whitelist]
-textarea[8.85,8.6;3.6,1;;;Start IPv4]
-textarea[12.45,8.6;3.6,1;;;End IPv4 (optional)]
-field[8.9,7.8;3.5,0.8;server_ip_start;;0.0.0.0]
-field[12.5,7.8;3.5,0.8;server_ip_end;;]
-button[8.9,9;3.5,0.8;server_ip_add;Add range]
-button[12.5,9;3.5,0.8;sever_ip_remove;Remove range]
+textarea[0.55,8.6;7.2,1;;;Server Actions]
+button[0.6,9;3.5,0.8;server_edit_rules;Server rules]
+button[4.2,9;3.5,0.8;server_whitelist;Whitelist]
+textarea[8.85,1;7.2,1;;;Game Information]
+textarea[8.85,1.4;7.2,1.4;;;Minetest version: x.x.x -- Server uptime: time]
+textarea[8.85,2.5;7.2,1;;;Online/Banned/Mods]
+textlist[8.9,2.9;7.1,6;server_dynamic;;1;false]
+button[8.9,9;7.1,0.8;;Unban]
 ]]

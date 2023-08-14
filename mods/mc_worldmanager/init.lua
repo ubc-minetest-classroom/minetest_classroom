@@ -1,4 +1,9 @@
-mc_worldManager = { storage = minetest.get_mod_storage(), path = minetest.get_modpath("mc_worldmanager"), spawnRealmSchematic = "vancouver_osm", hud = mhud.init() }
+mc_worldManager = {
+    storage = minetest.get_mod_storage(),
+    path = minetest.get_modpath("mc_worldmanager"),
+    spawnRealmSchematic = "vancouver_osm",
+    hud = mhud.init()
+}
 
 -- Include our source files
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realm.lua")
@@ -43,7 +48,6 @@ function mc_worldManager.GetSpawnRealm()
         spawnRealm:setCategoryKey("spawn")
         mc_worldManager.spawnRealmID = spawnRealm.ID
         mc_worldManager.save_data()
-        Debug.log("Saving spawn realm information")
     end
     return spawnRealm
 end
@@ -54,6 +58,10 @@ end
 ---@return boolean whether the operation succeeded or not.
 function mc_worldManager.SetSpawnRealm(newSpawnRealm)
     if (newSpawnRealm ~= nil) then
+        if (mc_worldManager.SpawnGenerated()) then
+            local oldSpawnRealm = mc_worldManager.GetSpawnRealm()
+            oldSpawnRealm:setCategoryKey("default")
+        end
         mc_worldManager.spawnRealmID = newSpawnRealm.ID
         newSpawnRealm:setCategoryKey("spawn")
         mc_worldManager.save_data()
@@ -71,7 +79,7 @@ end
 
 function mc_worldManager.GetRealmByName(realmName)
     for _, realm in pairs(Realm.realmDict) do
-        if (realm.Name == realmName) then
+        if (realm.Name == realmName and not realm:isDeleted()) then
             return realm
         end
     end
@@ -96,11 +104,11 @@ function mc_worldManager.GetCreateInstancedRealm(realmName, player, schematic, t
 
     if (realm == nil) then
         if (schematic == nil or schematic == "" or schematic == "nil") then
-            realm = Realm:New("[instance for " .. player:get_player_name() .. "] " .. realmName, { x = realmSize.x or 80, y = realmSize.y or 80, z = realmSize.z or 80 })
+            realm = Realm:New("["..player:get_player_name().."] "..realmName, { x = realmSize.x or 80, y = realmSize.y or 80, z = realmSize.z or 80 })
             realm:CreateGround()
             realm:CreateBarriers()
         else
-            realm = Realm:NewFromSchematic("[instance for " .. player:get_player_name() .. "] " .. realmName, schematic)
+            realm = Realm:NewFromSchematic("["..player:get_player_name().."] "..realmName, schematic)
         end
 
         realmInstanceTable[realmKey] = realm.ID
@@ -129,7 +137,5 @@ function mc_worldManager.InstancedDelete(realm, player)
     end
 end
 
-
 -- Registration
 schematicManager.registerSchematicPath("shack", mc_worldManager.path .. "/schematics/shack")
-

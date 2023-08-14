@@ -1,11 +1,3 @@
--- Privileges
-minetest.register_privilege("teacher", {
-    give_to_singleplayer = true
-})
-minetest.register_privilege("student", {
-    give_to_singleplayer = true
-})
-
 minetest.register_on_priv_grant(function(name, granter, priv)
     if priv == "teacher" then
         mc_teacher.register_teacher(name)
@@ -24,14 +16,20 @@ minetest.register_on_joinplayer(function(player)
     local pname = player:get_player_name()
     local pmeta = player:get_meta()
 
-    if not pmeta:get("priv_format") then
-        local privs = minetest.get_player_privs(pname)
-        privs["student"] = true
-        minetest.set_player_privs(pname, privs)
-        pmeta:set_int("priv_format", 2)
+    local priv_format = pmeta:get_int("priv_format")
+    if not priv_format or priv_format < 3 then
+        mc_worldManager.grantUniversalPriv(player, {"student"})
+        pmeta:set_int("priv_format", 3)
+        local realm = Realm.GetRealmFromPlayer(player)
+        if realm then realm:ApplyPrivileges(player) end
     end
 
-    if minetest.check_player_privs(player, {teacher = true}) then
+    if minetest.deserialize(pmeta:get_string("mc_teacher:frozen")) then
+        mc_core.freeze_player(player)
+        pmeta:set_string("mc_teacher:frozen", "")
+    end
+
+    if mc_core.checkPrivs(player, {teacher = true}) then
         mc_teacher.register_teacher(pname)
     else
         mc_teacher.register_student(pname)
@@ -66,24 +64,31 @@ end)
 -- Log all chat messages
 minetest.register_on_chat_message(mc_teacher.log_chat_message)
 
-local function get_players_to_update(player, context)
+local function get_players_to_update(player, context, override)
     local list = {}
+    local has_server_privs = mc_core.checkPrivs(player, {server = true})
+
+    -- Additional checks added to ensure that only admins can modify roles/privs of other teachers
     if context.selected_p_mode == mc_teacher.PMODE.SELECTED then
         local selected_player = context.p_list[context.selected_p_player]
-        if selected_player then table.insert(list, selected_player) end
+        if selected_player and (override or has_server_privs or mc_teacher.students[selected_player]) then
+            table.insert(list, selected_player)
+        end
     elseif context.selected_p_mode == mc_teacher.PMODE.TAB then
-        -- TODO: separate students and teachers
         for _,p in pairs(context.p_list) do
-            table.insert(list, p)
+            if override or has_server_privs or mc_teacher.students[p] then
+                table.insert(list, p)
+            end
         end
     elseif context.selected_p_mode == mc_teacher.PMODE.ALL then
         for student,_ in pairs(mc_teacher.students) do
             table.insert(list, student)
         end
-        -- TODO: add check for server perms
-        --[[for teacher,_ in pairs(mc_teacher.teachers) do
-            table.insert(list, teacher)
-        end]]
+        if override or has_server_privs then
+            for teacher,_ in pairs(mc_teacher.teachers) do
+                table.insert(list, teacher)
+            end
+        end
     end
     return list
 end
@@ -125,63 +130,307 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     local has_server_privs = mc_core.checkPrivs(player, {server = true})
 
     if formname == "mc_teacher:confirm_report_clear" then
+        ------------------------
+        -- REPORT CLEAR POPUP --
+        ------------------------
         if fields.confirm then
             mc_teacher.meta:set_string("report_log", minetest.serialize({}))
             minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The report log has been cleared."))
         end
         mc_teacher.show_controller_fs(player, context.tab)
-    elseif formname == "mc_teacher:ban_manager" and has_server_privs then
-        if fields.ban_list then
-            local event = minetest.explode_textlist_event(fields.ban_list)
-            if event.type == "CHG" then
-                context.selected_ban = event.index
+    elseif formname == "mc_teacher:spawn_type_change" then
+        ------------------------
+        -- SPAWN CHANGE POPUP --
+        ------------------------
+        if not fields.confirm then
+            fields.no_cat_override = true
+        end
+        mc_teacher.save_realm(player, context, fields)
+        if fields.confirm and tonumber(mc_worldManager.spawnRealmID) == tonumber(context.edit_realm.id) then
+            mc_worldManager.spawnRealmID = nil
+            mc_worldManager.GetSpawnRealm() -- this will generate a new spawn realm
+        end
+
+        context.edit_realm = nil
+        mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_hide_occupied" then
+        ----------------------
+        -- HIDE REALM POPUP --
+        ----------------------
+        if fields.confirm then
+            local realm = Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm]))
+            if realm then
+                local spawn = mc_worldManager.GetSpawnRealm()
+                for p, v in pairs(realm:GetPlayers() or {}) do
+                    if v == true then
+                        local p_obj = minetest.get_player_by_name(p)
+                        mc_core.temp_unfreeze_and_run(p_obj, spawn.TeleportPlayer, spawn, p_obj)
+                        minetest.chat_send_player(p, minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you were in was hidden, so you were brought back to the server spawn."))
+                    end
+                end
+                realm:setHidden(true)
             end
         end
-        if fields.unban then
-            context.selected_ban = context.selected_ban or 1
-            local ban_string = minetest.get_ban_list() or ""
-            local bans = mc_core.split(ban_string, ",")
-            if bans[context.selected_ban] then
-                minetest.unban_player_or_ip(bans[context.selected_ban])
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player unbanned!"))
+        mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_player_kick" then
+        -----------------------
+        -- PLAYER KICK POPUP --
+        -----------------------
+        if fields.confirm then
+            local players_to_update = get_players_to_update(player, context)
+            local pname = player:get_player_name()
+            local reason = fields.reason and mc_core.trim(fields.reason)
+            for _,p in pairs(players_to_update) do
+                if p ~= pname then
+                    local success = minetest.kick_player(p, reason ~= "" and reason)
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..(success and "Successfully kicked player " or "Could not kick player ")..p.." from the server."))
+                else
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not kick yourself from the server."))
+                end
             end
-        elseif fields.quit or fields.exit then
-            mc_teacher.show_controller_fs(player, context.tab)
         end
+        context.p_list = nil
+        mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_player_ban" then
+        ----------------------
+        -- PLAYER BAN POPUP --
+        ----------------------
+        if fields.confirm then
+            local players_to_update = get_players_to_update(player, context)
+            local pname = player:get_player_name()
+            for _,p in pairs(players_to_update) do
+                if p ~= pname then
+                    local success = minetest.ban_player(p)
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..(success and "Successfully banned player " or "Could not ban player ")..p.." from the server."))
+                else
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not ban yourself from the server."))
+                end
+            end
+        end
+        context.p_list = nil
+        mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_shutdown_schedule" and has_server_privs then
+        -----------------------------
+        -- SCHEDULE SHUTDOWN POPUP --
+        -----------------------------
+        if fields.confirm then
+            mc_teacher.cancel_shutdown()
+            local warn = {600, 540, 480, 420, 360, 300, 240, 180, 120, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 4, 3, 2, 1}
+            local time = mc_teacher.T_INDEX[context.server_shutdown_timer].t
+            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server shutdown successfully scheduled!"))
+            minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] The server will be restarting in "..context.server_shutdown_timer..". Classrooms will be saved prior to the restart."))
+            mc_teacher.restart_scheduled.timer = minetest.after(time, mc_teacher.shutdown_server, true)
+            for _,t in pairs(warn) do
+                if time >= t then
+                    mc_teacher.restart_scheduled["warn"..tostring(t)] = minetest.after(time - t, mc_teacher.display_restart_time, t)
+                end
+            end
+            reload = true
+        end
+        context.server_shutdown_timer = nil
+        mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_shutdown_now" and has_server_privs then
+        ------------------------
+        -- SHUTDOWN NOW POPUP --
+        ------------------------
+        if fields.confirm then
+            mc_teacher.cancel_shutdown()
+            mc_teacher.shutdown_server(true)
+        end
+        mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_hidden_delete" and has_server_privs then
+        ------------------
+        -- DELETE POPUP --
+        ------------------
+        if fields.confirm then
+            local realm = Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm]))
+            if not realm or realm:isDeleted() then
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom has already been deleted."))
+            elseif tonumber(context.realm_i_to_id[context.selected_realm]) == mc_worldManager.spawnRealmID then
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not delete the spawn classroom."))
+            else
+                realm:Delete()
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom will be deleted in 15 seconds."))
+            end
+        end
+        mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_hidden_deleteall" and has_server_privs then
+        ----------------------
+        -- DELETE ALL POPUP --
+        ----------------------
+        if fields.confirm then
+            local deletion_active = false
+            for _,id in pairs(context.realm_i_to_id) do
+                local realm = Realm.GetRealm(tonumber(id))
+                if realm and not realm:isDeleted() and tonumber(id) ~= mc_worldManager.spawnRealmID then
+                    realm:Delete()
+                    deletion_active = true
+                end
+            end
+            if deletion_active then
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Classrooms will begin being deleted in 15 seconds."))
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] No classrooms are available to delete."))
+            end
+        end
+        mc_teacher.show_controller_fs(player, context.tab)
     elseif formname == "mc_teacher:role_change_"..mc_teacher.ROLES.NONE or formname == "mc_teacher:role_change_"..mc_teacher.ROLES.STUDENT
     or (has_server_privs and (formname == "mc_teacher:role_change_"..mc_teacher.ROLES.TEACHER or formname == "mc_teacher:role_change_"..mc_teacher.ROLES.ADMIN)) then
+        -----------------------
+        -- ROLE CHANGE POPUP --
+        -----------------------
         if fields.confirm then
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
             for _,p in pairs(players_to_update) do
                 if p == pname then
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not change your own server role."))
-                end
-                local p_obj = minetest.get_player_by_name(p)
-                if not p_obj or not p_obj:is_player() then
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of player "..tostring(p).." (they are probably offline)."))
-                end
-                if formname == "mc_teacher:role_change_"..mc_teacher.ROLES.NONE then
-                    mc_worldManager.revokeUniversalPriv(p_obj, {"student", "teacher", "server"})
-                    mc_teacher.register_student(p)
-                elseif formname == "mc_teacher:role_change_"..mc_teacher.ROLES.STUDENT then
-                    mc_worldManager.grantUniversalPriv(p_obj, {"student"})
-                    mc_worldManager.revokeUniversalPriv(p_obj, {"teacher", "server"})
-                    mc_teacher.register_student(p)
-                elseif has_server_privs and formname == "mc_teacher:role_change_"..mc_teacher.ROLES.TEACHER then
-                    mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher"})
-                    mc_worldManager.revokeUniversalPriv(p_obj, {"server"})
-                    mc_teacher.register_teacher(p)
-                elseif has_server_privs and formname == "mc_teacher:role_change_"..mc_teacher.ROLES.ADMIN then
-                    mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher", "server"})
-                    mc_teacher.register_teacher(p)
                 else
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of player "..tostring(p).."."))
+                    local p_obj = minetest.get_player_by_name(p)
+                    if not p_obj or not p_obj:is_player() then
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of player "..tostring(p).." (they are probably offline)."))
+                    else
+                        if formname == "mc_teacher:role_change_"..mc_teacher.ROLES.NONE then
+                            mc_worldManager.revokeUniversalPriv(p_obj, {"student", "teacher", "server"})
+                            mc_teacher.register_student(p)
+                        elseif formname == "mc_teacher:role_change_"..mc_teacher.ROLES.STUDENT then
+                            mc_worldManager.grantUniversalPriv(p_obj, {"student"})
+                            mc_worldManager.revokeUniversalPriv(p_obj, {"teacher", "server"})
+                            mc_teacher.register_student(p)
+                        elseif has_server_privs and formname == "mc_teacher:role_change_"..mc_teacher.ROLES.TEACHER then
+                            mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher"})
+                            mc_worldManager.revokeUniversalPriv(p_obj, {"server"})
+                            mc_teacher.register_teacher(p)
+                        elseif has_server_privs and formname == "mc_teacher:role_change_"..mc_teacher.ROLES.ADMIN then
+                            mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher", "server"})
+                            mc_teacher.register_teacher(p)
+                        end
+
+                        local realm = Realm.GetRealmFromPlayer(p_obj)
+                        if realm then
+                            realm:ApplyPrivileges(p_obj)
+                        end
+                    end
                 end
             end
             minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server role changes applied!"))
         end
+        context.p_list = nil
         mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:whitelist" and has_server_privs then
+        ---------------------
+        -- WHITELIST POPUP --
+        ---------------------
+        local reload = false
+        if fields.whitelist then
+            local event = minetest.explode_textlist_event(fields.whitelist)
+            if event.type == "CHG" then
+                context.selected_ip_range = event.index
+            end
+        end
+
+        if fields.ip_add or fields.ip_remove then
+            if fields.ip_start and fields.ip_start ~= "" then
+                local add_cond = (fields.ip_remove == nil) or nil
+                if not fields.ip_end or fields.ip_end == "" then
+                    networking.modify_ipv4(player, fields.ip_start, nil, add_cond)
+                else
+                    local ips_ordered = networking.ipv4_compare(fields.ip_start, fields.ip_end)
+                    local start_ip = ips_ordered and fields.ip_start or fields.ip_end
+                    local end_ip = ips_ordered and fields.ip_end or fields.ip_start
+                    networking.modify_ipv4(player, start_ip, end_ip, add_cond)
+                end
+            end
+            reload = true
+        elseif fields.whitelist_show then
+            context.show_whitelist = true
+            reload = true
+        elseif fields.remove then
+            local ip_to_remove = context.ip_whitelist[tonumber(context.selected_ip_range)]
+            if ip_to_remove then
+                networking.modify_ipv4(player, ip_to_remove, nil, nil)
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This IP has already been removed from the whitelist."))
+            end
+            reload = true
+        elseif fields.toggle then
+            networking.toggle_whitelist(player)
+            reload = true
+        elseif fields.quit or fields.exit then
+            context.show_whitelist = nil
+            return mc_teacher.show_controller_fs(player, context.tab)
+        end
+
+        if reload then
+            if fields.ip_start then context.start_ip = minetest.formspec_escape(fields.ip_start) end
+            if fields.ip_end then context.end_ip = minetest.formspec_escape(fields.ip_end) end
+            mc_teacher.show_whitelist_popup(player)
+        end
+    elseif formname == "mc_teacher:edit_realm" then
+        ----------------------
+        -- REALM EDIT POPUP --
+        ----------------------
+        if fields.allowpriv_interact or fields.denypriv_interact or fields.ignorepriv_interact then
+            local change = fields.allowpriv_interact or fields.denypriv_interact or fields.ignorepriv_interact
+            context.edit_realm.privs.interact = (change == "false" and "nil") or (fields.allowpriv_interact and true) or (fields.ignorepriv_interact and "nil") or false
+            reload = true
+        end
+        if fields.allowpriv_shout or fields.denypriv_shout or fields.ignorepriv_shout then
+            local change = fields.allowpriv_shout or fields.denypriv_shout or fields.ignorepriv_shout
+            context.edit_realm.privs.shout = (change == "false" and "nil") or (fields.allowpriv_shout and true) or (fields.ignorepriv_shout and "nil") or false
+            reload = true
+        end
+        if fields.allowpriv_fast or fields.denypriv_fast or fields.ignorepriv_fast then
+            local change = fields.allowpriv_fast or fields.denypriv_fast or fields.ignorepriv_fast
+            context.edit_realm.privs.fast = (change == "false" and "nil") or (fields.allowpriv_fast and true) or (fields.ignorepriv_fast and "nil") or false
+            reload = true
+        end
+        if fields.allowpriv_fly or fields.denypriv_fly or fields.ignorepriv_fly then
+            local change = fields.allowpriv_fly or fields.denypriv_fly or fields.ignorepriv_fly
+            context.edit_realm.privs.fly = (change == "false" and "nil") or (fields.allowpriv_fly and true) or (fields.ignorepriv_fly and "nil") or false
+            reload = true
+        end
+        if fields.allowpriv_noclip or fields.denypriv_noclip or fields.ignorepriv_noclip then
+            local change = fields.allowpriv_noclip or fields.denypriv_noclip or fields.ignorepriv_noclip
+            context.edit_realm.privs.noclip = (change == "false" and "nil") or (fields.allowpriv_noclip and true) or (fields.ignorepriv_noclip and "nil") or false
+            reload = true
+        end
+        if fields.allowpriv_give or fields.denypriv_give or fields.ignorepriv_give then
+            local change = fields.allowpriv_give or fields.denypriv_give or fields.ignorepriv_give
+            context.edit_realm.privs.give = (change == "false" and "nil") or (fields.allowpriv_give and true) or (fields.ignorepriv_give and "nil") or false
+            reload = true
+        end
+
+        if fields.erealm_cat and fields.erealm_cat ~= context.edit_realm.type then
+            context.edit_realm.type = fields.erealm_cat
+        elseif fields.save_realm or fields.cancel or fields.quit then
+            if fields.save_realm then
+                local realm = Realm.GetRealm(context.edit_realm.id)
+                if realm then
+                    if realm:getCategory().key == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.SPAWN] and context.edit_realm.type ~= mc_teacher.R.CAT_KEY.SPAWN and tonumber(realm.ID) == tonumber(mc_worldManager.spawnRealmID) then
+                        context.edit_realm.name = fields.erealm_name
+                        return mc_teacher.show_confirm_popup(player, "spawn_type_change", {
+                            action = "Are you sure you want to change the current spawn classroom into a "..(context.edit_realm.type == mc_teacher.R.CAT_KEY.INSTANCED and "private" or "standard").." classroom?\nThis will generate a new spawn classroom.",
+                            button = "Save new type", cancel = "Keep current type",
+                        }, {x = 9.9, y = 3.8})
+                    else
+                        mc_teacher.save_realm(player, context, fields)
+                    end
+                else
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom could not be found, so no changes were made to it."))
+                end
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] No changes were made to the classroom."))
+            end
+
+            context.edit_realm = nil
+            return mc_teacher.show_controller_fs(player, context.tab)
+        end
+
+        if reload then
+            if fields.erealm_name then context.edit_realm.name = minetest.formspec_escape(fields.erealm_name) end
+            mc_teacher.show_edit_popup(player, context.edit_realm.id)
+        end
     elseif formname == "mc_teacher:controller_fs" then
         -------------
         -- GENERAL --
@@ -239,15 +488,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.mode and fields.mode ~= context.selected_mode then
             context.selected_mode = fields.mode
             -- digital twins are currently incompatible with instanced realms
-            if context.selected_mode == mc_teacher.MODES.TWIN and context.selected_realm_type == Realm.CAT_KEY.INSTANCED then
-                context.selected_realm_type = Realm.CAT_KEY.DEFAULT
+            if context.selected_mode == mc_teacher.MODES.TWIN and context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
+                context.selected_realm_type = mc_teacher.R.CAT_KEY.CLASSROOM
             end
             reload = true
         end
         if fields.realmcategory and fields.realmcategory ~= context.selected_realm_type then
             context.selected_realm_type = fields.realmcategory
             -- digital twins are currently incompatible with instanced realms
-            if context.selected_mode == mc_teacher.MODES.TWIN and context.selected_realm_type == Realm.CAT_KEY.INSTANCED then
+            if context.selected_mode == mc_teacher.MODES.TWIN and context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
                 context.selected_mode = mc_teacher.MODES.SCHEMATIC
             end
             reload = true
@@ -261,7 +510,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             context.selected_dem = fields.realterrain
             reload = true
         end
-        if fields.realm_generator and fields.realm_generator ~= context.realm_gen then
+        if fields.realm_generator and fields.realm_generator ~= context.realm_gen and fields.realm_generator ~= mc_teacher.R.GEN.DNR then
             context.realm_gen = fields.realm_generator
             reload = true
         end
@@ -270,7 +519,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
         end
         
-        if fields.requestrealm then
+        if fields.c_newrealm then
             if mc_core.checkPrivs(player,{teacher = true}) then
                 local realm_name = fields.realmname or context.realmname or ""
                 local new_realm
@@ -305,8 +554,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
                     end
 
-                    if context.selected_realm_type == Realm.CAT_KEY.INSTANCED then
-                        new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, nil, true, realm_size)
+                    if context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
+                        new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, nil, false, realm_size)
                     else
                         -- TODO: refactor realm.lua so that it can generate realms of non-block-aligned sizes
                         new_realm = Realm:New(realm_name, realm_size)
@@ -326,8 +575,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         if fields.realm_chill and fields.realm_chill ~= "" and tonumber(fields.realm_chill) then
                             table.insert(param_table, fields.realm_chill)
                         end
-                        if fields.realm_biome and fields.realm_biome ~= "" then
-                            table.insert(param_table, fields.realm_biome)
+                        if context.realm_biome and context.i_to_biome then
+                            table.insert(param_table, context.i_to_biome[context.realm_biome])
                         end
                         new_realm:GenerateTerrain(rgi.seed, rgi.sea_level, rgi.height_func, rgi.dec_func, param_table)
                     end
@@ -345,8 +594,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
                     end
 
-                    if context.selected_realm_type == Realm.CAT_KEY.INSTANCED then
-                        new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, context.selected_schematic, true)
+                    if context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
+                        new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, context.selected_schematic, false)
                     else
                         new_realm = Realm:NewFromSchematic(realm_name, context.selected_schematic)
                     end
@@ -368,43 +617,76 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
 
                 new_realm:set_data("owner", player:get_player_name())
-                new_realm:setCategoryKey(Realm.CAT_MAP[context.selected_realm_type or "1"])
+                if context.selected_realm_type == mc_teacher.R.CAT_KEY.SPAWN then
+                    mc_worldManager.SetSpawnRealm(new_realm)
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server spawn classroom updated!"))
+                else
+                    new_realm:setCategoryKey(mc_teacher.R.CAT_MAP[context.selected_realm_type or mc_teacher.R.CAT_KEY.CLASSROOM])
+                end
                 new_realm:UpdateRealmPrivilege(context.selected_privs)
                 minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your requested classroom was successfully created."))
                 reload = true
             end
         end
 
-        if fields.classroomlist then
-            local event = minetest.explode_textlist_event(fields.classroomlist)
-            if event.type == "CHG" and mc_core.checkPrivs(player,{teacher = true}) then
-                -- We should not use the index here because the realm could be deleted while the formspec is active
-                -- So return the actual realm.ID to avoid unexpected behaviour
-                local counter = 0
-                for _,thisRealm in pairs(Realm.realmDict) do
-                    counter = counter + 1
-                    if counter == tonumber(event.index) then
-                        context.selected_realm_id = thisRealm.ID
-                    end
-                end
-                reload = true
-            end
-        elseif fields.teleportrealm then
-            -- Still a remote possibility that the realm is deleted in the time that the callback is executed
-            -- So always check that the requested realm exists and the realm category allows the player to join
-            -- Check that the player selected something from the textlist, otherwise default to spawn realm
-            if not context.selected_realm_id then context.selected_realm_id = mc_worldManager.spawnRealmID end
-            local realm = Realm.GetRealm(context.selected_realm_id)
-            if realm then
-                realm:TeleportPlayer(player)
-                context.selected_realm_id = nil
+        if fields.c_hidden_delete then
+            local realm = Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm]))
+            if not realm then
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom has already been deleted."))
+            elseif realm:isDeleted() then
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom is currently being deleted."))
+            elseif tonumber(context.realm_i_to_id[context.selected_realm]) == mc_worldManager.spawnRealmID then
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not delete the spawn classroom."))
             else
-                minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available. Return to the Classroom tab on your dashboard to view the current list of available classrooms."))
+                return mc_teacher.show_confirm_popup(player, "confirm_hidden_delete", {
+                    action = "Are you sure you want to delete this classroom?\nClassroom deletion is irreversible, may take a while to complete, and can cause the server to become unresponsive.",
+                    button = "Delete"
+                }, {x = 9.2, y = 4.3})
+            end
+        elseif fields.c_hidden_deleteall then
+            local deletion_active = false
+            for _,id in pairs(context.realm_i_to_id) do
+                local realm = Realm.GetRealm(tonumber(id))
+                if realm and not realm:isDeleted() and tonumber(id) ~= mc_worldManager.spawnRealmID then
+                    deletion_active = true
+                    break
+                end
+            end
+            if deletion_active then
+                return mc_teacher.show_confirm_popup(player, "confirm_hidden_deleteall", {
+                    action = "Are you sure you want to delete all of these classrooms?\nClassroom deletion is irreversible, may take a while to complete, and can cause the server to become unresponsive.",
+                    button = "Delete all"
+                }, {x = 9, y = 4.3})
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] No classrooms are available to delete."))
             end
             reload = true
-        elseif fields.deleterealm then
-            local realm = Realm.GetRealm(tonumber(context.selected_realm_id))
-            if realm and tonumber(context.selected_realm_id) ~= mc_worldManager.spawnRealmID then realm:Delete() end
+        elseif fields.c_edit then
+            if not context.selected_realm then context.selected_realm = 1 end
+            if context.realm_i_to_id[context.selected_realm] and Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm])) then
+                return mc_teacher.show_edit_popup(player, context.realm_i_to_id[context.selected_realm])
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available."))
+            end
+        elseif fields.c_hide or fields.c_hidden_restore then
+            local realm = Realm.GetRealm(tonumber(context.realm_i_to_id[context.selected_realm]))
+            if realm then
+                if tonumber(context.realm_i_to_id[context.selected_realm]) == mc_worldManager.spawnRealmID then
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not hide the spawn classroom."))
+                else
+                    Realm.ScanForPlayerRealms()
+                    if fields.c_hide and realm:GetPlayerCount() > 0 then
+                        return mc_teacher.show_confirm_popup(player, "confirm_hide_occupied", {
+                            action = "There are currently players in this classroom. Are you sure you want to hide it?\nAny players inside the classroom will be teleported to the server spawn if it gets hidden.",
+                            button = "Hide classroom"
+                        }, {x = 9, y = 4.3})
+                    else
+                        realm:setHidden(fields.c_hide and true)
+                    end
+                end
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available."))
+            end
             reload = true
         end
 
@@ -423,29 +705,37 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             context.realm_biome = fields.realm_biome
         end
 
-        --  CLASSROOMS + PLAYERS
+        ---------------------------
+        --  CLASSROOMS + PLAYERS --
+        ---------------------------
         if fields.allowpriv_interact or fields.denypriv_interact or fields.ignorepriv_interact then
-            context.selected_privs.interact = (fields.allowpriv_interact and true) or (fields.ignorepriv_interact and "nil") or false
+            local change = fields.allowpriv_interact or fields.denypriv_interact or fields.ignorepriv_interact
+            context.selected_privs.interact = (change == "false" and "nil") or (fields.allowpriv_interact and true) or (fields.ignorepriv_interact and "nil") or false
             reload = true
         end
         if fields.allowpriv_shout or fields.denypriv_shout or fields.ignorepriv_shout then
-            context.selected_privs.shout = (fields.allowpriv_shout and true) or (fields.ignorepriv_shout and "nil") or false
+            local change = fields.allowpriv_shout or fields.denypriv_shout or fields.ignorepriv_shout
+            context.selected_privs.shout = (change == "false" and "nil") or (fields.allowpriv_shout and true) or (fields.ignorepriv_shout and "nil") or false
             reload = true
         end
         if fields.allowpriv_fast or fields.denypriv_fast or fields.ignorepriv_fast then
-            context.selected_privs.fast = (fields.allowpriv_fast and true) or (fields.ignorepriv_fast and "nil") or false
+            local change = fields.allowpriv_fast or fields.denypriv_fast or fields.ignorepriv_fast
+            context.selected_privs.fast = (change == "false" and "nil") or (fields.allowpriv_fast and true) or (fields.ignorepriv_fast and "nil") or false
             reload = true
         end
         if fields.allowpriv_fly or fields.denypriv_fly or fields.ignorepriv_fly then
-            context.selected_privs.fly = (fields.allowpriv_fly and true) or (fields.ignorepriv_fly and "nil") or false
+            local change = fields.allowpriv_fly or fields.denypriv_fly or fields.ignorepriv_fly
+            context.selected_privs.fly = (change == "false" and "nil") or (fields.allowpriv_fly and true) or (fields.ignorepriv_fly and "nil") or false
             reload = true
         end
         if fields.allowpriv_noclip or fields.denypriv_noclip or fields.ignorepriv_noclip then
-            context.selected_privs.noclip = (fields.allowpriv_noclip and true) or (fields.ignorepriv_noclip and "nil") or false
+            local change = fields.allowpriv_noclip or fields.denypriv_noclip or fields.ignorepriv_noclip
+            context.selected_privs.noclip = (change == "false" and "nil") or (fields.allowpriv_noclip and true) or (fields.ignorepriv_noclip and "nil") or false
             reload = true
         end
         if fields.allowpriv_give or fields.denypriv_give or fields.ignorepriv_give then
-            context.selected_privs.give = (fields.allowpriv_give and true) or (fields.ignorepriv_give and "nil") or false
+            local change = fields.allowpriv_give or fields.denypriv_give or fields.ignorepriv_give
+            context.selected_privs.give = (change == "false" and "nil") or (fields.allowpriv_give and true) or (fields.ignorepriv_give and "nil") or false
             reload = true
         end
 
@@ -455,6 +745,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.p_list_header and context.selected_p_tab ~= fields.p_list_header then
             context.selected_p_tab = fields.p_list_header
             context.selected_p_player = 1
+            context.selected_privs = nil
             context.p_list = nil
             reload = true
         end
@@ -462,96 +753,107 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             local event = minetest.explode_table_event(fields.p_list)
             if event.type == "CHG" and context.selected_p_player ~= event.row then
                 context.selected_p_player = tonumber(event.row)
+                context.selected_privs = nil
                 reload = true
             end
         end
         if fields.p_mode_selected then
             context.selected_p_mode = mc_teacher.PMODE.SELECTED
+            context.p_list = nil
             reload = true
         elseif fields.p_mode_tab then
             context.selected_p_mode = mc_teacher.PMODE.TAB
+            context.p_list = nil
             reload = true
         elseif fields.p_mode_all then
             context.selected_p_mode = mc_teacher.PMODE.ALL
+            context.p_list = nil
             reload = true
         end
 
         if fields.p_priv_update or fields.p_priv_reset then
-            local players_to_update = get_players_to_update(player, context)
+            local players_to_update = get_players_to_update(player, context, true)
             local realm = Realm.GetRealmFromPlayer(player)
             if realm and #players_to_update > 0 then
-                realm.PermissionsOverride = realm.PermissionsOverride or {}
                 for _,p in pairs(players_to_update) do
-                    if fields.p_priv_update then
-                        realm.PermissionsOverride[p] = realm.PermissionsOverride[p] or {}
-                        for priv, v in pairs(context.selected_privs) do
-                            if v ~= "nil" then
-                                realm.PermissionsOverride[p][priv] = v
-                            else
-                                realm.PermissionsOverride[p][priv] = nil
-                            end
-                        end
+                    if fields.p_priv_reset then
+                        realm:ClearRealmPrivilegeOverride(p)
                     else
-                        realm.PermissionsOverride[p] = nil
+                        realm:UpdateRealmPrivilegeOverride(context.selected_privs or {}, p)
                     end
                     local p_obj = minetest.get_player_by_name(p)
                     if p_obj and p_obj:is_player() then
                         realm:ApplyPrivileges(p_obj)
                     end
                 end
+                if fields.p_priv_reset then
+                    context.selected_privs = nil
+                end
             end
             minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player privileges updated!"))
+            context.p_list = nil
             reload = true
         elseif fields.p_kick then
+            -- TODO: add custom kick message to popup
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
-            for _,p in pairs(players_to_update) do
-                if p ~= pname then
-                    local success = minetest.kick_player(p)
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Successfully kicked player "..(success and p.." from the server." or "Could not kick "..p.." from the server.")))
-                else
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not kick yourself from the server."))
-                end
+            if #players_to_update <= 0 then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
+            elseif #players_to_update == 1 and players_to_update[1] == pname then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not kick yourself from the server."))
+            else
+                return mc_teacher.show_kick_popup(player, #players_to_update)
             end
         elseif fields.p_ban then
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
-            for _,p in pairs(players_to_update) do
-                if p ~= pname then
-                    local success = minetest.ban_player(p)
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Successfully banned player "..(success and p.." from the server." or "Could not ban "..p.." from the server.")))
-                else
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not ban yourself from the server."))
-                end
+            if #players_to_update <= 0 then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
+            elseif #players_to_update == 1 and players_to_update[1] == pname then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not ban yourself from the server."))
+            else
+                local p_count_string = (#players_to_update == 1 and "this player" or "these "..tostring(#players_to_update).." players")
+                return mc_teacher.show_confirm_popup(player, "confirm_player_ban", {
+                    action = "Are you sure you want to ban "..p_count_string.." from the server?\nThis can only be undone by a server administrator.",
+                    button = "Ban player"..(#players_to_update == 1 and "" or "s")
+                }, {y = 3.8})
             end
         elseif fields.p_teleport then
             local pname = player:get_player_name()
             local sel_pname = context.p_list[context.selected_p_player]
             local sel_pobj = minetest.get_player_by_name(sel_pname or "")
             if sel_pname and sel_pobj then
-                local destination = sel_pobj:get_pos()
-                local realm = Realm.GetRealmFromPlayer(sel_pobj)
-                if realm and realm:getCategory().joinable(realm, player) then
-                    realm:TeleportPlayer(player)
-                    player:set_pos(destination)
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Teleported to player "..tostring(sel_pname).."!"))
+                if not mc_core.is_frozen(player) then
+                    local destination = sel_pobj:get_pos()
+                    local realm = Realm.GetRealmFromPlayer(sel_pobj)
+                    if realm and not realm:isDeleted() and realm:getCategory().joinable(realm, player) then
+                        realm:TeleportPlayer(player)
+                        player:set_pos(destination)
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Teleported to player "..tostring(sel_pname).."!"))
+                    else
+                        minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport to player "..tostring(sel_pname).."."))
+                    end
                 else
-                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not teleport to player "..tostring(sel_pname).."."))
+                    minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not move while frozen."))
                 end
             else
                 minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not find the selected player!"))
             end
+            context.p_list = nil
             reload = true
         elseif fields.p_bring then
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
             local destination = player:get_pos()
             local destRealm = Realm.GetRealmFromPlayer(player)
-            if destRealm then
-                for _,p in pairs(players_to_update) do
+            if destRealm and not destRealm:isDeleted() then
+                if #players_to_update <= 0 then
+                    minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
+                end
+                for _, p in pairs(players_to_update) do
                     local p_obj = minetest.get_player_by_name(p)
-                    if p_obj and destRealm:getCategory().joinable(destRealm, player) then
-                        destRealm:TeleportPlayer(p_obj)
+                    if p_obj and destRealm:getCategory().joinable(destRealm, player) (not destRealm:isHidden() or mc_core.checkPrivs(p_obj, {teacher = true})) then
+                        mc_core.temp_unfreeze_and_run(p_obj, destRealm.TeleportPlayer, destRealm, player)
                         p_obj:set_pos(destination)
                     else
                         minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player "..tostring(p).." does not have access to your current classroom. Please check your current classroom's category and try again."))
@@ -560,9 +862,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             else
                 minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your current classroom could not be found! Please ask a server administrator to check that this classroom exists."))
             end
+            context.p_list = nil
+            reload = true
         elseif fields.p_mute or fields.p_unmute then
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
+            if #players_to_update <= 0 then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
+            end
             for _,p in pairs(players_to_update) do
                 if p ~= pname then
                     local p_obj = minetest.get_player_by_name(p)
@@ -581,18 +888,22 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_mute and "" or "un").."mute yourself."))
                 end
             end
+            context.p_list = nil
             reload = true
         elseif fields.p_freeze or fields.p_unfreeze then
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
+            if #players_to_update <= 0 then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
+            end
             for _,p in pairs(players_to_update) do
                 if p ~= pname then
                     local p_obj = minetest.get_player_by_name(p)
                     if p_obj then
                         if fields.p_freeze then
-                            -- TODO: freeze
+                            mc_core.freeze(p_obj)
                         else
-                            -- TODO: unfreeze
+                            mc_core.unfreeze(p_obj)
                         end
                     else
                         minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not "..(fields.p_freeze and "" or "un").."freeze player "..tostring(p).." (they are probably offline)."))
@@ -601,15 +912,19 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_freeze and "" or "un").."freeze yourself."))
                 end
             end
+            context.p_list = nil
             reload = true
         elseif fields.p_deactivate or fields.p_reactivate then
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
+            if #players_to_update <= 0 then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
+            end
             for _,p in pairs(players_to_update) do
                 if p ~= pname then
                     local p_obj = minetest.get_player_by_name(p)
                     if p_obj then
-                        if fields.p_mute then
+                        if fields.p_deactivate then
                             mc_worldManager.denyUniversalPriv(p_obj, {"interact"})
                         else
                             mc_worldManager.grantUniversalPriv(p_obj, {"interact"})
@@ -623,6 +938,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not "..(fields.p_deactivate and "de" or "re").."activate yourself."))
                 end
             end
+            context.p_list = nil
             reload = true
         elseif fields.p_role_none or fields.p_role_student then
             local players_to_update = get_players_to_update(player, context)
@@ -650,7 +966,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 local role_string = fields.p_role_admin and mc_teacher.ROLES.ADMIN or mc_teacher.ROLES.TEACHER
                 return mc_teacher.show_confirm_popup(player, "role_change_"..role_string,
                     {action = "Are you sure you want "..p_count_string.." to be "..pluralize(#players_to_update, role_string).."?\nThis will give them access to tools which can be used to modify the server."},
-                    {y = 4.2}
+                    {y = 4.3}
                 )
             end
         end
@@ -785,13 +1101,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         -- SERVER (ADDITIONAL PRIVS REQUIRED) --
         ----------------------------------------
         if has_server_privs then
-            if fields.server_whitelist then
-                local event = minetest.explode_textlist_event(fields.server_whitelist)
-                if event.type == "CHG" then
-                    context.selected_ip_range = event.index
-                end
+            if fields.server_dyn_header and context.selected_s_tab ~= fields.server_dyn_header then
+                context.selected_s_tab = fields.server_dyn_header
+                reload = true
             end
-                
+
             if fields.server_send_students or fields.server_send_teachers or fields.server_send_admins or fields.server_send_all then
                 if fields.server_message ~= "" then
                     local message_map = {
@@ -843,53 +1157,40 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] The scheduled server restart has been cancelled."))
                 reload = true
             elseif fields.server_shutdown_schedule then
-                mc_teacher.cancel_shutdown()
-                local warn = {600, 540, 480, 420, 360, 300, 240, 180, 120, 60, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 4, 3, 2, 1}
-                local time = mc_teacher.T_INDEX[fields.server_shutdown_timer].t
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server restart successfully scheduled!"))
-                minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] The server will be restarting in "..fields.server_shutdown_timer..". Classrooms will be saved prior to the restart."))
-                mc_teacher.restart_scheduled.timer = minetest.after(time, mc_teacher.shutdown_server, true)
-                for _,t in pairs(warn) do
-                    if time >= t then
-                        mc_teacher.restart_scheduled["warn"..tostring(t)] = minetest.after(time - t, mc_teacher.display_restart_time, t)
-                    end
-                end
-                reload = true
+                -- TODO: make popup
+                context.server_shutdown_timer = fields.server_shutdown_timer
+                return mc_teacher.show_confirm_popup(player, "confirm_shutdown_schedule", {
+                    action = "Are you sure you want to schedule a server shutdown in "..context.server_shutdown_timer.." from now?\nClassrooms will be saved prior to the shutdown.",
+                    button = "Schedule"
+                }, {x = 9.2, y = 3.9})
             elseif fields.server_shutdown_now then
-                mc_teacher.cancel_shutdown()
-                mc_teacher.shutdown_server(true)
-            elseif fields.server_ip_add or fields.server_ip_remove then
-                if fields.server_ip_start and fields.server_ip_start ~= "" then
-                    local add_cond = (fields.server_ip_remove == nil) or nil
-                    if not fields.server_ip_end or fields.server_ip_end == "" then
-                        networking.modify_ipv4(player, fields.server_ip_start, nil, add_cond)
+                -- TODO: make popup
+                return mc_teacher.show_confirm_popup(player, "confirm_shutdown_now", {
+                    action = "Are you sure you want to perform a server shutdown right now?\nClassrooms will be saved prior to the shutdown."
+                }, {x = 9.2, y = 3.5})
+            elseif fields.server_dyn then
+                local event = minetest.explode_textlist_event(fields.server_dyn)
+                if event.type == "CHG" then
+                    context.selected_s_dyn = event.index
+                end
+                reload = true
+            elseif fields.unban then
+                context.selected_s_dyn = context.selected_s_dyn or 1
+                local bans = mc_core.split(ban_string, ",")
+                if bans[context.selected_s_dyn] then
+                    local ban_split = mc_core.split(bans[context.selected_s_dyn], "|")
+                    if ban_split and ban_split[1] then
+                        minetest.unban_player_or_ip(ban_split[1])
+                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player unbanned!"))
                     else
-                        local ips_ordered = networking.ipv4_compare(fields.server_ip_start, fields.server_ip_end)
-                        local start_ip = ips_ordered and fields.server_ip_start or fields.server_ip_end
-                        local end_ip = ips_ordered and fields.server_ip_end or fields.server_ip_start
-                        networking.modify_ipv4(player, start_ip, end_ip, add_cond)
+                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player could not be unbanned. Please unban this player by using the /unban command instead."))
                     end
+                else
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player could not be unbanned."))
                 end
                 reload = true
-            elseif fields.server_whitelist_remove then
-                local ipv4_whitelist = minetest.deserialize(networking.storage:get_string("ipv4_whitelist"))
-                local ip_whitelist = {}
-                for ipv4,_ in pairs(ipv4_whitelist or {}) do
-                    table.insert(ip_whitelist, ipv4)
-                end
-                table.sort(ip_whitelist, networking.ipv4_compare)
-
-                local ip_to_remove = ip_whitelist[tonumber(context.selected_ip_range)]
-                if ip_to_remove then
-                    ipv4_whitelist[ip_to_remove] = nil
-                    networking.storage:set_string("ipv4_whitelist", minetest.serialize(ipv4_whitelist))
-                end
-                reload = true
-            elseif fields.server_whitelist_toggle then
-                networking.toggle_whitelist(player)
-                reload = true
-            elseif fields.server_ban_manager then
-                return mc_teacher.show_ban_popup(player)
+            elseif fields.server_whitelist then
+                return mc_teacher.show_whitelist_popup(player)
             end
             
             -- SERVER + OVERVIEW
@@ -898,9 +1199,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         end
 
-        -- GENERAL: RELOAD
-        if reload then
-            -- classroom
+        -------------
+        -- GENERAL --
+        -------------
+        if fields.exit or fields.quit then
+            if context.selected_privs_mode == mc_teacher.TABS.PLAYERS then
+                context.selected_privs = nil
+            end
+            context.tab = nil
+        elseif reload then
+            -- CLASSROOM --
             if fields.realmname then context.realmname = minetest.formspec_escape(fields.realmname) end
             if fields.realm_x_size then context.realm_x = fields.realm_x_size end
             if fields.realm_y_size then context.realm_y = fields.realm_y_size end
@@ -908,26 +1216,24 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if fields.realm_seed then context.realm_seed = fields.realm_seed end
             if fields.realm_sealevel then context.realm_sealevel = fields.realm_sealevel end
             if fields.realm_chill then context.realm_chill = fields.realm_chill end
-            -- moderation + reports
+            -- MODERATION --
             if fields.mod_message then context.mod_message = minetest.formspec_escape(fields.mod_message) end
+            -- REPORTS --
             if fields.report_message then context.report_message = minetest.formspec_escape(fields.report_message) end
-            -- server
+            -- SERVER --
             if fields.server_message then context.server_message = minetest.formspec_escape(fields.server_message) end
             if fields.server_message_type then context.server_message_type = fields.server_message_type end
-            if fields.server_ip_start then context.start_ip = minetest.formspec_escape(fields.server_ip_start) end
-            if fields.server_ip_end then context.end_ip = minetest.formspec_escape(fields.server_ip_end) end
             if fields.server_shutdown_timer then
                 context.time_index = mc_teacher.T_INDEX[fields.server_shutdown_timer] and mc_teacher.T_INDEX[fields.server_shutdown_timer].i
             end
-            -- reload
             mc_teacher.show_controller_fs(player, context.tab)
         end
     end
 end)
 
-----------------------------------------------------
--- MAP (common to both mc_teacher and mc_student) --
-----------------------------------------------------
+----------------------------------------
+-- COMMON (mc_teacher and mc_student) --
+----------------------------------------
 minetest.register_on_player_receive_fields(function(player, formname, fields)
     local pmeta = player:get_meta()
     local context
@@ -946,9 +1252,53 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     local reload = false
 
     if formname == "mc_student:notebook_fs" or formname == "mc_teacher:controller_fs" then
-        if fields.record and fields.note ~= "" then
-            mc_core.record_coordinates(player, fields.note)
+        ----------------
+        -- CLASSROOMS --
+        ----------------
+        if fields.c_list_header and context.selected_c_tab ~= fields.c_list_header then
+            context.selected_c_tab = fields.c_list_header
+            context.selected_realm = 1
             reload = true
+        end
+        if fields.classroomlist then
+            local event = minetest.explode_textlist_event(fields.classroomlist)
+            if event.type == "CHG" then
+                context.selected_realm = tonumber(event.index)
+                if not Realm.GetRealm(context.realm_i_to_id[context.selected_realm]) then
+                    context.selected_realm = 1
+                end
+                reload = true
+            end
+        elseif fields.c_teleport then
+            -- Still a remote possibility that the realm is deleted in the time that the callback is executed
+            -- So always check that the requested realm exists and the realm category allows the player to join
+            -- Check that the player selected something from the textlist, otherwise default to spawn realm
+            if not context.selected_realm then context.selected_realm = 1 end
+            local realm = Realm.GetRealm(context.realm_i_to_id[context.selected_realm])
+            if realm and not realm:isDeleted() and (not realm:isHidden() or mc_core.checkPrivs(player, {teacher = true})) then
+                if not mc_core.is_frozen(player) then
+                    realm:TeleportPlayer(player)
+                    context.selected_realm = 1
+                else
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not move while frozen."))
+                end
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you requested is no longer available."))
+            end
+            reload = true
+        end
+
+        ---------
+        -- MAP --
+        ---------
+        if fields.record and fields.note then
+            local clean_note = mc_core.trim(string.gsub(fields.note, "\n+", " "))
+            if clean_note ~= "" then 
+                mc_core.record_coordinates(player, clean_note)
+                reload = true
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not record a location without a note."))
+            end
         elseif fields.coordlist then
             local event = minetest.explode_textlist_event(fields.coordlist)
             if event.type == "CHG" then
@@ -972,26 +1322,30 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You do not have sufficient privileges to mark coordinates."))
             end
         elseif fields.go then
-            local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
-            if pdata and pdata.note_map then
-                if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
-                    context.selected_coord = 1
-                end
-                local note_name = context.coord_i_to_note[context.selected_coord]
-                local note_i = pdata.note_map[note_name]
-                local realm = Realm.GetRealm(pdata.realms[note_i])
-                if realm then
-                    if realm:getCategory().joinable(realm, player) then
-                        realm:TeleportPlayer(player)
-                        player:set_pos(pdata.coords[note_i])
+            if not mc_core.is_frozen(player) then
+                local pdata = minetest.deserialize(pmeta:get_string("coordinates"))
+                if pdata and pdata.note_map then
+                    if not context.selected_coord or not context.coord_i_to_note[context.selected_coord] then
+                        context.selected_coord = 1
+                    end
+                    local note_name = context.coord_i_to_note[context.selected_coord]
+                    local note_i = pdata.note_map[note_name]
+                    local realm = Realm.GetRealm(pdata.realms[note_i])
+                    if realm then
+                        if realm:getCategory().joinable(realm, player) and (not destRealm:isHidden() or mc_core.checkPrivs(player, {teacher = true})) then
+                            realm:TeleportPlayer(player)
+                            player:set_pos(pdata.coords[note_i])
+                        else
+                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You no longer have access to this classroom."))
+                        end
                     else
-                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You no longer have access to this classroom."))
+                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom no longer exists."))
                     end
                 else
-                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom no longer exists."))
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected coordinate not found! Please report this issue to a server administrator."))
                 end
             else
-                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected coordinate not found! Please report this issue to a server administrator."))
+                minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not move while frozen."))
             end
             reload = true
         elseif fields.go_all then
@@ -1005,10 +1359,14 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 local realm = Realm.GetRealm(pdata.realms[note_i])
                 if realm then
                     for _,p_obj in pairs(minetest.get_connected_players()) do
-                        local p_realm = Realm.GetRealmFromPlayer(p_obj)
-                        if p_realm and p_realm.ID == tonumber(pdata.realms[note_i]) and realm:getCategory().joinable(realm, p_obj) then
-                            realm:TeleportPlayer(p_obj)
-                            p_obj:set_pos(pdata.coords[note_i])
+                        if p_obj:get_player_name() ~= player:get_player_name() or not mc_core.is_frozen(p_obj) then
+                            local p_realm = Realm.GetRealmFromPlayer(p_obj)
+                            if p_realm and p_realm.ID == tonumber(pdata.realms[note_i]) and realm:getCategory().joinable(realm, p_obj) and (not destRealm:isHidden() or mc_core.checkPrivs(player, {teacher = true})) then
+                                realm:TeleportPlayer(p_obj)
+                                p_obj:set_pos(pdata.coords[note_i])
+                            end
+                        else
+                            minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not move while frozen."))
                         end
                     end
                 else
@@ -1111,11 +1469,66 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             mc_worldManager.RemoveHud(player)
         end
 
+        -------------
+        -- REPORTS --
+        -------------
+        if fields.submit_report then
+			if not fields.report_body or fields.report_body == "" then
+				return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please add a message to your report."))
+			end
+
+			local pname = player:get_player_name() or "unknown"
+			local pos = player:get_pos() or {x = 0, y = 0, z = 0}
+			local realm = Realm.GetRealmFromPlayer(player) or {Name = "Unknown", ID = 0}
+			local clean_report = minetest.formspec_escape(fields.report_body)
+			local report_type = fields.report_type or "Other"
+			local timestamp = tostring(os.date("%Y-%m-%d %H:%M:%S"))
+
+			if next(mc_teacher.teachers) ~= nil then
+				local details = "  DETAILS: "
+				if realm.ID ~= 0 then
+					local loc = {
+						x = tostring(math.round(pos.x - realm.StartPos.x)),
+						y = tostring(math.round(pos.y - realm.StartPos.y)),
+						z = tostring(math.round(pos.z - realm.StartPos.z)),
+					}
+					details = details.."Realm #"..realm.ID.." ("..realm.Name..") at position (x="..loc.x..", y="..loc.y..", z="..loc.z..")"
+				else
+					details = details.."Unknown realm at position (x="..pos.x..", y="..pos.y..", z="..pos.z..")"
+				end
+				for teacher,_ in pairs(mc_teacher.teachers) do
+					minetest.chat_send_player(teacher, minetest.colorize(mc_core.col.log, table.concat({
+						"[Minetest Classroom] NEW REPORT: ", timestamp, " by ", pname, "\n",
+						"  ", string.upper(report_type), ": ", fields.report_body, "\n", details,
+					})))
+				end
+			else
+				local report_reminder = mc_teacher.meta:get_int("report_reminder")
+				report_reminder = report_reminder + 1
+				mc_teacher.meta:set_int("report_reminder", report_reminder)
+			end
+
+			local reports = minetest.deserialize(mc_teacher.meta:get_string("report_log")) or {}
+			table.insert(reports, {
+				player = pname,
+				timestamp = timestamp,
+				pos = pos,
+				realm = realm.ID,
+				message = clean_report,
+				type = report_type
+			})
+			mc_teacher.meta:set_string("report_log", minetest.serialize(reports))
+
+			chatlog.write_log(pname, "[REPORT] " .. clean_report)
+			minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your report has been received."))
+            reload = true
+		end
+
         if reload == true then
             if formname == "mc_student:notebook_fs" then
-                mc_student.show_notebook_fs(player, mc_student.TABS.MAP)
+                mc_student.show_notebook_fs(player, context.tab)
             elseif formname == "mc_teacher:controller_fs" then
-                mc_teacher.show_controller_fs(player, mc_teacher.TABS.MAP)
+                mc_teacher.show_controller_fs(player, context.tab)
             end
         end
     end
