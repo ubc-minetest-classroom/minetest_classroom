@@ -2,11 +2,11 @@ local function getDescription(instanced, temp, realmID, name, schematic)
     local descriptionString = "Teleporter Node "
 
     if (instanced == true) then
-        descriptionString = descriptionString .. "[Instanced] "
+        descriptionString = descriptionString .. "[PRIVATE] "
     end
 
     if (temp == true) then
-        descriptionString = descriptionString .. "[Temp] "
+        descriptionString = descriptionString .. "[TEMP] "
     end
 
     if (schematic ~= nil and schematic ~= "") then
@@ -14,7 +14,7 @@ local function getDescription(instanced, temp, realmID, name, schematic)
     end
 
     if (instanced == false and realmID == 0) then
-        descriptionString = descriptionString .. "(Spawn)"
+        descriptionString = descriptionString .. "[SPAWN]"
     elseif (name ~= nil and name ~= "") then
         descriptionString = descriptionString .. "(" .. name .. ")"
     else
@@ -30,7 +30,7 @@ local function getDescription(instanced, temp, realmID, name, schematic)
 end
 
 minetest.register_node("mc_worldmanager:teleporter", {
-    description = "Teleporter Node (Spawn)",
+    description = "Teleporter Node [SPAWN]",
     tiles = { { name = "mc_worldmanager_teleporter.png", color = "white" } },
     overlay_tiles = { { name = "mc_worldmanager_teleporter_crystal.png" } },
     palette = "mc_worldmanager_palette.png",

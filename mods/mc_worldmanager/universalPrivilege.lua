@@ -20,16 +20,27 @@ function mc_worldManager.grantUniversalPriv(player, privs)
 end
 
 -- Revokes a universal privilege from a player
-function mc_worldManager.revokeUniversalPriv(player, privs)
+-- If overwrite_denied_privs is true, denied privs will be overwritten
+function mc_worldManager.revokeUniversalPriv(player, privs, overwrite_denied_privs)
     local pmeta = player:get_meta()
     local playerPrivileges = minetest.deserialize(pmeta:get_string("universalPrivs")) or {}
 
     for index, privilege in pairs(privs) do
         if (privilege == "all") then
-            playerPrivileges = {}
+            if overwrite_denied_privs then
+                playerPrivileges = {}
+            else
+                for k, v in pairs(playerPrivileges) do
+                    if playerPrivileges[k] ~= false then
+                        playerPrivileges[k] = nil
+                    end
+                end
+            end
             break
         else
-            playerPrivileges[privilege] = nil
+            if playerPrivileges[privilege] ~= false or overwrite_denied_privs then
+                playerPrivileges[privilege] = nil
+            end
         end
     end
 

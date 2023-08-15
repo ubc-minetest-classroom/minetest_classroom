@@ -116,7 +116,7 @@ function Realm.GetRealmFromPlayer(player)
     local pmeta = player:get_meta()
     local playerRealmID = pmeta:get_int("realm")
 
-    local realm = Realm.realmDict[playerRealmID]
+    local realm = Realm.GetRealm(playerRealmID)
     return realm
 end
 
@@ -130,7 +130,7 @@ end
 function Realm:GetPlayersAsArray()
     local players = self:GetPlayers()
     local retval = {}
-    for k, v in pairs(players) do
+    for k, v in pairs(players or {}) do
         if (v == true) then
             table.insert(retval, k)
         end

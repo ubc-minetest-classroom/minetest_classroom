@@ -1,6 +1,4 @@
 Realm.categories = {}
-Realm.CAT_KEY = {DEFAULT = "1", SPAWN = "2", CLASSROOM = "3", INSTANCED = "4"}
-Realm.CAT_MAP = {["1"] = "default", ["2"] = "spawn", ["3"] = "classroom", ["4"] = "instanced"}
 
 ---@public
 ---RegisterCategory
@@ -135,6 +133,8 @@ Realm.RegisterCategory({
             return true, "You are a student in this realm."
         elseif (realm:get_data("owner")[player:get_player_name()] ~= nil) then
             return true, "You are an owner of this realm."
+        elseif (minetest.check_player_privs(player, { teacher = true })) then
+            return true, "All realms are joinable by teachers."
         else
             return false, "You are not a student in this realm."
         end
@@ -163,6 +163,8 @@ Realm.RegisterCategory({
 
         if (realm:get_data("owner")[player:get_player_name()] ~= nil) then
             return true, "You are an owner of this realm."
+        elseif (minetest.check_player_privs(player, { teacher = true })) then
+            return true, "All realms are joinable by teachers."
         end
         return false
     end

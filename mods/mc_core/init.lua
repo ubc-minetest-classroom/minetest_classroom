@@ -14,11 +14,19 @@ mc_core = {
             selected = "#055C22",
             red = "#590C0C",
             orange = "#6E5205",
-        }
+            green = "#055C22",
+        },
+        t = {
+            selected = "#59A63A",
+            red = "#F5627D",
+            orange = "#F5C987",
+            green = "#71EBA8",
+            blue = "#ACABFF",
+        },
     },
     SERVER_USER = "Server",
 }
--- for compatibility with older mods
+-- for compatibility with older versions of mods
 mc_helpers = mc_core
 
 -- Required MT version
@@ -49,6 +57,7 @@ dofile(mc_core.path.."/PointTable.lua")
 dofile(mc_core.path.."/Hooks.lua")
 dofile(mc_core.path.."/gui.lua")
 dofile(mc_core.path.."/coordinates.lua")
+dofile(mc_core.path.."/freeze.lua")
 
 ---@public
 ---checkPrivs
@@ -185,6 +194,10 @@ function mc_core.pairsByKeys (t, f)
     return iter
 end
 
+---@public
+---Returns true if str is a number stored as a string, false otherwise
+---@param str String to check
+---@return boolean
 function mc_core.isNumber(str)
     if (str == nil) then
         return false
@@ -192,15 +205,27 @@ function mc_core.isNumber(str)
     return not (str == "" or str:match("%D"))
 end
 
+---@public
+---Trims whitespace characters from the beginning and end of a string
+---@param s String to trim
+---@return string
 function mc_core.trim(s)
     return s:match( "^%s*(.-)%s*$" )
 end
 
-function mc_core.starts(String,Start)
-    return string.sub(String,1,string.len(Start))==Start
+---@public
+---Returns true if string starts with start, false otherwise
+---@param string String to check
+---@param start Start of string to check for
+---@return boolean
+function mc_core.starts(string, start)
+    return string.sub(string, 1, string.len(start)) == start
 end
 
-
+---@public
+---Creates a shallow copy of table
+---@param table Table to copy
+---@return table
 function mc_core.shallowCopy(table)
     local copy = {}
     for k, v in pairs(table) do
@@ -209,6 +234,10 @@ function mc_core.shallowCopy(table)
     return copy
 end
 
+---@public
+---Creates a deep copy of table
+---@param table Table to copy
+---@return table
 function mc_core.deepCopy(table)
     local copy = {}
     for k, v in pairs(table) do
@@ -235,10 +264,19 @@ function mc_core.getInventoryItemLocation(inv, itemstack)
     return nil
 end
 
+---@public
+---Rounds a number to a given number of decimal places
+---@param x Number to round
+---@param n Number of decimal places to round to
+---@return number
 function mc_core.round(x, n)
     return tonumber(string.format("%." .. n .. "f", x))
 end
 
+---@public
+---Returns a hexadecimal string as a number
+---@param hex Hexadecimal string
+---@return number
 function mc_core.hex_string_to_num(hex)
     if string.sub(hex, 1, 1) == "#" then
         return tonumber(string.sub(hex, 2), 16)
@@ -254,4 +292,54 @@ end
 function mc_core.clean_key(key)
 	local match = string.match(tostring(key), "K?E?Y?_?KEY_(.-)$")
     return (match == "LBUTTON" and "LEFT CLICK") or (match == "RBUTTON" and "RIGHT CLICK") or match or key
+end
+
+---@public
+---Converts a time in seconds to a human-readable time
+---@param t Time in seconds
+---@returns string, table
+function mc_core.expand_time(t)
+    if t <= 0 then
+        return "0 seconds", {s = 0, m = 0, h = 0, d = 0}
+    end
+
+    local t_temp = mc_core.round(t, 0)
+    local sec = math.fmod(t_temp, 60)
+    t_temp = (t_temp - sec)/60
+    local min = math.fmod(t_temp, 60)
+    t_temp = (t_temp - min)/60
+    local hour = math.fmod(t_temp, 24)
+    local day = (t_temp - hour)/24
+
+    local t_string = {}
+    if day > 0 then table.insert(t_string, day.." day"..(day == 1 and "" or "s")) end
+    if hour > 0 then table.insert(t_string, hour.." hour"..(hour == 1 and "" or "s")) end
+    if min > 0 then table.insert(t_string, min.." minute"..(min == 1 and "" or "s")) end
+    if sec > 0 then table.insert(t_string, sec.." second"..(sec == 1 and "" or "s")) end
+    
+    return table.concat(t_string, ", "), {s = sec, m = min, h = hour, d = day}
+end
+
+---@public
+---Calls on_priv_grant callbacks as if granter had granted priv to name
+---@param name Name of player privileges were granted to
+---@param granter Name of player who granted privileges
+---@param priv Privilege granted
+function mc_core.call_priv_grant_callbacks(name, granter, priv)
+    for _,func in ipairs(minetest.registered_on_priv_grant) do
+        local res = func(name, granter, priv)
+        if not res then break end
+    end
+end
+
+---@public
+---Calls on_priv_rekove callbacks as if revoker had revoked priv from name
+---@param name Name of player privileges were revoked from
+---@param revoker Name of player who revoked privileges
+---@param priv Privilege revoked
+function mc_core.call_priv_revoke_callbacks(name, revoker, priv)
+    for _,func in ipairs(minetest.registered_on_priv_revoke) do
+        local res = func(name, revoker, priv)
+        if not res then break end
+    end
 end

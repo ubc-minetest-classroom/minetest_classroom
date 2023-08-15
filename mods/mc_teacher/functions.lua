@@ -7,6 +7,7 @@ function mc_teacher.cancel_shutdown()
         for _,timer in pairs(mc_teacher.restart_scheduled) do
             timer:cancel()
         end
+        mc_teacher.restart_scheduled = {}
         mc_teacher.clear_restart_time()
     end
 end
@@ -66,11 +67,11 @@ function mc_teacher.get_fs_context(player)
 end
 
 function mc_teacher.check_selected_priv_mode(context)
-    if context.tab == mc_teacher.TABS.CLASSROOMS and context.selected_privs_mode ~= mc_teacher.TABS.CLASSROOMS then
+    if context.tab == mc_teacher.TABS.CLASSROOMS and (not context.selected_privs or context.selected_privs_mode ~= mc_teacher.TABS.CLASSROOMS) then
         context.selected_privs = {interact = true, shout = true, fast = true, fly = "nil", noclip = "nil", give = "nil"}
         context.selected_privs_mode = mc_teacher.TABS.CLASSROOMS
-    elseif context.tab == mc_teacher.TABS.PLAYERS and context.selected_privs_mode ~= mc_teacher.TABS.PLAYERS then
-        context.selected_privs = {interact = "nil", shout = "nil", fast = "nil", fly = "nil", noclip = "nil", give = "nil"}
+    elseif context.tab == mc_teacher.TABS.PLAYERS and (not context.selected_privs or context.selected_privs_mode ~= mc_teacher.TABS.PLAYERS) then
+        context.selected_privs = nil
         context.selected_privs_mode = mc_teacher.TABS.PLAYERS
     end
 end
@@ -159,5 +160,35 @@ function mc_teacher.get_server_role(player)
         return mc_teacher.ROLES.TEACHER
     else
         return mc_teacher.ROLES.ADMIN
+    end
+end
+
+function mc_teacher.save_realm(player, context, fields)
+    local realm = Realm.GetRealm(context.edit_realm.id)
+    if realm then
+        if not fields.no_cat_override then
+            if context.edit_realm.type == mc_teacher.R.CAT_KEY.SPAWN then
+                if realm:isHidden() or realm:isDeleted() then
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom is currently "..(realm:isHidden() and "hidden" or "being deleted"..", so it could not be set as the server's spawn classroom.")))
+                else
+                    mc_worldManager.SetSpawnRealm(realm)
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server spawn classroom updated!"))
+                end
+            else
+                realm:setCategoryKey(mc_teacher.R.CAT_MAP[context.edit_realm.type or mc_teacher.R.CAT_KEY.CLASSROOM])
+            end
+        end
+        realm.Name = (mc_core.trim(fields.erealm_name or "") ~= "" and fields.erealm_name) or (mc_core.trim(context.edit_realm.name or "") ~= "" and context.edit_realm.name) or "Unnamed classroom"
+        realm:UpdateRealmPrivilege(context.edit_realm.privs or {})
+
+        -- update players in realm
+        local players_in_realm = realm:GetPlayersAsArray()
+        for _,p in pairs(players_in_realm) do
+            local p_obj = minetest.get_player_by_name(p)
+            if p_obj then
+                realm:ApplyPrivileges(p_obj)
+            end
+        end
+        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Classroom updated!"))
     end
 end
