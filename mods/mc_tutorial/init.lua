@@ -570,8 +570,8 @@ function mc_tutorial.show_record_fs(player)
                     "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",5.9;reward_selection;", concat_col_field_list(context.selected_rewards, ","), ";", context.reward_selected and context.reward_selected[2] or 1, ";false]",
                     "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
                     "style_type[field;border=false;font=mono]",
-                    "image_button[7.9,1.4;0.8,2.85;mc_tutorial_reward_add.png;reward_add;;false;true]",
-                    "image_button[7.9,4.45;0.8,2.85;mc_tutorial_reward_delete.png;reward_delete;;false;true]",
+                    "image_button[7.9,1.4;0.8,2.85;mc_teacher_swap_arrow_add.png;reward_add;;false;true]",
+                    "image_button[7.9,4.45;0.8,2.85;mc_teacher_swap_arrow_delete.png;reward_delete;;false;true]",
                     "textarea[", panel_width + text_spacer, ",7.4;", panel_width - 2*text_spacer, ",1;;;Quantity (WIP)]",
                     "textarea[", panel_width + text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Search for rewards (WIP)]",
                     "image[", panel_width + spacer, ",7.8;", panel_width - 2*spacer, ",0.8;mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
@@ -874,8 +874,8 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                         "textlist[0.4,2.9;5.58,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
                         "label[6.7,2.7;Keys to press]",
                         "textlist[6.62,2.9;5.58,4.8;key_list;", next(keys) and table.concat(keys, ",") or minetest.formspec_escape("[none]"), ";", context.epop.fields.key_selected or 1, ";false]",
-                        "image_button[5.98,2.9;0.64,2.4;mc_tutorial_reward_add.png;key_add;;false;true]",
-                        "image_button[5.98,5.3;0.64,2.4;mc_tutorial_reward_delete.png;key_delete;;false;true]",
+                        "image_button[5.98,2.9;0.64,2.4;mc_teacher_swap_arrow_add.png;key_add;;false;true]",
+                        "image_button[5.98,5.3;0.64,2.4;mc_teacher_swap_arrow_delete.png;key_delete;;false;true]",
                         "tooltip[key_add;Add key]",
                         "tooltip[key_delete;Remove key]"
                     }

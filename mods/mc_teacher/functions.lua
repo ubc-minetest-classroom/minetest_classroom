@@ -219,3 +219,12 @@ function mc_teacher.is_in_timeout(player)
     local pmeta = player and player:is_player() and player:get_meta()
 	return pmeta and minetest.deserialize(pmeta:get("mc_teacher:timeout")) or false
 end
+
+function mc_teacher.get_player_tab_groups(player)
+    local pmeta = player and player:is_player() and player:get_meta()
+    return pmeta and minetest.deserialize(pmeta:get("mc_teacher:groups")) or {}
+end
+
+function mc_teacher.get_group_index(group_id)
+    return tonumber(group_id or mc_teacher.PTAB.N) - mc_teacher.PTAB.N
+end

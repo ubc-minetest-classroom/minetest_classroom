@@ -209,6 +209,26 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
         context.p_list = nil
         mc_teacher.show_controller_fs(player, context.tab)
+    elseif formname == "mc_teacher:confirm_group_delete" then
+        ------------------------
+        -- DELETE GROUP POPUP --
+        ------------------------
+        if fields.confirm then
+            local pname = player:get_player_name()
+            local pmeta = player:get_meta()
+            local groups = mc_teacher.get_player_tab_groups(player)
+            local index = mc_teacher.get_group_index(context.selected_p_tab)
+            if groups[index] and pmeta then
+                local removed = table.remove(groups, index)
+                pmeta:set_string("mc_teacher:groups", minetest.serialize(groups))
+                context.selected_p_tab = nil
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Successfully deleted group "..removed.name.."."))
+            else
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected group could not be deleted."))
+            end
+        end
+        context.p_list = nil
+        mc_teacher.show_controller_fs(player, context.tab)
     elseif formname == "mc_teacher:confirm_shutdown_schedule" and has_server_privs then
         -----------------------------
         -- SCHEDULE SHUTDOWN POPUP --
@@ -432,6 +452,73 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if reload then
             if fields.erealm_name then context.edit_realm.name = minetest.formspec_escape(fields.erealm_name) end
             mc_teacher.show_edit_popup(player, context.edit_realm.id)
+        end
+    elseif formname == "mc_teacher:edit_group" then
+        -----------------
+        -- GROUP POPUP --
+        -----------------
+        local reload = false
+        if fields.non_members then
+            local event = minetest.explode_textlist_event(fields.non_members)
+            if event.type == "CHG" then
+                context.edit_group.sel_nm = event.index
+            elseif event.type == "DCL" then
+                context.edit_group.sel_nm = event.index
+                fields.member_add = ""      -- trigger add button
+            end
+        end
+        if fields.members then
+            local event = minetest.explode_textlist_event(fields.members)
+            if event.type == "CHG" then
+                context.edit_group.sel_m = event.index
+            elseif event.type == "DCL" then
+                context.edit_group.sel_m = event.index
+                fields.member_delete = ""   -- trigger delete button
+            end
+        end
+
+        if fields.member_add then
+            local selected_player = table.remove(context.edit_group.p_list, context.edit_group.sel_nm)
+            table.insert(context.edit_group.members, selected_player)
+            context.edit_group.sel_nm = math.max(1, math.min(context.edit_group.sel_nm, #context.edit_group.p_list))
+            reload = true
+        elseif fields.member_delete then
+            local selected_player = table.remove(context.edit_group.members, context.edit_group.sel_m)
+            table.insert(context.edit_group.p_list, selected_player)
+            context.edit_group.sel_m = math.max(1, math.min(context.edit_group.sel_m, #context.edit_group.members))
+            reload = true
+        elseif fields.save or fields.cancel or fields.quit then
+            if fields.save then
+                local pname = player:get_player_name()
+                local pmeta = player:get_meta()
+                local groups = mc_teacher.get_player_tab_groups(player)
+                if groups and pmeta then
+                    local group_to_save = {name = fields.group_name or context.edit_group.name, members = context.edit_group.members or {}}
+                    if context.edit_group.id == 0 then
+                        table.insert(groups, group_to_save)
+                        context.selected_p_tab = (#groups + mc_teacher.PTAB.N)
+                        pmeta:set_string("mc_teacher:groups", minetest.serialize(groups))
+                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Group created!"))
+                    else
+                        groups[context.edit_group.id] = group_to_save
+                        pmeta:set_string("mc_teacher:groups", minetest.serialize(groups))
+                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Group updated!"))
+                    end
+                else
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The group could not be found, so no changes were made to it."))
+                end
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] No changes were made to the group."))
+            end
+
+            context.edit_group = nil
+            context.p_list = nil
+            return mc_teacher.show_controller_fs(player, context.tab)
+        end
+
+        if reload then
+            if fields.group_name then context.edit_group.name = minetest.formspec_escape(fields.group_name) end
+            mc_teacher.show_group_popup(player)
         end
     elseif formname == "mc_teacher:controller_fs" then
         -------------
@@ -777,7 +864,24 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             reload = true
         end
 
-        if fields.p_priv_update or fields.p_priv_reset then
+        if fields.p_group_new then
+            return mc_teacher.show_group_popup(player, nil)
+        elseif fields.p_group_edit then
+            if tonumber(context.selected_p_tab) > mc_teacher.PTAB.N then
+                return mc_teacher.show_group_popup(player, tonumber(context.selected_p_tab))
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This group can not be edited."))
+            end
+        elseif fields.p_group_delete then
+            if tonumber(context.selected_p_tab) > mc_teacher.PTAB.N then
+                return mc_teacher.show_confirm_popup(player, "confirm_group_delete", {
+                    action = "Are you sure you want to delete this group?",
+                    button = "Delete group", irreversible = true,
+                })
+            else
+                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This group can not be deleted."))
+            end
+        elseif fields.p_priv_update or fields.p_priv_reset then
             local players_to_update = get_players_to_update(player, context, true)
             local realm = Realm.GetRealmFromPlayer(player)
             if realm and #players_to_update > 0 then
@@ -862,7 +966,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
                 for _, p in pairs(players_to_update) do
                     local p_obj = minetest.get_player_by_name(p)
-                    if p_obj and destRealm:getCategory().joinable(destRealm, player) (not destRealm:isHidden() or mc_core.checkPrivs(p_obj, {teacher = true})) then
+                    if p_obj and destRealm:getCategory().joinable(destRealm, player) and (not destRealm:isHidden() or mc_core.checkPrivs(p_obj, {teacher = true})) then
                         mc_core.run_unfrozen(p_obj, destRealm.TeleportPlayer, destRealm, player)
                         p_obj:set_pos(destination)
                     else

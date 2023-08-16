@@ -463,6 +463,81 @@ button[0.6,8.1;3.5,0.8;save_realm;Save changes]
 button[4.2,8.1;3.5,0.8;cancel;Cancel]
 ]]
 
+function mc_teacher.show_group_popup(player, group_id)
+    local spacer = mc_teacher.fs_spacer
+    local text_spacer = mc_teacher.fs_t_spacer
+    local width = 12.2
+    local height = 9.7
+    local list_width = (width - 2*spacer - 1)/2
+    local button_width = (width - 2*spacer - 0.1)/2
+
+    local pname = player:get_player_name()
+    local groups = mc_teacher.get_player_tab_groups(player)
+    local context = mc_teacher.get_fs_context(player)
+
+    if not context.edit_group then
+        if group_id and group_id ~= 0 then
+            local index = mc_teacher.get_group_index(group_id)
+            context.edit_group = {
+                id = index,
+                members = groups[index].members or {},
+                name = groups[index].name or "G"..tostring(index),
+            }
+        else
+            context.edit_group = {
+                id = 0,
+                members = {},
+                name = "G"..tostring(#groups + mc_teacher.PTAB.N + 1),
+            }
+        end
+
+        context.edit_group.sel_nm = 1
+        context.edit_group.sel_m = 1
+        context.edit_group.p_list = {}
+        for _,p in pairs(minetest.get_connected_players()) do
+            if p and p:is_player() and not mc_core.tableHas(context.edit_group.members, p:get_player_name()) then
+                table.insert(context.edit_group.p_list, p:get_player_name())
+            end
+        end
+    end
+
+    local fs = {
+        mc_core.draw_note_fs(width, height, {bg = "#baf5a2", accent = "#e0fccf"}),
+        "style_type[textarea;font=mono,bold;textcolor=#000000]",
+        "style_type[field;font=mono]",
+        "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+
+        "textarea[", text_spacer, ",0.5;11.1,1;;;Group name]",
+        "field[", spacer, ",0.9;11,0.8;group_name;;", context.edit_group.name or "", "]",
+        "field_close_on_enter[group_name;false]",
+        "textarea[", text_spacer, ",1.8;5.1,1;;;Available players]",
+        "textlist[", spacer, ",2.2;", list_width, ",5.9;non_members;", table.concat(context.edit_group.p_list, ","), ";", context.edit_group.sel_nm, ";false]",
+        "textarea[", text_spacer + list_width + 1, ",1.8;5.1,1;;;Group members]",
+        "textlist[", spacer + list_width + 1, ",2.2;", list_width, ",5.9;members;", table.concat(context.edit_group.members, ","), ";", context.edit_group.sel_m, ";false]",
+        "image_button[", spacer + list_width + 0.1, ",2.2;0.8,2.9;mc_teacher_swap_arrow_add.png;member_add;;false;true]",
+        "image_button[", spacer + list_width + 0.1, ",5.2;0.8,2.9;mc_teacher_swap_arrow_delete.png;member_delete;;false;true]",
+        "button[", spacer, ",8.3;", button_width, ",0.8;save;", (context.edit_group.id == 0 and "Create new group") or "Save changes", "]",
+        "button[", spacer + button_width + 0.1, ",8.3;", button_width, ",0.8;cancel;Cancel]",
+    }
+
+    minetest.show_formspec(pname, "mc_teacher:edit_group", table.concat(fs, ""))
+end
+
+--[[ GROUP POPUP
+formspec_version[6]
+size[12.2,9.7]
+textarea[0.55,0.5;11.1,1;;;Group name]
+field[0.6,0.9;11,0.8;group_name;;]
+textarea[0.55,1.8;5.1,1;;;Available players]
+textlist[0.6,2.2;5,5.9;non_members;;1;false]
+textarea[6.55,1.8;5.1,1;;;Group members]
+textlist[6.6,2.2;5,5.9;members;;1;false]
+image_button[5.7,2.2;0.8,2.9;blank.png;member_add;-->;false;true]
+image_button[5.7,5.2;0.8,2.9;blank.png;member_delete;<--;false;true]
+button[0.6,8.3;5.45,0.8;save;Save group]
+button[6.15,8.3;5.45,0.8;cancel;Cancel]
+]]
+
 function mc_teacher.show_controller_fs(player, tab)
     local controller_width = 16.6
     local controller_height = 10.4
@@ -877,27 +952,36 @@ function mc_teacher.show_controller_fs(player, tab)
             end,
             [mc_teacher.TABS.PLAYERS] = function()
                 local this_realm = Realm.GetRealmFromPlayer(player)
-                context.selected_p_tab = context.selected_p_tab or "1"
+                context.selected_p_tab = context.selected_p_tab or mc_teacher.PTAB.STUDENTS
                 context.selected_p_player = context.selected_p_player or 1
                 context.selected_p_mode = context.selected_p_mode or mc_teacher.PMODE.SELECTED
 
                 if not context.p_list then
                     context.p_list = {}
-                    if context.selected_p_tab == "1" then
+                    if context.selected_p_tab == mc_teacher.PTAB.STUDENTS then
                         for student,_ in pairs(mc_teacher.students) do
                             table.insert(context.p_list, student)
                         end
-                    elseif context.selected_p_tab == "2" then
+                    elseif context.selected_p_tab == mc_teacher.PTAB.TEACHERS then
                         for teacher,_ in pairs(mc_teacher.teachers) do
                             table.insert(context.p_list, teacher)
                         end
-                    elseif context.selected_p_tab == "3" then
+                    elseif context.selected_p_tab == mc_teacher.PTAB.CLASSROOM then
                         if this_realm then
                             for _,p in pairs(this_realm:GetPlayersAsArray() or {}) do
                                 local p_obj = minetest.get_player_by_name(p)
                                 if p_obj and p_obj:is_player() then
                                     table.insert(context.p_list, p)
                                 end
+                            end
+                        end
+                    else
+                        local groups = mc_teacher.get_player_tab_groups(player)
+                        local index = mc_teacher.get_group_index(context.selected_p_tab)
+                        for _,p in pairs(groups[index] and groups[index].members or {}) do
+                            local p_obj = minetest.get_player_by_name(p)
+                            if p_obj and p_obj:is_player() then
+                                table.insert(context.p_list, p)
                             end
                         end
                     end
@@ -945,6 +1029,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     r = "^[resize:25x25",
                     o = "^[opacity:31",
                 }
+
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
                     "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
@@ -953,14 +1038,24 @@ function mc_teacher.show_controller_fs(player, tab)
                     "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Manage Players</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-                    -- TODO: re-implement groups
-                    "style[p_group_new,p_group_edit,p_group_delete;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     -- TODO: re-impelment remaining actions
                     "style[p_audience;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     "style[p_mode_", context.selected_p_mode == mc_teacher.PMODE.ALL and "all" or context.selected_p_mode == mc_teacher.PMODE.TAB and "tab" or "selected", ";bgimg=mc_pixel.png^[multiply:", mc_core.col.b.selected, "]",
                     context.selected_p_mode ~= mc_teacher.PMODE.SELECTED and "style[p_teleport;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.orange.."]" or "",
-                    
-                    "tabheader[", spacer, ",1.4;", panel_width - 2*spacer - 0.35, ",0.5;p_list_header;Students,Teachers,Classroom;", context.selected_p_tab, ";false;true]",
+                }
+
+                if tonumber(context.selected_p_tab) <= mc_teacher.PTAB.N then
+                    table.insert(fs, "style[p_group_edit,p_group_delete;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.blocked.."]")
+                end
+                local header_string = "Students,Teachers,Classroom"
+                local groups = mc_teacher.get_player_tab_groups(player)
+                for i, g in pairs(groups) do
+                    header_string = header_string..","..g.name
+                end
+
+                table.insert(fs, table.concat({
+                    "tabheader[", spacer, ",1.4;", panel_width - 2*spacer - 0.35, ",0.5;p_list_header;", header_string, ";", context.selected_p_tab, ";false;true]",
+                    "button[", panel_width - spacer - 0.45, ",0.95;0.45,0.45;p_group_new;+]",
                     "tablecolumns[image,align=center,padding=0.1,tooltip=shout,",    "0=", img.shout,    img.e, img.r, img.o, ",1=", img.shout,    img.e, img.r, ",2=", img.shout,    img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.shout,    "_o", img.e, img.r, ";",
                                  "image,align=center,padding=0.1,tooltip=interact,", "0=", img.interact, img.e, img.r, img.o, ",1=", img.interact, img.e, img.r, ",2=", img.interact, img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.interact, "_o", img.e, img.r, ";",
                                  "image,align=center,padding=0.1,tooltip=fast,",     "0=", img.fast,     img.e, img.r, img.o, ",1=", img.fast,     img.e, img.r, ",2=", img.fast,     img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.fast,     "_o", img.e, img.r, ",4=mc_teacher_freeze", img.e, img.r, ";",
@@ -969,8 +1064,7 @@ function mc_teacher.show_controller_fs(player, tab)
                                  "image,align=center,padding=0.1,tooltip=give,",     "0=", img.give,     img.e, img.r, img.o, ",1=", img.give,     img.e, img.r, ",2=", img.give,     img.e, img.r, img.o, "^(", img.slash, img.e, img.r, "),3=", img.give,     "_o", img.e, img.r, ";",
                                  "text]",
                     "table[", spacer, ",1.4;", panel_width - 2*spacer, ",7.5;p_list;", generate_player_table(context.p_list, p_priv_list), ";", context.selected_p_player, "]",
-                    
-                    "button[", panel_width - spacer - 0.45, ",0.95;0.45,0.45;p_group_new;+]",
+
                     "button[", spacer, ",9;3.5,0.8;p_group_edit;Edit group]",
                     "button[", spacer + 3.6, ",9;3.5,0.8;p_group_delete;Delete group]",
 
@@ -1001,7 +1095,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     "image[", panel_width + spacer + 3.55 + ((priv_override_state.fly      == true and 0) or (priv_override_state.fly      == false and 0.8) or 0.4), ",3.1;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
                     "image[", panel_width + spacer + 3.55 + ((priv_override_state.noclip   == true and 0) or (priv_override_state.noclip   == false and 0.8) or 0.4), ",3.5;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
                     "image[", panel_width + spacer + 3.55 + ((priv_override_state.give     == true and 0) or (priv_override_state.give     == false and 0.8) or 0.4), ",3.9;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
-                }
+                }))
 
                 if not context.selected_privs then
                     context.selected_privs = priv_override_state or {interact = "nil", shout = "nil", fast = "nil", fly = "nil", noclip = "nil", give = "nil"}
@@ -1106,7 +1200,15 @@ function mc_teacher.show_controller_fs(player, tab)
                     "tooltip[p_audience;This action has not been implemented yet!;#404040;#ffffff]", --[[Teleports players to you, standing in a semicircle facing you;#404040;#ffffff]"]]
                     "tooltip[p_timeout;Teleports players to spawn and\nprevents them from joining classrooms;#404040;#ffffff]",
                     "tooltip[p_endtimeout;Allows players to join classrooms again;#404040;#ffffff]",
+                    "tooltip[p_group_new;Add a new group;#404040;#ffffff]",
                 }))
+
+                if tonumber(context.selected_p_tab) <= mc_teacher.PTAB.N then
+                    table.insert(fs, table.concat({
+                        "tooltip[p_group_edit;This is a predefined group that can not be edited;#404040;#ffffff]",
+                        "tooltip[p_group_delete;This is a predefined group that can not be deleted;#404040;#ffffff]",
+                    }))
+                end
 
                 return fs
             end,

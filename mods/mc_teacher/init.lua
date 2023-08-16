@@ -20,7 +20,7 @@ mc_teacher = {
         SERVER = "8", -- TODO: make dynamic for easier modification of notebook
     },
     CTAB = {PUBLIC = "1", PRIVATE = "2", HIDDEN = "3"},
-    PTAB = {STUDENTS = "1", TEACHERS = "2", CLASSROOM = "3"},
+    PTAB = {STUDENTS = "1", TEACHERS = "2", CLASSROOM = "3", N = 3},
     STAB = {BANNED = "1", ONLINE = "2", MODS = "3"},
     ROLES = {
         NONE = "1",
