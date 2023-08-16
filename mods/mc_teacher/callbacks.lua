@@ -93,26 +93,26 @@ local function get_players_to_update(player, context, override)
     return list
 end
 
-local function pluralize(count, role_string)
+local function pluralize(count, role)
     local map = {
         [mc_teacher.ROLES.NONE] = {
-            [true] = role_string,
-            [false] = role_string,
+            [true] = "roleless",
+            [false] = "roleless",
         },
         [mc_teacher.ROLES.STUDENT] = {
-            [true] = "a "..role_string,
-            [false] = role_string.."s",
+            [true] = "a student",
+            [false] = "students",
         },
         [mc_teacher.ROLES.TEACHER] = {
-            [true] = "a "..role_string,
-            [false] = role_string.."s",
+            [true] = "a teacher",
+            [false] = "teachers",
         },
         [mc_teacher.ROLES.ADMIN] = {
-            [true] = "an "..role_string,
-            [false] = role_string.."s",
+            [true] = "an administrator",
+            [false] = "administrators",
         }
     }
-    return role_string and map[role_string] and map[role_string][count == 1] or "???"
+    return role and map[role] and map[role][count == 1] or "???"
 end
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
@@ -983,9 +983,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not change your own server role."))
             else
                 local p_count_string = (#players_to_update == 1 and "this player" or "these "..tostring(#players_to_update).." players")
-                local role_string = fields.p_role_student and mc_teacher.ROLES.STUDENT or mc_teacher.ROLES.NONE
-                return mc_teacher.show_confirm_popup(player, "role_change_"..role_string,
-                    {action = "Are you sure you want "..p_count_string.." to be "..pluralize(#players_to_update, role_string).."?"}
+                local role = fields.p_role_student and mc_teacher.ROLES.STUDENT or mc_teacher.ROLES.NONE
+                return mc_teacher.show_confirm_popup(player, "role_change_"..role,
+                    {action = "Are you sure you want "..p_count_string.." to be "..pluralize(#players_to_update, role).."?"}
                 )
             end
         elseif has_server_privs and (fields.p_role_teacher or fields.p_role_admin) then
@@ -997,9 +997,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not change your own server role."))
             else
                 local p_count_string = (#players_to_update == 1 and "this player" or "these "..tostring(#players_to_update).." players")
-                local role_string = fields.p_role_admin and mc_teacher.ROLES.ADMIN or mc_teacher.ROLES.TEACHER
-                return mc_teacher.show_confirm_popup(player, "role_change_"..role_string,
-                    {action = "Are you sure you want "..p_count_string.." to be "..pluralize(#players_to_update, role_string).."?\nThis will give them access to tools which can be used to modify the server."},
+                local role = fields.p_role_admin and mc_teacher.ROLES.ADMIN or mc_teacher.ROLES.TEACHER
+                return mc_teacher.show_confirm_popup(player, "role_change_"..role,
+                    {action = "Are you sure you want "..p_count_string.." to be "..pluralize(#players_to_update, role).."?\nThis will give them access to tools which can be used to modify the server."},
                     {y = 4.3}
                 )
             end

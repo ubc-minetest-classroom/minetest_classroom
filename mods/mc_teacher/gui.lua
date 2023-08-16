@@ -59,14 +59,14 @@ local function get_privs(player)
     return privs
 end
 
-local function role_to_fs_elem(role_string, caller_has_server_privs)
+local function role_to_fs_elem(role, caller_has_server_privs)
     local map = {
         [mc_teacher.ROLES.NONE] = {[true] = "p_role_none", [false] = "p_role_none"},
         [mc_teacher.ROLES.STUDENT] = {[true] = "p_role_student", [false] = "p_role_student"},
         [mc_teacher.ROLES.TEACHER] = {[true] = "p_role_teacher", [false] = "blocked_role_teacher"},
         [mc_teacher.ROLES.ADMIN] = {[true] = "p_role_admin", [false] = "blocked_role_admin"},
     }
-    return role_string and map[role_string] and map[role_string][caller_has_server_privs] or ""
+    return role and map[role] and map[role][caller_has_server_privs] or ""
 end
 
 local function generate_player_table(p_list, p_priv_list)
