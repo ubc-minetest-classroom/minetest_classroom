@@ -1564,7 +1564,8 @@ function mc_teacher.show_controller_fs(player, tab)
                         "textlist[", spacer + panel_width, ",3.2;", panel_width - 2*spacer, ",6.8;server_dyn;", table.concat(context.server_dyn_list, ","), ";", context.selected_s_dyn or 1, ";false]",
                     }))
                 else
-                    context.server_dyn_list = minetest.get_ban_list() or ""
+                    local ban_string = minetest.get_ban_list() or ""
+                    context.server_dyn_list = string.gsub(ban_string, ", *", ",")
                     table.insert(fs, table.concat({
                         "textlist[", spacer + panel_width, ",3.2;", panel_width - 2*spacer, ",5.7;server_dyn;", context.server_dyn_list, ";", context.selected_s_dyn or 1, ";false]",
                         "button[", spacer + panel_width, ",9;", panel_width - 2*spacer, ",0.8;server_unban;Unban]",

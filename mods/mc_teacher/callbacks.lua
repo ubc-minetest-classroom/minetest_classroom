@@ -1312,19 +1312,23 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     context.selected_s_dyn = event.index
                 end
                 reload = true
-            elseif fields.unban then
+            elseif fields.server_unban then
                 context.selected_s_dyn = context.selected_s_dyn or 1
-                local bans = mc_core.split(ban_string, ",")
-                if bans[context.selected_s_dyn] then
-                    local ban_split = mc_core.split(bans[context.selected_s_dyn], "|")
-                    if ban_split and ban_split[1] then
-                        minetest.unban_player_or_ip(ban_split[1])
-                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player unbanned!"))
+                if mc_core.trim(context.server_dyn_list or "") ~= "" then
+                    local bans = mc_core.split(context.server_dyn_list, ",")
+                    if bans[context.selected_s_dyn] and mc_core.trim(bans[context.selected_s_dyn]) ~= "" then
+                        local ban_split = mc_core.split(bans[context.selected_s_dyn], "|")
+                        if ban_split and ban_split[1] then
+                            minetest.unban_player_or_ip(ban_split[1])
+                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player unbanned!"))
+                        else
+                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player could not be unbanned. Please unban this player by using the /unban command instead."))
+                        end
                     else
                         minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player could not be unbanned. Please unban this player by using the /unban command instead."))
                     end
                 else
-                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player could not be unbanned."))
+                    minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players to unban."))
                 end
                 reload = true
             elseif fields.server_whitelist then

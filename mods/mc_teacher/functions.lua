@@ -201,8 +201,7 @@ function mc_teacher.timeout(player)
         local realm = Realm.GetRealmFromPlayer(player) or {ID = 0}
         local spawn = mc_worldManager.GetSpawnRealm()
         if realm.ID ~= spawn.ID then
-            local freeze_func = mc_core.temp_unfreeze_and_run or mc_core.run_unfrozen
-            freeze_func(player, spawn.TeleportPlayer, spawn, player)
+            mc_core.temp_unfreeze_and_run(player, spawn.TeleportPlayer, spawn, player)
         end
 	    pmeta:set_string("mc_teacher:timeout", minetest.serialize(true))
     end
