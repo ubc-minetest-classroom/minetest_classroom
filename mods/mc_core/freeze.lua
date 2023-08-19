@@ -79,13 +79,13 @@ function mc_core.is_frozen(player)
 end
 
 ---@public
----Runs a function on player, temporarily unfreezing them while the function runs if they are frozen. If player is not frozen, the function will be run normally
----Arguments after the func will be passed into func when it runs (similarly to how minetest.after passes arguments)
----The player argument will not be passed into func by default, so it should be added to the argument list in the appropriate position
+---Temporarily unfreezes player if they are frozen, runs func, then refreezes player if they should be frozen
+---This should be used when applying forced movement to a player, since frozen players can not be teleported normally
+---Optional arguments after func will be passed into func when it runs (similarly to how minetest.after passes arguments)
 ---@param player ObjectRef to treat as unfrozen
 ---@param func Function to run
 ---@return returns from func
-function mc_core.run_unfrozen(player, func, ...)
+function mc_core.temp_unfreeze_and_run(player, func, ...)
     local frozen = mc_core.is_frozen(player)
     if frozen then unfreeze_player(player) end
     -- store func's returns

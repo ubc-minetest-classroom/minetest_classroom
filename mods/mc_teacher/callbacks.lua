@@ -164,7 +164,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 for p, v in pairs(realm:GetPlayers() or {}) do
                     if v == true then
                         local p_obj = minetest.get_player_by_name(p)
-                        mc_core.run_unfrozen(p_obj, spawn.TeleportPlayer, spawn, p_obj)
+                        mc_core.temp_unfreeze_and_run(p_obj, spawn.TeleportPlayer, spawn, p_obj)
                         minetest.chat_send_player(p, minetest.colorize(mc_core.col.log, "[Minetest Classroom] The classroom you were in was hidden, so you were brought back to the server spawn."))
                     end
                 end
@@ -967,7 +967,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 for _, p in pairs(players_to_update) do
                     local p_obj = minetest.get_player_by_name(p)
                     if p_obj and destRealm:getCategory().joinable(destRealm, player) and (not destRealm:isHidden() or mc_core.checkPrivs(p_obj, {teacher = true})) then
-                        mc_core.run_unfrozen(p_obj, destRealm.TeleportPlayer, destRealm, player)
+                        mc_core.temp_unfreeze_and_run(p_obj, destRealm.TeleportPlayer, destRealm, player)
                         p_obj:set_pos(destination)
                     else
                         minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player "..tostring(p).." does not have access to your current classroom. Please check your current classroom's category and try again."))

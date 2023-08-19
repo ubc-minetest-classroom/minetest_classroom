@@ -17,3 +17,17 @@ sfinv.register_page("sfinv:crafting", {
 			]], true)
 	end
 })
+
+minetest.register_on_priv_grant(function(name, granter, priv)
+	if priv == "interact" then
+		sfinv.set_player_inventory_formspec(minetest.get_player_by_name(name))
+	end
+	return true
+end)
+
+minetest.register_on_priv_revoke(function(name, revoker, priv)
+	if priv == "interact" then
+		sfinv.set_player_inventory_formspec(minetest.get_player_by_name(name))
+	end
+	return true
+end)
