@@ -68,7 +68,7 @@ local SAFE, CAUTION, UNSAFE = 0, 1, 2
 -- basic privilege safety: may be worth moving?
 local PRIV_SAFETY = { -- basic privileges by overall safety
     -- SAFE: generally safe to give to players
-    ["fast"] = SAFE, ["fly"] = SAFE, ["interact"] = SAFE, ["shout"] = SAFE, ["student"] = SAFE,
+    ["fast"] = SAFE, ["fly"] = SAFE, ["interact"] = SAFE, ["shout"] = SAFE,
     -- CAUTION: privileges which may be appropriate to grant in some circumstances, but have the potential to be abused
     ["noclip"] = CAUTION, ["give"] = CAUTION, ["teleport"] = CAUTION, ["bring"] = CAUTION, ["creative"] = CAUTION,
     ["settime"] = CAUTION, ["debug"] = CAUTION,

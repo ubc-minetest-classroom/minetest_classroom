@@ -61,8 +61,7 @@ end
 
 local function role_to_fs_elem(role, caller_has_server_privs)
     local map = {
-        [mc_teacher.ROLES.NONE] = {[true] = "p_role_none", [false] = "p_role_none"},
-        [mc_teacher.ROLES.STUDENT] = {[true] = "p_role_student", [false] = "p_role_student"},
+        [mc_teacher.ROLES.STUDENT] = {[true] = "p_role_student", [false] = "blocked_role_student"},
         [mc_teacher.ROLES.TEACHER] = {[true] = "p_role_teacher", [false] = "blocked_role_teacher"},
         [mc_teacher.ROLES.ADMIN] = {[true] = "p_role_admin", [false] = "blocked_role_admin"},
     }
@@ -1068,33 +1067,33 @@ function mc_teacher.show_controller_fs(player, tab)
                     "button[", spacer, ",9;3.5,0.8;p_group_edit;Edit group]",
                     "button[", spacer + 3.6, ",9;3.5,0.8;p_group_delete;Delete group]",
 
-                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Action Mode]",
+                    "textarea[", panel_width + text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Action mode]",
                     "button[", panel_width + spacer, ",1.4;2.3,0.8;p_mode_selected;Selected]",
                     "button[", panel_width + spacer + 2.4, ",1.4;2.3,0.8;p_mode_tab;Tab]",
                     "button[", panel_width + spacer + 4.8, ",1.4;2.3,0.8;p_mode_all;All]",
 
-                    "textarea[", panel_width + text_spacer, ",2.3;", panel_width - 2*text_spacer, ",1;;;Privileges in this Classroom]",
+                    "textarea[", panel_width + text_spacer, ",2.35;", panel_width - 2*text_spacer, ",1;;;Privileges in this classroom]",
                     "style_type[textarea;font=mono]",
-                    "textarea[", panel_width + text_spacer + 1.3, ",3.1;2.3,1;;;interact]",
-                    "textarea[", panel_width + text_spacer + 1.3, ",3.5;2.3,1;;;shout]",
-                    "textarea[", panel_width + text_spacer + 1.3, ",3.9;2.3,1;;;fast]",
-                    "textarea[", panel_width + text_spacer + 4.9, ",3.1;2.3,1;;;fly]",
-                    "textarea[", panel_width + text_spacer + 4.9, ",3.5;2.3,1;;;noclip]",
-                    "textarea[", panel_width + text_spacer + 4.9, ",3.9;2.3,1;;;give]",
+                    "textarea[", panel_width + text_spacer + 1.3, ",3.2;2.3,1;;;interact]",
+                    "textarea[", panel_width + text_spacer + 1.3, ",3.6;2.3,1;;;shout]",
+                    "textarea[", panel_width + text_spacer + 1.3, ",4.0;2.3,1;;;fast]",
+                    "textarea[", panel_width + text_spacer + 4.9, ",3.2;2.3,1;;;fly]",
+                    "textarea[", panel_width + text_spacer + 4.9, ",3.6;2.3,1;;;noclip]",
+                    "textarea[", panel_width + text_spacer + 4.9, ",4.0;2.3,1;;;give]",
                     "style_type[textarea;font=mono,bold]",
-                    "image[", panel_width + text_spacer, ",2.7;0.4,0.4;mc_teacher_check.png]",
-                    "image[", panel_width + text_spacer + 0.4, ",2.7;0.4,0.4;mc_teacher_ignore.png]",
-                    "image[", panel_width + text_spacer + 0.8, ",2.7;0.4,0.4;mc_teacher_delete.png]",
-                    "image[", panel_width + text_spacer + 3.6, ",2.7;0.4,0.4;mc_teacher_check.png]",
-                    "image[", panel_width + text_spacer + 4.0, ",2.7;0.4,0.4;mc_teacher_ignore.png]",
-                    "image[", panel_width + text_spacer + 4.4, ",2.7;0.4,0.4;mc_teacher_delete.png]",
+                    "image[", panel_width + text_spacer, ",2.8;0.4,0.4;mc_teacher_check.png]",
+                    "image[", panel_width + text_spacer + 0.4, ",2.8;0.4,0.4;mc_teacher_ignore.png]",
+                    "image[", panel_width + text_spacer + 0.8, ",2.8;0.4,0.4;mc_teacher_delete.png]",
+                    "image[", panel_width + text_spacer + 3.6, ",2.8;0.4,0.4;mc_teacher_check.png]",
+                    "image[", panel_width + text_spacer + 4.0, ",2.8;0.4,0.4;mc_teacher_ignore.png]",
+                    "image[", panel_width + text_spacer + 4.4, ",2.8;0.4,0.4;mc_teacher_delete.png]",
 
-                    "image[", panel_width + spacer - 0.05 + ((priv_override_state.interact == true and 0) or (priv_override_state.interact == false and 0.8) or 0.4), ",3.1;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
-                    "image[", panel_width + spacer - 0.05 + ((priv_override_state.shout    == true and 0) or (priv_override_state.shout    == false and 0.8) or 0.4), ",3.5;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
-                    "image[", panel_width + spacer - 0.05 + ((priv_override_state.fast     == true and 0) or (priv_override_state.fast     == false and 0.8) or 0.4), ",3.9;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
-                    "image[", panel_width + spacer + 3.55 + ((priv_override_state.fly      == true and 0) or (priv_override_state.fly      == false and 0.8) or 0.4), ",3.1;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
-                    "image[", panel_width + spacer + 3.55 + ((priv_override_state.noclip   == true and 0) or (priv_override_state.noclip   == false and 0.8) or 0.4), ",3.5;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
-                    "image[", panel_width + spacer + 3.55 + ((priv_override_state.give     == true and 0) or (priv_override_state.give     == false and 0.8) or 0.4), ",3.9;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer - 0.05 + ((priv_override_state.interact == true and 0) or (priv_override_state.interact == false and 0.8) or 0.4), ",3.2;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer - 0.05 + ((priv_override_state.shout    == true and 0) or (priv_override_state.shout    == false and 0.8) or 0.4), ",3.6;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer - 0.05 + ((priv_override_state.fast     == true and 0) or (priv_override_state.fast     == false and 0.8) or 0.4), ",4.0;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer + 3.55 + ((priv_override_state.fly      == true and 0) or (priv_override_state.fly      == false and 0.8) or 0.4), ",3.2;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer + 3.55 + ((priv_override_state.noclip   == true and 0) or (priv_override_state.noclip   == false and 0.8) or 0.4), ",3.6;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
+                    "image[", panel_width + spacer + 3.55 + ((priv_override_state.give     == true and 0) or (priv_override_state.give     == false and 0.8) or 0.4), ",4.0;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.green, "]",
                 }))
 
                 if not context.selected_privs then
@@ -1103,92 +1102,86 @@ function mc_teacher.show_controller_fs(player, tab)
                 context.selected_privs = priv_state_to_sel_privs(context.selected_privs)
 
                 if player_privs.interact ~= nil then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05 + (player_privs.interact and 0 or 0.8), ",3.1;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
+                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05 + (player_privs.interact and 0 or 0.8), ",3.2;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
                 end
                 if player_privs.shout ~= nil then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05 + (player_privs.shout and 0 or 0.8), ",3.5;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
+                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05 + (player_privs.shout and 0 or 0.8), ",3.6;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
                 end
                 if player_privs.fast ~= nil then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05 + (player_privs.fast and 0 or 0.8), ",3.9;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
+                    table.insert(fs, table.concat({"image[", panel_width + spacer - 0.05 + (player_privs.fast and 0 or 0.8), ",4.0;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
                 end
                 if player_privs.fly ~= nil then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer + 3.55 + (player_privs.fly and 0 or 0.8), ",3.1;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
+                    table.insert(fs, table.concat({"image[", panel_width + spacer + 3.55 + (player_privs.fly and 0 or 0.8), ",3.2;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
                 end
                 if player_privs.noclip ~= nil then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer + 3.55 + (player_privs.noclip and 0 or 0.8), ",3.5;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
+                    table.insert(fs, table.concat({"image[", panel_width + spacer + 3.55 + (player_privs.noclip and 0 or 0.8), ",3.6;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
                 end
                 if player_privs.give ~= nil then
-                    table.insert(fs, table.concat({"image[", panel_width + spacer + 3.55 + (player_privs.give and 0 or 0.8), ",3.9;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
+                    table.insert(fs, table.concat({"image[", panel_width + spacer + 3.55 + (player_privs.give and 0 or 0.8), ",4.0;0.4,0.4;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]"}))
                 end
 
                 table.insert(fs, table.concat({
-                    "checkbox[", panel_width + spacer, ",3.3;allowpriv_interact;;", tostring(context.selected_privs.interact == true), "]",
-                    "checkbox[", panel_width + spacer, ",3.7;allowpriv_shout;;", tostring(context.selected_privs.shout == true), "]",
-                    "checkbox[", panel_width + spacer, ",4.1;allowpriv_fast;;", tostring(context.selected_privs.fast == true), "]",
-                    "checkbox[", panel_width + spacer + 0.4, ",3.3;ignorepriv_interact;;", tostring(context.selected_privs.interact == "nil"), "]",
-                    "checkbox[", panel_width + spacer + 0.4, ",3.7;ignorepriv_shout;;", tostring(context.selected_privs.shout == "nil"), "]",
-                    "checkbox[", panel_width + spacer + 0.4, ",4.1;ignorepriv_fast;;", tostring(context.selected_privs.fast == "nil"), "]",
-                    "checkbox[", panel_width + spacer + 0.8, ",3.3;denypriv_interact;;", tostring(context.selected_privs.interact == false), "]",
-                    "checkbox[", panel_width + spacer + 0.8, ",3.7;denypriv_shout;;", tostring(context.selected_privs.shout == false), "]",
-                    "checkbox[", panel_width + spacer + 0.8, ",4.1;denypriv_fast;;", tostring(context.selected_privs.fast == false), "]",
-                    "checkbox[", panel_width + spacer + 3.6, ",3.3;allowpriv_fly;;", tostring(context.selected_privs.fly == true), "]",
-                    "checkbox[", panel_width + spacer + 3.6, ",3.7;allowpriv_noclip;;", tostring(context.selected_privs.noclip == true), "]",
-                    "checkbox[", panel_width + spacer + 3.6, ",4.1;allowpriv_give;;", tostring(context.selected_privs.give == true), "]",
-                    "checkbox[", panel_width + spacer + 4.0, ",3.3;ignorepriv_fly;;", tostring(context.selected_privs.fly == "nil"), "]",
-                    "checkbox[", panel_width + spacer + 4.0, ",3.7;ignorepriv_noclip;;", tostring(context.selected_privs.noclip == "nil"), "]",
-                    "checkbox[", panel_width + spacer + 4.0, ",4.1;ignorepriv_give;;", tostring(context.selected_privs.give == "nil"), "]",
-                    "checkbox[", panel_width + spacer + 4.4, ",3.3;denypriv_fly;;", tostring(context.selected_privs.fly == false), "]",
-                    "checkbox[", panel_width + spacer + 4.4, ",3.7;denypriv_noclip;;", tostring(context.selected_privs.noclip == false), "]",
-                    "checkbox[", panel_width + spacer + 4.4, ",4.1;denypriv_give;;", tostring(context.selected_privs.give == false), "]",
-                    "button[", panel_width + spacer, ",4.4;3.5,0.8;p_priv_update;Update privs]",
-                    "button[", panel_width + spacer + 3.6, ",4.4;3.5,0.8;p_priv_reset;Reset privs]",
+                    "checkbox[", panel_width + spacer, ",3.4;allowpriv_interact;;", tostring(context.selected_privs.interact == true), "]",
+                    "checkbox[", panel_width + spacer, ",3.8;allowpriv_shout;;", tostring(context.selected_privs.shout == true), "]",
+                    "checkbox[", panel_width + spacer, ",4.2;allowpriv_fast;;", tostring(context.selected_privs.fast == true), "]",
+                    "checkbox[", panel_width + spacer + 0.4, ",3.4;ignorepriv_interact;;", tostring(context.selected_privs.interact == "nil"), "]",
+                    "checkbox[", panel_width + spacer + 0.4, ",3.8;ignorepriv_shout;;", tostring(context.selected_privs.shout == "nil"), "]",
+                    "checkbox[", panel_width + spacer + 0.4, ",4.2;ignorepriv_fast;;", tostring(context.selected_privs.fast == "nil"), "]",
+                    "checkbox[", panel_width + spacer + 0.8, ",3.4;denypriv_interact;;", tostring(context.selected_privs.interact == false), "]",
+                    "checkbox[", panel_width + spacer + 0.8, ",3.8;denypriv_shout;;", tostring(context.selected_privs.shout == false), "]",
+                    "checkbox[", panel_width + spacer + 0.8, ",4.2;denypriv_fast;;", tostring(context.selected_privs.fast == false), "]",
+                    "checkbox[", panel_width + spacer + 3.6, ",3.4;allowpriv_fly;;", tostring(context.selected_privs.fly == true), "]",
+                    "checkbox[", panel_width + spacer + 3.6, ",3.8;allowpriv_noclip;;", tostring(context.selected_privs.noclip == true), "]",
+                    "checkbox[", panel_width + spacer + 3.6, ",4.2;allowpriv_give;;", tostring(context.selected_privs.give == true), "]",
+                    "checkbox[", panel_width + spacer + 4.0, ",3.4;ignorepriv_fly;;", tostring(context.selected_privs.fly == "nil"), "]",
+                    "checkbox[", panel_width + spacer + 4.0, ",3.8;ignorepriv_noclip;;", tostring(context.selected_privs.noclip == "nil"), "]",
+                    "checkbox[", panel_width + spacer + 4.0, ",4.2;ignorepriv_give;;", tostring(context.selected_privs.give == "nil"), "]",
+                    "checkbox[", panel_width + spacer + 4.4, ",3.4;denypriv_fly;;", tostring(context.selected_privs.fly == false), "]",
+                    "checkbox[", panel_width + spacer + 4.4, ",3.8;denypriv_noclip;;", tostring(context.selected_privs.noclip == false), "]",
+                    "checkbox[", panel_width + spacer + 4.4, ",4.2;denypriv_give;;", tostring(context.selected_privs.give == false), "]",
+                    "button[", panel_width + spacer, ",4.5;3.5,0.8;p_priv_update;Update privs]",
+                    "button[", panel_width + spacer + 3.6, ",4.5;3.5,0.8;p_priv_reset;Reset privs]",
 
-                    "textarea[", panel_width + text_spacer, ",5.3;", panel_width - 2*text_spacer, ",1;;;Actions]",
-                    "button[", panel_width + spacer, ",5.7;2.3,0.8;p_teleport;Teleport]",
-                    "button[", panel_width + spacer + 2.4, ",5.7;2.3,0.8;p_bring;Bring]",
-                    "button[", panel_width + spacer + 4.8, ",5.7;2.3,0.8;p_audience;Audience]",
-                    "button[", panel_width + spacer + 2.4, ",7.5;2.3,0.8;p_kick;Kick]",
-                    "button[", panel_width + spacer + 4.8, ",7.5;2.3,0.8;p_ban;Ban]",
-                    create_state_button(panel_width + spacer, 6.6, 2.3, 0.8, {[true] = "p_mute", [false] = "p_unmute"},
+                    "textarea[", panel_width + text_spacer, ",5.45;", panel_width - 2*text_spacer, ",1;;;Global actions]",
+                    "button[", panel_width + spacer, ",5.85;2.3,0.8;p_teleport;Teleport]",
+                    "button[", panel_width + spacer + 2.4, ",5.85;2.3,0.8;p_bring;Bring]",
+                    "button[", panel_width + spacer + 4.8, ",5.85;2.3,0.8;p_audience;Audience]",
+                    create_state_button(panel_width + spacer, 6.75, 2.3, 0.8, {[true] = "p_mute", [false] = "p_unmute"},
                     {[true] = "Mute", [false] = "Unmute", default = "Mute"}, priv_b_state.shout),
-                    create_state_button(panel_width + spacer + 2.4, 6.6, 2.3, 0.8, {[true] = "p_deactivate", [false] = "p_reactivate"},
+                    create_state_button(panel_width + spacer + 2.4, 6.75, 2.3, 0.8, {[true] = "p_deactivate", [false] = "p_reactivate"},
                     {[true] = "Deactivate", [false] = "Reactivate", default = "Activate"}, priv_b_state.interact),
-                    create_state_button(panel_width + spacer + 4.8, 6.6, 2.3, 0.8, {[true] = "p_freeze", [false] = "p_unfreeze"},
+                    create_state_button(panel_width + spacer + 4.8, 6.75, 2.3, 0.8, {[true] = "p_freeze", [false] = "p_unfreeze"},
                     {[true] = "Freeze", [false] = "Unfreeze", default = "Freeze"}, priv_b_state.frozen),
-                    create_state_button(panel_width + spacer, 7.5, 2.3, 0.8, {[true] = "p_timeout", [false] = "p_endtimeout"},
+                    create_state_button(panel_width + spacer, 7.65, 2.3, 0.8, {[true] = "p_timeout", [false] = "p_endtimeout"},
                     {[true] = "Timeout", [false] = "End timeout", default = "Timeout"}, priv_b_state.timeout),
+                    "button[", panel_width + spacer + 2.4, ",7.65;2.3,0.8;p_kick;Kick]",
+                    "button[", panel_width + spacer + 4.8, ",7.65;2.3,0.8;p_ban;Ban]",
                     
-                    "textarea[", panel_width + text_spacer, ",8.4;", panel_width - 2*text_spacer, ",1;;;Server Role]",
+                    "textarea[", panel_width + text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Server role]",
+                    "style[blocked_role_student,blocked_role_teacher,blocked_role_admin;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.blocked.."]",
                 }))
 
-                if not has_server_privs then
-                    table.insert(fs, "style[blocked_role_teacher,blocked_role_admin;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.blocked.."]")
-                end
                 if selected_player then
                     table.insert(fs, "style["..role_to_fs_elem(mc_teacher.get_server_role(selected_player), has_server_privs)..";bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.selected.."]")
                 end
                 table.insert(fs, table.concat({
-                    "image[", panel_width + spacer, ",8.8;3.5,1;mc_pixel.png^[multiply:", mc_core.col.t.blue, "]",
-                    "image[", panel_width + spacer + 3.6, ",8.8;3.5,1;mc_pixel.png^[multiply:", mc_core.col.t.orange, "]",
-                    "button[", panel_width + spacer + 0.1, ",8.9;1.6,0.8;p_role_none;None]",
-                    "button[", panel_width + spacer + 1.8, ",8.9;1.6,0.8;p_role_student;Student]",
-                    "button[", panel_width + spacer + 3.7, ",8.9;1.6,0.8;", has_server_privs and "p_role_teacher" or "blocked_role_teacher", ";Teacher]",
-                    "button[", panel_width + spacer + 5.4, ",8.9;1.6,0.8;", has_server_privs and "p_role_admin" or "blocked_role_admin", ";Admin]",
+                    "button[", panel_width + spacer, ",9;2.3,0.8;", has_server_privs and "p_role_student" or "blocked_role_student", ";Student]",
+                    "button[", panel_width + spacer + 2.4, ",9;2.3,0.8;", has_server_privs and "p_role_teacher" or "blocked_role_teacher", ";Teacher]",
+                    "button[", panel_width + spacer + 4.8, ",9;2.3,0.8;", has_server_privs and "p_role_admin" or "blocked_role_admin", ";Admin]",
                     
                     "tooltip[p_mode_selected;The selected player;#404040;#ffffff]",
                     "tooltip[p_mode_tab;All players in the selected tab;#404040;#ffffff]",
                     "tooltip[p_mode_all;All online players;#404040;#ffffff]",
-                    "tooltip[p_role_none;No privileges\nListed as a student\nCan not use classroom tools;#404040;#ffffff]",
-                    "tooltip[p_role_student;Privileges: student\nListed as a student\nCan use student tools;#404040;#ffffff]",
-                    "tooltip[", has_server_privs and "p_role_teacher" or "blocked_role_teacher", ";Privileges: student, teacher\nListed as a teacher\nCan use student and teacher tools;#404040;#ffffff]",
-                    "tooltip[", has_server_privs and "p_role_admin" or "blocked_role_admin", ";Privileges: student, teacher, server\nListed as a teacher\nCan use student, teacher, and administrator tools;#404040;#ffffff]",
+                    "tooltip[", has_server_privs and "p_role_student" or "blocked_role_student", ";No universal privileges\nCan use student tools", has_server_privs and "" or "\n(Only administrators can change roles)", ";#404040;#ffffff]",
+                    "tooltip[", has_server_privs and "p_role_teacher" or "blocked_role_teacher", ";Universal privileges: teacher\nCan use student and teacher tools", has_server_privs and "" or "\n(Only administrators can change roles)", ";#404040;#ffffff]",
+                    "tooltip[", has_server_privs and "p_role_admin" or "blocked_role_admin", ";Universal privileges: teacher, server\nCan use student, teacher, and administrator tools", has_server_privs and "" or "\n(Only administrators can change roles)", ";#404040;#ffffff]",
                     
-                    "tooltip[", panel_width + text_spacer, ",2.7;0.4,0.4;ALLOW: Privilege will be granted\n(overrides universal privileges);#404040;#ffffff]",
-                    "tooltip[", panel_width + text_spacer + 0.4, ",2.7;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
-                    "tooltip[", panel_width + text_spacer + 0.8, ",2.7;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
-                    "tooltip[", panel_width + text_spacer + 3.6, ",2.7;0.4,0.4;ALLOW: Privilege will be granted\n(overrides universal privileges);#404040;#ffffff]",
-                    "tooltip[", panel_width + text_spacer + 4.0, ",2.7;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
-                    "tooltip[", panel_width + text_spacer + 4.4, ",2.7;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
+                    "tooltip[", panel_width + text_spacer, ",2.8;0.4,0.4;ALLOW: Privilege will be granted\n(overrides universal privileges);#404040;#ffffff]",
+                    "tooltip[", panel_width + text_spacer + 0.4, ",2.8;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
+                    "tooltip[", panel_width + text_spacer + 0.8, ",2.8;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
+                    "tooltip[", panel_width + text_spacer + 3.6, ",2.8;0.4,0.4;ALLOW: Privilege will be granted\n(overrides universal privileges);#404040;#ffffff]",
+                    "tooltip[", panel_width + text_spacer + 4.0, ",2.8;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
+                    "tooltip[", panel_width + text_spacer + 4.4, ",2.8;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
                     "tooltip[p_mute;Revokes the shout privilege globally;#404040;#ffffff]",
                     "tooltip[p_unmute;Re-grants the shout privilege globally;#404040;#ffffff]",
                     "tooltip[p_deactivate;Revokes the interact privilege globally;#404040;#ffffff]",
@@ -1520,8 +1513,8 @@ function mc_teacher.show_controller_fs(player, tab)
                     "textarea[", text_spacer, ",3.7;", panel_width - 2*text_spacer, ",1;;;Send as:]",
                     "dropdown[", spacer, ",4.1;", panel_width - 2*spacer, ",0.8;server_message_type;General server message,Server message from yourself,Chat message from yourself;", context.server_message_type or mc_teacher.M.MODE.SERVER_ANON, ";true]",
                     "textarea[", text_spacer, ",4.9;", panel_width - 2*text_spacer, ",1;;;Send to:]",
-                    "button[", spacer, ",5.3;1.7,0.8;server_send_teachers;Teachers]",
-                    "button[", spacer + 1.8, ",5.3;1.7,0.8;server_send_students;Students]",
+                    "button[", spacer, ",5.3;1.7,0.8;server_send_students;Students]",
+                    "button[", spacer + 1.8, ",5.3;1.7,0.8;server_send_teachers;Teachers]",
                     "button[", spacer + 3.6, ",5.3;1.7,0.8;server_send_admins;Admins]",
                     "button[", spacer + 5.4, ",5.3;1.7,0.8;server_send_all;Everyone]",
 
@@ -1764,67 +1757,71 @@ textlist[0.6,1.4;7.1,7.5;student_list;;1;false]
 button[7.25,0.95;0.45,0.45;p_group_new;+]
 button[0.6,9;3.5,0.8;p_group_edit;Edit group]
 button[4.2,9;3.5,0.8;p_group_delete;Delete group]
-image[4.25,1.45;0.4,0.4;]
-image[4.75,1.45;0.4,0.4;]
-image[5.25,1.45;0.4,0.4;]
-image[5.75,1.45;0.4,0.4;]
-image[6.25,1.45;0.4,0.4;]
-image[6.75,1.45;0.4,0.4;]
-image[7.25,1.45;0.4,0.4;]
+image[0.65,1.45;0.4,0.4;]
+image[1.15,1.45;0.4,0.4;]
+image[1.65,1.45;0.4,0.4;]
+image[2.15,1.45;0.4,0.4;]
+image[2.65,1.45;0.4,0.4;]
+image[3.15,1.45;0.4,0.4;]
+image[3.75,1.45;0.4,0.4;]
 textarea[8.85,1;7.2,1;;;Action Mode]
 button[8.9,1.4;2.3,0.8;;Selected]
 button[11.3,1.4;2.3,0.8;;Group]
 button[13.7,1.4;2.3,0.8;;All]
-textarea[8.85,2.3;7.2,1;;;Privileges in this Classroom]
-textarea[10.15,3.1;2.3,1;;;interact]
-textarea[10.15,3.5;1.8,1;;;shout]
-textarea[10.15,3.9;1.8,1;;;fast]
-textarea[13.75,3.1;1.8,1;;;fly]
-textarea[13.75,3.5;1.8,1;;;noclip]
-textarea[13.75,3.9;1.8,1;;;give]
-image[8.9,2.7;0.4,0.4;mc_teacher_check.png]
-image[9.3,2.7;0.4,0.4;mc_teacher_ignore.png]
-image[9.7,2.7;0.4,0.4;mc_teacher_delete.png]
-image[12.5,2.7;0.4,0.4;mc_teacher_check.png]
-image[12.9,2.7;0.4,0.4;mc_teacher_ignore.png]
-image[13.3,2.7;0.4,0.4;mc_teacher_delete.png]
-checkbox[8.9,3.3;allowpriv_interact;;false]
-checkbox[8.9,3.7;allowpriv_shout;;false]
-checkbox[8.9,4.1;allowpriv_fast;;false]
-checkbox[9.3,3.3;ignorepriv_interact;;true]
-checkbox[9.3,3.7;ignorepriv_shout;;true]
-checkbox[9.3,4.1;ignorepriv_fast;;true]
-checkbox[9.7,3.3;denypriv_interact;;false]
-checkbox[9.7,3.7;denypriv_shout;;false]
-checkbox[9.7,4.1;denypriv_fast;;false]
-checkbox[12.5,3.3;allowpriv_fly;;false]
-checkbox[12.5,3.7;allowpriv_noclip;;false]
-checkbox[12.5,4.1;allowpriv_give;;false]
-checkbox[12.9,3.3;ignorepriv_fly;;true]
-checkbox[12.9,3.7;ignorepriv_noclip;;true]
-checkbox[12.9,4.1;ignorepriv_give;;true]
-checkbox[13.3,3.3;denypriv_fly;;false]
-checkbox[13.3,3.7;denypriv_noclip;;false]
-checkbox[13.3,4.1;denypriv_give;;false]
-button[8.9,4.4;3.5,0.8;p_priv_update;Update privs]
-button[12.5,4.4;3.5,0.8;p_priv_reset;Reset privs]
-textarea[8.85,5.3;7.2,1;;;Actions]
-button[8.9,5.7;2.3,0.8;p_teleport;Teleport]
-button[11.3,5.7;2.3,0.8;p_bring;Bring]
-button[13.7,5.7;2.3,0.8;p_audience;Audience]
-button[8.9,6.6;2.3,0.8;p_mute;Mute]
-button[11.3,6.6;2.3,0.8;p_deactivate;Deactivate]
-button[13.7,6.6;2.3,0.8;p_freeze;Freeze]
-button[8.9,7.5;2.3,0.8;p_timeout;Timeout]
-button[11.3,7.5;2.3,0.8;p_kick;Kick]
-button[13.7,7.5;2.3,0.8;p_ban;Ban]
-textarea[8.9,8.4;7.2,1;;;Server Role]
-box[12.5,8.8;3.5,1;#FFCC00]
-box[8.9,8.8;3.5,1;#00FF00]
-button[9,8.9;1.6,0.8;p_role_none;None]
-button[10.7,8.9;1.6,0.8;p_role_student;Student]
-button[12.6,8.9;1.6,0.8;p_role_teacher;Teacher]
-button[14.3,8.9;1.6,0.8;p_role_admin;Admin]
+textarea[8.85,2.35;7.2,1;;;Privileges in this Classroom]
+textarea[10.15,3.2;2.3,1;;;interact]
+textarea[10.15,3.6;1.8,1;;;shout]
+textarea[10.15,4;1.8,1;;;fast]
+textarea[13.75,3.2;1.8,1;;;fly]
+textarea[13.75,3.6;1.8,1;;;noclip]
+textarea[13.75,4;1.8,1;;;give]
+image[8.9,2.8;0.4,0.4;mc_teacher_check.png]
+image[9.3,2.8;0.4,0.4;mc_teacher_ignore.png]
+image[9.7,2.8;0.4,0.4;mc_teacher_delete.png]
+image[12.5,2.8;0.4,0.4;mc_teacher_check.png]
+image[12.9,2.8;0.4,0.4;mc_teacher_ignore.png]
+image[13.3,2.8;0.4,0.4;mc_teacher_delete.png]
+checkbox[8.9,3.4;allowpriv_interact;;false]
+checkbox[8.9,3.8;allowpriv_shout;;false]
+checkbox[8.9,4.2;allowpriv_fast;;false]
+checkbox[9.3,3.4;ignorepriv_interact;;true]
+checkbox[9.3,3.8;ignorepriv_shout;;true]
+checkbox[9.3,4.2;ignorepriv_fast;;true]
+checkbox[9.7,3.4;denypriv_interact;;false]
+checkbox[9.7,3.8;denypriv_shout;;false]
+checkbox[9.7,4.2;denypriv_fast;;false]
+checkbox[12.5,3.4;allowpriv_fly;;false]
+checkbox[12.5,3.8;allowpriv_noclip;;false]
+checkbox[12.5,4.2;allowpriv_give;;false]
+checkbox[12.9,3.4;ignorepriv_fly;;true]
+checkbox[12.9,3.8;ignorepriv_noclip;;true]
+checkbox[12.9,4.2;ignorepriv_give;;true]
+checkbox[13.3,3.4;denypriv_fly;;false]
+checkbox[13.3,3.8;denypriv_noclip;;false]
+checkbox[13.3,4.2;denypriv_give;;false]
+button[8.9,4.5;3.5,0.8;p_priv_update;Update privs]
+button[12.5,4.5;3.5,0.8;p_priv_reset;Reset privs]
+textarea[8.85,5.45;7.2,1;;;Actions]
+button[8.9,5.85;2.3,0.8;p_teleport;Teleport]
+button[11.3,5.85;2.3,0.8;p_bring;Bring]
+button[13.7,5.85;2.3,0.8;p_audience;Audience]
+button[8.9,6.75;2.3,0.8;p_mute;Mute]
+button[11.3,6.75;2.3,0.8;p_deactivate;Deactivate]
+button[13.7,6.75;2.3,0.8;p_freeze;Freeze]
+button[8.9,7.65;2.3,0.8;p_timeout;Timeout]
+button[11.3,7.65;2.3,0.8;p_kick;Kick]
+button[13.7,7.65;2.3,0.8;p_ban;Ban]
+textarea[8.9,8.6;7.2,1;;;Server Role]
+button[8.9,9;2.3,0.8;p_role_student;Student]
+button[11.3,9;2.3,0.8;p_role_teacher;Teacher]
+button[13.7,9;2.3,0.8;p_role_admin;Admin]
+
+-- ALT ROLE AREA
+box[11.3,8.8;4.7,1;#FFCC00]
+box[8.9,8.8;2.4,1;#00FF00]
+button[9,8.9;2.2,0.8;p_role_student;Student]
+button[11.4,8.9;2.2,0.8;p_role_teacher;Teacher]
+button[13.7,8.9;2.2,0.8;p_role_admin;Admin]
 
 MODERATION:
 formspec_version[6]
@@ -1895,8 +1892,8 @@ textarea[0.6,1.4;7.1,2.3;server_message;;]
 textarea[0.6,3.7;7.2,1;;;Send as:]
 dropdown[0.6,4.1;7.1,0.8;server_message_type;Anonymous server message,Server message from yourself,Chat message from yourself;1;true]
 textarea[0.6,4.9;7.2,1;;;Send to:]
-button[2.4,5.3;1.7,0.8;server_send_teachers;Teachers]
 button[0.6,5.3;1.7,0.8;server_send_students;Students]
+button[2.4,5.3;1.7,0.8;server_send_teachers;Teachers]
 button[4.2,5.3;1.7,0.8;server_send_admins;Admins]
 button[6,5.3;1.7,0.8;server_send_all;Everyone]
 textarea[0.6,6.3;7.2,1;;;Schedule Server Shutdown]

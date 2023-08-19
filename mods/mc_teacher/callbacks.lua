@@ -17,9 +17,9 @@ minetest.register_on_joinplayer(function(player)
     local pmeta = player:get_meta()
 
     local priv_format = pmeta:get_int("priv_format")
-    if not priv_format or priv_format < 3 then
-        mc_worldManager.grantUniversalPriv(player, {"student"})
-        pmeta:set_int("priv_format", 3)
+    if not priv_format or priv_format < 4 then
+        pmeta:set_int("priv_format", 4)
+        mc_worldManager.revokeUniversalPriv(player, {"student"})
         local realm = Realm.GetRealmFromPlayer(player)
         if realm then realm:ApplyPrivileges(player) end
     end
@@ -95,10 +95,6 @@ end
 
 local function pluralize(count, role)
     local map = {
-        [mc_teacher.ROLES.NONE] = {
-            [true] = "roleless",
-            [false] = "roleless",
-        },
         [mc_teacher.ROLES.STUDENT] = {
             [true] = "a student",
             [false] = "students",
@@ -294,8 +290,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         end
         mc_teacher.show_controller_fs(player, context.tab)
-    elseif formname == "mc_teacher:role_change_"..mc_teacher.ROLES.NONE or formname == "mc_teacher:role_change_"..mc_teacher.ROLES.STUDENT
-    or (has_server_privs and (formname == "mc_teacher:role_change_"..mc_teacher.ROLES.TEACHER or formname == "mc_teacher:role_change_"..mc_teacher.ROLES.ADMIN)) then
+    elseif has_server_privs and string.sub(formname or "", 1, 23) == "mc_teacher:role_change_" then
         -----------------------
         -- ROLE CHANGE POPUP --
         -----------------------
@@ -310,19 +305,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     if not p_obj or not p_obj:is_player() then
                         minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Could not change server role of player "..tostring(p).." (they are probably offline)."))
                     else
-                        if formname == "mc_teacher:role_change_"..mc_teacher.ROLES.NONE then
-                            mc_worldManager.revokeUniversalPriv(p_obj, {"student", "teacher", "server"})
-                            mc_teacher.register_student(p)
-                        elseif formname == "mc_teacher:role_change_"..mc_teacher.ROLES.STUDENT then
-                            mc_worldManager.grantUniversalPriv(p_obj, {"student"})
+                        if formname == "mc_teacher:role_change_"..mc_teacher.ROLES.STUDENT then
                             mc_worldManager.revokeUniversalPriv(p_obj, {"teacher", "server"})
                             mc_teacher.register_student(p)
-                        elseif has_server_privs and formname == "mc_teacher:role_change_"..mc_teacher.ROLES.TEACHER then
-                            mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher"})
+                        elseif formname == "mc_teacher:role_change_"..mc_teacher.ROLES.TEACHER then
+                            mc_worldManager.grantUniversalPriv(p_obj, {"teacher"})
                             mc_worldManager.revokeUniversalPriv(p_obj, {"server"})
                             mc_teacher.register_teacher(p)
-                        elseif has_server_privs and formname == "mc_teacher:role_change_"..mc_teacher.ROLES.ADMIN then
-                            mc_worldManager.grantUniversalPriv(p_obj, {"student", "teacher", "server"})
+                        elseif formname == "mc_teacher:role_change_"..mc_teacher.ROLES.ADMIN then
+                            mc_worldManager.grantUniversalPriv(p_obj, {"teacher", "server"})
                             mc_teacher.register_teacher(p)
                         end
 
@@ -526,10 +517,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         -------------
         if fields.record_nav then
             context.tab = fields.record_nav
+            context.p_list = nil
             reload = true
         end
         if fields.default_tab then
             pmeta:set_string("default_teacher_tab", context.tab)
+            context.p_list = nil
             reload = true
         end
 
@@ -872,6 +865,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             else
                 minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This group can not be edited."))
             end
+            context.p_list = nil
+            reload = true
         elseif fields.p_group_delete then
             if tonumber(context.selected_p_tab) > mc_teacher.PTAB.N then
                 return mc_teacher.show_confirm_popup(player, "confirm_group_delete", {
@@ -881,6 +876,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             else
                 minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This group can not be deleted."))
             end
+            context.p_list = nil
+            reload = true
         elseif fields.p_priv_update or fields.p_priv_reset then
             local players_to_update = get_players_to_update(player, context, true)
             local realm = Realm.GetRealmFromPlayer(player)
@@ -914,6 +911,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             else
                 return mc_teacher.show_kick_popup(player, #players_to_update)
             end
+            context.p_list = nil
+            reload = true
         elseif fields.p_ban then
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
@@ -928,6 +927,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     button = "Ban player"..(#players_to_update == 1 and "" or "s")
                 }, {y = 3.8})
             end
+            context.p_list = nil
+            reload = true
         elseif fields.p_teleport then
             local pname = player:get_player_name()
             local sel_pname = context.p_list[context.selected_p_player]
@@ -1078,7 +1079,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
             context.p_list = nil
             reload = true
-        elseif fields.p_role_none or fields.p_role_student then
+        elseif has_server_privs and (fields.p_role_student or fields.p_role_teacher or fields.p_role_admin) then
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
             if #players_to_update <= 0 then
@@ -1087,26 +1088,20 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not change your own server role."))
             else
                 local p_count_string = (#players_to_update == 1 and "this player" or "these "..tostring(#players_to_update).." players")
-                local role = fields.p_role_student and mc_teacher.ROLES.STUDENT or mc_teacher.ROLES.NONE
-                return mc_teacher.show_confirm_popup(player, "role_change_"..role,
-                    {action = "Are you sure you want "..p_count_string.." to be "..pluralize(#players_to_update, role).."?"}
-                )
+                if fields.p_role_student then
+                    return mc_teacher.show_confirm_popup(player, "role_change_"..mc_teacher.ROLES.STUDENT,
+                        {action = "Are you sure you want "..p_count_string.." to be "..pluralize(#players_to_update, mc_teacher.ROLES.STUDENT).."?"}
+                    )
+                else
+                    local role = fields.p_role_admin and mc_teacher.ROLES.ADMIN or mc_teacher.ROLES.TEACHER
+                    return mc_teacher.show_confirm_popup(player, "role_change_"..role,
+                        {action = "Are you sure you want "..p_count_string.." to be "..pluralize(#players_to_update, role).."?\nThis will give them access to tools which can be used to modify the server."},
+                        {y = 4.3}
+                    )
+                end
             end
-        elseif has_server_privs and (fields.p_role_teacher or fields.p_role_admin) then
-            local players_to_update = get_players_to_update(player, context)
-            local pname = player:get_player_name()
-            if #players_to_update <= 0 then
-                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
-            elseif #players_to_update == 1 and players_to_update[1] == pname then
-                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not change your own server role."))
-            else
-                local p_count_string = (#players_to_update == 1 and "this player" or "these "..tostring(#players_to_update).." players")
-                local role = fields.p_role_admin and mc_teacher.ROLES.ADMIN or mc_teacher.ROLES.TEACHER
-                return mc_teacher.show_confirm_popup(player, "role_change_"..role,
-                    {action = "Are you sure you want "..p_count_string.." to be "..pluralize(#players_to_update, role).."?\nThis will give them access to tools which can be used to modify the server."},
-                    {y = 4.3}
-                )
-            end
+            context.p_list = nil
+            reload = true
         end
 
         ----------------
@@ -1295,14 +1290,12 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] The scheduled server restart has been cancelled."))
                 reload = true
             elseif fields.server_shutdown_schedule then
-                -- TODO: make popup
                 context.server_shutdown_timer = fields.server_shutdown_timer
                 return mc_teacher.show_confirm_popup(player, "confirm_shutdown_schedule", {
                     action = "Are you sure you want to schedule a server shutdown in "..context.server_shutdown_timer.." from now?\nClassrooms will be saved prior to the shutdown.",
                     button = "Schedule"
                 }, {x = 9.2, y = 3.9})
             elseif fields.server_shutdown_now then
-                -- TODO: make popup
                 return mc_teacher.show_confirm_popup(player, "confirm_shutdown_now", {
                     action = "Are you sure you want to perform a server shutdown right now?\nClassrooms will be saved prior to the shutdown."
                 }, {x = 9.2, y = 3.5})

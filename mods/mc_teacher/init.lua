@@ -23,10 +23,9 @@ mc_teacher = {
     PTAB = {STUDENTS = "1", TEACHERS = "2", CLASSROOM = "3", N = 3},
     STAB = {BANNED = "1", ONLINE = "2", MODS = "3"},
     ROLES = {
-        NONE = "1",
-        STUDENT = "2",
-        TEACHER = "3",
-        ADMIN = "4",
+        STUDENT = "1",
+        TEACHER = "2",
+        ADMIN = "3",
     },
     MODES = {EMPTY = "1", SCHEMATIC = "2", TWIN = "3"},
     PMODE = {SELECTED = "1", TAB = "2", ALL = "3"},
