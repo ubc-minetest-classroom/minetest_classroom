@@ -104,16 +104,15 @@ function mc_worldManager.GetCreateInstancedRealm(realmName, player, schematic, t
 
     if (realm == nil) then
         if (schematic == nil or schematic == "" or schematic == "nil") then
-            realm = Realm:New("["..player:get_player_name().."] "..realmName, { x = realmSize.x or 80, y = realmSize.y or 80, z = realmSize.z or 80 })
+            realm = Realm:New(realmName, {x = realmSize.x or 80, y = realmSize.y or 80, z = realmSize.z or 80})
             realm:CreateGround()
             realm:CreateBarriers()
         else
-            realm = Realm:NewFromSchematic("["..player:get_player_name().."] "..realmName, schematic)
+            realm = Realm:NewFromSchematic(realmName, schematic)
         end
 
         realmInstanceTable[realmKey] = realm.ID
         realm:setCategoryKey("instanced")
-
         realm:AddOwner(player:get_player_name())
 
         if (temporary == nil) then
@@ -130,9 +129,9 @@ function mc_worldManager.GetCreateInstancedRealm(realmName, player, schematic, t
 end
 
 function mc_worldManager.InstancedDelete(realm, player)
-    local owners = realm:get_data("owner")
+    local owners = realm:GetOwners()
 
-    if (owners[player:get_player_name()] ~= nil) then
+    if (owners ~= nil and owners[player:get_player_name()] ~= nil) then
         realm:Delete()
     end
 end

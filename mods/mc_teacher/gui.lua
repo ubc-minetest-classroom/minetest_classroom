@@ -622,7 +622,7 @@ function mc_teacher.show_controller_fs(player, tab)
 
                         if (realm:isHidden() and context.selected_c_tab == mc_teacher.CTAB.HIDDEN) or (not realm:isHidden() and
                         ((context.selected_c_tab == mc_teacher.CTAB.PUBLIC and cat ~= mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.INSTANCED]) or (context.selected_c_tab == mc_teacher.CTAB.PRIVATE and cat == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.INSTANCED]))) then
-                            table.insert(classroom_list, table.concat({minetest.formspec_escape(realm.Name or ""), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
+                            table.insert(classroom_list, table.concat({minetest.formspec_escape(mc_teacher.get_realm_prefix(realm, cat) or ""), minetest.formspec_escape(realm.Name or "Unnamed classroom"), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
                             table.insert(context.realm_i_to_id, id)
                         end
                     end

@@ -701,7 +701,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     new_realm = Realm:NewFromDEM(realm_name, context.selected_dem)
                 end
 
-                new_realm:set_data("owner", player:get_player_name())
+                new_realm:AddOwner(player:get_player_name())
                 if context.selected_realm_type == mc_teacher.R.CAT_KEY.SPAWN then
                     mc_worldManager.SetSpawnRealm(new_realm)
                     minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server spawn classroom updated!"))

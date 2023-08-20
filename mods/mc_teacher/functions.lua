@@ -225,3 +225,24 @@ end
 function mc_teacher.get_group_index(group_id)
     return tonumber(group_id or mc_teacher.PTAB.N) - mc_teacher.PTAB.N
 end
+
+function mc_teacher.get_realm_prefix(realm, category)
+    if not realm or not category then
+        return ""
+    elseif category == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.INSTANCED] then
+        local raw_owners = realm:GetOwners() or {}
+        local owners = {}
+        for p,_ in pairs(raw_owners) do
+            table.insert(owners, p)
+        end
+        if next(owners) then
+            return "["..table.concat(owners, ", ").."] "
+        else
+            return ""
+        end
+    elseif category == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.SPAWN] then
+        return "[SPAWN] "
+    else
+        return ""
+    end
+end

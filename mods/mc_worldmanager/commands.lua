@@ -43,7 +43,7 @@ commands["new"] = {
         local newRealm = Realm:New(realmName, { x = sizeX, y = sizeY, z = sizeZ })
         newRealm:CreateGround()
         newRealm:CreateBarriersFast()
-        newRealm:set_data("owner", name)
+        newRealm:AddOwner(name)
 
         return true, "created new realm with ID: " .. newRealm.ID
     end,
