@@ -54,7 +54,7 @@ minetest.register_on_joinplayer(function(player, last_login)
 
     local realm = Realm.GetRealmFromPlayer(player)
     -- don't allow players to enter realms they no longer have access to when joining
-    if (not realm or not realm:getCategory().joinable(realm, player) or realm:isDeleted() or (realm:isHidden() and not mc_core.checkPrivs(player, {teacher = true}))) then
+    if not realm:Joinable(player) then
         realm = mc_worldManager.GetSpawnRealm()
         mc_core.temp_unfreeze_and_run(player, realm.TeleportPlayer, realm, player)
         pmeta:set_int("realm", realm.ID)

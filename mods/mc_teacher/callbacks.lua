@@ -937,7 +937,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 if not mc_core.is_frozen(player) then
                     local destination = sel_pobj:get_pos()
                     local realm = Realm.GetRealmFromPlayer(sel_pobj)
-                    if realm and not realm:isDeleted() and realm:getCategory().joinable(realm, player) then
+                    if realm and realm:Joinable(player) then
                         if mc_teacher.is_in_timeout(player) and realm.ID ~= (Realm.GetRealmFromPlayer(player) or {ID = 0}).ID then
                             minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not join other classrooms while in timeout."))
                         else
@@ -967,9 +967,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
                 for _, p in pairs(players_to_update) do
                     local p_obj = minetest.get_player_by_name(p)
-                    if p_obj and destRealm:getCategory().joinable(destRealm, player) and (not destRealm:isHidden() or mc_core.checkPrivs(p_obj, {teacher = true})) then
-                        mc_core.temp_unfreeze_and_run(p_obj, destRealm.TeleportPlayer, destRealm, player)
-                        p_obj:set_pos(destination)
+                    if destRealm:Joinable(p_obj) then
+                        mc_core.temp_unfreeze_and_run(p_obj, function()
+                            destRealm:TeleportPlayer(p_obj)
+                            p_obj:set_pos(destination)
+                        end)
                     else
                         minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Player "..tostring(p).." does not have access to your current classroom. Please check your current classroom's category and try again."))
                     end
@@ -979,6 +981,26 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
             context.p_list = nil
             reload = true
+        elseif fields.p_audience then
+            ---Audience action adapted from actions.lua in rubenwardy's classroom mod
+            ---@see https://gitlab.com/rubenwardy/classroom/-/blob/master/actions.lua
+            ---@license MIT: https://gitlab.com/rubenwardy/classroom/-/blob/1e7b11f824c03c882d74d5079d8275f3e297adea/LICENSE.txt
+
+            local players_to_update = get_players_to_update(player, context)
+            local pname = player:get_player_name()
+            local realm = Realm.GetRealmFromPlayer(player)
+            if #players_to_update <= 0 then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] There are no players selected."))
+            elseif #players_to_update == 1 and players_to_update[1] == pname then
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You can not create an audience containing only yourself."))
+            elseif realm and realm:Joinable(player) then
+                local eye_height = player:get_properties().eye_height
+                local teacher_pos = vector.add(player:get_pos(), {x = 0, y = eye_height, z = 0})
+                local res = mc_teacher.create_audience(players_to_update, realm, player:get_player_name(), teacher_pos, player:get_look_dir())
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..(res and "Audience created!" or "Could not fully create the requested audience, use the bring action instead.")))
+            else
+                minetest.chat_send_player(pname, minetest.colorize(mc_core.col.log, "[Minetest Classroom] You no longer have access to this classroom."))
+            end
         elseif fields.p_mute or fields.p_unmute then
             local players_to_update = get_players_to_update(player, context)
             local pname = player:get_player_name()
@@ -1469,15 +1491,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     local note_name = context.coord_i_to_note[context.selected_coord]
                     local note_i = pdata.note_map[note_name]
                     local realm = Realm.GetRealm(pdata.realms[note_i])
-                    if realm then
-                        if realm:getCategory().joinable(realm, player) and (not realm:isHidden() or mc_core.checkPrivs(player, {teacher = true})) then
-                            realm:TeleportPlayer(player)
-                            player:set_pos(pdata.coords[note_i])
-                        else
-                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You no longer have access to this classroom."))
-                        end
+                    if realm and realm:Joinable(player)then
+                        realm:TeleportPlayer(player)
+                        player:set_pos(pdata.coords[note_i])
                     else
-                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom no longer exists."))
+                        minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] You no longer have access to this classroom."))
                     end
                 else
                     minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Selected coordinate not found! Please report this issue to a server administrator."))
@@ -1499,7 +1517,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     for _,p_obj in pairs(minetest.get_connected_players()) do
                         if p_obj:get_player_name() ~= player:get_player_name() or not mc_core.is_frozen(p_obj) then
                             local p_realm = Realm.GetRealmFromPlayer(p_obj)
-                            if p_realm and p_realm.ID == tonumber(pdata.realms[note_i]) and realm:getCategory().joinable(realm, p_obj) and (not destRealm:isHidden() or mc_core.checkPrivs(player, {teacher = true})) then
+                            if p_realm and p_realm.ID == tonumber(pdata.realms[note_i]) and realm:Joinable(p_obj) then
                                 realm:TeleportPlayer(p_obj)
                                 p_obj:set_pos(pdata.coords[note_i])
                             end

@@ -246,3 +246,75 @@ function mc_teacher.get_realm_prefix(realm, category)
         return ""
     end
 end
+
+---Audience utilities (mc_teacher.create_audience, find_audience_center, place_player_if_pos_clear) adapted from actions.lua in rubenwardy's classroom mod
+---@see https://gitlab.com/rubenwardy/classroom/-/blob/master/actions.lua
+---@license MIT: https://gitlab.com/rubenwardy/classroom/-/blob/1e7b11f824c03c882d74d5079d8275f3e297adea/LICENSE.txt
+
+local function find_audience_center(start, direction)
+    local endp = vector.add(start, vector.multiply(direction, 10))
+    local rc = minetest.raycast(start, endp, false, true)
+    local first = rc:next()
+    if first then
+        return vector.subtract(first.under, direction)
+    else
+        return endp
+    end
+end
+
+local function place_player_if_pos_clear(player, pos, realm, face_pos)
+    -- Move down to ground
+    local rc = minetest.raycast(pos, vector.add(pos, { x = 0, y = -20, z = 0 }), false, true)
+    local first = rc:next()
+    if first then
+        pos = vector.add(first.under, { x = 0, y = 1, z = 0 })
+    end
+
+    -- Check teacher is visible and audience position is within realm
+    if not minetest.line_of_sight(pos, face_pos) or not realm:ContainsCoordinate(pos) then
+        return false
+    end
+
+    mc_core.temp_unfreeze_and_run(player, function()
+        realm:TeleportPlayer(player)
+        player:set_pos(pos)
+        local delta = vector.subtract(face_pos, pos)
+        player:set_look_horizontal(math.atan2(delta.z, delta.x) - math.pi / 2)
+    end)
+    return true
+end
+
+function mc_teacher.create_audience(players, realm, focus_pname, focus_pos, direction)
+    local center = find_audience_center(focus_pos, direction)
+    local dir_perp = vector.normalize(vector.new(direction.z, direction.y, -direction.x))
+    local row = 0
+    local raw_column = 0
+    local is_single_row = #players <= 5
+
+    while #players > 0 do
+        local p = table.remove(players, #players)
+        local p_obj = minetest.get_player_by_name(p)
+        if p ~= focus_pname and realm:Joinable(p_obj) then
+            -- calculate player position
+            local column = math.floor(raw_column / 2) * ((raw_column % 2) * 2 - 1) + raw_column % 2
+            local delta = vector.add(vector.multiply(direction, row), vector.multiply(dir_perp, column))
+            local pos = vector.add(center, delta)
+            if not place_player_if_pos_clear(p_obj, pos, realm, focus_pos) then
+                table.insert(players, p)
+            end
+            -- adjust position variables
+            row = is_single_row and row or ((row + 1) % 2)
+            if row ~= 1 then
+                raw_column = raw_column + 1
+            end
+            if raw_column >= 200 and raw_column % 100 == 1 then
+                is_single_row = true
+                row = math.floor(raw_column / 100)
+            end
+            if row > 10 then
+                return false
+            end
+        end
+    end
+    return true
+end

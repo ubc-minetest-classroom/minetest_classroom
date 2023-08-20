@@ -160,3 +160,10 @@ function Realm:ApplySkybox(player)
     local sky = self:get_data("skybox")
     skybox.set(player, skybox.get_sky_number(sky or skybox.get_default_sky()))
 end
+
+---@public
+---Checks if a player can join this realm.
+---@return boolean whether player can join this realm.
+function Realm:Joinable(player)
+    return player and player:is_player() and not self:isDeleted() and self:getCategory().joinable(self, player) and (not self:isHidden() or mc_core.checkPrivs(player, {teacher = true}))
+end

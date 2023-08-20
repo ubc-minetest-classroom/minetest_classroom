@@ -1040,8 +1040,6 @@ function mc_teacher.show_controller_fs(player, tab)
                     "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Manage Players</b></center></style>]",
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-                    -- TODO: re-impelment remaining actions
-                    "style[p_audience;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
                     "style[p_mode_", context.selected_p_mode == mc_teacher.PMODE.ALL and "all" or context.selected_p_mode == mc_teacher.PMODE.TAB and "tab" or "selected", ";bgimg=mc_pixel.png^[multiply:", mc_core.col.b.selected, "]",
                     context.selected_p_mode ~= mc_teacher.PMODE.SELECTED and "style[p_teleport;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.orange.."]" or "",
                 }
