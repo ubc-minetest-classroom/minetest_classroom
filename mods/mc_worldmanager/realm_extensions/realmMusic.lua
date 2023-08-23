@@ -16,16 +16,13 @@ function Realm.GetRegisteredMusic()
 end
 
 function Realm:UpdateMusic(sound, volume)
-    minetest.log("update: "..minetest.serialize(sound))
     self:set_data("background_sound", sound or nil)
     self:set_data("background_volume", volume and volume/100 or nil)
     Realm.SaveDataToStorage()
 end
 
 function Realm:GetMusic()
-    local res = self:get_data("background_sound") or "none"
-    minetest.log("get: "..res)
-    return res
+    return self:get_data("background_sound") or "none"
 end
 
 function Realm:ApplyMusic(player)
