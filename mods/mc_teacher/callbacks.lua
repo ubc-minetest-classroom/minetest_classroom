@@ -416,6 +416,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             context.edit_realm.type = fields.erealm_cat
         elseif fields.erealm_skybox and tonumber(fields.erealm_skybox) ~= tonumber(context.edit_realm.skybox) then
             context.edit_realm.skybox = tonumber(fields.erealm_skybox)
+        elseif fields.erealm_music and tonumber(fields.erealm_music) ~= tonumber(context.edit_realm.music) then
+            context.edit_realm.music = tonumber(fields.erealm_music)
         elseif fields.save_realm or fields.cancel or fields.quit then
             if fields.save_realm then
                 local realm = Realm.GetRealm(context.edit_realm.id)
@@ -603,6 +605,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.realm_skybox and tonumber(fields.realm_skybox) ~= tonumber(context.selected_skybox) then
             context.selected_skybox = tonumber(fields.realm_skybox)
         end
+        if fields.realm_music and tonumber(fields.realm_music) ~= tonumber(context.selected_music) then
+            context.selected_music = tonumber(fields.realm_music)
+        end
         
         if fields.c_newrealm then
             if mc_core.checkPrivs(player, {teacher = true}) then
@@ -710,6 +715,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 end
                 new_realm:UpdateRealmPrivilege(context.selected_privs)
                 new_realm:UpdateSkybox(context.skyboxes[context.selected_skybox])
+                -- TODO: allow volume to be set
+                new_realm:UpdateMusic(context.music[context.selected_music], 100)
                 minetest.chat_send_player(player:get_player_name(),minetest.colorize(mc_core.col.log, "[Minetest Classroom] Your requested classroom was successfully created."))
                 reload = true
             end

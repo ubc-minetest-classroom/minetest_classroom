@@ -179,6 +179,7 @@ function mc_teacher.save_realm(player, context, fields)
         realm.Name = (mc_core.trim(fields.erealm_name or "") ~= "" and fields.erealm_name) or (mc_core.trim(context.edit_realm.name or "") ~= "" and context.edit_realm.name) or "Unnamed classroom"
         realm:UpdateRealmPrivilege(context.edit_realm.privs or {})
         realm:UpdateSkybox(context.skyboxes[context.edit_realm.skybox])
+        realm:UpdateMusic(context.music[context.edit_realm.music], 100)
 
         -- update players in realm
         local players_in_realm = realm:GetPlayersAsArray()
@@ -187,6 +188,7 @@ function mc_teacher.save_realm(player, context, fields)
             if p_obj then
                 realm:ApplyPrivileges(p_obj)
                 realm:ApplySkybox(p_obj)
+                realm:ApplyMusic(p_obj)
             end
         end
         minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Classroom updated!"))
