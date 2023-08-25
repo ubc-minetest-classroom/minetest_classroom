@@ -748,7 +748,6 @@ commands["coordinates"] = {
             end
 
             if (format == "utm") then
-                local utminfo
                 if (utmInfo == nil) then
                     utmInfo = { easting = tonumber(params[3]), northing = tonumber(params[4]), zone = tonumber(params[5]), utm_is_north = tostring(params[6]) }
                 end
