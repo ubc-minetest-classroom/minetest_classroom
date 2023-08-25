@@ -179,7 +179,7 @@ minetest.register_globalstep(function(deltaTime)
             local pmeta = player:get_meta()
             local positionHudMode = pmeta:get_string("positionHudMode")
             if (positionHudMode ~= "") then
-                --mc_worldManager.UpdatePositionHud(player, positionHudMode)
+                mc_worldManager.UpdatePositionHud(player, positionHudMode)
             end
         end
     end
