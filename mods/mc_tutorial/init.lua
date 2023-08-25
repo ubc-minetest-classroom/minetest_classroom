@@ -68,7 +68,7 @@ local SAFE, CAUTION, UNSAFE = 0, 1, 2
 -- basic privilege safety: may be worth moving?
 local PRIV_SAFETY = { -- basic privileges by overall safety
     -- SAFE: generally safe to give to players
-    ["fast"] = SAFE, ["fly"] = SAFE, ["interact"] = SAFE, ["shout"] = SAFE, ["student"] = SAFE,
+    ["fast"] = SAFE, ["fly"] = SAFE, ["interact"] = SAFE, ["shout"] = SAFE,
     -- CAUTION: privileges which may be appropriate to grant in some circumstances, but have the potential to be abused
     ["noclip"] = CAUTION, ["give"] = CAUTION, ["teleport"] = CAUTION, ["bring"] = CAUTION, ["creative"] = CAUTION,
     ["settime"] = CAUTION, ["debug"] = CAUTION,
@@ -570,8 +570,8 @@ function mc_tutorial.show_record_fs(player)
                     "textlist[", panel_width + spacer, ",1.4;", panel_width - 2*spacer, ",5.9;reward_selection;", concat_col_field_list(context.selected_rewards, ","), ";", context.reward_selected and context.reward_selected[2] or 1, ";false]",
                     "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
                     "style_type[field;border=false;font=mono]",
-                    "image_button[7.9,1.4;0.8,2.85;mc_tutorial_reward_add.png;reward_add;;false;true]",
-                    "image_button[7.9,4.45;0.8,2.85;mc_tutorial_reward_delete.png;reward_delete;;false;true]",
+                    "image_button[7.9,1.4;0.8,2.85;mc_teacher_swap_arrow_add.png;reward_add;;false;true]",
+                    "image_button[7.9,4.45;0.8,2.85;mc_teacher_swap_arrow_delete.png;reward_delete;;false;true]",
                     "textarea[", panel_width + text_spacer, ",7.4;", panel_width - 2*text_spacer, ",1;;;Quantity (WIP)]",
                     "textarea[", panel_width + text_spacer, ",8.6;", panel_width - 2*text_spacer, ",1;;;Search for rewards (WIP)]",
                     "image[", panel_width + spacer, ",7.8;", panel_width - 2*spacer, ",0.8;mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
@@ -733,7 +733,7 @@ function mc_tutorial.show_record_options_fs(player)
         "label[3.5,0.6;What would you like to do?]",
         "box[0.4,1.1;10.6,4.7;#0090a0]",
         "box[0.4,6.2;10.6,1.7;#9040a0]",
-        "label[3.9,1.5;Add an Action or Event]",
+        "label[3.9,1.5;Add an action or event]",
         "button_exit[0.6,1.8;5,0.8;wieldeditem;Wield an item]",
         "button_exit[5.8,1.8;5,0.8;playercontrol;Press keys]",
         "button_exit[0.6,2.8;5,0.8;getpos;Go to current position]",
@@ -741,7 +741,7 @@ function mc_tutorial.show_record_options_fs(player)
         "button_exit[0.6,3.8;5,0.8;lookvertical;Look in current vertical dir.]",
         "button_exit[5.8,3.8;5,0.8;lookhorizontal;Look in current horizontal dir.]",
         "button[3.2,4.8;5,0.8;editor;Add action/event using editor]",
-        "label[4.6,6.6;Other Options]",
+        "label[4.6,6.6;Other options]",
         "button_exit[0.6,6.9;5,0.8;exit;Cancel]",
         "button_exit[5.8,6.9;5,0.8;stop;End recording]"
     }
@@ -796,7 +796,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                         "label[0.4,2.7;Registered items]",
                         "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
                         "image[6.4,6.5;1.2,1.2;mc_tutorial_tutorialbook.png]",
-                        "textarea[7.7,6.4;4.6,1.3;;;Item + desc]",
+                        "textarea[7.7,6.4;4.6,1.3;;;Item + description]",
                         "field[6.4,2.9;5.8,0.8;node;Punch (node);", context.epop.fields.node or "", "]",
                         "field[6.4,4.2;5.8,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
                         "image_button[11.1,2.9;1.1,0.8;mc_tutorial_paste.png;node_import;;false;false]",
@@ -817,7 +817,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                         "label[0.4,2.7;Registered items]",
                         "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
                         "image[6.4,6.5;1.2,1.2;mc_tutorial_tutorialbook.png]",
-                        "textarea[7.7,6.4;4.6,1.3;;;Item + desc]",
+                        "textarea[7.7,6.4;4.6,1.3;;;Item + description]",
                         "field[6.4,2.9;5.8,0.8;node;Dig (node);", context.epop.fields.node or "", "]",
                         "field[6.4,4.2;5.8,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
                         "image_button[11.1,2.9;1.1,0.8;mc_tutorial_paste.png;node_import;;false;false]",
@@ -838,7 +838,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                         "label[0.4,2.7;Registered nodes]",
                         "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
                         "image[6.4,6.5;1.2,1.2;mc_tutorial_tutorialbook.png]",
-                        "textarea[7.7,6.4;4.6,1.3;;;Node + desc]",
+                        "textarea[7.7,6.4;4.6,1.3;;;Node + description]",
                         "field[6.4,2.9;5.8,0.8;node;Place (node);", context.epop.fields.node or "", "]",
                         "image_button[11.1,2.9;1.1,0.8;mc_tutorial_paste.png;node_import;;false;false]",
                         "field_close_on_enter[node;false]",
@@ -855,7 +855,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                         "label[0.4,2.7;Registered items]",
                         "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
                         "image[6.4,6.5;1.2,1.2;mc_tutorial_tutorialbook.png]",
-                        "textarea[7.7,6.4;4.6,1.3;;;Item + desc]",
+                        "textarea[7.7,6.4;4.6,1.3;;;Item + description]",
                         "field[6.4,2.9;5.8,0.8;tool;Wield (item);", context.epop.fields.tool or "", "]",
                         "image_button[11.1,2.9;1.1,0.8;mc_tutorial_paste.png;tool_import;;false;false]",
                         "field_close_on_enter[tool;false]",
@@ -874,8 +874,8 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                         "textlist[0.4,2.9;5.58,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
                         "label[6.7,2.7;Keys to press]",
                         "textlist[6.62,2.9;5.58,4.8;key_list;", next(keys) and table.concat(keys, ",") or minetest.formspec_escape("[none]"), ";", context.epop.fields.key_selected or 1, ";false]",
-                        "image_button[5.98,2.9;0.64,2.4;mc_tutorial_reward_add.png;key_add;;false;true]",
-                        "image_button[5.98,5.3;0.64,2.4;mc_tutorial_reward_delete.png;key_delete;;false;true]",
+                        "image_button[5.98,2.9;0.64,2.4;mc_teacher_swap_arrow_add.png;key_add;;false;true]",
+                        "image_button[5.98,5.3;0.64,2.4;mc_teacher_swap_arrow_delete.png;key_delete;;false;true]",
                         "tooltip[key_add;Add key]",
                         "tooltip[key_delete;Remove key]"
                     }
@@ -974,7 +974,7 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                     return {
                         "textarea[0.4,2.9;5.9,4.8;;Position info;",
                         "\nEach position is an absolute world position with 3 coordinates (X, Y, Z). You can view your position by pressing F5.\n",
-                        "NOTE: In order for a player to complete a tutorials with a position action, they must go to the exact world position specified. This means that players completing these tutorials must have access to the realms the tutorials were recorded in.",
+                        "NOTE: In order for a player to complete a tutorials with a position action, they must go to the exact world position specified. This means that players completing these tutorials must have access to the classrooms the tutorials were recorded in.",
                         "]",
                         "label[6.4,2.9;X =]",
                         "label[6.4,3.8;Y =]",
@@ -1161,7 +1161,7 @@ function mc_tutorial.show_tutorials(player)
 
         fs = {
             "style_type[textarea;font=mono,bold;textcolor=black]",
-            "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1.1;;;Available Tutorials]",
+            "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1.1;;;Available tutorials]",
             "style[tutoriallist;font=mono]",
             "textlist[", spacer, ",1.4;", panel_width - 2*spacer, ",", has_recorder_privs and "7.5" or "8.4", ";tutoriallist;", table.concat(titles, ","), ";", context.tutorial_selected, ";false]",
             "style_type[textarea;font=mono,bold;textcolor=black;font_size=*1.5]",
@@ -1247,7 +1247,7 @@ function mc_tutorial.show_delete_confirm_popup(player)
     local fs = {
         "formspec_version[6]",
         "size[8,3.2]",
-        "textarea[0.4,0.4;7.2,1.4;;;Are you sure you want to delete \"", selected.title or "Untitled tutorial", "\"?\nThis action is irreversible.]",
+        "textarea[0.4,0.4;7.2,1.4;;;Are you sure you want to delete \"", selected.title or "this tutorial", "\"?\nThis action is irreversible.]",
         "button[0.4,2;3.5,0.8;confirm;Delete]",
         "button[4.1,2;3.5,0.8;cancel;Cancel]",
     }

@@ -1,7 +1,6 @@
 minetest.register_tool("mc_teacher:controller", {
     description = "Controller for teachers",
     inventory_image = "mc_teacher_controller.png",
-    _mc_tool_privs = {teacher = true},
     on_use = function(itemstack, player, pointed_thing)
         local pmeta = player:get_meta()
         if mc_core.checkPrivs(player) then
