@@ -44,11 +44,24 @@ function Realm.getRegisteredCategories()
 end
 
 ---@public
+---GetOwners
+---Gets owners of a realm.
+---@return table
+function Realm:GetOwners()
+    local owners = self:get_data("owner")
+    if type(owners) == "string" then
+        owners = {[owners] = true}
+        self:set_data("owner", owners)
+    end
+    return owners
+end
+
+---@public
 ---AddOwner
 ---Adds a new owner to a realm.
 ---@param owner string @The owner to add.
 function Realm:AddOwner(ownerName)
-    local owners = self:get_data("owner")
+    local owners = self:GetOwners()
     if (owners == nil) then
         owners = {}
     end
@@ -66,7 +79,7 @@ end
 ---Removes an owner from a realm.
 ---@param owner string @The owner to remove.
 function Realm:RemoveOwner(ownerName)
-    local owners = self:get_data("owner")
+    local owners = self:GetOwners()
     if (owners == nil) then
         owners = {}
     end
@@ -107,13 +120,13 @@ Realm.RegisterCategory({
             realm:set_data("students", {})
         end
 
-        if (realm:get_data("owner") == nil) then
+        if (realm:GetOwners() == nil) then
             realm:set_data("owner", {})
         end
 
         if (realm:get_data("students")[player:get_player_name()] ~= nil) then
             return true, "You are a student in this realm."
-        elseif (realm:get_data("owner")[player:get_player_name()] ~= nil) then
+        elseif (realm:GetOwners()[player:get_player_name()] ~= nil) then
             return true, "You are an owner of this realm."
         else
             return false, "You are not a student in this realm."
@@ -125,13 +138,13 @@ Realm.RegisterCategory({
             realm:set_data("students", {})
         end
 
-        if (realm:get_data("owner") == nil) then
+        if (realm:GetOwners() == nil) then
             realm:set_data("owner", {})
         end
 
         if (realm:get_data("students")[player:get_player_name()] ~= nil) then
             return true, "You are a student in this realm."
-        elseif (realm:get_data("owner")[player:get_player_name()] ~= nil) then
+        elseif (realm:GetOwners()[player:get_player_name()] ~= nil) then
             return true, "You are an owner of this realm."
         elseif (minetest.check_player_privs(player, { teacher = true })) then
             return true, "All realms are joinable by teachers."
@@ -145,11 +158,11 @@ Realm.RegisterCategory({
     key = "instanced",
     visible = function(realm, player)
 
-        if (realm:get_data("owner") == nil) then
+        if (realm:GetOwners() == nil) then
             realm:set_data("owner", {})
         end
 
-        if (realm:get_data("owner")[player:get_player_name()] ~= nil) then
+        if (realm:GetOwners()[player:get_player_name()] ~= nil) then
             return true, "You are an owner of this realm."
         end
 
@@ -157,11 +170,11 @@ Realm.RegisterCategory({
     end,
     joinable = function(realm, player)
 
-        if (realm:get_data("owner") == nil) then
+        if (realm:GetOwners() == nil) then
             realm:set_data("owner", {})
         end
 
-        if (realm:get_data("owner")[player:get_player_name()] ~= nil) then
+        if (realm:GetOwners()[player:get_player_name()] ~= nil) then
             return true, "You are an owner of this realm."
         elseif (minetest.check_player_privs(player, { teacher = true })) then
             return true, "All realms are joinable by teachers."

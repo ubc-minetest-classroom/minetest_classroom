@@ -1,5 +1,6 @@
 ---Adapted from freeze.lua in rubenwardy's classroom mod
 ---@see https://gitlab.com/rubenwardy/classroom/-/blob/master/freeze.lua
+---@license MIT: https://gitlab.com/rubenwardy/classroom/-/blob/1e7b11f824c03c882d74d5079d8275f3e297adea/LICENSE.txt
 
 -- Frozen players
 minetest.register_entity("mc_core:frozen_player", {

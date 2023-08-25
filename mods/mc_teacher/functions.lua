@@ -152,9 +152,7 @@ end
 function mc_teacher.get_server_role(player)
     local pname = (type(player) == "string" and player) or (player:is_player() and player:get_player_name()) or ""
     local privs = minetest.get_player_privs(pname)
-    if not privs["student"] then
-        return mc_teacher.ROLES.NONE
-    elseif not privs["teacher"] then
+    if not privs["teacher"] then
         return mc_teacher.ROLES.STUDENT
     elseif not privs["server"] then
         return mc_teacher.ROLES.TEACHER
@@ -167,7 +165,7 @@ function mc_teacher.save_realm(player, context, fields)
     local realm = Realm.GetRealm(context.edit_realm.id)
     if realm then
         if not fields.no_cat_override then
-            if context.edit_realm.type == mc_teacher.R.CAT_KEY.SPAWN then
+            if context.edit_realm.type == mc_teacher.R.CAT_KEY.SPAWN and realm.ID ~= mc_worldManager.GetSpawnRealm().ID then
                 if realm:isHidden() or realm:isDeleted() then
                     minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom is currently "..(realm:isHidden() and "hidden" or "being deleted"..", so it could not be set as the server's spawn classroom.")))
                 else
@@ -180,6 +178,8 @@ function mc_teacher.save_realm(player, context, fields)
         end
         realm.Name = (mc_core.trim(fields.erealm_name or "") ~= "" and fields.erealm_name) or (mc_core.trim(context.edit_realm.name or "") ~= "" and context.edit_realm.name) or "Unnamed classroom"
         realm:UpdateRealmPrivilege(context.edit_realm.privs or {})
+        realm:UpdateSkybox(context.skyboxes[context.edit_realm.skybox])
+        realm:UpdateMusic(context.music[context.edit_realm.music], 100)
 
         -- update players in realm
         local players_in_realm = realm:GetPlayersAsArray()
@@ -187,8 +187,136 @@ function mc_teacher.save_realm(player, context, fields)
             local p_obj = minetest.get_player_by_name(p)
             if p_obj then
                 realm:ApplyPrivileges(p_obj)
+                realm:ApplySkybox(p_obj)
+                realm:ApplyMusic(p_obj)
             end
         end
         minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Classroom updated!"))
     end
+end
+
+function mc_teacher.timeout(player)
+    local pmeta = player and player:is_player() and player:get_meta()
+    if pmeta then
+        local realm = Realm.GetRealmFromPlayer(player) or {ID = 0}
+        local spawn = mc_worldManager.GetSpawnRealm()
+        if realm.ID ~= spawn.ID then
+            mc_core.temp_unfreeze_and_run(player, spawn.TeleportPlayer, spawn, player)
+        end
+	    pmeta:set_string("mc_teacher:timeout", minetest.serialize(true))
+    end
+end
+
+function mc_teacher.end_timeout(player)
+    local pmeta = player and player:is_player() and player:get_meta()
+    if pmeta then
+	    pmeta:set_string("mc_teacher:timeout", "")
+    end
+end
+
+function mc_teacher.is_in_timeout(player)
+    local pmeta = player and player:is_player() and player:get_meta()
+	return pmeta and minetest.deserialize(pmeta:get("mc_teacher:timeout")) or false
+end
+
+function mc_teacher.get_player_tab_groups(player)
+    local pmeta = player and player:is_player() and player:get_meta()
+    return pmeta and minetest.deserialize(pmeta:get("mc_teacher:groups")) or {}
+end
+
+function mc_teacher.get_group_index(group_id)
+    return tonumber(group_id or mc_teacher.PTAB.N) - mc_teacher.PTAB.N
+end
+
+function mc_teacher.get_realm_prefix(realm, category)
+    if not realm or not category then
+        return ""
+    elseif category == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.INSTANCED] then
+        local raw_owners = realm:GetOwners() or {}
+        local owners = {}
+        for p,_ in pairs(raw_owners) do
+            table.insert(owners, p)
+        end
+        if next(owners) then
+            return "["..table.concat(owners, ", ").."] "
+        else
+            return ""
+        end
+    elseif category == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.SPAWN] then
+        return "[SPAWN] "
+    else
+        return ""
+    end
+end
+
+---Audience utilities (mc_teacher.create_audience, find_audience_center, place_player_if_pos_clear) adapted from actions.lua in rubenwardy's classroom mod
+---@see https://gitlab.com/rubenwardy/classroom/-/blob/master/actions.lua
+---@license MIT: https://gitlab.com/rubenwardy/classroom/-/blob/1e7b11f824c03c882d74d5079d8275f3e297adea/LICENSE.txt
+
+local function find_audience_center(start, direction)
+    local endp = vector.add(start, vector.multiply(direction, 10))
+    local rc = minetest.raycast(start, endp, false, true)
+    local first = rc:next()
+    if first then
+        return vector.subtract(first.under, direction)
+    else
+        return endp
+    end
+end
+
+local function place_player_if_pos_clear(player, pos, realm, face_pos)
+    -- Move down to ground
+    local rc = minetest.raycast(pos, vector.add(pos, { x = 0, y = -20, z = 0 }), false, true)
+    local first = rc:next()
+    if first then
+        pos = vector.add(first.under, { x = 0, y = 1, z = 0 })
+    end
+
+    -- Check teacher is visible and audience position is within realm
+    if not minetest.line_of_sight(pos, face_pos) or not realm:ContainsCoordinate(pos) then
+        return false
+    end
+
+    mc_core.temp_unfreeze_and_run(player, function()
+        realm:TeleportPlayer(player)
+        player:set_pos(pos)
+        local delta = vector.subtract(face_pos, pos)
+        player:set_look_horizontal(math.atan2(delta.z, delta.x) - math.pi / 2)
+    end)
+    return true
+end
+
+function mc_teacher.create_audience(players, realm, focus_pname, focus_pos, direction)
+    local center = find_audience_center(focus_pos, direction)
+    local dir_perp = vector.normalize(vector.new(direction.z, direction.y, -direction.x))
+    local row = 0
+    local raw_column = 0
+    local is_single_row = #players <= 5
+
+    while #players > 0 do
+        local p = table.remove(players, #players)
+        local p_obj = minetest.get_player_by_name(p)
+        if p ~= focus_pname and realm:Joinable(p_obj) then
+            -- calculate player position
+            local column = math.floor(raw_column / 2) * ((raw_column % 2) * 2 - 1) + raw_column % 2
+            local delta = vector.add(vector.multiply(direction, row), vector.multiply(dir_perp, column))
+            local pos = vector.add(center, delta)
+            if not place_player_if_pos_clear(p_obj, pos, realm, focus_pos) then
+                table.insert(players, p)
+            end
+            -- adjust position variables
+            row = is_single_row and row or ((row + 1) % 2)
+            if row ~= 1 then
+                raw_column = raw_column + 1
+            end
+            if raw_column >= 200 and raw_column % 100 == 1 then
+                is_single_row = true
+                row = math.floor(raw_column / 100)
+            end
+            if row > 10 then
+                return false
+            end
+        end
+    end
+    return true
 end

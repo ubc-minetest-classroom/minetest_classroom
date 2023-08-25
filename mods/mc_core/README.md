@@ -291,7 +291,7 @@ Returns `true` if the player is frozen, `false` otherwise
 ### `mc_core.temp_unfreeze_and_run(player, func, ...)`
 
 Temporarily unfreezes `player` if they are frozen, runs `func`, then refreezes `player` if they should be frozen
-This should be used when applying forced movement to a player, since frozen players can not be teleported normally
+This should be used when applying forced movement to a player, since frozen players can not be teleported or moved normally
 Optional arguments after `func` will be passed into `func` when it runs (similarly to how `minetest.after` passes arguments)
 
 - Parameters:

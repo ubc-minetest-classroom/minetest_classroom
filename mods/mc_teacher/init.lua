@@ -20,13 +20,12 @@ mc_teacher = {
         SERVER = "8", -- TODO: make dynamic for easier modification of notebook
     },
     CTAB = {PUBLIC = "1", PRIVATE = "2", HIDDEN = "3"},
-    PTAB = {STUDENTS = "1", TEACHERS = "2", CLASSROOM = "3"},
+    PTAB = {STUDENTS = "1", TEACHERS = "2", CLASSROOM = "3", N = 3},
     STAB = {BANNED = "1", ONLINE = "2", MODS = "3"},
     ROLES = {
-        NONE = "roleless",
-        STUDENT = "student",
-        TEACHER = "teacher",
-        ADMIN = "administrator",
+        STUDENT = "1",
+        TEACHER = "2",
+        ADMIN = "3",
     },
     MODES = {EMPTY = "1", SCHEMATIC = "2", TWIN = "3"},
     PMODE = {SELECTED = "1", TAB = "2", ALL = "3"},
