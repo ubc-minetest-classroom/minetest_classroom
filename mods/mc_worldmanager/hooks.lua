@@ -54,7 +54,7 @@ minetest.register_on_joinplayer(function(player, last_login)
 
     local realm = Realm.GetRealmFromPlayer(player)
     -- don't allow players to enter realms they no longer have access to when joining
-    if (not realm or not realm:getCategory().joinable(realm, player) or realm:isDeleted() or (realm:isHidden() and not mc_core.checkPrivs(player, {teacher = true}))) then
+    if not realm:Joinable(player) then
         realm = mc_worldManager.GetSpawnRealm()
         mc_core.temp_unfreeze_and_run(player, realm.TeleportPlayer, realm, player)
         pmeta:set_int("realm", realm.ID)
@@ -66,6 +66,7 @@ minetest.register_on_joinplayer(function(player, last_login)
         realm:RegisterPlayer(player)
         realm:RunTeleportInFunctions(player)
         realm:ApplyPrivileges(player)
+        realm:ApplySkybox(player)
         mc_core.update_marker_visibility(player:get_player_name(), realm.ID)
     end
 end)
@@ -190,13 +191,19 @@ minetest.register_on_shutdown(function()
 end)
 
 minetest.register_on_mods_loaded(function()
-    -- Ensure that there is only one spawn realm
     for id,realm in pairs(Realm.realmDict) do
+        -- Ensure that there is only one spawn realm
         local cat = realm:getCategory().key
         if cat == "spawn" and tonumber(id) ~= tonumber(mc_worldManager.spawnRealmID) then
             realm:setCategoryKey("default")
         elseif cat ~= "spawn" and tonumber(id) == tonumber(mc_worldManager.spawnRealmID) then
             realm:setCategoryKey("spawn")
+        end
+
+        -- Apply old default skybox to realms with undefined skyboxes
+        local sky = realm:GetSkybox()
+        if not sky then
+            realm:UpdateSkybox(skybox.get_default_sky())
         end
     end
 end)
