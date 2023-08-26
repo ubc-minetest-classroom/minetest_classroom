@@ -303,7 +303,7 @@ function mc_student.show_notebook_fs(player, tab)
 					"textarea[", panel_width + text_spacer, ",7.6;", panel_width - 2*text_spacer, ",1;;;SELECTED\nLocal: (X, Y, Z)]",
 					"textarea[", panel_width + spacer, ",8.9;6.2,0.9;note;;]",
 					"style_type[image_button;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-					"button[5.1,8.9;0.9,0.9;record;Save]",
+					"button[15.1,8.9;0.9,0.9;record;Save]",
 					"tooltip[utmcoords;Displays real-world UTM coordinates;#325140;#ffffff]",
 					"tooltip[latloncoords;Displays real-world latitude and longitude;#325140;#ffffff]",
 					"tooltip[classroomcoords;Displays in-game coordinates, relative to the classroom;#325140;#ffffff]",
