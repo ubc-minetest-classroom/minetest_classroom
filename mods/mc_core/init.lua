@@ -1,5 +1,5 @@
 -- initialize minetest_classroom global object + mod table
-minetest_classroom = {}
+minetest_classroom = {} -- TODO: check if this table is obsolete
 mc_core = {
     path = minetest.get_modpath("mc_core"),
     meta = minetest.get_mod_storage(),

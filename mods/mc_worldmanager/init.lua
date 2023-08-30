@@ -135,6 +135,3 @@ function mc_worldManager.InstancedDelete(realm, player)
         realm:Delete()
     end
 end
-
--- Registration
-schematicManager.registerSchematicPath("shack", mc_worldManager.path .. "/schematics/shack")
