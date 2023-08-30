@@ -1,7 +1,6 @@
 -- All the functionality from these commands will added to a realm book.
 -- These commands are currently just for testing
 
-
 local commands = {}
 
 minetest.register_chatcommand("localPos", {
@@ -716,8 +715,6 @@ commands["blocks"] = {
 
 }
 
-
-
 commands["clean"] = {
     func = function(name, params)
         local realmID = tonumber(params[1])
@@ -857,21 +854,26 @@ minetest.register_chatcommand("realm", {
 
 -- Gets called when a command is called, before it is handled by the engine / lua runtime.
 minetest.register_on_chatcommand(function(name, command, params)
-
-
-    if (command == "grantme") then
+    if (command == "grantme" or command == "revokeme") then
         local privTable = mc_core.split(params, ", ")
-        mc_worldManager.grantUniversalPriv(minetest.get_player_by_name(name), privTable)
-        return false -- we must return false so that the regular grant command proceeds.
-    elseif (command == "revokeme") then
-        local privTable = mc_core.split(params, ", ")
-        mc_worldManager.revokeUniversalPriv(minetest.get_player_by_name(name), privTable)
-        return false -- we must return false so that the regular grant command proceeds.
+        local player = minetest.get_player_by_name(name)
+
+        if command == "grantme" then
+            mc_worldManager.grantUniversalPriv(player, privTable)
+        else
+            mc_worldManager.revokeUniversalPriv(player, privTable)
+        end
+
+        if mc_core.tableHas(privTable, "noclip") or mc_core.tableHas(privTable, "fly") then
+            local realm = Realm.GetRealmFromPlayer(player)
+            realm:ApplyPrivileges(player)
+            return true -- stop the regular command from proceeding if noclip or fly were affected
+        else
+            return false -- this lets the regular grant command proceed
+        end
     end
 
-
     -- Gets called when grant / revoke is called. We're using this to add permissions that are granted onto the universalPrivs table.
-
     if (command == "grant" or command == "revoke") then
         local privsTable = mc_core.split(params, ", ")
         local tmpTable = mc_core.split(table.remove(privsTable, 1), " ")
@@ -880,24 +882,28 @@ minetest.register_on_chatcommand(function(name, command, params)
         table.insert(privsTable, tmpTable[2])
         tmpTable = nil
 
-        if (not minetest.player_exists(name)) then
-            return false -- we must return false so that the regular grant command proceeds. Error text is handled there.
+        if (not minetest.player_exists(name) or name == nil or name == "" or privsTable == nil) then
+            return false -- this lets the regular grant command proceed, error text is handled there
         end
 
-        if (name == nil or name == "" or privsTable == nil) then
-            return false -- we must return false so that the regular grant command proceeds. Error text is handled there.
-        end
-
+        local player = minetest.get_player_by_name(name)
         if (command == "grant") then
-            mc_worldManager.grantUniversalPriv(minetest.get_player_by_name(name), privsTable)
+            mc_worldManager.grantUniversalPriv(player, privsTable)
         else
-            mc_worldManager.revokeUniversalPriv(minetest.get_player_by_name(name), privsTable)
+            mc_worldManager.revokeUniversalPriv(player, privsTable)
+        end
+
+        if mc_core.tableHas(privsTable, "noclip") or mc_core.tableHas(privsTable, "fly") then
+            local realm = Realm.GetRealmFromPlayer(player)
+            realm:ApplyPrivileges(player)
+            return true -- stop the regular command from proceeding if noclip or fly were affected
+        else
+            return false -- this lets the regular grant command proceed
         end
     end
 
     return false
 end)
-
 
 -- We could have also done minetest.override_chatcommand; but I want complete control
 minetest.unregister_chatcommand("teleport")

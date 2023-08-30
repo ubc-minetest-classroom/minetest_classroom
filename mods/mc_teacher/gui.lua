@@ -45,7 +45,8 @@ end
 
 local function get_privs(player)
     local pmeta = player:get_meta()
-    local privs = minetest.get_player_privs(player:get_player_name())
+    local pname = player:get_player_name()
+    local privs = minetest.get_player_privs(pname)
     local universal_privs = minetest.deserialize(pmeta:get_string("universalPrivs")) or {}
 
     for k, v in pairs(universal_privs) do
@@ -55,6 +56,13 @@ local function get_privs(player)
     end
     if mc_core.is_frozen(player) then
         privs["fast"] = "alt_deny"
+    end
+    if privs["noclip"] == true or privs["noclip"] == "overridden" then
+        local realm = Realm.GetRealmFromPlayer(player)
+        local override = realm:GetRealmPrivilegeOverride(pname)
+        if override["fly"] == false or (override["fly"] == nil and realm.Permissions["fly"] == false) or (override["fly"] == nil and realm.Permissions["fly"] == nil and universal_privs["fly"] ~= true) then
+            privs["fly"] = "overridden"
+        end
     end
     return privs
 end

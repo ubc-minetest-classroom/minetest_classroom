@@ -173,6 +173,10 @@ function Realm:ApplyPrivileges(player)
             privs[k] = nil
         end
     end
+    -- Always grant fly if noclip is granted, regardless of fly status
+    if privs["noclip"] == true then
+        privs["fly"] = true
+    end
 
     -- Track changed privs
     local oldPrivs = minetest.get_player_privs(name)
@@ -222,4 +226,3 @@ else
 end
 
 Debug.logTable("whitelisted Privs", Realm.whitelistedPrivs)
-
