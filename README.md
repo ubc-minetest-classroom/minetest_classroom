@@ -3,6 +3,7 @@
 Repo for Minetest Classroom game
 
 Licenses
+
 - `mc_teacher` modified from Ruben Wardy's `classroom` (LGPLv2.1+).
 - `mc_mapper` modified from 4aiman's `mapp`
 - Page turning sound (page_turn.ogg) is by [flag2](https://freesound.org/people/flag2/sounds/63318/) (CC BY 3.0).
@@ -15,6 +16,7 @@ Licenses
 - Ocean and seagulls sound (ocean-seagulls.ogg) is by [juskiddink](https://freesound.org/people/juskiddink/sounds/149488/) (CC BY 4.0)
 - Arctic wind sound (arctic-wing.ogg) is by [cobratronik](https://freesound.org/people/cobratronik/sounds/117136/) (CC0 1.0)
 - Tide pools sound (tide-pools.ogg) is by pauldpickell (CC BY SA 4.0)
+- Urban background sound (vancouver.ogg) is by [ListenTonyBoy](https://freesound.org/people/ListenTonyBoy/sounds/326254/) (CC0 1.0)
 - Theme 1 sound is by [adamfk](https://freesound.org/people/adamfk/sounds/83647/) (CC0 1.0)
 - Theme 2 sound is by [oymaldonado](https://freesound.org/people/oymaldonado/sounds/544019/) (CC BY 3.0)
 - Theme 3 sound is by [emirdemirel](https://freesound.org/people/emirdemirel/sounds/424910/) (CC BY 4.0)
