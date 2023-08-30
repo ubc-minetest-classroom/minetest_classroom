@@ -7,7 +7,7 @@ end)
 -- TODO: programmatically make names look nicer in GUI without changing names internally
 function Realm.GetRegisteredMusic()
     local sounds = {}
-    for _,file in pairs(minetest.get_dir_list(mc_worldManager.path.."/sounds/music", false)) do
+    for _,file in pairs(minetest.get_dir_list(mc_core.path.."/sounds/music", false)) do
         if string.sub(file, -4) == ".ogg" then
             table.insert(sounds, string.sub(file, 1, -5))
         end

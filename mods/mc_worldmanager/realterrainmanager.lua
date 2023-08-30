@@ -123,9 +123,9 @@ function realterrainManager.getDEM(key)
     return DEM_PATH, config
 end
 
-local files = minetest.get_dir_list(minetest.get_modpath("realterrain") .. "\\rasters\\dem\\", false)
+local files = minetest.get_dir_list(realterrain.raster_path.."dem\\", false)
 for _, fileName in pairs(files) do
-    local filePath = minetest.get_modpath("realterrain") .. "\\rasters\\dem\\" .. fileName
+    local filePath = realterrain.raster_path.."dem\\" .. fileName
     local ext = string.sub(filePath, -5)
     if (ext == ".conf") then
         local path = string.sub(filePath, 1, -6)

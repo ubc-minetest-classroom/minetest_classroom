@@ -1,12 +1,34 @@
 # mc_core
 
-Core utilities for Minetest Classroom
+Core data and utilities for Minetest Classroom
+
+```lua
+mc_core
+├── maps
+│   ├── lidar_twins     -- digital twin maps made using LiDAR
+│   ├── raster_twins    -- digital twin maps made using bitmaps (rasters)
+│   │   ├── chm             -- chm data
+│   │   ├── cover           -- canopy cover data
+│   │   ├── dem             -- dem and configuration data
+│   │   ├── symbology       -- symbology data
+│   │   └── urban           -- building/structure data
+│   └── schematics      -- realm schematics
+├── sounds
+│   ├── common          -- common/core sounds (used across multiple mods)
+│   └── music           -- background music for realms
+├── textures            -- common/core textures (used across multiple mods)
+└── ...
+```
 
 ## Global Objects
 
 ### `minetest_classroom` (*`table`*)
 
 Global table used by various mods to store Minetest Classroom data
+
+### `mc_core` (*`table`*)
+
+Global mod table used to store core Minetest Classroom data and helper functions
 
 ## Bundled Utilities
 
