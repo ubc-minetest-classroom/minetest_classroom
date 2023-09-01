@@ -728,56 +728,46 @@ image_button[6.9,9;0.8,0.8;blank.png;depend_search_x;X;false;true]
 
 function mc_tutorial.show_record_options_fs(player)
     local record_options_fs = {
-        "formspec_version[6]",
-        "size[11.4,8.3]",
-        "label[3.5,0.6;What would you like to do?]",
-        "box[0.4,1.1;10.6,4.7;#0090a0]",
-        "box[0.4,6.2;10.6,1.7;#9040a0]",
-        "label[3.9,1.5;Add an action or event]",
-        "button_exit[0.6,1.8;5,0.8;wieldeditem;Wield an item]",
-        "button_exit[5.8,1.8;5,0.8;playercontrol;Press keys]",
-        "button_exit[0.6,2.8;5,0.8;getpos;Go to current position]",
-        "button_exit[5.8,2.8;5,0.8;getlookdir;Look in current direction]",
-        "button_exit[0.6,3.8;5,0.8;lookvertical;Look in current vertical dir.]",
-        "button_exit[5.8,3.8;5,0.8;lookhorizontal;Look in current horizontal dir.]",
-        "button[3.2,4.8;5,0.8;editor;Add action/event using editor]",
-        "label[4.6,6.6;Other options]",
-        "button_exit[0.6,6.9;5,0.8;exit;Cancel]",
-        "button_exit[5.8,6.9;5,0.8;stop;End recording]"
+        mc_core.draw_note_fs(6.8, 7.5, {bg = "#e8b1fa", accent = "#f5ccff"}),
+        "style_type[textarea;font=mono,bold;textcolor=#000000]",
+        "style_type[button,image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+        "textarea[0.55,0.5;5.7,1;;;Add an action or event]",
+        "image_button[0.6,0.9;1.8,1.4;blank.png;wieldeditem;Wield;false;true]",
+        "image_button[4.4,0.9;1.8,1.4;blank.png;getpos;Position;false;true]",
+        "image_button[2.5,0.9;1.8,1.4;blank.png;playercontrol;Keys;false;true]",
+        "image_button[0.6,2.4;1.8,1.4;blank.png;getlookdir;Direction;false;true]",
+        "image_button[2.5,2.4;1.8,1.4;blank.png;lookvertical;Vertical;false;true]",
+        "image_button[4.4,2.4;1.8,1.4;blank.png;lookhorizontal;Horizontal;false;true]",
+        "button[0.6,3.9;5.6,0.8;editor;Add using editor]",
+        "textarea[0.55,4.8;5.7,1;;;Other options]",
+        "button_exit[0.6,6.1;5.6,0.8;exit;Cancel]",
+        "button_exit[0.6,5.2;5.6,0.8;stop;End recording]",
+        "tooltip[wieldeditem;Wield an item;#63406a;#ffffff]",
+        "tooltip[getpos;Go to your current position;#63406a;#ffffff]",
+        "tooltip[playercontrol;Press keys;#63406a;#ffffff]",
+        "tooltip[getlookdir;Look in your current direction;#63406a;#ffffff]",
+        "tooltip[lookvertical;Look in your current vertical direction;#63406a;#ffffff]",
+        "tooltip[lookhorizontal;Look in your current horizontal direction;#63406a;#ffffff]",
     }
     local pname = player:get_player_name()
 	minetest.show_formspec(pname, "mc_tutorial:record_options_fs", table.concat(record_options_fs, ""))
 	return true
 end
 
---[[
-OPTIONS CLEAN COPY
-
+--[[ OPTIONS POPUP
 formspec_version[6]
-size[11.4,8.3]
-label[3.5,0.6;What would you like to do?]
-box[0.4,6.2;10.6,1.7;#9040a0]
-box[0.4,1.1;10.6,4.7;#0090a0]
-label[3.9,1.5;Add an Action or Event]
-button_exit[0.6,1.8;5,0.8;wieldeditem;Wield an item]
-button_exit[5.8,1.8;5,0.8;playercontrol;Press keys]
-button_exit[0.6,2.8;5,0.8;getpos;Go to current position]
-button_exit[5.8,2.8;5,0.8;getlookdir;Look in current direction]
-button_exit[0.6,3.8;5,0.8;lookvertical;Look in current vertical dir.]
-button_exit[5.8,3.8;5,0.8;lookhorizontal;Look in current horizontal dir.]
-button[3.2,4.8;5,0.8;editor;Add action/event using editor]
-label[4.6,6.6;Other Options]
-button_exit[0.6,6.9;5,0.8;exit;Cancel]
-button_exit[5.8,6.9;5,0.8;stop;End recording]
-
-label[0.4,2.7;Available items]
-textlist[0.4,2.9;5.8,4.7;epop_list;;1;false]
-image[6.4,6.4;1.2,1.2;]
-textarea[7.7,6.3;4.6,1.3;;;Item + desc]
-field[6.4,2.9;5.8,0.8;node;Punch (node);]
-field[6.4,4.2;5.8,0.8;tool;With (item);]
-image_button[11.4,2.9;0.8,0.8;mc_tutorial_add_event.png;node_import;;false;true]
-image_button[11.4,4.2;0.8,0.8;mc_tutorial_add_event.png;tool_import;;false;true]
+size[6.8,7.5]
+textarea[0.55,0.5;5.7,1;;;Add an action or event]
+image_button[0.6,0.9;1.8,1.4;blank.png;wieldeditem;Wield;false;true]
+image_button[4.4,0.9;1.8,1.4;blank.png;getpos;Position;false;true]
+image_button[2.5,0.9;1.8,1.4;blank.png;playercontrol;Keys;false;true]
+image_button[0.6,2.4;1.8,1.4;blank.png;getlookdir;Direction;false;true]
+image_button[2.5,2.4;1.8,1.4;blank.png;lookvertical;Vertical;false;true]
+image_button[4.4,2.4;1.8,1.4;blank.png;lookhorizontal;Horizontal;false;true]
+button[0.6,3.9;5.6,0.8;editor;Add using editor]
+textarea[0.55,4.8;5.7,1;;;Other options]
+button_exit[0.6,5.2;5.6,0.8;stop;End recording]
+button_exit[0.6,6.1;5.6,0.8;exit;Cancel]
 ]]
 
 function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
@@ -793,39 +783,44 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                 modifies_world = false,
                 fs_elem = function()
                     return {
-                        "label[0.4,2.7;Registered items]",
-                        "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
-                        "image[6.4,6.5;1.2,1.2;mc_tutorial_tutorialbook.png]",
-                        "textarea[7.7,6.4;4.6,1.3;;;Item + description]",
-                        "field[6.4,2.9;5.8,0.8;node;Punch (node);", context.epop.fields.node or "", "]",
-                        "field[6.4,4.2;5.8,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
-                        "image_button[11.1,2.9;1.1,0.8;mc_tutorial_paste.png;node_import;;false;false]",
-                        "image_button[11.1,4.2;1.1,0.8;mc_tutorial_paste.png;tool_import;;false;false]",
+                        "textarea[0.55,1.8;5.5,1;;;All items/nodes]",
+                        "textlist[0.6,2.2;5.4,5.175;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
+                        "textarea[6.05,1.8;5.5,1;;;Punch (node)]",
+                        "field[6.1,2.2;5.4,0.8;node;;", context.epop.fields.node or "", "]",
+                        "image_button[10.4,2.2;1.1,0.8;mc_tutorial_paste.png;node_import;;false;false]",
+                        "textarea[6.05,3;5.5,1;;;With (item)]",
+                        "field[6.1,3.4;5.4,0.8;tool;;", context.epop.fields.tool or "", "]",
+                        "image_button[10.4,3.4;1.1,0.8;mc_tutorial_paste.png;tool_import;;false;false]",
+                        "image[6.1,6.175;1.2,1.2;mc_tutorial_tutorialbook.png]",
+                        "textarea[7.35,6.1;4.2,1.3;;;Item + description]",
                         "field_close_on_enter[node;false]",
                         "field_close_on_enter[tool;false]",
-                        "tooltip[node_import;Paste selected]",
-                        "tooltip[tool_import;Paste selected]"
+                        "tooltip[node_import;Paste selected;#63406a;#ffffff]",
+                        "tooltip[tool_import;Paste selected;#63406a;#ffffff]"
                     }
                 end,
             },
+
             [mc_tutorial.ACTION.DIG] = {
                 name = "Dig a node",
                 list_mode = mc_tutorial.EPOP_LIST.ITEM,
                 modifies_world = true,
                 fs_elem = function()
                     return {
-                        "label[0.4,2.7;Registered items]",
-                        "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
-                        "image[6.4,6.5;1.2,1.2;mc_tutorial_tutorialbook.png]",
-                        "textarea[7.7,6.4;4.6,1.3;;;Item + description]",
-                        "field[6.4,2.9;5.8,0.8;node;Dig (node);", context.epop.fields.node or "", "]",
-                        "field[6.4,4.2;5.8,0.8;tool;With (item);", context.epop.fields.tool or "", "]",
-                        "image_button[11.1,2.9;1.1,0.8;mc_tutorial_paste.png;node_import;;false;false]",
-                        "image_button[11.1,4.2;1.1,0.8;mc_tutorial_paste.png;tool_import;;false;false]",
+                        "textarea[0.55,1.8;5.5,1;;;All items/nodes]",
+                        "textlist[0.6,2.2;5.4,5.175;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
+                        "textarea[6.05,1.8;5.5,1;;;Dig (node)]",
+                        "field[6.1,2.2;5.4,0.8;node;;", context.epop.fields.node or "", "]",
+                        "image_button[10.4,2.2;1.1,0.8;mc_tutorial_paste.png;node_import;;false;false]",
+                        "textarea[6.05,3;5.5,1;;;With (item)]",
+                        "field[6.1,3.4;5.4,0.8;tool;;", context.epop.fields.tool or "", "]",
+                        "image_button[10.4,3.4;1.1,0.8;mc_tutorial_paste.png;tool_import;;false;false]",
+                        "image[6.1,6.175;1.2,1.2;mc_tutorial_tutorialbook.png]",
+                        "textarea[7.35,6.1;4.2,1.3;;;Item + description]",
                         "field_close_on_enter[node;false]",
                         "field_close_on_enter[tool;false]",
-                        "tooltip[node_import;Paste selected]",
-                        "tooltip[tool_import;Paste selected]"
+                        "tooltip[node_import;Paste selected;#63406a;#ffffff]",
+                        "tooltip[tool_import;Paste selected;#63406a;#ffffff]"
                     }
                 end,
             },
@@ -835,14 +830,15 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                 modifies_world = true,
                 fs_elem = function()
                     return {
-                        "label[0.4,2.7;Registered nodes]",
-                        "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
-                        "image[6.4,6.5;1.2,1.2;mc_tutorial_tutorialbook.png]",
-                        "textarea[7.7,6.4;4.6,1.3;;;Node + description]",
-                        "field[6.4,2.9;5.8,0.8;node;Place (node);", context.epop.fields.node or "", "]",
-                        "image_button[11.1,2.9;1.1,0.8;mc_tutorial_paste.png;node_import;;false;false]",
+                        "textarea[0.55,1.8;5.5,1;;;All nodes]",
+                        "textlist[0.6,2.2;5.4,5.175;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
+                        "textarea[6.05,1.8;5.5,1;;;Place (node)]",
+                        "field[6.1,2.2;5.4,0.8;node;;", context.epop.fields.node or "", "]",
+                        "image_button[10.4,2.2;1.1,0.8;mc_tutorial_paste.png;node_import;;false;false]",
+                        "image[6.1,6.175;1.2,1.2;mc_tutorial_tutorialbook.png]",
+                        "textarea[7.35,6.1;4.2,1.3;;;Node + description]",
                         "field_close_on_enter[node;false]",
-                        "tooltip[node_import;Paste selected]",
+                        "tooltip[node_import;Paste selected;#63406a;#ffffff]",
                     }
                 end,
             },
@@ -852,14 +848,15 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                 modifies_world = false,
                 fs_elem = function()
                     return {
-                        "label[0.4,2.7;Registered items]",
-                        "textlist[0.4,2.9;5.8,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
-                        "image[6.4,6.5;1.2,1.2;mc_tutorial_tutorialbook.png]",
-                        "textarea[7.7,6.4;4.6,1.3;;;Item + description]",
-                        "field[6.4,2.9;5.8,0.8;tool;Wield (item);", context.epop.fields.tool or "", "]",
-                        "image_button[11.1,2.9;1.1,0.8;mc_tutorial_paste.png;tool_import;;false;false]",
+                        "textarea[0.55,1.8;5.5,1;;;All items/nodes]",
+                        "textlist[0.6,2.2;5.4,5.175;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
+                        "textarea[6.05,1.8;5.5,1;;;Wield (item)]",
+                        "field[6.1,2.2;5.4,0.8;tool;;", context.epop.fields.tool or "", "]",
+                        "image_button[10.4,2.2;1.1,0.8;mc_tutorial_paste.png;tool_import;;false;false]",
+                        "image[6.1,6.175;1.2,1.2;mc_tutorial_tutorialbook.png]",
+                        "textarea[7.35,6.1;4.2,1.3;;;Item + description]",
                         "field_close_on_enter[tool;false]",
-                        "tooltip[tool_import;Paste selected]"
+                        "tooltip[tool_import;Paste selected;#63406a;#ffffff]"
                     }
                 end,
             },
@@ -870,14 +867,15 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                 fs_elem = function()
                     local keys = context.epop.fields.key or {}
                     return {
-                        "label[0.4,2.7;Available keys]",
-                        "textlist[0.4,2.9;5.58,4.8;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
-                        "label[6.7,2.7;Keys to press]",
-                        "textlist[6.62,2.9;5.58,4.8;key_list;", next(keys) and table.concat(keys, ",") or minetest.formspec_escape("[none]"), ";", context.epop.fields.key_selected or 1, ";false]",
-                        "image_button[5.98,2.9;0.64,2.4;mc_teacher_swap_arrow_add.png;key_add;;false;true]",
-                        "image_button[5.98,5.3;0.64,2.4;mc_teacher_swap_arrow_delete.png;key_delete;;false;true]",
-                        "tooltip[key_add;Add key]",
-                        "tooltip[key_delete;Remove key]"
+                        "style_type[image_button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+                        "textarea[0.55,1.8;5.1,1;;;Available keys]",
+                        "textlist[0.6,2.2;5,5.175;epop_list;", table.concat(context.epop.list.list, ","), ";", context.epop.list.selected or 1, ";false]",
+                        "textarea[6.45,1.8;5.1,1;;;Keys to press]",
+                        "textlist[6.5,2.2;5,5.175;key_list;", next(keys) and table.concat(keys, ",") or minetest.formspec_escape("[none]"), ";", context.epop.fields.key_selected or 1, ";false]",
+                        "image_button[5.7,2.2;0.7,2.5375;mc_teacher_swap_arrow_add.png;key_add;;false;true]",
+                        "image_button[5.7,4.8375;0.7,2.5375;mc_teacher_swap_arrow_delete.png;key_delete;;false;true]",
+                        "tooltip[key_add;Add key;#63406a;#ffffff]",
+                        "tooltip[key_delete;Remove key;#63406a;#ffffff]"
                     }
                 end,
             },
@@ -887,11 +885,12 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                 modifies_world = false,
                 fs_elem = function()
                     return {
-                        "textarea[0.4,2.9;5.9,4.8;;Yaw/pitch info;",
-                        "\nYaw: horizontal azimuth/heading, in degrees.\n(0 ≤ yaw < 360)\n",
-                        "\nPitch: vertical inclination, in degrees.\n(-90 < pitch < 90)",
-                        "]",
-                        "field[6.4,2.9;5.8,0.8;yaw;Yaw (horizontal degrees);", context.epop.fields.yaw or "", "]",
+                        "textarea[0.55,1.8;5.5,1;;;Yaw/pitch info]",
+                        "style_type[textarea;font=mono]",
+                        "textarea[0.55,2.2;5.5,5.2;;;Yaw: horizontal azimuth/heading, in degrees.\n(0 ≤ yaw < 360)\nPitch: vertical inclination, in degrees.\n(-90 < pitch < 90)]",
+                        "style_type[textarea;font=mono,bold]",
+                        "textarea[6.05,1.8;5.5,1;;;Yaw (degrees)]",
+                        "field[6.1,2.2;5.4,0.8;yaw;;", context.epop.fields.yaw or "", "]",
                         "field_close_on_enter[yaw;false]",
                     }
                 end,
@@ -902,11 +901,12 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                 modifies_world = false,
                 fs_elem = function()
                     return {
-                        "textarea[0.4,2.9;5.9,4.8;;Yaw/pitch info;",
-                        "\nYaw: horizontal azimuth/heading, in degrees.\n(0 ≤ yaw < 360)\n",
-                        "\nPitch: vertical inclination, in degrees.\n(-90 < pitch < 90)",
-                        "]",
-                        "field[6.4,2.9;5.8,0.8;pitch;Pitch (vertical degrees);", context.epop.fields.pitch or "", "]",
+                        "textarea[0.55,1.8;5.5,1;;;Yaw/pitch info]",
+                        "style_type[textarea;font=mono]",
+                        "textarea[0.55,2.2;5.5,5.2;;;Yaw: horizontal azimuth/heading, in degrees.\n(0 ≤ yaw < 360)\nPitch: vertical inclination, in degrees.\n(-90 < pitch < 90)]",
+                        "style_type[textarea;font=mono,bold]",
+                        "textarea[6.05,1.8;5.5,1;;;Pitch (degrees)]",
+                        "field[6.1,2.2;5.4,0.8;pitch;;", context.epop.fields.pitch or "", "]",
                         "field_close_on_enter[pitch;false]",
                     }
                 end,
@@ -925,8 +925,10 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                                     yaw, pitch = vect_to_yp(context.epop.fields.dir)
                                 end
                                 return table.concat({
-                                    "field[6.4,4.1;5.8,0.8;dir_yaw;Yaw (horizontal degrees);", yaw or "", "]",
-                                    "field[6.4,5.4;5.8,0.8;dir_pitch;Pitch (vertical degrees);", pitch or "", "]",
+                                    "textarea[6.05,3.1;5.5,1;;;Yaw (degrees)]",
+                                    "field[6.1,3.5;5.4,0.8;dir_yaw;;", yaw or "", "]",
+                                    "textarea[6.05,4.3;5.5,1;;;Pitch (degrees)]",
+                                    "field[6.1,4.7;5.4,0.8;dir_pitch;;", pitch or "", "]",
                                     "field_close_on_enter[dir_yaw;false]",
                                     "field_close_on_enter[dir_pitch;false]",
                                 })
@@ -936,12 +938,12 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                             name = "Spatial vector",
                             get = function()
                                 return table.concat({
-                                    "label[6.4,4.2;X =]",
-                                    "label[6.4,5.1;Y =]",
-                                    "label[6.4,6.0;Z =]",
-                                    "field[7,3.8;5.2,0.8;dir_x;;", context.epop.fields.dir and context.epop.fields.dir.x or "", "]",
-                                    "field[7,4.7;5.2,0.8;dir_y;;", context.epop.fields.dir and context.epop.fields.dir.y or "", "]",
-                                    "field[7,5.6;5.2,0.8;dir_z;;", context.epop.fields.dir and context.epop.fields.dir.z or "", "]",
+                                    "textarea[6.05,3.1;2,1;;;X =]",
+                                    "field[7,3.2;4.5,0.8;dir_x;;", context.epop.fields.dir and context.epop.fields.dir.x or "", "]",
+                                    "textarea[6.05,4;2,1;;;Y =]",
+                                    "field[7,4.1;4.5,0.8;dir_y;;", context.epop.fields.dir and context.epop.fields.dir.y or "", "]",
+                                    "textarea[6.05,5;2,1;;;Z =]",
+                                    "field[7,5;4.5,0.8;dir_z;;", context.epop.fields.dir and context.epop.fields.dir.z or "", "]",
                                     "field_close_on_enter[dir_x;false]",
                                     "field_close_on_enter[dir_y;false]",
                                     "field_close_on_enter[dir_z;false]",
@@ -956,12 +958,14 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
 
                     context.epop.d_input_type = context.epop.d_input_type or 1
                     return {
-                        "textarea[0.4,2.9;5.9,4.8;;Input types;",
-                        "\nYaw/pitch\n", "Yaw (horizontal azimuth/heading) and pitch (vertical inclination) in degrees.\n(0 ≤ yaw < 360, -90 < pitch < 90)\n",
-                        "\nSpatial vector\n", "Direction of a 3D vector with components (X, Y, Z).",
-                        "]",
-                        "label[6.4,2.7;Selected input type]",
-                        "dropdown[6.4,2.9;5.8,0.7;dir_type;", table.concat(input_types, ",") , ";", context.epop.d_input_type, ";true]",
+                        "textarea[0.55,1.8;5.5,1;;;Yaw/pitch]",
+                        "textarea[0.55,5.1;5.5,1;;;Spatial vector]",
+                        "style_type[textarea;font=mono]",
+                        "textarea[0.55,2.2;5.5,2.8;;;Yaw (horizontal azimuth/heading) and pitch (vertical inclination) in degrees.\n(0 ≤ yaw < 360, -90 < pitch < 90)]",
+                        "textarea[0.55,5.5;5.5,1.9;;;Direction of a 3D vector with components (X, Y, Z).]",
+                        "style_type[textarea;font=mono,bold]",
+                        "textarea[6.05,1.8;5.5,1;;;Input type]",
+                        "dropdown[6.1,2.2;5.4,0.8;dir_type;", table.concat(input_types, ",") , ";", context.epop.d_input_type, ";true]",
                         input_map[context.epop.d_input_type] and input_map[context.epop.d_input_type].get() or "",
                     }
                 end,
@@ -972,17 +976,21 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
                 modifies_world = false,
                 fs_elem = function()
                     return {
-                        "textarea[0.4,2.9;5.9,4.8;;Position info;",
-                        "\nEach position is an absolute world position with 3 coordinates (X, Y, Z). You can view your position by pressing F5.\n",
+                        "textarea[0.55,1.8;5.5,1;;;Position info]",
+                        "style_type[textarea;font=mono]",
+                        "style[pos_import_curr;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.blocked, "]",
+                        "textarea[0.55,2.2;5.5,5.2;;;",
+                        "Each position is an absolute world position with 3 coordinates (X, Y, Z). You can view your position by pressing F5.\n",
                         "NOTE: In order for a player to complete a tutorials with a position action, they must go to the exact world position specified. This means that players completing these tutorials must have access to the classrooms the tutorials were recorded in.",
                         "]",
-                        "label[6.4,2.9;X =]",
-                        "label[6.4,3.8;Y =]",
-                        "label[6.4,4.7;Z =]",
-                        "field[7,2.5;5.2,0.8;pos_x;;", context.epop.fields.pos and context.epop.fields.pos.x or "", "]",
-                        "field[7,3.4;5.2,0.8;pos_y;;", context.epop.fields.pos and context.epop.fields.pos.y or "", "]",
-                        "field[7,4.3;5.2,0.8;pos_z;;", context.epop.fields.pos and context.epop.fields.pos.z or "", "]",
-                        "button[6.3,5.3;5.9,0.8;pos_import_curr;Use current position]",
+                        "style_type[textarea;font=mono,bold]",
+                        "textarea[6.05,1.9;2,1;;;X =]",
+                        "field[7,1.9;4.5,0.8;pos_x;;", context.epop.fields.pos and context.epop.fields.pos.x or "", "]",
+                        "textarea[6.05,2.8;2,1;;;Y =]",
+                        "field[7,2.8;4.5,0.8;pos_y;;", context.epop.fields.pos and context.epop.fields.pos.y or "", "]",
+                        "textarea[6.05,3.7;2,1;;;Z =]",
+                        "field[7,3.7;4.5,0.8;pos_z;;", context.epop.fields.pos and context.epop.fields.pos.z or "", "]",
+                        "button[6.1,4.6;5.4,0.8;pos_import_curr;Use current position]",
                         "field_close_on_enter[pos_x;false]",
                         "field_close_on_enter[pos_y;false]",
                         "field_close_on_enter[pos_z;false]",
@@ -1039,13 +1047,14 @@ function mc_tutorial.show_event_popup_fs(player, is_edit, is_iso)
         end
 
         local epop_fs = {
-            "formspec_version[6]",
-            "size[12.6,8.1]",
-            "box[0.4,0.4;11.8,1.7;#0090a0]",
-            "label[4.5,0.8;", context.epop.edit and "Edit" or "Add", " an action or event]",
-            "dropdown[0.6,1.2;5.6,0.7;action;", table.concat(context.epop.actions, ","), ";", context.epop.selected or 1, ";true]",
-            "button", context.epop.is_iso and "_exit" or "", "[6.4,1.2;2.7,0.7;save;Save]",
-            "button", context.epop.is_iso and "_exit" or "", "[9.3,1.2;2.7,0.7;cancel;Cancel]",
+            mc_core.draw_note_fs(12.1, 8.975, {bg = "#e8b1fa", accent = "#f5ccff"}),
+            "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+            "style_type[textarea;font=mono,bold;textcolor=#000000]",
+            "style_type[field;font=mono;textcolor=#ffffff]",
+            "textarea[0.55,0.5;11,1;;;Selected action/event]",
+            "dropdown[0.6,0.9;10.9,0.8;action;", table.concat(context.epop.actions, ","), ";", context.epop.selected or 1, ";true]",
+            "button", context.epop.is_iso and "_exit" or "", "[0.6,7.575;5.4,0.8;save;Save]",
+            "button", context.epop.is_iso and "_exit" or "", "[6.1,7.575;5.4,0.8;cancel;Cancel]",
         }
 
         local action_info = action_map[context.epop.i_to_action[context.epop.selected]]
@@ -1086,21 +1095,60 @@ end
 --[[
 UNIFIED:
 formspec_version[6]
-size[12.6,8.1]
-box[0.4,0.4;11.8,1.7;#0090a0]
-label[4.5,0.8;Add an action or event]
-dropdown[0.6,1.2;5.6,0.7;action;;1;true]
-button[6.4,1.2;2.7,0.7;save;Save]
-button[9.3,1.2;2.7,0.7;cancel;Cancel]
+size[12.1,8.975]
+textarea[0.55,0.5;11,1;;;Selected action/event]
+dropdown[0.6,0.9;10.9,0.8;action;;1;true]
+button[0.6,7.575;5.4,0.8;save;Save]
+button[6.1,7.575;5.4,0.8;cancel;Cancel]
 
-label[0.4,2.7;Available items]
-textlist[0.4,2.9;5.8,4.8;epop_list;;1;false]
-image[6.4,6.5;1.2,1.2;]
-textarea[7.7,6.4;4.6,1.3;;;Item + desc]
-field[6.4,2.9;5.8,0.8;node;Punch (node);]
-field[6.4,4.2;5.8,0.8;tool;With (item);]
-image_button[11.4,2.9;0.8,0.8;mc_tutorial_add_event.png;node_import;;false;true]
-image_button[11.4,4.2;0.8,0.8;mc_tutorial_add_event.png;tool_import;;false;true]
+NODES/ITEMS:
+textarea[0.55,1.8;5.5,1;;;All items/nodes]
+textlist[0.6,2.2;5.4,5.175;epop_list;;1;false]
+textarea[6.05,1.8;5.5,1;;;Punch (node)]
+field[6.1,2.2;5.4,0.8;node;;]
+image_button[10.4,2.2;1.1,0.8;mc_tutorial_add_event.png;node_import;;false;true]
+textarea[6.05,3;5.5,1;;;With (item)]
+field[6.1,3.4;5.4,0.8;tool;;]
+image_button[10.4,3.4;1.1,0.8;mc_tutorial_add_event.png;tool_import;;false;true]
+image[6.1,6.175;1.2,1.2;]
+textarea[7.35,6.1;4.2,1.3;;;Item + desc]
+
+KEYS:
+textarea[0.55,1.8;5.1,1;;;Available keys]
+textlist[0.6,2.2;5,5.175;epop_list;;1;false]
+textarea[6.45,1.8;5.1,1;;;Selected keys]
+textlist[6.5,2.2;5,5.175;key_list;;1;false]
+image_button[5.7,2.2;0.7,2.5375;blank.png;key_add;→;false;true]
+image_button[5.7,4.8375;0.7,2.5375;blank.png;key_delete;←;false;true]
+
+DIRECTION:
+textarea[0.55,1.8;5.5,1;;;Yaw/pitch]
+textarea[0.55,2.2;5.5,2.8;;;Add info text here!]
+textarea[0.55,5.1;5.5,1;;;Spatial vector]
+textarea[0.55,5.5;5.5,1.9;;;Add info text here!]
+textarea[6.05,1.8;5.5,1;;;Input type]
+dropdown[6.1,2.2;5.4,0.8;;;1;false]
+textarea[6.05,3.1;5.5,1;;;Yaw (degrees)]
+field[6.1,3.5;5.4,0.8;dir_yaw;;]
+textarea[6.05,4.3;5.5,1;;;Pitch (degrees)]
+field[6.1,4.7;5.4,0.8;dir_pitch;;]
+textarea[6.05,3.1;2,1;;;X =]
+field[7,3.2;4.5,0.8;dir_x;;]
+textarea[6.05,4;2,1;;;Y =]
+field[7,4.1;4.5,0.8;dir_y;;]
+textarea[6.05,5;2,1;;;Z =]
+field[7,5;4.5,0.8;dir_z;;]
+
+POSITION:
+textarea[0.55,1.8;5.5,1;;;Position info]
+textarea[0.55,2.2;5.5,5.2;;;Add info text here!]
+textarea[6.05,1.9;2,1;;;X =]
+field[7,1.9;4.5,0.8;pos_x;;]
+textarea[6.05,2.8;2,1;;;Y =]
+field[7,2.8;4.5,0.8;pos_y;;]
+textarea[6.05,3.7;2,1;;;Z =]
+field[7,3.7;4.5,0.8;pos_z;;]
+button[6.1,4.6;5.4,0.8;pos_import_curr;Use current position]
 ]]
 
 function mc_tutorial.show_tutorials(player)
