@@ -7,9 +7,9 @@ mc_core
 ├── maps
 │   ├── lidar_twins     -- digital twin maps made using LiDAR
 │   ├── raster_twins    -- digital twin maps made using bitmaps (rasters)
-│   │   ├── chm             -- chm data
+│   │   ├── chm             -- canopy height model
 │   │   ├── cover           -- canopy cover data
-│   │   ├── dem             -- dem and configuration data
+│   │   ├── dem             -- digital elevation model and configuration data
 │   │   ├── symbology       -- symbology data
 │   │   └── urban           -- building/structure data
 │   └── schematics      -- realm schematics

@@ -165,11 +165,19 @@ function mc_teacher.save_realm(player, context, fields)
     local realm = Realm.GetRealm(context.edit_realm.id)
     if realm then
         if not fields.no_cat_override then
-            if context.edit_realm.type == mc_teacher.R.CAT_KEY.SPAWN and realm.ID ~= mc_worldManager.GetSpawnRealm().ID then
+            local spawn = mc_worldManager.GetSpawnRealm()
+            if context.edit_realm.type == mc_teacher.R.CAT_KEY.SPAWN and realm.ID ~= spawn.ID then
                 if realm:isHidden() or realm:isDeleted() then
                     minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] This classroom is currently "..(realm:isHidden() and "hidden" or "being deleted"..", so it could not be set as the server's spawn classroom.")))
                 else
                     mc_worldManager.SetSpawnRealm(realm)
+                    local players_in_old_spawn = spawn:GetPlayersAsArray()
+                    for _,p in pairs(players_in_old_spawn) do
+                        local p_obj = minetest.get_player_by_name(p)
+                        if p_obj then
+                            mc_worldManager.UpdateRealmHud(p_obj)
+                        end
+                    end
                     minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server spawn classroom updated!"))
                 end
             else
@@ -189,6 +197,7 @@ function mc_teacher.save_realm(player, context, fields)
                 realm:ApplyPrivileges(p_obj)
                 realm:ApplySkybox(p_obj)
                 realm:ApplyMusic(p_obj)
+                mc_worldManager.UpdateRealmHud(p_obj)
             end
         end
         minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Classroom updated!"))

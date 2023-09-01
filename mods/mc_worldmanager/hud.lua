@@ -1,11 +1,17 @@
+local CAT_KEY = {DEFAULT = "default", SPAWN = "spawn", PRIVATE = "instanced"}
+
 local function createRealmInfoHudString(player)
     local realm = Realm.GetRealmFromPlayer(player)
-    local string = "Realm "
-    if (realm ~= nil) then
-        string = string .. realm.ID
-        string = string .. " : " .. realm.Name
+    if realm and realm.ID and realm.Name then
+        local string = "Classroom: "..realm.Name.." (#"..realm.ID..")"
+        if realm:isHidden() then
+            return "Hidden "..string
+        else
+            local cat = (realm:getCategory() or {key = "default"}).key
+            return ((cat == CAT_KEY.SPAWN and "Spawn ") or (cat == CAT_KEY.PRIVATE and "Private ") or "")..string
+        end
     end
-    return string
+    return "Unknown Classroom"
 end
 
 function mc_worldManager.UpdateRealmHud(player)
