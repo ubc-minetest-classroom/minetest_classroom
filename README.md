@@ -4,7 +4,7 @@ Minetest Classroom is a game for educators to teach anything with the voxel-base
 
 Classrooms can be a blank slate...\
 
-![](/images/empty_classroom.png)
+![](/images/empty-classroom.png)
 
 Classrooms can be randomly generated terrain...
 
