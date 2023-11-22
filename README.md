@@ -2,17 +2,25 @@
 
 Minetest Classroom is a game for educators to teach anything with the voxel-based [Minetest game engine](https://minetest.net). Minetest Classroom allows you to create classrooms, which are unique 3D spaces that are bounded by walls and can contain anything. You can create many classrooms of any size and fill them with whatever content you want to teach with. When running Minetest Classroom on a multiplayer server, players can join and move between available classrooms, complete tasks, and receive rewards.
 
-Classrooms can be a blank slate...\
+Classrooms can be a blank slate...
 
 ![](/images/empty-classroom.png)
 
 Classrooms can be randomly generated terrain...
 
+![](/images/random-terrain.png)
 
 Classrooms can have randomly generated biomes...
 
+![](/images/biome.png)
+
+Classrooms can have sea level...
+
+![](/images/sea-level.png)
 
 Classrooms can even be digital twins from real-world geographic data...
+
+![](/images/downtown-vancouver.png)
 
 As a teacher, you can translate your lesson plans directly into tutorials by recording your player's actions, keystrokes, and movements in the game. Student players can then complete those tutorials and get rewarded items, tools, and privileges.
 
