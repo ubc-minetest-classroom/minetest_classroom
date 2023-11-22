@@ -57,16 +57,6 @@ You can create a shortcut on your desktop to the executable located in the "bin"
 
 Read more detailed documention and recipes for creating any kind of classroom on our [wiki page](https://github.com/ubc-minetest-classroom/minetest_classroom/wiki).
 
-## Using the Teacher Controller tool
-
-## Using the Student Notebook tool
-
-## Using the tutorial recording tool
-
-## Completing tutorials
-
-## Contributing
-
 ## Asset Licenses
 - `mc_teacher` modified from Ruben Wardy's `classroom` (LGPLv2.1+).
 - `mc_mapper` modified from 4aiman's `mapp`
