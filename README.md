@@ -21,9 +21,19 @@ Minetest Classroom has a graphical user interface (GUI) that is accessible throu
 
 ### Windows
 
+32-bit Minetest clients are not currently supported. Please use our pre-configured download link below or download the 64-bit Minetest client directly from the [official Minetest website](https://minetest.net)
+
+#### Download
+
+To make it simple and quick to get started, we provide a pre-built version of the latest Minetest client with Minetest Classroom already installed and configured. Simply download the game, unzip it where ever you want, and run the Minetest executable located in the "bin" folder. You can create a shortcut on your desktop to the executable located in the "bin" folder by right-clicking the "minetest.exe" file and selecting "Send to" > "Desktop (create shortcut)".
+
+[Minetest 5.7.0 ]()
+
+#### Advanced Users
 1. Install the latest version of the [Minetest game engine](https://minetest.net), then extract the folder to your computer. Create a shortcut on your desktop to the executable located in the "bin" folder by right-clicking the "minetest.exe" file and selecting "Send to" > "Desktop (create shortcut)".
-2. Install Minetest Classroom by downloading the latest release of this repository and then extracting the content into the "games" folder of your Minetest directory from Step 1.
+2. Install Minetest Classroom by downloading or cloning the latest release of this repository and then extracting the content into the "games" folder of your Minetest directory from Step 1.
 3. Run Minetest from the shortcut you created in Step 1 or by directly executing the executable. When you see the Minetest Game splash screen, click the Minetest Classroom game icon at the bottom to create a new Minetest Classroom game world.
+4. Install any mods you want to use with Minetest Classroom in the "mods" folder of your Minetest directory. 
 
 ## Creating your first classroom in under 5 minutes
 
