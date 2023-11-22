@@ -25,9 +25,11 @@ Minetest Classroom has a graphical user interface (GUI) that is accessible throu
 
 #### Download
 
-To make it simple and quick to get started, we provide a pre-built version of the latest Minetest client with Minetest Classroom already installed and configured. Simply download the game, unzip it where ever you want, and run the Minetest executable located in the "bin" folder. You can create a shortcut on your desktop to the executable located in the "bin" folder by right-clicking the "minetest.exe" file and selecting "Send to" > "Desktop (create shortcut)".
+To make it simple and quick to get started, we provide a pre-built version of the latest Minetest client with Minetest Classroom already installed and configured. Simply download the game, unzip it where ever you want, and run the Minetest executable located in the "bin" folder. 
 
 [Minetest Classroom preconfigured on Minetest Client 5.7.0 (April 8, 2023) - 108 MB](https://206-12-122-94.cloud.computecanada.ca/minetest-classroom-minetest-client-5.7.0-win64.zip)
+
+You can create a shortcut on your desktop to the executable located in the "bin" folder by right-clicking the "minetest.exe" file and selecting "Send to" > "Desktop (create shortcut)".
 
 #### Advanced Users
 1. Install the latest version of the [Minetest game engine](https://minetest.net), then extract the folder to your computer. Create a shortcut on your desktop to the executable located in the "bin" folder by right-clicking the "minetest.exe" file and selecting "Send to" > "Desktop (create shortcut)".
