@@ -39,7 +39,7 @@ function Realm.WorldGen.RegisterMapDecorator(name, NodeDecoratorFunction, Vegeta
     VegetationDecorator[name] = VegetationDecoratorFunction
 end
 
-function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecoratorName, paramTable)
+--[[ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecoratorName, paramTable)
 
     self:set_data("worldSeed", seed)
     self:set_data("seaLevel", seaLevel)
@@ -97,4 +97,53 @@ function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, mapDecora
     end
 
     self:UpdateSpawn(self:WorldToLocalSpace({ x = spawnPos.x, y = surfaceLevel + 1, z = spawnPos.z }))
+end ]]
+
+function Realm:GenerateTerrain(seed, seaLevel, heightMapGeneratorName, paramTable)
+
+    self:set_data("worldSeed", seed)
+    self:set_data("seaLevel", seaLevel)
+    self:set_data("worldMapGenerator", heightMapGeneratorName)
+    self:set_data("worldExtraGenParams", paramTable)
+
+    local heightMapGen = heightMapGenerator[heightMapGeneratorName]
+
+    if (heightMapGen == nil) then
+        Debug.log("Height map generator with name: " .. heightMapGeneratorName .. " does not exist.")
+        return false
+    end
+
+    local vm = minetest.get_voxel_manip()
+    local emin, emax = vm:read_from_map(self.StartPos, self.EndPos)
+    local area = VoxelArea:new {
+        MinEdge = emin,
+        MaxEdge = emax
+    }
+
+    local data = vm:get_data()
+    local heightMapTable = heightMapGen(self.StartPos, self.EndPos, vm, area, data, seed, self.StartPos.y, seaLevel, paramTable)
+
+    Debug.log("Saving and loading map...")
+
+    vm:set_data(data)
+    vm:write_to_map()
+
+    -- Create barriers
+    self:CreateBarriers()
+    
+    -- Set our new spawnpoint
+    local spawnPos = self.SpawnPoint
+    local surfaceLevel = ptable.get2D(heightMapTable, { x = spawnPos.x, y = spawnPos.z })
+
+    if (surfaceLevel == nil) then
+        local spawnPos = { x = (self.StartPos.x + self.EndPos.x) / 2, y = (self.StartPos.y + self.EndPos.y) / 2, z = (self.StartPos.z + self.EndPos.z) / 2 }
+        surfaceLevel = ptable.get2D(heightMapTable, { x = spawnPos.x, y = spawnPos.z })
+
+        if (surfaceLevel == nil) then
+            surfaceLevel = self.EndPos.y - 5
+        end
+    end
+
+    self:UpdateSpawn(self:WorldToLocalSpace({ x = spawnPos.x, y = surfaceLevel + 1, z = spawnPos.z }))
+    return heightMapTable
 end

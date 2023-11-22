@@ -25,6 +25,7 @@ mc_core = {
         },
     },
     SERVER_USER = "Server",
+    VM_CHUNK_SIZE = 80,
 }
 -- for compatibility with older versions of mods
 mc_helpers = mc_core
@@ -143,6 +144,23 @@ function mc_core.tableHas(table, val)
         end
     end
     return false
+end
+
+---@public
+---Returns position index if any of the values in the given table is equal to the value provided
+---@param table The table to check
+---@param val The value to check for
+---@return the position index of the supplied value in the table otherwise nil
+function mc_core.getIndex(table, val)
+    if not table or not val then
+        return false
+    end
+    for i, v in ipairs(table) do
+        if v == val then
+            return i
+        end
+    end
+    return nil
 end
 
 ---@private

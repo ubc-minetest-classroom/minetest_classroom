@@ -1,6 +1,6 @@
 local function createRealmInfoHudString(player)
     local realm = Realm.GetRealmFromPlayer(player)
-    local string = "Realm "
+    local string = "Classroom "
     if (realm ~= nil) then
         string = string .. realm.ID
         string = string .. " : " .. realm.Name
