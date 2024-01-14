@@ -89,7 +89,7 @@ end
 function json_importer.loadDirectory(rootPath)
     local files = buildFilePath(rootPath, "json")
     for k, file in ipairs(files) do
-        minetest.debug(tostring(file))
+        --minetest.debug(tostring(file))
         loadFile(file)
     end
 end

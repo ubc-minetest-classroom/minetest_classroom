@@ -19,7 +19,6 @@ Realm.__index = Realm
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmNodeManipulation.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmDataManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmSchematicSaveLoad.lua")
-dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmRealTerrainLoad.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPlayerManagement.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmCoordinateConversion.lua")
 dofile(minetest.get_modpath("mc_worldmanager") .. "/realm/realmPrivileges.lua")
@@ -82,7 +81,12 @@ function Realm:New(name, area, callbacks)
 
     -- Calculate our world position based on our location on the realm grid
     this.StartPos = Realm.gridToWorldSpace(gridStartPos)
-    this.EndPos = Realm.gridToWorldSpace(gridEndPos)
+    --this.EndPos = Realm.gridToWorldSpace(gridEndPos)
+    this.EndPos = { 
+        x = this.StartPos.x + area.x,
+        y = this.StartPos.y + area.y,
+        z = this.StartPos.z + area.z 
+    }
 
 
     -- Temporary spawn point calculation
@@ -218,7 +222,7 @@ function Realm.CalculateStartEndPosition(area)
     if (reuseBin == true) then
 
         local emptySpace = {
-            top = { startPos = { x = StartPos.x, y = EndPos.y, z = StartPos.z, }, endPos = { x = EndPos.x, y = BinEndPos.y, x = EndPos.z } },
+            top = { startPos = { x = StartPos.x, y = EndPos.y, z = StartPos.z, }, endPos = { x = EndPos.x, y = BinEndPos.y, z = EndPos.z } },
             xAxis = { startPos = { x = EndPos.x, y = StartPos.y, z = StartPos.z, }, endPos = { x = BinEndPos.x, y = EndPos.y, z = EndPos.z } },
             zAxis = { startPos = { x = StartPos.z, y = StartPos.y, z = EndPos.z, }, endPos = { x = EndPos.z, y = EndPos.y, z = BinEndPos.z } }
         }

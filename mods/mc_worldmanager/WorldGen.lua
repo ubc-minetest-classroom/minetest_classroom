@@ -67,15 +67,12 @@ Realm.WorldGen.RegisterHeightMapGenerator("v2", function(startPos, endPos, vm, a
             for posX = startPos.x, endPos.x do
                 -- vi, voxel index, is a common variable name here
                 local vi = area:index(posX, posY, posZ)
-
                 local surfaceHeight
 
                 if (ptable.get2D(heightMapTable, { x = posX, y = posZ }) == nil) then
                     local noise = mainPerlin:get_2d({ x = posX - startPos.x, y = posZ - startPos.z })
                     local noise2 = erosionPerlin:get_2d({ x = posX - startPos.x, y = posZ - startPos.z })
-
                     local noise4 = mountainPerlin:get_2d({ x = posX - startPos.x, y = posZ - startPos.z })
-
                     local mountainNoise = 0
 
                     if (noise4 >= 0.5) then
@@ -87,9 +84,7 @@ Realm.WorldGen.RegisterHeightMapGenerator("v2", function(startPos, endPos, vm, a
                     end
 
                     noise = (noise - 0.5) * 2
-
                     surfaceHeight = math.ceil(realmFloorLevel + (noise * 5) + (noise * noise2 * 10)) + (mountainNoise * 10) + 40
-
                     ptable.store2D(heightMapTable, { x = posX, y = posZ }, surfaceHeight)
                 else
                     surfaceHeight = ptable.get2D(heightMapTable, { x = posX, y = posZ })
@@ -113,7 +108,6 @@ Realm.WorldGen.RegisterHeightMapGenerator("dnr", function(startPos, endPos, vm, 
     Debug.log("Calling heightmap generator DNR")
 
     local heightMapTable = {}
-
     for posZ = startPos.z, endPos.z do
         for posY = startPos.y, endPos.y do
             for posX = startPos.x, endPos.x do
@@ -123,7 +117,6 @@ Realm.WorldGen.RegisterHeightMapGenerator("dnr", function(startPos, endPos, vm, 
                 if (previousHeight == nil) then
                     previousHeight = startPos.y
                 end
-
 
                 local vi = area:index(posX, posY, posZ)
 
@@ -143,9 +136,7 @@ Realm.WorldGen.RegisterHeightMapGenerator("dnr", function(startPos, endPos, vm, 
                 end
             end
         end
-
     end
-
     return heightMapTable
 end)
 
@@ -178,8 +169,6 @@ Realm.WorldGen.RegisterMapDecorator("v1", function(startPos, endPos, vm, area, d
                             data[vi] = c_dirtGrass
                         end
                     end
-
-
                 end
             end
         end
@@ -233,7 +222,6 @@ Realm.WorldGen.RegisterMapDecorator("v2",
                     end
                 end
             end
-
         end,
 
         function(startPos, endPos, area, data, heightMapTable, decoratorData, seed, seaLevel, paramTable)

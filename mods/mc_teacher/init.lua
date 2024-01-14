@@ -27,7 +27,8 @@ mc_teacher = {
         TEACHER = "2",
         ADMIN = "3",
     },
-    MODES = {EMPTY = "1", SCHEMATIC = "2", TWIN = "3"},
+    --MODES = {EMPTY = "1", SCHEMATIC = "2", TWIN = "3"},
+    MODES = {FLAT = "1", RANDOM = "2", SCHEMATIC = "3", LIDAR = "4"},
     PMODE = {SELECTED = "1", TAB = "2", ALL = "3"},
     M = {
         MODE = {SERVER_ANON = "1", SERVER_PLAYER = "2", PLAYER = "3"},
@@ -61,7 +62,7 @@ mc_teacher = {
         ["6 hours"] = {i = 11, t = 21600},
         ["12 hours"] = {i = 12, t = 43200},
         ["24 hours"] = {i = 13, t = 86400}
-    },
+    }
 }
 
 -- Source files

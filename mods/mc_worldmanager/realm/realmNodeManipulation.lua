@@ -17,13 +17,17 @@ function Realm:ClearNodes()
         -- Send progress message
         -- Send progress message
         if context.total_blocks == context.loaded_blocks then
-            minetest.chat_send_all("Finished deleting realm!")
+            minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] Finished deleting the classroom."))
         end
 
         local pos1 = { x = blockpos.x * 16, y = blockpos.y * 16, z = blockpos.z * 16 }
         local pos2 = { x = blockpos.x * 16 + 15, y = blockpos.y * 16 + 15, z = blockpos.z * 16 + 15 }
-
-        context.realm:SetNodes(pos1, pos2, "air")
+        
+        -- Chunk the VM
+        local chunks = Realm:Create_VM_Chunks(pos1, pos2, mc_core.VM_CHUNK_SIZE)
+        for _, chunk in pairs(chunks) do
+            context.realm:SetNodes(chunk.pos1, chunk.pos2, "air")
+        end
     end
 
     local context = {} -- persist data between callback calls
@@ -33,19 +37,37 @@ function Realm:ClearNodes()
     local endPos = { x = self.EndPos.x + 40, y = self.EndPos.y + 40, z = self.EndPos.z + 40 }
 
     minetest.emerge_area(startPos, endPos, emerge_callback, context)
-
-    minetest.chat_send_all("[INFO] Started cleaning up a realm, block placement might act unresponsive for a moment.")
+    minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] Started cleaning up a classroom, block placement might act unresponsive for a moment."))
 end
 
 ---@public
 ---Creates a ground plane between the realms start and end positions.
 ---@return void
-function Realm:CreateGround(nodeType)
+function Realm:CreateGround(nodeType, height)
+    nodeType = nodeType or "mc_worldmanager:temp"
+    local pos1 = { x = self.StartPos.x, y = self.StartPos.y + (height or 1), z = self.StartPos.z }
+    local pos2 = { x = self.EndPos.x, y = self.StartPos.y + (height or 1), z = self.EndPos.z }
+
+    -- Chunk the VM
+    local chunks = Realm:Create_VM_Chunks(pos1, pos2, mc_core.VM_CHUNK_SIZE)
+    for _, chunk in pairs(chunks) do
+        self:SetNodes(chunk.pos1, chunk.pos2, nodeType)
+    end
+end
+
+---@public
+---Fills below ground plane between the realms start and end positions.
+---@return void
+function Realm:FillBelowGround(nodeType, fill_depth)
     nodeType = nodeType or "mc_worldmanager:temp"
     local pos1 = { x = self.StartPos.x, y = self.StartPos.y + 1, z = self.StartPos.z }
-    local pos2 = { x = self.EndPos.x, y = self.StartPos.y + 1, z = self.EndPos.z }
+    local pos2 = { x = self.EndPos.x, y = self.StartPos.y + fill_depth, z = self.EndPos.z }
 
-    self:SetNodes(pos1, pos2, nodeType)
+    -- Chunk the VM
+    local chunks = Realm:Create_VM_Chunks(pos1, pos2, mc_core.VM_CHUNK_SIZE)
+    for _, chunk in pairs(chunks) do
+        self:SetNodes(chunk.pos1, chunk.pos2, nodeType)
+    end
 end
 
 ---@public
@@ -54,33 +76,84 @@ end
 function Realm:CreateBarriers()
     local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
     local pos2 = { x = self.StartPos.x, y = self.EndPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrierAir")
+    -- Chunk the VM
+    local chunks = Realm:Create_VM_Chunks(pos1, pos2, mc_core.VM_CHUNK_SIZE)
+    for _, chunk in pairs(chunks) do
+        self:SetNodes(chunk.pos1, chunk.pos2, "unbreakable_map_barrier:barrierAir")
+    end
 
     local pos1 = { x = self.EndPos.x, y = self.StartPos.y, z = self.StartPos.z }
     local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrierAir")
+    local chunks = Realm:Create_VM_Chunks(pos1, pos2, mc_core.VM_CHUNK_SIZE)
+    for _, chunk in pairs(chunks) do
+        self:SetNodes(chunk.pos1, chunk.pos2, "unbreakable_map_barrier:barrierAir")
+    end
 
     local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
     local pos2 = { x = self.EndPos.x, y = self.StartPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrierAir")
+    local chunks = Realm:Create_VM_Chunks(pos1, pos2, mc_core.VM_CHUNK_SIZE)
+    for _, chunk in pairs(chunks) do
+        self:SetNodes(chunk.pos1, chunk.pos2, "unbreakable_map_barrier:barrierAir")
+    end
 
     local pos1 = { x = self.StartPos.x, y = self.EndPos.y, z = self.StartPos.z }
     local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrierAir")
+    local chunks = Realm:Create_VM_Chunks(pos1, pos2, mc_core.VM_CHUNK_SIZE)
+    for _, chunk in pairs(chunks) do
+        self:SetNodes(chunk.pos1, chunk.pos2, "unbreakable_map_barrier:barrierAir")
+    end
 
     local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.StartPos.z }
     local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.StartPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrierAir")
+    local chunks = Realm:Create_VM_Chunks(pos1, pos2, mc_core.VM_CHUNK_SIZE)
+    for _, chunk in pairs(chunks) do
+        self:SetNodes(chunk.pos1, chunk.pos2, "unbreakable_map_barrier:barrierAir")
+    end
 
     local pos1 = { x = self.StartPos.x, y = self.StartPos.y, z = self.EndPos.z }
     local pos2 = { x = self.EndPos.x, y = self.EndPos.y, z = self.EndPos.z }
-    self:SetNodes(pos1, pos2, "unbreakable_map_barrier:barrierAir")
+    local chunks = Realm:Create_VM_Chunks(pos1, pos2, mc_core.VM_CHUNK_SIZE)
+    for _, chunk in pairs(chunks) do
+        self:SetNodes(chunk.pos1, chunk.pos2, "unbreakable_map_barrier:barrierAir")
+    end
+end
+
+---Helper function to split the voxel manipulator space into chunks and return a list of chunks
+---@param pos1 table coordinates
+---@param pos2 table coordinates
+---@param chunk_size integer chunk size limit in x, y, and z dimensions
+function Realm:Create_VM_Chunks(pos1, pos2, chunk_size)
+    local chunks = {}
+    
+    local num_chunks_x = math.ceil((pos2.x - pos1.x + 1) / chunk_size)
+    local num_chunks_y = math.ceil((pos2.y - pos1.y + 1) / chunk_size)
+    local num_chunks_z = math.ceil((pos2.z - pos1.z + 1) / chunk_size)
+    
+    for chunk_z = 0, num_chunks_z - 1 do
+        for chunk_y = 0, num_chunks_y - 1 do
+            for chunk_x = 0, num_chunks_x - 1 do
+                local chunk_pos1 = {
+                    x = pos1.x + chunk_x * chunk_size,
+                    y = pos1.y + chunk_y * chunk_size,
+                    z = pos1.z + chunk_z * chunk_size
+                }
+                local chunk_pos2 = {
+                    x = math.min(chunk_pos1.x + chunk_size - 1, pos2.x),
+                    y = math.min(chunk_pos1.y + chunk_size - 1, pos2.y),
+                    z = math.min(chunk_pos1.z + chunk_size - 1, pos2.z)
+                }
+                table.insert(chunks, {pos1 = chunk_pos1, pos2 = chunk_pos2})
+            end
+        end
+    end
+    
+    return chunks
 end
 
 ---Helper function to set cubic areas of nodes based on world coordinates and node type
 ---@param pos1 table coordinates
 ---@param pos2 table coordinates
----@param pos2 string nodeType name
+---@param node string nodeType name
 function Realm:SetNodes(pos1, pos2, node)
     local node_id = minetest.get_content_id(node)
 
@@ -126,10 +199,7 @@ function Realm:CreateBarriersFast()
 
         -- Send finished message
         if context.total_blocks == context.loaded_blocks then
-            minetest.chat_send_all("Finished walling realm!")
-            if realterrain.loadRealm then
-                realterrain.realmEmergeDone = true
-            end
+            minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] Finished walling the classroom."))
         end
 
         local pos1 = { x = blockpos.x * 16, y = blockpos.y * 16, z = blockpos.z * 16 }
@@ -158,14 +228,11 @@ function Realm:CreateBarriersFast()
         for z = pos1.z, pos2.z do
             for y = pos1.y, pos2.y do
                 for x = pos1.x, pos2.x do
-
                     -- Check if we are in the realm. If we are, we place barrier. If not, we clean up the boundary area.
                     -- This can probably be optimized but it's fast enough for now.
                     if (x >= context.startPos.x and x <= context.endPos.x) and (y >= context.startPos.y and y <= context.endPos.y) and (z >= context.startPos.z and z <= context.endPos.z) then
                         if (x == context.startPos.x or x == context.endPos.x) or (y == context.startPos.y or y == context.endPos.y) or (z == context.startPos.z or z == context.endPos.z) then
-
                             local index = a:index(x, y, z)
-
                             if (y == context.startPos.y) then
                                 data[index] = barrierNodeVoid
                             elseif (data[index] ~= airNode) then
@@ -173,8 +240,6 @@ function Realm:CreateBarriersFast()
                             else
                                 data[index] = barrierNodeAir
                             end
-
-
                         end
                     else
                         local index = a:index(x, y, z)
@@ -199,8 +264,7 @@ function Realm:CreateBarriersFast()
     local realmEndPos = { x = self.EndPos.x + 16, y = self.EndPos.y + 16, z = self.EndPos.z + 16 }
 
     minetest.emerge_area(realmStartPos, realmEndPos, emerge_callback, context)
-
-    minetest.chat_send_all("[INFO] Started creating barriers for realm, block placement might act unresponsive for a moment.")
+    minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] Started creating the classroom, block placement might act unresponsive for a moment."))
 end
 
 function Realm:CleanNodes()

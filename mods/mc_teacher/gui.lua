@@ -34,13 +34,37 @@ local function get_saved_coords(player)
 end
 
 local function get_options_height(context)
-    if (not context.realm_gen or context.realm_gen == mc_teacher.R.GEN.NONE) then
-        return 2.6
-    elseif context.realm_dec == mc_teacher.R.DEC.BIOME then
-        return 5.2
-    else
-        return 3.9
+    local options_height = 0
+    if context.selected_mode == mc_teacher.MODES.FLAT then
+        options_height = options_height + 14.8
+        if tonumber(context.selected_decorator) == 1 then
+        elseif tonumber(context.selected_decorator) == 2 then
+        elseif tonumber(context.selected_decorator) == 3 then
+            options_height = options_height + 5.2
+            if context.fetched_nodes then
+                options_height = options_height + 4.2
+                if openstreetmap.temp.sizeX > 1000 or openstreetmap.temp.sizeY > 1000 or openstreetmap.temp.sizeZ > 1000 then
+                    options_height = options_height + 1.4
+                end
+                if hasNodeValues then
+                    options_height = options_height + 4.2
+                else
+                    options_height = options_height + 1.2
+                end
+                if hasWayValues then
+                    options_height = options_height + 4.4
+                else
+                    options_height = options_height + 1.2
+                end
+                if openstreetmap.write_metadata then
+                    options_height = options_height + 0.8
+                else
+                    options_height = options_height + 0.4
+                end
+            end
+        end
     end
+    return options_height
 end
 
 local function get_privs(player)
@@ -377,7 +401,7 @@ function mc_teacher.show_edit_popup(player, realmID)
         "hypertext[", text_spacer + button_width + 0.1, ",2.22;", button_width + 0.1, ",2;;<global font=mono halign=center color=#000000><b><bigger>#", realmID, "</bigger></b>]",
 
         "textarea[", text_spacer, ",3.1;", width - 2*text_spacer, ",1;;;Default privileges]",
-        "style_type[textarea;font=mono]",
+        "style_type[textarea;font=mono;textcolor=#000000]",
         "textarea[", text_spacer + 1.3, ",3.9;2.3,1;;;interact]",
         "textarea[", text_spacer + 1.3, ",4.3;2.3,1;;;shout]",
         "textarea[", text_spacer + 1.3, ",4.7;2.3,1;;;fast]",
@@ -474,6 +498,91 @@ dropdown[0.6,6.9;7.1,0.8;;;1;true]
 button[0.6,8.1;3.5,0.8;save_realm;Save changes]
 button[4.2,8.1;3.5,0.8;cancel;Cancel]
 ]]
+
+function mc_teacher.show_classifier_popup(player, class_value, context)
+    local spacer = mc_teacher.fs_spacer
+    local text_spacer = mc_teacher.fs_t_spacer
+    local width = 8.3
+    local height = 9.5
+    local button_width = (width - 2*spacer - 0.1)/2
+
+    local pname = player:get_player_name()
+    local context = mc_teacher.get_fs_context(player)
+
+    local fs = {
+        mc_core.draw_note_fs(width, height, {bg = "#96e1fa", accent = "#c2e9fc"}),
+        "style_type[textarea;font=mono,bold;textcolor=#000000]",
+        "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
+        "hypertext[", text_spacer, ",0.5;", width - 2*text_spacer, ",1;;<global font=mono halign=center color=#000000><b><bigger>", class_value, "</bigger></b>]",
+        "textarea[", text_spacer, ",1.5;", width - 2*text_spacer, ",1;;;Available Textures]",
+        "textlist[", spacer, " ,2.0;", button_width, ",5.5;itemstring_list;"
+    }
+
+    for _,itemstring in pairs(openstreetmap.NODE_ITEMSTRINGS) do
+        fs[#fs + 1] = itemstring
+        fs[#fs + 1] = ","
+    end
+    fs[#fs] = ";"
+
+    -- Check if we are dealing with a node, way or LiDAR
+    local current_value_itemstring
+    if context.value_element == "node" then
+        current_value_itemstring = openstreetmap.temp.node_value_itemstring_table[context.selected_node_value or openstreetmap.temp.node_values_list[1]]
+        fs[#fs + 1] = context.selected_node_itemstring_index or mc_core.getIndex(openstreetmap.NODE_ITEMSTRINGS, current_value_itemstring)
+    elseif context.value_element == "way" then
+        current_value_itemstring = openstreetmap.temp.way_value_itemstring_table[context.selected_way_value or openstreetmap.temp.way_values_list[1]]
+        fs[#fs + 1] = context.selected_way_itemstring_index or mc_core.getIndex(openstreetmap.NODE_ITEMSTRINGS, current_value_itemstring)
+    else
+        -- TODO: reserved for LiDAR processing
+    end
+
+    fs[#fs + 1] = "]"
+
+    table.insert(fs, table.concat({
+        "textarea[4.2,1.5;", width - 2*text_spacer, ",1;;;Height Above Ground]",
+        "dropdown[4.2,2;", button_width, ",0.8;extrude;",
+    })) 
+    for dd = 0, openstreetmap.temp.sizeY - context.fill_depth - 3, 1 do
+        fs[#fs + 1] = dd
+        fs[#fs + 1] = ","
+    end
+    fs[#fs] = ";"
+
+    local extrude_index
+    if context.extrude then 
+        extrude_index = context.extrude
+    elseif context.value_element == "node" and openstreetmap.temp.node_value_extrusion_table[context.selected_node_value] then
+        -- The extrusion value is one less than the index for that value
+        extrude_index = openstreetmap.temp.node_value_extrusion_table[context.selected_node_value] + 1
+    elseif context.value_element == "way" and openstreetmap.temp.way_value_extrusion_table[context.selected_way_value] then
+        -- The extrusion value is one less than the index for that value
+        extrude_index = openstreetmap.temp.way_value_extrusion_table[context.selected_way_value] + 1
+    else
+        extrude_index = 1
+    end
+    
+    table.insert(fs, table.concat({
+        extrude_index, "]",
+    }))
+
+    if context.value_element == "node" then
+        if not context.selected_node_itemstring then context.selected_node_itemstring = current_value_itemstring end
+        table.insert(fs, table.concat({
+            "item_image[4.2,", 7.5 - button_width, ";", button_width, ",", button_width, ";", context.selected_node_itemstring, "]",
+        }))
+    elseif context.value_element == "way" then
+        if not context.selected_way_itemstring then context.selected_way_itemstring = current_value_itemstring end
+        table.insert(fs, table.concat({
+            "item_image[4.2,", 7.5 - button_width, ";", button_width, ",", button_width, ";", context.selected_way_itemstring, "]",
+        }))
+    end
+
+    table.insert(fs, table.concat({
+        "button[", spacer, " ,8.1;", button_width, ",0.8;save_classification;Save changes]",
+        "button[4.2,8.1;", button_width, ",0.8;cancel_classification;Cancel]",
+    }))
+    minetest.show_formspec(pname, "mc_teacher:classify_value", table.concat(fs, ""))
+end
 
 function mc_teacher.show_group_popup(player, group_id)
     local spacer = mc_teacher.fs_spacer
@@ -579,7 +688,6 @@ function mc_teacher.show_controller_fs(player, tab)
                     "tooltip[exit;Exit;#404040;#ffffff]",
                     "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Overview</b></center></style>]",
                     "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Dashboard</b></center></style>]",
-
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
                     "textarea[", text_spacer, ",1;", panel_width - 2*text_spacer, ",1;;;Welcome to Minetest Classroom!]",
@@ -601,9 +709,9 @@ function mc_teacher.show_controller_fs(player, tab)
                     "hypertext[", spacer + 1.8, ",4.0;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Players</b>\n", minetest.formspec_escape("Manage player privileges"), "]",
                     "image_button[", spacer, ",4.1;", button_width, ",", button_height, ";mc_teacher_players.png;players;;false;false]",
                     "hypertext[", spacer + 1.8, ",5.8;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Moderation</b>\n", minetest.formspec_escape("View player chat logs"), "]",
-                    "image_button[", spacer, ",5.9;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;moderation;;false;false]",
+                    "image_button[", spacer, ",5.9;", button_width, ",", button_height, ";mc_teacher_moderation.png;moderation;;false;false]",
                     "hypertext[", spacer + 1.8, ",7.6;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Reports</b>\n", minetest.formspec_escape("View player reports"), "]",
-                    "image_button[", spacer, ",7.7;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;reports;;false;false]",
+                    "image_button[", spacer, ",7.7;", button_width, ",", button_height, ";mc_teacher_reports.png;reports;;false;false]",
                     "hypertext[", spacer + 1.8, ",9.4;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Help</b>\n", minetest.formspec_escape("View guides and report issues"), "</style>]",
                     "image_button[", spacer, ",9.5;", button_width, ",", button_height, ";mc_teacher_help.png;help;;false;false]",
                 }
@@ -611,7 +719,7 @@ function mc_teacher.show_controller_fs(player, tab)
                 if has_server_privs then
                     table.insert(fs, table.concat({
                         "hypertext[", spacer + 1.8, ",11.2;5.35,1.8;;<global valign=middle color=#000000 font=mono><b>Server</b>\n", minetest.formspec_escape("Manage server settings"), "]",
-                        "image_button[", spacer, ",11.3;", button_width, ",", button_height, ";mc_teacher_isometric_crop.png;server;;false;false]",
+                        "image_button[", spacer, ",11.3;", button_width, ",", button_height, ";mc_teacher_settings.png;server;;false;false]",
                     }))
                 end
                 table.insert(fs, "scroll_container_end[]")
@@ -620,8 +728,8 @@ function mc_teacher.show_controller_fs(player, tab)
             end,
             [mc_teacher.TABS.CLASSROOMS] = function()
                 local classroom_list = {}
-                local options_height = (context.selected_mode == mc_teacher.MODES.EMPTY and get_options_height(context)) or 1.3
-                local FACTOR = 0.1
+                local options_height = (context.selected_mode == mc_teacher.MODES.FLAT and get_options_height(context)) or 1.3
+                local FACTOR = 0.05
                 context.realm_i_to_id = {}
                 context.selected_c_tab = context.selected_c_tab or mc_teacher.CTAB.PUBLIC
 
@@ -639,16 +747,23 @@ function mc_teacher.show_controller_fs(player, tab)
                     end
                 end
 
+                context.decorator_name_to_i = {
+                    ["None"] = 1,
+                    ["Biome"] = 2,
+                    ["OpenStreetMap"] = 3,
+                }  
+
+                ---------------
+                -- Left Page --
+                ---------------
                 local fs = {
                     "image[0,0;", controller_width, ",0.5;mc_pixel.png^[multiply:#737373]",
                     "image_button_exit[0.2,0.05;0.4,0.4;mc_x.png;exit;;false;false]",
                     "tooltip[exit;Exit;#404040;#ffffff]",
                     "hypertext[", text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Classrooms</b></center></style>]",
                     "hypertext[", panel_width + text_spacer, ",0.1;", panel_width - 2*text_spacer, ",1;;<style font=mono><center><b>Build a Classroom</b></center></style>]",
-                    
                     "style_type[textarea;font=mono,bold;textcolor=#000000]",
                     "style_type[button;border=false;font=mono,bold;bgimg=mc_pixel.png^[multiply:", mc_core.col.b.default, "]",
-                    "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;c_newrealm;Generate classroom]",
                     "tabheader[", spacer, ",1.4;", panel_width - 2*spacer, ",0.5;c_list_header;Public,Private,Hidden;", context.selected_c_tab, ";false;true]",
                 }
                 
@@ -677,51 +792,237 @@ function mc_teacher.show_controller_fs(player, tab)
                         "button[", spacer + 4.8, ",9;2.3,0.8;c_hide;Hide]",
                     }))   
                 end
-                
+
+                ----------------
+                -- Right Page --
+                ----------------
+
                 table.insert(fs, table.concat({
                     "style_type[field;font=mono;textcolor=#ffffff]",
-                    "scrollbaroptions[min=0;max=", (options_height - 0.7)/FACTOR, ";smallstep=", 0.6/FACTOR, ";largestep=", 3.6/FACTOR, ";thumbsize=", 0.6/FACTOR, "]",
+                    "scrollbaroptions[min=0;max=", options_height/FACTOR, ";smallstep=", 0.8/FACTOR, ";largestep=", 4.8/FACTOR, ";thumbsize=", 1/FACTOR, "]",
                     "scrollbar[", controller_width - 0.3, ",1;0.3,", controller_height - 2.5, ";vertical;class_opt_scroll;", context.class_opt_scroll or 0, "]",
                     "scroll_container[", panel_width, ",1;", panel_width - 0.3, ",", controller_height - 2.5, ";class_opt_scroll;vertical;", FACTOR, "]",
-
                     "textarea[", text_spacer, ",0;", panel_width - 2*text_spacer, ",1;;;Name]",
                     "field[", spacer, ",0.4;7.1,0.8;realmname;;", context.realmname or "", "]",
                     "field_close_on_enter[realmname;false]",
                     "textarea[", text_spacer, ",1.25;3.6,1;;;Type]",
                     "dropdown[", spacer, ",1.7;3.5,0.8;realmcategory;Classroom,Spawn,Private" or "", ";", context.selected_realm_type or 1, ";true]",
-                    "textarea[", text_spacer + 3.6, ",1.25;3.6,1;;;Generation]",
-                    "dropdown[", spacer + 3.6, ",1.7;3.5,0.8;mode;Empty World,Schematic,Digital Twin" or "", ";", context.selected_mode or 1, ";true]",
+                    "textarea[", text_spacer + 3.6, ",1.25;3.6,1;;;Select Ground]",
+                    "dropdown[", spacer + 3.6, ",1.7;3.5,0.8;mode;Flat,Random,Schematic" or "", ";", context.selected_mode or 1, ";true]",
                 }))
 
-                if context.selected_mode == mc_teacher.MODES.EMPTY then
+                local last_scrollbar_container_y
+                if context.selected_mode == mc_teacher.MODES.FLAT then
+                    local button_width = 1.7
                     table.insert(fs, table.concat({
                         "textarea[", text_spacer, ",2.6;", panel_width - 2*text_spacer, ",1;;;Classroom size]",
                         "textarea[", text_spacer, ",3.2;1,1;;;X =]",
                         "textarea[", text_spacer + 2.4, ",3.2;1,1;;;Y =]",
                         "textarea[", text_spacer + 4.8, ",3.2;1,1;;;Z =]",
-                        "field[", spacer + 0.9, ",3;1.3,0.8;realm_x_size;;", context.realm_x or 80, "]",
-                        "field[", spacer + 3.3, ",3;1.3,0.8;realm_y_size;;", context.realm_y or 80, "]",
-                        "field[", spacer + 5.7, ",3;1.3,0.8;realm_z_size;;", context.realm_z or 80, "]",
-                        "textarea[", text_spacer, ",3.9;3.6,1;;;Terrain]",
-                        "textarea[", text_spacer + 3.6, ",3.9;3.6,1;;;Foliage]",
-                        "dropdown[", spacer, ",4.3;3.5,0.8;realm_generator;None,Version 1,Version 2;", context.realm_gen or 1, ";true]",
-                        "dropdown[", spacer + 3.6, ",4.3;3.5,0.8;realm_decorator;None,Version 1,Version 2,Biomegen;", context.realm_dec or 1, ";true]",
-                    
+                        "field[", spacer + 0.9, ",3;1.3,0.8;realm_x_size;;", openstreetmap.temp.sizeX or context.realm_x or 80, "]",
+                        "field[", spacer + 3.3, ",3;1.3,0.8;realm_y_size;;", openstreetmap.temp.sizeY or context.realm_y or 80, "]",
+                        "field[", spacer + 5.7, ",3;1.3,0.8;realm_z_size;;", openstreetmap.temp.sizeZ or context.realm_z or 80, "]",
                         "field_close_on_enter[realm_x_size;false]",
                         "field_close_on_enter[realm_y_size;false]",
                         "field_close_on_enter[realm_z_size;false]",
+                        "textarea[", text_spacer, ",3.9;", panel_width - 2*text_spacer, ",1;;;Choose Ground Surface Texture]",
+                        "textlist[", spacer, " ,4.4;", panel_width/2 - spacer, ",3;surface_itemstring_list;"
+                    }))
+                
+                    for _,itemstring in pairs(openstreetmap.NODE_ITEMSTRINGS) do
+                        fs[#fs + 1] = itemstring
+                        fs[#fs + 1] = ","
+                    end
+                    
+                    fs[#fs] = "]"
+                    table.insert(fs, table.concat({
+                        "item_image[", spacer + panel_width/2, ",4.4;3,3;", context.selected_surface_itemstring or "default:dirt_with_grass" or mc_teacher.NODE_ITEMSTRINGS[1], "]",
+                        "textarea[", text_spacer, ",7.8;", panel_width - 2*text_spacer, ",1;;;Choose Ground Fill Texture]",
+                        "textlist[", spacer, " ,8.3;", panel_width/2 - spacer, ",3;fill_itemstring_list;"
                     }))
 
-                    if options_height >= 3.9 then
-                        table.insert(fs, table.concat({
-                            "textarea[", text_spacer, ",5.2;3.6,1;;;Seed]",
-                            "textarea[", text_spacer + 3.6, ",5.2;3.6,1;;;Sea level]",
-                            "field[", spacer, ",5.6;3.5,0.8;realm_seed;;", minetest.formspec_escape(context.realm_seed) or "", "]",
-                            "field[", spacer + 3.6, ",5.6;3.5,0.8;realm_sealevel;;", minetest.formspec_escape(context.realm_sealevel) or "", "]",
+                    for _,itemstring in pairs(openstreetmap.NODE_ITEMSTRINGS) do
+                        fs[#fs + 1] = itemstring
+                        fs[#fs + 1] = ","
+                    end
+                    
+                    fs[#fs] = "]"
+                    table.insert(fs, table.concat({
+                        "item_image[", spacer + panel_width/2, ",8.3;3,3;", context.selected_fill_itemstring or "default:dirt" or mc_teacher.NODE_ITEMSTRINGS[1], "]",
+                        "textarea[", text_spacer, ",11.8;", panel_width - 2*text_spacer, ",1;;;Ground Fill Depth]",
+                        "dropdown[", spacer, ",12.3;", panel_width - 2*text_spacer,",0.8;fill_depth;", 
+                    }))
 
-                            "field_close_on_enter[realm_seed;false]",
-                            "field_close_on_enter[realm_sealevel;false]",
+                    local max_depth = context.realm_y or 80
+                    for dd = 0, max_depth - 1, 1 do
+                        fs[#fs + 1] = dd
+                        fs[#fs + 1] = ","
+                    end
+                    
+                    fs[#fs] = ";"
+                    fs[#fs + 1] = context.fill_depth or 1
+                    fs[#fs + 1] = ";true]"
+
+                    -- Now add decorator options
+                    table.insert(fs, table.concat({
+                        "textarea[", text_spacer, ",13.4;", panel_width - 2*text_spacer, ",1;;;Select Decorator]",
+                        "dropdown[", spacer, ",14;", panel_width - 2*text_spacer,",0.8;decorator;None,Biome,OpenStreetMap;", tonumber(context.selected_decorator) or 1,";true]"
+                    }))
+
+                    last_scrollbar_container_y = 14.8
+
+                    context.selected_decorator = context.selected_decorator or 1
+                    if tonumber(context.selected_decorator) == 1 then
+                        -- None
+
+                    elseif tonumber(context.selected_decorator) == 2 then
+                        -- Biome
+
+                    elseif tonumber(context.selected_decorator) == 3 then
+                        -- OpenStreetMap
+
+                        -- Show fields for user-entered extent
+                        table.insert(fs, table.concat({
+                            "container[0,", last_scrollbar_container_y + 0.2, "]",
+                            "textarea[2.7375,0;", panel_width - 2*text_spacer, ",1;;;Max Latitude]",
+                            "field[2.55,0.4;3,0.8;osm_extent_maxlat;;", context.osm_extent_maxlat or "49.2613700", "]",
+                            "textarea[", text_spacer + 4.38125, ",1.4;", panel_width - 2*text_spacer, ",1;;;Max Longitude]",
+                            "field[", spacer + 4.1, ",1.8;3,0.8;osm_extent_maxlon;;", context.osm_extent_maxlon or "-123.2463687", "]",
+                            "textarea[2.925,2.8;", panel_width - 2*text_spacer, ",1;;;Min Latitude]",
+                            "field[2.55,3.2;3,0.8;osm_extent_minlat;;", context.osm_extent_minlat or "49.2598899", "]",
+                            "textarea[", text_spacer + 0.28125, ",1.4;", panel_width - 2*text_spacer, ",1;;;Min Longitude]",
+                            "field[", spacer, ",1.8;3,0.8;osm_extent_minlon;;", context.osm_extent_minlon or "-123.2491944", "]",
+                            "button[", spacer, ",4.4;7.1,0.8;fetch_osm_extent;Fetch OSM Data]",
+                            "container_end[]",
                         }))
+
+                        --[[ -- UBC campus below for testing
+                        table.insert(fs, table.concat({
+                            "container[0,", last_scrollbar_container_y + 0.2, "]",
+                            "textarea[2.7375,0;", panel_width - 2*text_spacer, ",1;;;Max Latitude]",
+                            "field[2.55,0.4;2.6,0.8;osm_extent_maxlat;;", context.osm_extent_maxlat or "49.2730726117", "]",
+                            "textarea[", text_spacer + 4.38125, ",1.4;", panel_width - 2*text_spacer, ",1;;;Max Longitude]",
+                            "field[", spacer + 4.1, ",1.8;3,0.8;osm_extent_maxlon;;", context.osm_extent_maxlon or "-123.2264827826", "]",
+                            "textarea[2.925,2.8;", panel_width - 2*text_spacer, ",1;;;Min Latitude]",
+                            "field[2.55,3.2;3,0.8;osm_extent_minlat;;", context.osm_extent_minlat or "49.2417041373", "]",
+                            "textarea[", text_spacer + 0.28125, ",1.4;", panel_width - 2*text_spacer, ",1;;;Min Longitude]",
+                            "field[", spacer, ",1.8;3,0.8;osm_extent_minlon;;", context.osm_extent_minlon or "-123.262219147", "]",
+                            "button[", spacer, ",4.4;7.1,0.8;fetch_osm_extent;Fetch OSM Data]",
+                            "container_end[]",
+                        })) ]]
+
+                        last_scrollbar_container_y = last_scrollbar_container_y + 5.2
+
+                        if context.fetched_nodes then
+                            -- Summarize the fetched nodes
+                            table.insert(fs, table.concat({
+                                "container[0,", last_scrollbar_container_y + 0.2, "]",
+                                "style_type[textarea;font=mono]",
+                                "textarea[", text_spacer, ",0.4;", panel_width - 2*text_spacer, ",1;;;Total OSM Nodes Fetched: ", #openstreetmap.temp.nodedata.elements, "]",
+                                "textarea[", text_spacer, ",0.8;", panel_width - 2*text_spacer, ",1;;;Total OSM Ways Fetched: ", #openstreetmap.temp.waydata.elements, "]",
+                                "textarea[", text_spacer, ",1.2;", panel_width - 2*text_spacer, ",1;;;Classroom X size: ", openstreetmap.temp.sizeX, "]",
+                                "textarea[", text_spacer, ",1.6;", panel_width - 2*text_spacer, ",1;;;Classroom Y size: ", openstreetmap.temp.sizeY, "]",
+                                "textarea[", text_spacer, ",2.0;", panel_width - 2*text_spacer, ",1;;;Classroom Z size: ", openstreetmap.temp.sizeZ, "]",
+                            }))
+
+                            if openstreetmap.temp.sizeX > 1000 or openstreetmap.temp.sizeY > 1000 or openstreetmap.temp.sizeZ > 1000 then
+                                table.insert(fs, table.concat({
+                                    "style_type[textarea;font=mono;textcolor=#ff0000]",
+                                    "textarea[", text_spacer, ",2.4;", panel_width, ",1;;;Warning: Large classroom dimensions]",
+                                    "container_end[]",
+                                }))
+                            else
+                                table.insert(fs, table.concat({
+                                    "container_end[]",
+                                }))
+                            end
+                            last_scrollbar_container_y = last_scrollbar_container_y + 3.2
+
+                            -- Show list of available values and button to modify itemstring
+                            local hasNodeValues
+                            openstreetmap.temp.node_values_list = {}
+                            if openstreetmap.temp.node_value_texture_table then
+                                for k, _ in pairs(openstreetmap.temp.node_value_texture_table) do 
+                                    if k and k ~= "" then
+                                        table.insert(openstreetmap.temp.node_values_list, k)
+                                        hasNodeValues = true
+                                    end
+                                end
+                            end
+                            local hasWayValues
+                            openstreetmap.temp.way_values_list = {}
+                            if openstreetmap.temp.way_value_texture_table then
+                                for k, _ in pairs(openstreetmap.temp.way_value_texture_table) do 
+                                    if k and k ~= "" then
+                                        table.insert(openstreetmap.temp.way_values_list, k)
+                                        hasWayValues = true
+                                    end
+                                end
+                            end
+
+                            if hasNodeValues then
+                                -- Value-Itemstring textlist for nodes
+                                table.insert(fs, table.concat({
+                                    "style_type[textarea;font=mono;textcolor=#000000]",
+                                    "textarea[", text_spacer, ",", last_scrollbar_container_y, ";", panel_width - 2*text_spacer, ",1;;;Choose Textures For Node Tags]",
+                                    "textlist[", spacer, ",", last_scrollbar_container_y + 0.5, ";", panel_width/2 - spacer, ",3;node_value_list;",
+                                    table.concat(openstreetmap.temp.node_values_list, ","), ";", context.selected_node_value_index or 1, ";false]",
+                                    "item_image_button[", spacer + panel_width/2, ",", last_scrollbar_container_y + 0.5, ";3,3;", openstreetmap.temp.node_value_itemstring_table[context.selected_node_value] or openstreetmap.temp.node_value_itemstring_list[context.selected_node_value_index or 1], ";node_texture_button;]",
+                                }))
+                                last_scrollbar_container_y = last_scrollbar_container_y + 4.2
+                            else
+                                table.insert(fs, table.concat({ 
+                                    "textarea[", text_spacer, ",", last_scrollbar_container_y + 0.2, ";", panel_width - 2*text_spacer, ",1;;;No tag information to display for nodes.]",
+                                }))
+                                last_scrollbar_container_y = last_scrollbar_container_y + 1.2
+                            end
+
+                            if hasWayValues then
+                                -- Value-Itemstring textlist for ways
+                                table.insert(fs, table.concat({
+                                    "textarea[", text_spacer, ",", last_scrollbar_container_y, ";", panel_width - 2*text_spacer, ",1;;;Choose Textures For Way Tags]",
+                                    "textlist[", spacer, ",", last_scrollbar_container_y + 0.5, ";", panel_width/2 - spacer, ",3;way_value_list;",
+                                    table.concat(openstreetmap.temp.way_values_list, ","), ";", context.selected_way_value_index or 1, ";false]",
+                                    "item_image_button[", spacer + panel_width/2, ",", last_scrollbar_container_y + 0.5, ";3,3;", openstreetmap.temp.way_value_itemstring_table[context.selected_way_value] or openstreetmap.temp.way_value_itemstring_list[context.selected_way_value_index or 1], ";way_texture_button;]",
+                                }))
+                                last_scrollbar_container_y = last_scrollbar_container_y + 4
+
+                                -- Fill enclosure option
+                                table.insert(fs, table.concat({
+                                    "style_type[textarea;font=mono;textcolor=#000000]",
+                                    "textarea[", text_spacer + 0.4, ",", last_scrollbar_container_y, ";", panel_width, ",1;;;Fill enclosed areas of ways?]",
+                                    "checkbox[", spacer, ",", last_scrollbar_container_y + 0.2, ";fill_enclosures;;", tostring(openstreetmap.fill_enclosures),"]"
+                                }))
+                                last_scrollbar_container_y = last_scrollbar_container_y + 0.4
+                            else
+                                table.insert(fs, table.concat({ 
+                                    "textarea[", text_spacer, ",", last_scrollbar_container_y + 0.2, ";", panel_width - 2*text_spacer, ",1;;;No tag information to display for ways.]",
+                                }))
+                                last_scrollbar_container_y = last_scrollbar_container_y + 1.2
+                            end
+
+                            -- Write node metadata option
+                            table.insert(fs, table.concat({
+                                "style_type[textarea;font=mono;textcolor=#000000]",
+                                "textarea[", text_spacer + 0.4, ",", last_scrollbar_container_y, ";", panel_width, ",1;;;Write OSM metadata to nodes?]",
+                                "checkbox[", spacer, ",", last_scrollbar_container_y + 0.2, ";write_metadata;;", tostring(openstreetmap.write_metadata),"]"
+                            }))
+                            if openstreetmap.write_metadata then
+                                table.insert(fs, table.concat({
+                                    "style_type[textarea;font=mono;textcolor=#ff0000]",
+                                    "textarea[", text_spacer + 0.4, ",", last_scrollbar_container_y + 0.4, ";", panel_width, ",1;;;WARNING: May take longer to process]",
+                                }))
+                                last_scrollbar_container_y = last_scrollbar_container_y + 0.8
+                            else
+                                last_scrollbar_container_y = last_scrollbar_container_y + 0.4
+                            end
+
+                            context.twin_ready = true
+                        end
+                    end
+
+--[[                     if options_height >= 3.9 then
+                        
                     end
                     if options_height >= 5.2 then
                         local raw_biomes = biomegen.get_biomes()
@@ -737,56 +1038,475 @@ function mc_teacher.show_controller_fs(player, tab)
                             "textarea[", text_spacer + 3.6, ",6.5;3.6,1;;;Chill coefficient]",
                             "dropdown[", spacer, ",6.9;3.5,0.8;realm_biome;", table.concat(context.i_to_biome, ","), ";", context.realm_biome, ";true]",
                             "field[", spacer + 3.6, ",6.9;3.5,0.8;realm_chill;;", minetest.formspec_escape(context.realm_chill) or "", "]",
-
                             "field_close_on_enter[realm_chill;false]",
                         }))
+                    end 
+                    last_scrollbar_container_y = 6.9 + 0.8 ]]
+                elseif context.selected_mode == mc_teacher.MODES.RANDOM then
+                    
+                    table.insert(fs, table.concat({
+                        "textarea[", text_spacer, ",2.6;", panel_width - 2*text_spacer, ",1;;;Classroom size]",
+                        "textarea[", text_spacer, ",3.2;1,1;;;X =]",
+                        "textarea[", text_spacer + 2.4, ",3.2;1,1;;;Y =]",
+                        "textarea[", text_spacer + 4.8, ",3.2;1,1;;;Z =]",
+                        "field[", spacer + 0.9, ",3;1.3,0.8;realm_x_size;;", openstreetmap.temp.sizeX or context.realm_x or 80, "]",
+                        "field[", spacer + 3.3, ",3;1.3,0.8;realm_y_size;;", openstreetmap.temp.sizeY or context.realm_y or 80, "]",
+                        "field[", spacer + 5.7, ",3;1.3,0.8;realm_z_size;;", openstreetmap.temp.sizeZ or context.realm_z or 80, "]",
+                        "field_close_on_enter[realm_x_size;false]",
+                        "field_close_on_enter[realm_y_size;false]",
+                        "field_close_on_enter[realm_z_size;false]",
+                        "textarea[", text_spacer, ",4;3.6,1;;;Seed]",
+                        "textarea[", text_spacer + 3.6, ",4;3.6,1;;;Sea Level]",
+                        "field[", spacer, ",4.4;3.5,0.8;realm_seed;;", minetest.formspec_escape(context.realm_seed) or "", "]",
+                        "field[", spacer + 3.6, ",4.4;3.5,0.8;realm_sealevel;;", minetest.formspec_escape(context.realm_sealevel) or "", "]",
+                        "field_close_on_enter[realm_seed;false]",
+                        "field_close_on_enter[realm_sealevel;false]",
+                        "textarea[", text_spacer, ",5.3;", panel_width - 2*text_spacer, ",1;;;Select Decorator]",
+                        "dropdown[", spacer, ",5.7;", panel_width - 2*text_spacer,",0.8;decorator;None,Biome,OpenStreetMap;", tonumber(context.selected_decorator) or 1,";true]"
+                    }))
+
+                    last_scrollbar_container_y = 6.5
+                    context.selected_decorator = context.selected_decorator or 1
+                    if tonumber(context.selected_decorator) == 1 then
+                        -- None
+
+                    elseif tonumber(context.selected_decorator) == 2 then
+                        -- Biome
+
+                    elseif tonumber(context.selected_decorator) == 3 then
+                        -- OpenStreetMap
+
+                        -- Show fields for user-entered extent
+                        table.insert(fs, table.concat({
+                            "container[0,", last_scrollbar_container_y + 0.2, "]",
+                            "textarea[2.7375,0;", panel_width - 2*text_spacer, ",1;;;Max Latitude]",
+                            "field[2.55,0.4;2.6,0.8;osm_extent_maxlat;;", context.osm_extent_maxlat or "49.2613700", "]",
+                            "textarea[", text_spacer + 4.38125, ",1.4;", panel_width - 2*text_spacer, ",1;;;Max Longitude]",
+                            "field[", spacer + 4.1, ",1.8;3,0.8;osm_extent_maxlon;;", context.osm_extent_maxlon or "-123.2463687", "]",
+                            "textarea[2.925,2.8;", panel_width - 2*text_spacer, ",1;;;Min Latitude]",
+                            "field[2.55,3.2;3,0.8;osm_extent_minlat;;", context.osm_extent_minlat or "49.2598899", "]",
+                            "textarea[", text_spacer + 0.28125, ",1.4;", panel_width - 2*text_spacer, ",1;;;Min Longitude]",
+                            "field[", spacer, ",1.8;3,0.8;osm_extent_minlon;;", context.osm_extent_minlon or "-123.2491944", "]",
+                            "button[", spacer, ",4.4;7.1,0.8;fetch_osm_extent;Fetch OSM Data]",
+                            "container_end[]",
+                        }))
+
+                        last_scrollbar_container_y = last_scrollbar_container_y + 5.2
+
+                        if context.fetched_nodes then
+                            -- Summarize the fetched nodes
+                            table.insert(fs, table.concat({
+                                "container[0,", last_scrollbar_container_y + 0.2, "]",
+                                "style_type[textarea;font=mono]",
+                                "textarea[", text_spacer, ",0.4;", panel_width - 2*text_spacer, ",1;;;Total OSM Nodes Fetched: ", #openstreetmap.temp.nodedata.elements, "]",
+                                "textarea[", text_spacer, ",0.8;", panel_width - 2*text_spacer, ",1;;;Total OSM Ways Fetched: ", #openstreetmap.temp.waydata.elements, "]",
+                                "textarea[", text_spacer, ",1.2;", panel_width - 2*text_spacer, ",1;;;Classroom X size: ", openstreetmap.temp.sizeX, "]",
+                                "textarea[", text_spacer, ",1.6;", panel_width - 2*text_spacer, ",1;;;Classroom Y size: ", openstreetmap.temp.sizeY, "]",
+                                "textarea[", text_spacer, ",2.0;", panel_width - 2*text_spacer, ",1;;;Classroom Z size: ", openstreetmap.temp.sizeZ, "]",
+                            }))
+
+                            if openstreetmap.temp.sizeX > 1000 or openstreetmap.temp.sizeY > 1000 or openstreetmap.temp.sizeZ > 1000 then
+                                table.insert(fs, table.concat({
+                                    "style_type[textarea;font=mono;textcolor=#ff0000]",
+                                    "textarea[", text_spacer, ",2.4;", panel_width, ",1;;;Warning: Large classroom dimensions]",
+                                    "container_end[]",
+                                }))
+                            else
+                                table.insert(fs, table.concat({
+                                    "container_end[]",
+                                }))
+                            end
+                            last_scrollbar_container_y = last_scrollbar_container_y + 3.2
+
+                            -- Show list of available values and button to modify itemstring
+                            local hasNodeValues
+                            openstreetmap.temp.node_values_list = {}
+                            if openstreetmap.temp.node_value_texture_table then
+                                for k, _ in pairs(openstreetmap.temp.node_value_texture_table) do 
+                                    if k and k ~= "" then
+                                        table.insert(openstreetmap.temp.node_values_list, k)
+                                        hasNodeValues = true
+                                    end
+                                end
+                            end
+                            local hasWayValues
+                            openstreetmap.temp.way_values_list = {}
+                            if openstreetmap.temp.way_value_texture_table then
+                                for k, _ in pairs(openstreetmap.temp.way_value_texture_table) do 
+                                    if k and k ~= "" then
+                                        table.insert(openstreetmap.temp.way_values_list, k)
+                                        hasWayValues = true
+                                    end
+                                end
+                            end                          
+
+                            if hasNodeValues then
+                                -- Value-Itemstring textlist for nodes
+                                table.insert(fs, table.concat({
+                                    "textarea[", text_spacer, ",", last_scrollbar_container_y, ";", panel_width - 2*text_spacer, ",1;;;Choose Textures For Node Tags]",
+                                    "textlist[", spacer, ",", last_scrollbar_container_y + 0.5, ";", panel_width/2 - spacer, ",3;node_value_list;",
+                                    table.concat(openstreetmap.temp.node_values_list, ","), ";", context.selected_node_value_index or 1, ";false]",
+                                    "item_image_button[", spacer + panel_width/2, ",", last_scrollbar_container_y + 0.5, ";3,3;", openstreetmap.temp.node_value_itemstring_table[context.selected_node_value] or openstreetmap.temp.node_value_itemstring_list[context.selected_node_value_index or 1], ";node_texture_button;]",
+                                }))
+                                last_scrollbar_container_y = last_scrollbar_container_y + 4.2
+                            else
+                                table.insert(fs, table.concat({ 
+                                    "textarea[", text_spacer, ",", last_scrollbar_container_y + 0.2, ";", panel_width - 2*text_spacer, ",1;;;No tag information to display for nodes.]",
+                                }))
+                                last_scrollbar_container_y = last_scrollbar_container_y + 1.2
+                            end
+
+                            if hasWayValues then
+                                -- Value-Itemstring textlist for ways
+                                table.insert(fs, table.concat({
+                                    "textarea[", text_spacer, ",", last_scrollbar_container_y, ";", panel_width - 2*text_spacer, ",1;;;Choose Textures For Way Tags]",
+                                    "textlist[", spacer, ",", last_scrollbar_container_y + 0.5, ";", panel_width/2 - spacer, ",3;way_value_list;",
+                                    table.concat(openstreetmap.temp.way_values_list, ","), ";", context.selected_way_value_index or 1, ";false]",
+                                    "item_image_button[", spacer + panel_width/2, ",", last_scrollbar_container_y + 0.5, ";3,3;", openstreetmap.temp.way_value_itemstring_table[context.selected_way_value] or openstreetmap.temp.way_value_itemstring_list[context.selected_way_value_index or 1], ";way_texture_button;]",
+                                }))
+                                last_scrollbar_container_y = last_scrollbar_container_y + 4
+
+                                -- Fill enclosure option
+                                table.insert(fs, table.concat({
+                                    "style_type[textarea;font=mono;textcolor=#000000]",
+                                    "textarea[", text_spacer + 0.4, ",", last_scrollbar_container_y, ";", panel_width, ",1;;;Fill enclosed areas of ways?]",
+                                    "checkbox[", spacer, ",", last_scrollbar_container_y + 0.2, ";fill_enclosures;;", tostring(openstreetmap.fill_enclosures),"]"
+                                }))
+                                last_scrollbar_container_y = last_scrollbar_container_y + 0.4
+                            else
+                                table.insert(fs, table.concat({ 
+                                    "textarea[", text_spacer, ",", last_scrollbar_container_y + 0.2, ";", panel_width - 2*text_spacer, ",1;;;No tag information to display for ways.]",
+                                }))
+                                last_scrollbar_container_y = last_scrollbar_container_y + 1.2
+                            end
+
+                            -- Write node metadata option
+                            table.insert(fs, table.concat({
+                                "style_type[textarea;font=mono;textcolor=#000000]",
+                                "textarea[", text_spacer + 0.4, ",", last_scrollbar_container_y, ";", panel_width, ",1;;;Write OSM metadata to nodes?]",
+                                "checkbox[", spacer, ",", last_scrollbar_container_y + 0.2, ";write_metadata;;", tostring(openstreetmap.write_metadata),"]"
+                            }))
+                            if openstreetmap.write_metadata then
+                                table.insert(fs, table.concat({
+                                    "style_type[textarea;font=mono;textcolor=#ff0000]",
+                                    "textarea[", text_spacer + 0.4, ",", last_scrollbar_container_y + 0.4, ";", panel_width, ",1;;;WARNING: May take longer to process]",
+                                }))
+                                last_scrollbar_container_y = last_scrollbar_container_y + 0.8
+                            else
+                                last_scrollbar_container_y = last_scrollbar_container_y + 0.4
+                            end
+
+                            context.twin_ready = true
+                        end
                     end
                 elseif context.selected_mode == mc_teacher.MODES.SCHEMATIC then
                     local schematics = {}
-                    local name_to_i = {}
+                    local schematic_name_to_i = {}
                     local ctr = 1
                     for name, path in pairs(schematicManager.schematics) do
                         if ctr == 1 and not context.selected_schematic then
                             context.selected_schematic = name
                         end
                         table.insert(schematics, name)
-                        name_to_i[name] = ctr
+                        schematic_name_to_i[name] = ctr
                         ctr = ctr + 1
                     end
-                    context.name_to_i = name_to_i
+                    context.schematic_name_to_i = schematic_name_to_i
 
                     table.insert(fs, table.concat({
                         "textarea[", text_spacer, ",2.6;", panel_width - 2*text_spacer, ",1;;;Schematic]",
-                        "dropdown[", spacer, ",3;", panel_width - 2*spacer, ",0.8;schematic;", table.concat(schematics, ","), ";", context.name_to_i[context.selected_schematic] or 1, ";false]",
+                        "dropdown[", spacer, ",3;", panel_width - 2*spacer, ",0.8;schematic;", table.concat(schematics, ","), ";", context.schematic_name_to_i[context.selected_schematic] or 1, ";false]",
                     }))
-                elseif context.selected_mode == mc_teacher.MODES.TWIN then
-                    local twins = {}
-                    local name_to_i = {}
-                    local ctr = 1
-                    for name, path in pairs(realterrainManager.dems) do
-                        if ctr == 1 and not context.selected_dem then
-                            context.selected_dem = name
-                        end
-                        table.insert(twins, name)
-                        name_to_i[name] = ctr
-                        ctr = ctr + 1
-                    end
-                    context.name_to_i = name_to_i
+                    last_scrollbar_container_y = 3.0 + 0.8
+                elseif context.selected_mode == mc_teacher.MODES.LIDAR then
 
+                    context.data_source_name_to_i = {
+                        ["Select a data source"] = 1,
+                        ["LiDAR LAS file"] = 2,
+                        ["OpenStreetMap"] = 3,
+                    }                    
                     table.insert(fs, table.concat({
-                        "textarea[", text_spacer, ",2.6;", panel_width - 2*text_spacer, ",1;;;Digital twin world]",
-                        "dropdown[", spacer, ",3;", panel_width - 2*spacer, ",0.8;realterrain;", table.concat(twins, ","), ";", context.name_to_i[context.selected_dem] or 1, ";false]",
+                        "textarea[", text_spacer, ",2.6;", panel_width - 2*text_spacer, ",1;;;Data Source]",
+                        "dropdown[", spacer, ",3;", panel_width - 2*spacer, ",0.8;twin_data_source;Select a data source,LiDAR LAS file,OpenStreetMap;", context.data_source_name_to_i[context.selected_twin_data_source] or 1, ";false]",
                     }))
+                    last_scrollbar_container_y = 3.8
+                    if context.data_source_name_to_i[context.selected_twin_data_source] == 2 then
+                        -- LiDAR process here
+                        -- Check if there are any las files before proceeding
+                        LASFile.registerLAS()
+                        if next(LASFile.las_file_list) then
+                            context.las_file_to_i = {}
+                            for k,v in pairs(LASFile.las_file_list) do
+                                context.las_file_to_i[v] = k
+                            end
+
+                            local dropdownOptions = {}
+                            for _, file in pairs(LASFile.las_file_list) do table.insert(dropdownOptions, file) end
+                            table.insert(fs, table.concat({
+                                "container[0,", last_scrollbar_container_y + 0.2, "]",
+                                "textarea[", text_spacer, ",0;", panel_width - 2*text_spacer, ",1;;;Select a LAS file]",
+                                "dropdown[", spacer, ",0.4;", panel_width - 2*spacer, ",0.8;las_file;", table.concat(dropdownOptions, ","), ";", context.las_file_to_i[context.selected_las_file] or 1, ";false]",
+                                "container_end[]",
+                            }))
+                            last_scrollbar_container_y = last_scrollbar_container_y + 1.2
+
+                            -- Display summary header information and classification options
+                            if context.selected_las_file then
+                                local filename = context.selected_las_file..".las"
+
+                                -- Read the header
+                                if not LASFile.temp.lasheader then
+                                    LASFile.temp.lasheader = LASFile.header(filename)
+                                end
+
+                                table.insert(fs, table.concat({
+                                    "container[0,", last_scrollbar_container_y + 0.2, "]",
+                                    "style_type[textarea;font=mono]",
+                                    "textarea[", text_spacer, ",0.4;", panel_width - 2*text_spacer, ",1;;;Total Points: ", LASFile.temp.lasheader.LegacyNumberofPointRecords, "]",
+                                    "textarea[", text_spacer, ",0.8;", panel_width - 2*text_spacer, ",1;;;Classroom X size: ", math.ceil(LASFile.temp.lasheader.MaxX - LASFile.temp.lasheader.MinX) + 1, "]",
+                                    "textarea[", text_spacer, ",1.2;", panel_width - 2*text_spacer, ",1;;;Classroom Y size: ", math.max(math.ceil(LASFile.temp.lasheader.MaxZ + 80), 80), "]", -- LAS Z is Minetest Y
+                                    "textarea[", text_spacer, ",1.6;", panel_width - 2*text_spacer, ",1;;;Classroom Z size: ", math.ceil(LASFile.temp.lasheader.MaxY - LASFile.temp.lasheader.MinY) + 1, "]", -- LAS Y is Minetest Z
+                                }))
+
+                                if math.ceil(LASFile.temp.lasheader.MaxX - LASFile.temp.lasheader.MinX) > 1000 or math.ceil(LASFile.temp.lasheader.MaxY - LASFile.temp.lasheader.MinY) > 1000 or math.ceil(LASFile.temp.lasheader.MaxZ - LASFile.temp.lasheader.MinZ) > 1000 then
+                                    table.insert(fs, table.concat({
+                                        "style_type[textarea;font=mono;textcolor=#ff0000]",
+                                        "textarea[", text_spacer, ",2.0;", panel_width, ",1;;;WARNING: Large classroom dimensions]",
+                                        "container_end[]",
+                                    }))
+                                else
+                                    table.insert(fs, table.concat({
+                                        "container_end[]",
+                                    }))
+                                end
+                                last_scrollbar_container_y = last_scrollbar_container_y + 2.4
+
+                                -- TODO: implement these as options in the GUI
+                                LASFile.place_low_veg = false
+                                LASFile.place_medium_veg = false
+                                LASFile.place_high_veg = false
+                                LASFile.place_tree_stems = false
+                                local attributes = {
+                                    ReturnNumber = false,
+                                    NumberOfReturns = false,
+                                    ClassificationFlagSynthetic = false,
+                                    ClassificationFlagKeyPoint = false,
+                                    ClassificationFlagWithheld = false,
+                                    ClassificationFlagOverlap = false,
+                                    ScannerChannel = false,
+                                    ScanDirectionFlag = false,
+                                    EdgeOfFlightLine = false,
+                                    Classification = false,
+                                    Intensity = false,
+                                    UserData = false,
+                                    ScanAngle = false,
+                                    PointSourceID = false,
+                                    GPSTime = false,
+                                }
+                                local extent = {
+                                    xmin = nil,
+                                    xmax = nil,
+                                    ymin = nil,
+                                    ymax = nil,
+                                }
+                        
+                                -- Collect the points
+                                if not LASFile.temp.points then
+                                    LASFile.temp.points = LASFile.read_points(filename, attributes, extent, LASFile.temp.lasheader)
+                                end
+                                -- Get the classes we need
+                                if not LASFile.temp.ground then
+                                    LASFile.temp.ground = LASFile.get_points_by_class(LASFile.temp.points, 2)
+                                end
+                                if not LASFile.temp.lowveg then
+                                    LASFile.temp.lowveg = LASFile.get_points_by_class(LASFile.temp.points, 3)
+                                end
+                                if not LASFile.temp.medveg then
+                                    LASFile.temp.medveg = LASFile.get_points_by_class(LASFile.temp.points, 4)
+                                end
+                                if not LASFile.temp.hiveg then
+                                    LASFile.temp.hiveg = LASFile.get_points_by_class(LASFile.temp.points, 5)
+                                end
+                                if not LASFile.temp.building then
+                                    LASFile.temp.building = LASFile.get_points_by_class(LASFile.temp.points, 6)
+                                end
+
+                                -- Populate the ordered lists of class values and associated itemstrings
+                                if not LASFile.values_list then
+                                    LASFile.values_list = {}
+                                end
+                                if not LASFile.itemstring_list then
+                                    LASFile.itemstring_list = {}
+                                end
+                                if LASFile.temp.ground then
+                                    LASFile.values_list = { 
+                                        "ground_surface",
+                                        "ground_shallow",
+                                        "ground_deep",
+                                        "near_sea_level",
+                                        "sea_level",
+                                    }
+                                    LASFile.itemstring_list = { 
+                                        "default:dirt_with_grass", 
+                                        "default:dirt",
+                                        "default:stone",
+                                        "default:sand",
+                                        "default:water_source",
+                                    }
+                                end
+                                if LASFile.temp.lowveg then
+                                    if not next(LASFile.values_list) then 
+                                        LASFile.values_list = { "low_vegetation" }
+                                        LASFile.itemstring_list = { "default:fern_3" }
+                                    else
+                                        table.insert(LASFile.values_list, "low_vegetation")
+                                        table.insert(LASFile.itemstring_list, "default:fern_3")
+                                    end
+                                end
+                                if LASFile.temp.medveg then
+                                    if not next(LASFile.values_list) then 
+                                        LASFile.values_list = { "medium_vegetation" }
+                                        LASFile.itemstring_list = { "default:papyrus" }
+                                    else
+                                        table.insert(LASFile.values_list, "medium_vegetation")
+                                        table.insert(LASFile.itemstring_list, "default:papyrus")
+                                    end
+                                end
+                                if LASFile.temp.hiveg then
+                                    if not next(LASFile.values_list) then 
+                                        LASFile.values_list = { "high_vegetation", "tree_stem" }
+                                        LASFile.itemstring_list = { "default:pine_needles", "default:pine_tree" }
+                                    else
+                                        table.insert(LASFile.values_list, "high_vegetation")
+                                        table.insert(LASFile.values_list, "tree_stem")
+                                        table.insert(LASFile.itemstring_list, "default:pine_needles")
+                                        table.insert(LASFile.itemstring_list, "default:pine_tree")
+                                    end
+                                end
+                                if LASFile.temp.buildings then
+                                    if not next(LASFile.values_list) then 
+                                        LASFile.values_list = { "buildings" }
+                                        LASFile.itemstring_list = { "default:tinblock" }
+                                    else
+                                        table.insert(LASFile.values_list, "buildings")
+                                        table.insert(LASFile.itemstring_list, "default:tinblock")
+                                    end
+                                end
+
+                                LASFile.value_itemstring_table = {}
+                                for i, value in ipairs(LASFile.values_list) do
+                                    LASFile.value_itemstring_table[value] = LASFile.itemstring_list[i]
+                                end
+
+                                if LASFile.values_list then
+                                    table.insert(fs, table.concat({
+                                        "textlist[", spacer, ",", last_scrollbar_container_y, ";", panel_width/2 - spacer, ",3;value_list;",
+                                        table.concat(LASFile.values_list, ","), ";", context.selected_value_index or 1, ";false]",
+                                        "item_image_button[", spacer + panel_width/2 + 0.5, ",", last_scrollbar_container_y + 0.2 + 0.5, ";2,2;", LASFile.itemstring_list[context.selected_value_index or 1], ";texture_button;]",
+                                    })) 
+                                    last_scrollbar_container_y = last_scrollbar_container_y + 3.2
+                                else
+                                    table.insert(fs, table.concat({ 
+                                        "textarea[", text_spacer, ",", last_scrollbar_container_y + 0.2, ";", panel_width - 2*text_spacer, ",1;;;The provided LAS file is not classified, cannot create a classroom.]",
+                                    }))
+                                    last_scrollbar_container_y = last_scrollbar_container_y + 1.2
+                                end
+
+                                context.twin_ready = true
+                            end
+                        else
+                            table.insert(fs, table.concat({
+                                "textarea[", text_spacer, ",", last_scrollbar_container_y + 0.2, ";", panel_width - 2*text_spacer, ",1.2;;;No LAS files found. Add LAS files to\n ~/Minetest_Classroom/lasfile/lasdata\n then restart the game.]",
+                            }))
+                            last_scrollbar_container_y = last_scrollbar_container_y + 1.2
+                        end
+                        
+                    elseif context.data_source_name_to_i[context.selected_twin_data_source] == 3 then
+                        -- BELOW IS DEPRECATED
+--[[                         -- Show fields for user-entered extent
+                        table.insert(fs, table.concat({
+                            "container[0,", last_scrollbar_container_y + 0.2, "]",
+                            "textarea[2.7375,0;", panel_width - 2*text_spacer, ",1;;;Max Latitude]",
+                            "field[2.55,0.4;2.6,0.8;osm_extent_maxlat;;", context.osm_extent_maxlat or "49.2613700", "]",
+                            "textarea[", text_spacer + 4.38125, ",1.4;", panel_width - 2*text_spacer, ",1;;;Max Longitude]",
+                            "field[", spacer + 4.1, ",1.8;3,0.8;osm_extent_maxlon;;", context.osm_extent_maxlon or "-123.2463687", "]",
+                            "textarea[2.925,2.8;", panel_width - 2*text_spacer, ",1;;;Min Latitude]",
+                            "field[2.55,3.2;3,0.8;osm_extent_minlat;;", context.osm_extent_minlat or "49.2598899", "]",
+                            "textarea[", text_spacer + 0.28125, ",1.4;", panel_width - 2*text_spacer, ",1;;;Min Longitude]",
+                            "field[", spacer, ",1.8;3,0.8;osm_extent_minlon;;", context.osm_extent_minlon or "-123.2491944", "]",
+                            "button[", spacer, ",4.4;7.1,0.8;fetch_osm_extent;Fetch OSM Data]",
+                            "container_end[]",
+                        }))
+                        last_scrollbar_container_y = last_scrollbar_container_y + 5.2
+
+                        if context.fetched_nodes then
+                            -- Summarize the fetched nodes
+                            table.insert(fs, table.concat({
+                                "container[0,", last_scrollbar_container_y + 0.2, "]",
+                                "style_type[textarea;font=mono]",
+                                "textarea[", text_spacer, ",0.4;", panel_width - 2*text_spacer, ",1;;;Total OSM Nodes Fetched: ", #openstreetmap.temp.nodedata.elements, "]",
+                                "textarea[", text_spacer, ",0.8;", panel_width - 2*text_spacer, ",1;;;Total OSM Ways Fetched: ", #openstreetmap.temp.waydata.elements, "]",
+                                "textarea[", text_spacer, ",1.2;", panel_width - 2*text_spacer, ",1;;;Classroom X size: ", openstreetmap.temp.sizeX, "]",
+                                "textarea[", text_spacer, ",1.6;", panel_width - 2*text_spacer, ",1;;;Classroom Y size: ", openstreetmap.temp.sizeY, "]",
+                                "textarea[", text_spacer, ",2.0;", panel_width - 2*text_spacer, ",1;;;Classroom Z size: ", openstreetmap.temp.sizeZ, "]",
+                            }))
+
+                            if openstreetmap.temp.sizeX > 1000 or openstreetmap.temp.sizeY > 1000 or openstreetmap.temp.sizeZ > 1000 then
+                                table.insert(fs, table.concat({
+                                    "style_type[textarea;font=mono;textcolor=#ff0000]",
+                                    "textarea[", text_spacer, ",2.4;", panel_width, ",1;;;Warning: Large classroom dimensions]",
+                                    "container_end[]",
+                                }))
+                            else
+                                table.insert(fs, table.concat({
+                                    "container_end[]",
+                                }))
+                            end
+                            last_scrollbar_container_y = last_scrollbar_container_y + 3.2
+
+                            -- Show list of available values and button to modify itemstring
+                            local hasvalues
+                            openstreetmap.temp.values_list = {}
+                            if openstreetmap.temp.value_texture_table then
+                                for k, _ in pairs(openstreetmap.temp.value_texture_table) do 
+                                    if k and k ~= "" then
+                                        table.insert(openstreetmap.temp.values_list, k)
+                                        hasvalues = true
+                                    end
+                                end
+                            end                           
+
+                            if hasvalues then
+                                table.insert(fs, table.concat({
+                                    "textlist[", spacer, ",", last_scrollbar_container_y, ";", panel_width/2 - spacer, ",3;value_list;",
+                                    table.concat(openstreetmap.temp.values_list, ","), ";", context.selected_value_index or 1, ";false]",
+                                    "item_image_button[", spacer + panel_width/2 + 0.5, ",", last_scrollbar_container_y + 0.2 + 0.5, ";2,2;", openstreetmap.temp.value_itemstring_table[context.selected_value] or openstreetmap.temp.value_itemstring_list[context.selected_value_index or 1], ";texture_button;]",
+                                })) 
+                                last_scrollbar_container_y = last_scrollbar_container_y + 3.2
+                            else
+                                table.insert(fs, table.concat({ 
+                                    "textarea[", text_spacer, ",", last_scrollbar_container_y + 0.2, ";", panel_width - 2*text_spacer, ",1;;;No tag information to display, proceed to create the classroom.]",
+                                }))
+                                last_scrollbar_container_y = last_scrollbar_container_y + 1.2
+                            end
+
+                            context.twin_ready = true
+                        end ]]
+                    else
+                        last_scrollbar_container_y = 3.0 + 0.8
+                    end
                 else
                     table.insert(fs, table.concat({
-                        "textarea[", text_spacer, ",2.6;", panel_width - 2*text_spacer, ",1.2;;;Select a generation mode for more options!]",
+                        "textarea[", text_spacer, ",3;", panel_width - 2*text_spacer, ",1.2;;;Select a generation mode for more options!]",
                     }))
+                    last_scrollbar_container_y = 3 + 1.2
                 end
 
                 table.insert(fs, table.concat({
-                    "container[0,", 2.6 + options_height, "]",
+                    "container[0,", last_scrollbar_container_y + 0.4, "]",
+                    "style_type[textarea;font=mono;textcolor=#000000]",
                     "textarea[", text_spacer, ",0;", panel_width - 2*text_spacer, ",1;;;Default privileges]",
-                    "style_type[textarea;font=mono]",
+                    "style_type[textarea;font=mono;textcolor=#000000]",
                     "textarea[", text_spacer + 1.3, ",0.8;1.9,1;;;interact]",
                     "textarea[", text_spacer + 1.3, ",1.2;1.9,1;;;shout]",
                     "textarea[", text_spacer + 1.3, ",1.6;1.9,1;;;fast]",
@@ -805,7 +1525,6 @@ function mc_teacher.show_controller_fs(player, tab)
                     "tooltip[", text_spacer + 3.6, ",0.4;0.4,0.4;ALLOW: Privilege will be granted\n(does NOT override universal privileges);#404040;#ffffff]",
                     "tooltip[", text_spacer + 4.0, ",0.4;0.4,0.4;IGNORE: Privilege will be unaffected;#404040;#ffffff]",
                     "tooltip[", text_spacer + 4.4, ",0.4;0.4,0.4;DENY: Privilege will not be granted\n(overrides universal privileges);#404040;#ffffff]",
-
                     "checkbox[", spacer, ",1.0;allowpriv_interact;;",        tostring(context.selected_privs.interact == true), "]",
                     "checkbox[", spacer, ",1.4;allowpriv_shout;;",           tostring(context.selected_privs.shout    == true), "]",
                     "checkbox[", spacer, ",1.8;allowpriv_fast;;",            tostring(context.selected_privs.fast     == true), "]",
@@ -824,7 +1543,6 @@ function mc_teacher.show_controller_fs(player, tab)
                     "checkbox[", spacer + 4.4, ",1.0;denypriv_fly;;",        tostring(context.selected_privs.fly      == false), "]",
                     "checkbox[", spacer + 4.4, ",1.4;denypriv_noclip;;",     tostring(context.selected_privs.noclip   == false), "]",
                     "checkbox[", spacer + 4.4, ",1.8;denypriv_give;;",       tostring(context.selected_privs.give     == false), "]",
-                    "container_end[]",
                 }))
 
                 if not context.skyboxes then
@@ -855,12 +1573,19 @@ function mc_teacher.show_controller_fs(player, tab)
 
                 table.insert(fs, table.concat({
                     "style_type[textarea;font=mono,bold]",
-                    "textarea[", text_spacer, ",", 4.7 + options_height, ";", panel_width - 2*text_spacer, ",1;;;Background music]",
-                    "dropdown[", spacer, ",", 5.1 + options_height, ";", panel_width - 2*spacer, ",0.8;realm_music;", table.concat(context.music, ","), ";", context.selected_music, ";true]",
-                    "textarea[", text_spacer, ",", 6 + options_height, ";", panel_width - 2*text_spacer, ",1;;;Skybox]",
-                    "dropdown[", spacer, ",", 6.4 + options_height, ";", panel_width - 2*spacer, ",0.8;realm_skybox;", table.concat(context.skyboxes, ","), ";", context.selected_skybox, ";true]",
+                    "textarea[", text_spacer, ",2.4;", panel_width - 2*text_spacer, ",1;;;Background music]",
+                    "dropdown[", spacer, ",2.8;", panel_width - 2*spacer, ",0.8;realm_music;", table.concat(context.music, ","), ";", context.selected_music, ";true]",
+                    "textarea[", text_spacer, ",3.8;", panel_width - 2*text_spacer, ",1;;;Skybox]",
+                    "dropdown[", spacer, ",4.2;", panel_width - 2*spacer, ",0.8;realm_skybox;", table.concat(context.skyboxes, ","), ";", context.selected_skybox, ";true]",
+                    "container_end[]",
                     "scroll_container_end[]",
                 }))
+
+                if (tonumber(context.selected_decorator) == 3 and context.twin_ready) or tonumber(context.selected_decorator) == 1 then
+                    table.insert(fs, table.concat({
+                        "button[", panel_width + spacer, ",9;", panel_width - 2*spacer, ",0.8;c_newrealm;Generate classroom]",
+                    }))
+                end
 
                 return fs
             end,

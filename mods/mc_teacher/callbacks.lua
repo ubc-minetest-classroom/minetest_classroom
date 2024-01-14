@@ -468,8 +468,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 context.edit_group.sel_m = event.index
                 fields.member_delete = ""   -- trigger delete button
             end
-        end
-
+        end     
         if fields.member_add then
             local selected_player = table.remove(context.edit_group.p_list, context.edit_group.sel_nm)
             table.insert(context.edit_group.members, selected_player)
@@ -513,6 +512,76 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if fields.group_name then context.edit_group.name = minetest.formspec_escape(fields.group_name) end
             mc_teacher.show_group_popup(player)
         end
+    elseif formname == "mc_teacher:classify_value" then
+        --------------------------
+        -- CLASSIFICATION POPUP --
+        --------------------------
+        -- No value was clicked in the value textlist, so we assume it is the first value in the list
+        if context.value_element == "node" then
+            if not context.selected_node_value then context.selected_node_value = openstreetmap.temp.node_values_list[1] end
+        elseif context.value_element == "way" then
+            if not context.selected_way_value then context.selected_way_value = openstreetmap.temp.way_values_list[1] end
+        else
+            -- TODO: reserved for LiDAR
+        end
+
+        if fields.itemstring_list then
+            local event = minetest.explode_textlist_event(fields.itemstring_list)
+            if event.type == "CHG" then
+                if tonumber(context.selected_decorator) == 2 then
+                    context.selected_itemstring = openstreetmap.NODE_ITEMSTRINGS[event.index]
+                    context.selected_itemstring_index = event.index
+                    return mc_teacher.show_classifier_popup(player, context.selected_value or LASFile.values_list[1])
+                elseif tonumber(context.selected_decorator) == 3 then
+                    if context.value_element == "node" then
+                        context.selected_node_itemstring = openstreetmap.NODE_ITEMSTRINGS[event.index]
+                        context.selected_node_itemstring_index = event.index
+                        return mc_teacher.show_classifier_popup(player, context.selected_node_value or openstreetmap.temp.node_values_list[1], context)
+                    end
+            
+                    if context.value_element == "way" then
+                        context.selected_way_itemstring = openstreetmap.NODE_ITEMSTRINGS[event.index]
+                        context.selected_way_itemstring_index = event.index
+                        return mc_teacher.show_classifier_popup(player, context.selected_way_value or openstreetmap.temp.way_values_list[1], context)
+                    end
+                end
+            end
+        end
+        if fields.extrude then
+            context.extrude = fields.extrude
+        end
+        if fields.save_classification then
+            if context.value_element == "node" and context.selected_node_itemstring then
+                openstreetmap.temp.node_value_itemstring_table[context.selected_node_value] = context.selected_node_itemstring
+            elseif context.value_element == "way" and context.selected_way_itemstring then
+                openstreetmap.temp.way_value_itemstring_table[context.selected_way_value] = context.selected_way_itemstring
+            end
+            -- fields.extrude is the index, not the value, so we need to subtract 1
+            if fields.extrude then
+                if context.value_element == "node" then
+                    openstreetmap.temp.node_value_extrusion_table[context.selected_node_value] = fields.extrude
+                elseif context.value_element == "way" then
+                    openstreetmap.temp.way_value_extrusion_table[context.selected_way_value] = fields.extrude
+                end
+            end
+            -- Reset context for the next classification popup
+            context.extrude = nil
+            context.selected_node_itemstring = nil
+            context.selected_way_itemstring = nil
+            context.selected_node_itemstring_index = nil
+            context.selected_way_itemstring_index = nil
+            return mc_teacher.show_controller_fs(player, context.tab)
+        end
+        if fields.cancel_classification then
+            -- Reset context for the next classification popup
+            context.extrude = nil
+            context.selected_node_itemstring = nil
+            context.selected_way_itemstring = nil
+            context.selected_node_itemstring_index = nil
+            context.selected_way_itemstring_index = nil
+            return mc_teacher.show_controller_fs(player, context.tab)
+        end
+
     elseif formname == "mc_teacher:controller_fs" then
         -------------
         -- GENERAL --
@@ -572,7 +641,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.mode and fields.mode ~= context.selected_mode then
             context.selected_mode = fields.mode
             -- digital twins are currently incompatible with instanced realms
-            if context.selected_mode == mc_teacher.MODES.TWIN and context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
+            if context.selected_mode == mc_teacher.MODES.LIDAR and context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
                 context.selected_realm_type = mc_teacher.R.CAT_KEY.CLASSROOM
             end
             reload = true
@@ -580,9 +649,38 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.realmcategory and fields.realmcategory ~= context.selected_realm_type then
             context.selected_realm_type = fields.realmcategory
             -- digital twins are currently incompatible with instanced realms
-            if context.selected_mode == mc_teacher.MODES.TWIN and context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
+            if context.selected_mode == mc_teacher.MODES.LIDAR and context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
                 context.selected_mode = mc_teacher.MODES.SCHEMATIC
             end
+            reload = true
+        end
+        if fields.surface_itemstring_list then
+            local event = minetest.explode_textlist_event(fields.surface_itemstring_list)
+            if event.type == "CHG" then
+                context.selected_surface_itemstring = openstreetmap.NODE_ITEMSTRINGS[event.index]
+            end
+            reload = true
+        end
+        if fields.fill_itemstring_list then
+            local event = minetest.explode_textlist_event(fields.fill_itemstring_list)
+            if event.type == "CHG" then
+                context.selected_fill_itemstring = openstreetmap.NODE_ITEMSTRINGS[event.index]
+            end
+            reload = true
+        end
+        if fields.fill_depth then
+            context.fill_depth = fields.fill_depth
+            openstreetmap.fill_depth = fields.fill_depth
+            reload = true
+        end
+        if fields.fill_enclosures then
+            local change = fields.fill_enclosures
+            openstreetmap.fill_enclosures = (change == "true")
+            reload = true
+        end
+        if fields.write_metadata then
+            local change = fields.write_metadata
+            openstreetmap.write_metadata = (change == "true")
             reload = true
         end
         if fields.schematic and fields.schematic ~= context.selected_schematic then
@@ -590,7 +688,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             context.selected_schematic = fields.schematic
             reload = true
         elseif fields.realterrain and context.selected_dem ~= fields.realterrain then
-            context.selected_mode = mc_teacher.MODES.TWIN
+            context.selected_mode = mc_teacher.MODES.LIDAR
             context.selected_dem = fields.realterrain
             reload = true
         end
@@ -608,7 +706,246 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if fields.realm_music and tonumber(fields.realm_music) ~= tonumber(context.selected_music) then
             context.selected_music = tonumber(fields.realm_music)
         end
-        
+        if fields.twin_data_source then
+            context.selected_twin_data_source = fields.twin_data_source
+            reload = true
+        end
+        if fields.decorator then
+            context.selected_decorator = fields.decorator
+            reload = true
+        end
+        if fields.node_value_list then
+            local event = minetest.explode_textlist_event(fields.node_value_list)
+            if event.type == "CHG" then
+                context.selected_node_value_index = event.index
+                if openstreetmap.temp.node_values_list then
+                    context.selected_node_value = openstreetmap.temp.node_values_list[event.index]
+                end
+            end
+        end
+        if fields.way_value_list then
+            local event = minetest.explode_textlist_event(fields.way_value_list)
+            if event.type == "CHG" then
+                context.selected_way_value_index = event.index
+                if openstreetmap.temp.way_values_list then
+                    context.selected_way_value = openstreetmap.temp.way_values_list[event.index]
+                end
+            end
+        end
+        if fields.las_file then
+            context.selected_las_file = fields.las_file
+            reload = true
+        end
+        if fields.fetch_osm_extent then
+            -- Sanitize + check input
+            if fields.osm_extent_maxlat and tonumber(fields.osm_extent_maxlat) and fields.osm_extent_minlat and tonumber(fields.osm_extent_minlat) and fields.osm_extent_maxlon and tonumber(fields.osm_extent_maxlon) and fields.osm_extent_minlon and tonumber(fields.osm_extent_minlon) and tonumber(fields.osm_extent_maxlat) <= 90 and tonumber(fields.osm_extent_minlat) >= -90 and tonumber(fields.osm_extent_maxlon) <= 180 and tonumber(fields.osm_extent_minlon) >= -180 and tonumber(fields.osm_extent_minlon) < tonumber(fields.osm_extent_maxlon) and tonumber(fields.osm_extent_minlat) < tonumber(fields.osm_extent_maxlat) then
+                -- Initialize the callback to fetch nodes
+                openstreetmap.fetch_all_overpass_nodes_callback(fields.osm_extent_minlat, fields.osm_extent_minlon, fields.osm_extent_maxlat, fields.osm_extent_maxlon, true, function(result)
+                    if result.succeeded then
+
+                        -- Check for errors
+                        if result.status and result.status ~= "200" then
+                            minetest.chat_send_player(player:get_player_name(),"[Minetest Classroom] Error: Overpass API request returned HTTP error " .. result.status)
+                            return
+                        end
+                        
+                        local data = minetest.parse_json(result.data)
+                        if data and data.elements and #data.elements > 0 then
+                            
+                            -- Get and check the UTM zone from the bounding longitude
+                            local utm_zone_min = openstreetmap.computeUTMZone(fields.osm_extent_minlon)
+                            local utm_zone_max = openstreetmap.computeUTMZone(fields.osm_extent_maxlon)
+                            if utm_zone_min == utm_zone_max then
+                                
+                                -- Get the range of eastings and northings for creating the realm size
+                                local max_easting = 0
+                                local max_northing = 0
+                                local min_easting, min_northing, easting, northing, isnorth
+                                local tags = {}
+                                local indexedNodeData = {}
+                                for _,node in pairs(data.elements) do
+                                    easting, northing, isnorth = openstreetmap.latLonToUTM(node.lat, node.lon, utm_zone_min)
+                                    if min_easting then min_easting = math.min(min_easting,easting) else min_easting = easting end
+                                    if min_northing then min_northing = math.min(min_northing,northing) else min_northing = northing end
+                                    max_easting = math.max(max_easting,easting)
+                                    max_northing = math.max(max_northing,northing)
+
+                                    -- Get unique tags while we're in here
+                                    if node.tags then
+                                        for k, v in pairs(node.tags) do
+                                            -- Check that the tag name is whitelisted
+                                            -- TODO: add support for numeric tags: "roof:levels", "width", "ele", "lanes", "maxpseed", "height", "building:levels"
+                                            if openstreetmap.whitelistTags[k] then
+                                                -- Parse string values here
+                                                local values = mc_core.split(v, ";")
+                                                if values then
+                                                    for _, value in pairs(values) do 
+                                                        if openstreetmap.whitelistTags[k][value] then
+                                                            if openstreetmap.osm_textures[value] then
+                                                                -- We have a matching texture based on the value
+                                                                openstreetmap.temp.node_value_texture_table[value] = openstreetmap.osm_textures[value]
+                                                                openstreetmap.temp.node_value_itemstring_table[value] = "openstreetmap:" .. value
+                                                                table.insert(openstreetmap.temp.node_value_itemstring_list, "openstreetmap:" .. value)
+                                                            else
+                                                                -- No matching texture, so we will use the default node texture
+                                                                openstreetmap.temp.node_value_texture_table[value] = "node.png"
+                                                                openstreetmap.temp.node_value_itemstring_table[value] = "openstreetmap:node"
+                                                                table.insert(openstreetmap.temp.node_value_itemstring_list, "openstreetmap:node")
+                                                            end
+                                                        end
+                                                    end
+                                                end
+                                            end
+                                        end 
+                                    end
+
+                                    indexedNodeData[node.id] = {
+                                        lat = node.lat,
+                                        lon = node.lon,
+                                        type = node.type,
+                                        timestamp = node.timstamp,
+                                        version = node.version,
+                                        changeset = node.changeset,
+                                        user = node.user,
+                                        uid = node.uid,
+                                        tags = node.tags,
+                                        MTnodeID = MTnodeID,
+                                    }
+                                end
+
+                                local sizeX = max_easting - min_easting + 1
+                                local sizeZ = max_northing - min_northing + 1
+                                
+                                -- Store everything
+                                openstreetmap.temp.sizeX = sizeX
+                                openstreetmap.temp.sizeY = 160 -- TODO: calculate dynamically as a function of extrusion, fill depth, terrain, minimum of 80
+                                openstreetmap.temp.sizeZ = sizeZ
+                                openstreetmap.temp.min_easting = min_easting
+                                openstreetmap.temp.min_northing = min_northing
+                                openstreetmap.temp.utm_zone = utm_zone_min
+                                openstreetmap.temp.utm_zone_is_north = isnorth
+                                openstreetmap.temp.nodedata = data
+                                openstreetmap.temp.indexedNodeData = indexedNodeData
+                                context.fetched_nodes = true
+
+                                -- We have nodes, now get ways
+                                openstreetmap.fetch_all_overpass_ways_callback(fields.osm_extent_minlat, fields.osm_extent_minlon, fields.osm_extent_maxlat, fields.osm_extent_maxlon, false, function(result)
+                                    if result.succeeded then
+                
+                                        -- Check for errors
+                                        if result.status and result.status ~= "200" then
+                                            minetest.chat_send_player(player:get_player_name(),"[Minetest Classroom] Error: Overpass API request returned HTTP error " .. result.status)
+                                            return
+                                        end
+                                        
+                                        local data = minetest.parse_json(result.data)
+                                        if data and data.elements and #data.elements > 0 then
+                                            -- Add any new values to the symbology table and get the MTnode
+                                            for _, way in pairs(data.elements) do
+                                                -- Get unique tags while we're in here
+                                                if way.tags then
+                                                    for k, v in pairs(way.tags) do
+                                                        -- TODO: add support for numeric tags: "roof:levels", "width", "ele", "lanes", "maxpseed", "height", "building:levels"
+                                                        -- Check that the tag name is whitelisted
+                                                        if openstreetmap.whitelistTags[k] then
+                                                            -- Parse string values here
+                                                            local values = mc_core.split(v, ";")
+                                                            if values then
+                                                                for _, value in pairs(values) do 
+                                                                    if openstreetmap.whitelistTags[k][value] then
+                                                                        if openstreetmap.osm_textures[value] then
+                                                                            -- We have a matching texture based on the value
+                                                                            openstreetmap.temp.way_value_texture_table[value] = openstreetmap.osm_textures[value]
+                                                                            openstreetmap.temp.way_value_itemstring_table[value] = "openstreetmap:" .. value
+                                                                            table.insert(openstreetmap.temp.way_value_itemstring_list, "openstreetmap:" .. value)
+                                                                        else
+                                                                            -- No matching texture, so we will use the default way texture
+                                                                            openstreetmap.temp.way_value_texture_table[value] = "way.png"
+                                                                            openstreetmap.temp.way_value_itemstring_table[value] = "openstreetmap:way"
+                                                                            table.insert(openstreetmap.temp.way_value_itemstring_list, "openstreetmap:way")
+                                                                        end
+                                                                    end
+                                                                end
+                                                            end
+                                                        end
+                                                    end 
+                                                end
+                                            end
+
+                                            -- We iterate a second time because we need to populate openstreetmap.value_texture_table first
+                                            local indexedWayData = {}
+                                            for _, way in pairs(data.elements) do
+                                                local MTnode = "openstreetmap:way"
+                                                local MTnodeID
+                                                if way.tags then
+                                                    -- Get the texture for the way
+                                                    for k, v in pairs(way.tags) do
+                                                        -- Use the first valid key-value for the way texture, otherwise use the default
+                                                        if MTnode == "openstreetmap:way" and openstreetmap.temp.way_value_itemstring_table[v] then
+                                                            MTnode = openstreetmap.temp.way_value_itemstring_table[v]
+                                                            MTnodeID = minetest.get_content_id(MTnode)
+                                                            break
+                                                        end
+                                                    end
+
+                                                    -- Determine if the way is enclosed
+                                                    local nodesinway = {}
+                                                    for _, id in pairs(way.nodes) do table.insert(nodesinway, id) end
+                                                    local enclosed
+                                                    if nodesinway[1] == nodesinway[#nodesinway] then enclosed = true else enclosed = false end
+
+                                                    indexedWayData[way.id] = {
+                                                        type = way.type,
+                                                        timestamp = way.timstamp,
+                                                        version = way.version,
+                                                        changeset = way.changeset,
+                                                        user = way.user,
+                                                        uid = way.uid,
+                                                        nodes = way.nodes,
+                                                        tags = way.tags,
+                                                        MTnodeID = MTnodeID,
+                                                        enclosed = enclosed
+                                                    }
+                                                end
+                                            end
+                                            openstreetmap.temp.waydata = data
+                                            openstreetmap.temp.indexedWayData = indexedWayData
+                                        end
+                                    end
+                                end)
+
+                                context.fetched_ways = true
+                                reload = true
+                            else
+                                minetest.chat_send_player(player:get_player_name(),"[Minetest Classroom] Error: OpenStreetMap data span more than one UTM zone, cannot map all the features on a cartesian coordinate system. Select a smaller range of longitude and try again.")
+                                reload = true
+                            end
+                        else
+                            minetest.chat_send_player(player:get_player_name(),"[Minetest Classroom] Error: Unhandled exception.")
+                            reload = true
+                        end
+                    else
+                        minetest.chat_send_player(player:get_player_name(),"[Minetest Classroom] Error: Overpass API request returned HTTP error " .. result.status)
+                        reload = true
+                    end
+                end)
+            else
+                minetest.chat_send_player(player:get_player_name(), "[Minetest Classroom] Error: Invalid format or range of input latitude or longitude values.")
+                reload = true
+            end
+        end
+
+        -- Show the classifier popup
+        if fields.node_texture_button then
+            context.value_element = "node"
+            return mc_teacher.show_classifier_popup(player, context.selected_node_value or openstreetmap.temp.node_values_list[1], context)
+        end
+
+        if fields.way_texture_button then
+            context.value_element = "way"
+            return mc_teacher.show_classifier_popup(player, context.selected_way_value or openstreetmap.temp.way_values_list[1], context)
+        end
+
         if fields.c_newrealm then
             if mc_core.checkPrivs(player, {teacher = true}) then
                 local realm_name = fields.realmname or context.realmname or ""
@@ -619,7 +956,97 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     table.insert(errors, "Classrooms must have a non-empty name field.")
                 end
                 
-                if context.selected_mode == mc_teacher.MODES.EMPTY then
+                if context.selected_mode == mc_teacher.MODES.FLAT then
+
+                    if tonumber(context.selected_decorator) == 3 then
+                        -- Decorator is OPENSTREETMAP
+                        -- TODO: Get any user-entered key-values submitted for query
+                        new_realm = Realm:New(realm_name or "OSM", { x = openstreetmap.temp.sizeX, y = openstreetmap.temp.sizeY, z = openstreetmap.temp.sizeZ })
+                        openstreetmap.temp.realmID = new_realm.ID
+                        new_realm:CreateGround(context.selected_surface_itemstring or "default:dirt_with_grass", (context.fill_depth + 1) or 1)
+                        new_realm:FillBelowGround(context.selected_fill_itemstring or "default:dirt", context.fill_depth)
+                        new_realm:UpdateSpawn({x = math.ceil(openstreetmap.temp.sizeX / 2), y = math.min(context.fill_depth + 2, openstreetmap.temp.sizeY - 3), z = math.ceil(openstreetmap.temp.sizeZ / 2)})
+                        new_realm:CreateBarriersFast()
+                        local utmInfo = { zone = openstreetmap.temp.utm_zone, utm_is_north = openstreetmap.temp.utm_zone_is_north, easting = openstreetmap.temp.min_easting, northing = openstreetmap.temp.min_northing }
+                        new_realm:set_data("UTMInfo", utmInfo)
+                        new_realm:set_data("OSMIndexedNodeData",openstreetmap.temp.indexedNodeData)
+                        new_realm:set_data("OSMIndexedWayData",openstreetmap.temp.indexedWayData)
+                        new_realm:set_data("min_easting",openstreetmap.temp.min_easting)
+                        new_realm:set_data("min_northing",openstreetmap.temp.min_northing)
+                        new_realm:set_data("utm_zone",openstreetmap.temp.utm_zone)
+
+                        local nodes = openstreetmap.temp.nodedata.elements
+                        local ways = openstreetmap.temp.waydata.elements
+                        openstreetmap.place_nodes_in_realm(nodes, new_realm)
+                        openstreetmap.place_ways_in_realm(nodes, ways, new_realm)
+
+                        -- Save the context and reload the controller fs for user to assign textures to the avaialable key-values
+                        reload = true
+                    else
+                        -- Sanitize + check input
+                        local realm_size = {
+                            x = tonumber(fields.realm_x_size or context.realm_x),
+                            y = tonumber(fields.realm_y_size or context.realm_y),
+                            z = tonumber(fields.realm_z_size or context.realm_z)
+                        }
+
+                        if realm_size.x < 80 or (realm_size.x > 240 and not has_server_privs) then
+                            table.insert(errors, "Classrooms must have a width "..(has_server_privs and "of at least 80 nodes." or "between 80 and 240 nodes."))
+                        end
+                        if realm_size.y < 80 or (realm_size.y > 240 and not has_server_privs) then
+                            table.insert(errors, "Classrooms must have a height "..(has_server_privs and "of at least 80 nodes." or "between 80 and 240 nodes."))
+                        end
+                        if realm_size.z < 80 or (realm_size.z > 240 and not has_server_privs) then
+                            table.insert(errors, "Classrooms must have a length "..(has_server_privs and "of at least 80 nodes." or "between 80 and 240 nodes."))
+                        end
+
+                        if #errors ~= 0 then
+                            for _,err in pairs(errors) do
+                                minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..err))
+                            end
+                            return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
+                        end
+
+                        if context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
+                            new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, nil, false, realm_size)
+                        else
+                            -- TODO: refactor realm.lua so that it can generate realms of non-block-aligned sizes
+                            new_realm = Realm:New(realm_name, realm_size)
+                        end
+                        
+                        new_realm:CreateBarriersFast()
+                        new_realm:CreateGround(context.selected_surface_itemstring or "default:dirt_with_grass", context.fill_depth + 1 or 1)
+                        new_realm:FillBelowGround(context.selected_fill_itemstring or "default:dirt", context.fill_depth)
+                        new_realm:UpdateSpawn({x = math.ceil(realm_size.x / 2), y = math.min(context.fill_depth + 2, realm_size.y - 3), z = math.ceil(realm_size.z / 2)})
+                        
+                        if tonumber(context.selected_decorator) == 2 then
+                            -- If the decorator is 2, then we add the biome on top
+                        else
+                            -- If the decorator is 1, then we are done
+                            reload = true
+                        end
+                    end
+
+                elseif context.selected_mode == mc_teacher.MODES.SCHEMATIC then
+                    if not context.selected_schematic then
+                        table.insert(errors, "No schematic selected.")
+                    elseif not schematicManager.schematics[context.selected_schematic] then
+                        table.insert(errors, "Selected schematic not found.")
+                    end
+
+                    if #errors ~= 0 then
+                        for _,err in pairs(errors) do
+                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..err))
+                        end
+                        return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
+                    end
+
+                    if context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
+                        new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, context.selected_schematic, false)
+                    else
+                        new_realm = Realm:NewFromSchematic(realm_name, context.selected_schematic)
+                    end
+                elseif context.selected_mode == mc_teacher.MODES.RANDOM then
                     -- Sanitize + check input
                     local realm_size = {
                         x = tonumber(fields.realm_x_size or context.realm_x),
@@ -649,14 +1076,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     else
                         -- TODO: refactor realm.lua so that it can generate realms of non-block-aligned sizes
                         new_realm = Realm:New(realm_name, realm_size)
-                        new_realm:CreateGround()
-                        new_realm:CreateBarriersFast()
                     end
+                    
+                    -- Generate random terrain
+                    if fields.realm_seed then context.realm_seed = fields.realm_seed end
+                    if fields.realm_sealevel then context.realm_sealevel = fields.realm_sealevel end
 
-                    -- Generate realm terrain
                     local rgi = {
-                        height_func =  mc_teacher.R.GEN_MAP[context.realm_gen or "1"],
-                        dec_func = mc_teacher.R.DEC_MAP[context.realm_dec or "1"],
+                        --height_func = mc_teacher.R.GEN_MAP[context.realm_gen or "1"],
+                        height_func = "v2",
                         seed = context.realm_seed ~= "" and tonumber(context.realm_seed) or math.random(1, 999999999),
                         sea_level = new_realm.StartPos.y + (context.realm_sealevel ~= "" and tonumber(context.realm_sealevel) or 30),
                     }
@@ -668,42 +1096,155 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         if context.realm_biome and context.i_to_biome then
                             table.insert(param_table, context.i_to_biome[context.realm_biome])
                         end
-                        new_realm:GenerateTerrain(rgi.seed, rgi.sea_level, rgi.height_func, rgi.dec_func, param_table)
-                    end
-                elseif context.selected_mode == mc_teacher.MODES.SCHEMATIC then
-                    if not context.selected_schematic then
-                        table.insert(errors, "No schematic selected.")
-                    elseif not schematicManager.schematics[context.selected_schematic] then
-                        table.insert(errors, "Selected schematic not found.")
-                    end
+                        local heightMapTable = new_realm:GenerateTerrain(rgi.seed, rgi.sea_level, rgi.height_func, param_table)
 
-                    if #errors ~= 0 then
-                        for _,err in pairs(errors) do
-                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..err))
+                        if tonumber(context.selected_decorator) == 3 then
+                            -- Decorator is OPENSTREETMAP
+                            openstreetmap.temp.realmID = new_realm.ID
+                            local utmInfo = { zone = openstreetmap.temp.utm_zone, utm_is_north = openstreetmap.temp.utm_zone_is_north, easting = openstreetmap.temp.min_easting, northing = openstreetmap.temp.min_northing }
+                            new_realm:set_data("UTMInfo", utmInfo)
+    
+                            local nodes = openstreetmap.temp.nodedata.elements
+                            local ways = openstreetmap.temp.waydata.elements
+                            openstreetmap.place_nodes_in_realm(nodes, new_realm, heightMapTable)
+                            openstreetmap.place_ways_in_realm(nodes, ways, new_realm, heightMapTable)
+    
+                            -- Save the context and reload the controller fs for user to assign textures to the avaialable key-values
+                            reload = true
+                        elseif tonumber(context.selected_decorator) == 2 then
+
                         end
-                        return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
-                    end
-
-                    if context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
-                        new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, context.selected_schematic, false)
                     else
-                        new_realm = Realm:NewFromSchematic(realm_name, context.selected_schematic)
+
                     end
-                elseif context.selected_mode == mc_teacher.MODES.TWIN then
-                    if not context.selected_dem then
-                        table.insert(errors, "No digital twin world selected.")
-                    elseif not realterrainManager.dems[context.selected_dem] then
-                        table.insert(errors, "Selected digital twin world not found.")
-                    end
+
+                    reload = true
+                elseif context.selected_mode == mc_teacher.MODES.LIDAR then
+
+                    if tonumber(context.selected_decorator) == 2 then
+                        -- Ground
+                        local GroundVoxelMap, xmin, ymin, zmin, xmax, ymax, zmax = LASFile.createVoxelMap(LASFile.temp.points, 2)
+                        if not GroundVoxelMap or not xmin or not ymin or not zmin or not xmax or not ymax or not zmax then
+                            return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The provided LAS file is not classified so no classroom can be created."))
+                        else
+                            minetest.chat_send_all("DEBUG: xmin = "..xmin)
+                            minetest.chat_send_all("DEBUG: xmax = "..xmax)
+                            minetest.chat_send_all("DEBUG: ymin = "..ymin)
+                            minetest.chat_send_all("DEBUG: ymax = "..ymax)
+                            -- Below ensures that all voxelMaps have the same dims as the ground
+                            LASFile.temp.sizeX = math.ceil(xmax - xmin) + 1
+                            minetest.chat_send_all("DEBUG: LASFile.temp.sizeX = "..LASFile.temp.sizeX)
+                            LASFile.temp.sizeY = math.ceil(ymax - ymin) + 1
+                            minetest.chat_send_all("DEBUG: LASFile.temp.sizeY = "..LASFile.temp.sizeY)
+                            LASFile.temp.sizeZ = math.max(math.ceil(LASFile.temp.lasheader.MaxZ + 80), 80) -- The height will always be a minimum of 80 nodes or a buffer of 80 nodes above the max Z of the LAS
+                            LASFile.temp.minX = xmin
+                            LASFile.temp.minY = ymin
+                            LASFile.temp.minZ = zmin
+                            LASFile.temp.maxX = xmax
+                            LASFile.temp.maxY = ymax
+                            LASFile.temp.maxZ = zmax
+    
+                            -- Filter ground noise at/near sea level
+                            local GroundFilteredVoxelMap = LASFile.filter_ground_noise(GroundVoxelMap, 5)
                     
-                    if #errors ~= 0 then
-                        for _,err in pairs(errors) do
-                            minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] "..err))
+                            -- Fill -inf ground values with Inverse Distance Weighted value
+                            for x = 1, LASFile.temp.sizeX do
+                                for y = 1, LASFile.temp.sizeY do
+                                    if GroundFilteredVoxelMap[x][y] == -math.huge then
+                                        local imputed_value = LASFile.Impute_IDW(x, y, GroundFilteredVoxelMap)
+                                        if imputed_value ~= -math.huge then
+                                            GroundFilteredVoxelMap[x][y] = imputed_value
+                                        end
+                                    end
+                                end
+                            end
+                            LASFile.GroundVoxelMap = GroundFilteredVoxelMap
+                    
+                            -- Vegetation
+                            if not LASFile.temp.lowveg and LASFile.temp.ground then
+                                -- Classify vegetation if the ground exists and it is not already classified
+                                local LowVegVoxelMap, MediumVegVoxelMap, HighVegVoxelMap = LASFile.classify_vegetation_voxelmaps(LASFile.temp.points, LASFile.temp.minX, LASFile.temp.minY, LASFile.temp.maxX, LASFile.temp.maxY, LASFile.temp.GroundVoxelMap)
+                                LASFile.temp.LowVegVoxelMap = LowVegVoxelMap
+                                LASFile.temp.MediumVegVoxelMap = MediumVegVoxelMap
+                                LASFile.temp.HighVegVoxelMap = HighVegVoxelMap
+                            else
+                                local LowVegVoxelMap, _, _, _, _, _, _ = LASFile.createVoxelMap(LASFile.temp.points, 3)
+                                local MediumVegVoxelMap, _, _, _, _, _, _ = LASFile.createVoxelMap(LASFile.temp.points, 4)
+                                local HighVegVoxelMap, _, _, _, _, _, _ = LASFile.createVoxelMap(LASFile.temp.points, 5)
+                                LASFile.temp.LowVegVoxelMap = LowVegVoxelMap
+                                LASFile.temp.MediumVegVoxelMap = MediumVegVoxelMap
+                                LASFile.temp.HighVegVoxelMap = HighVegVoxelMap
+                            end
+                    
+                            -- Find tree stems
+                            -- 1. Initialize a new voxelmap
+                            local TreeStemVoxelMap = {}
+                            for x = 1, LASFile.temp.sizeX do
+                                TreeStemVoxelMap[x] = {}
+                                for y = 1, LASFile.temp.sizeY do
+                                    TreeStemVoxelMap[x][y] = -math.huge
+                                end
+                            end
+                    
+                            -- 2. Calculate focal maxima of the high vegetation voxelmap
+                            local LocalMaximaVoxelMap = LASFile.peak_local_max(LASFile.temp.HighVegVoxelMap, 5)
+                    
+                            -- 3. Check for clustered maxima and calculate the centroid position in such cases
+                            local labeledVoxelMap = LASFile.label_regions(LocalMaximaVoxelMap)
+                            local centralPositions = LASFile.find_central_positions(LocalMaximaVoxelMap, labeledVoxelMap)
+                    
+                            -- 4. Write out the maximum elevations from the LocalMaximaVoxelMap into our final TreeStemVoxelMap
+                            for _, pos in ipairs(centralPositions) do
+                                TreeStemVoxelMap[pos.x][pos.y] = LocalMaximaVoxelMap[pos.x][pos.y].value
+                            end
+                            LASFile.temp.TreeStemVoxelMap = TreeStemVoxelMap
+                    
+                            -- Buildings
+                            local BuildingVoxelMap, _, _, _, _, _, _ = LASFile.createVoxelMap(LASFile.temp.points, 6, LASFile.minX, LASFile.minY, LASFile.minZ, LASFile.maxX, LASFile.maxY, LASFile.maxZ)
+                            LASFile.temp.BuildingVoxelMap = BuildingVoxelMap
+    
+                            -- Note here we switch LAS Z and Y for the minetest convention
+                            minetest.chat_send_all("DEBUG: creating realm")
+                            new_realm = Realm:New(realm_name or "LAS", { x = LASFile.temp.sizeX, y = LASFile.temp.sizeZ, z = LASFile.temp.sizeY }, false)
+                            minetest.chat_send_all("DEBUG: created realm")
+    
+                            -- Remove the buffer from the EndPos x,z so that the map fits snuggly in the new realm (add 1 for the barrier)
+                            new_realm.EndPos.x = new_realm.StartPos.x + LASFile.temp.sizeX + 1
+                            new_realm.EndPos.y = new_realm.StartPos.y + LASFile.temp.sizeZ + 1 -- LASFile Z is minetest Y
+                            new_realm.EndPos.z = new_realm.StartPos.z + LASFile.temp.sizeY + 1 -- LASFile Y is minetest Z
+                            new_realm.MetaStorage.emerge = true
+    
+                            new_realm:CreateGround()
+                            minetest.chat_send_all("DEBUG: created ground")
+                            new_realm:CreateBarriersFast()
+                            --[[ -- TODO: get the UTM projection information from the header
+                            local utmInfo = { zone = 10, utm_is_north = true, easting = LASFile.temp.minX, northing = LASFile.temp.minY }
+                            new_realm:set_data("UTMInfo", utmInfo) ]]
+                            new_realm:CallOnCreateCallbacks()
+    
+                            reload = true
                         end
-                        return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
+                    elseif tonumber(context.selected_decorator) == 3 then
+                        -- TODO: Get any user-entered key-values submitted for query
+                        new_realm = Realm:New(realm_name or "OSM", { x = openstreetmap.temp.sizeX, y = openstreetmap.temp.sizeY, z = openstreetmap.temp.sizeZ })
+                        openstreetmap.temp.realmID = new_realm.ID
+                        new_realm:CreateGround(context.selected_surface_itemstring or "default:dirt_with_grass", context.fill_depth + 1 or 1)
+                        new_realm:FillBelowGround(context.selected_fill_itemstring or "default:dirt", context.fill_depth)
+                        new_realm:UpdateSpawn({x = math.ceil(realm_size.x / 2), y = math.min(context.fill_depth + 2, realm_size.y - 3), z = math.ceil(realm_size.z / 2)})
+                        new_realm:CreateBarriersFast()
+                        local utmInfo = { zone = openstreetmap.temp.utm_zone, utm_is_north = openstreetmap.temp.utm_zone_is_north, easting = openstreetmap.temp.min_easting, northing = openstreetmap.temp.min_northing }
+                        new_realm:set_data("UTMInfo", utmInfo)
+
+                        local nodes = openstreetmap.temp.nodedata.elements
+                        local ways = openstreetmap.temp.waydata.elements
+                        openstreetmap.place_nodes_in_realm(nodes, new_realm)
+                        openstreetmap.place_ways_in_realm(nodes, ways, new_realm)
+
+                        -- Save the context and reload the controller fs for user to assign textures to the avaialable key-values
+                        reload = true
+                    else
+                        -- No selection has been made yet, do not allow the user to submit anything
                     end
-                    
-                    new_realm = Realm:NewFromDEM(realm_name, context.selected_dem)
                 end
 
                 new_realm:AddOwner(player:get_player_name())
@@ -1381,6 +1922,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             if fields.realm_seed then context.realm_seed = fields.realm_seed end
             if fields.realm_sealevel then context.realm_sealevel = fields.realm_sealevel end
             if fields.realm_chill then context.realm_chill = fields.realm_chill end
+            if fields.osm_extent_maxlat then context.osm_extent_maxlat = fields.osm_extent_maxlat end
+            if fields.osm_extent_minlat then context.osm_extent_minlat = fields.osm_extent_minlat end
+            if fields.osm_extent_maxlon then context.osm_extent_maxlon = fields.osm_extent_maxlon end
+            if fields.osm_extent_minlon then context.osm_extent_minlon = fields.osm_extent_minlon end
             -- MODERATION --
             if fields.mod_message then context.mod_message = minetest.formspec_escape(fields.mod_message) end
             -- REPORTS --
