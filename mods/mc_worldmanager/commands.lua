@@ -1,7 +1,3 @@
--- All the functionality from these commands will added to a realm book.
--- These commands are currently just for testing
-
-
 local commands = {}
 
 minetest.register_chatcommand("localPos", {
@@ -13,20 +9,20 @@ minetest.register_chatcommand("localPos", {
         local requestedRealm = Realm.GetRealmFromPlayer(player)
 
         if (requestedRealm == nil) then
-            return false, "Player is not listed in a realm OR current realm has been deleted; Try teleporting to a different realm and then back..."
+            return false, "Player is not listed in a classroom OR current classroom has been deleted; Try teleporting to a different classroom and then back..."
         end
 
         local position = requestedRealm:WorldToLocalSpace(player:get_pos())
-        return true, "Your position in the local space of realm " .. param .. " is x: " .. position.x .. " y: " .. position.y .. " z: " .. position.z
+        return true, "Your position in the local space of classroom " .. param .. " is x: " .. position.x .. " y: " .. position.y .. " z: " .. position.z
     end,
-    help = "Get your local position in the current realm",
+    help = "Get your local position in the current classroom",
 })
 
 commands["new"] = {
     func = function(name, params)
         local realmName = tostring(params[1])
         if (realmName == "" or realmName == "nil") then
-            realmName = "Unnamed Realm"
+            realmName = "Unnamed classroom"
         end
         local sizeX = tonumber(params[2])
         if (sizeX == nil or sizeX == 0) then
@@ -45,16 +41,16 @@ commands["new"] = {
         newRealm:CreateBarriersFast()
         newRealm:AddOwner(name)
 
-        return true, "created new realm with ID: " .. newRealm.ID
+        return true, "created new classroom with ID: " .. newRealm.ID
     end,
-    help = "realm new [name] ([<sizeX>] [<sizeY>] [<sizeZ>]) - Create a new realm", }
+    help = "classroom new [name] ([<sizeX>] [<sizeY>] [<sizeZ>]) - Create a new classroom", }
 
 commands["delete"] = {
     func = function(name, params)
         local realmID = params[1]
 
         if (realmID == nil) then
-            return false, "No realm ID specified"
+            return false, "No classroom ID specified"
         end
 
         if (realmID == mc_worldManager.spawnRealmID) then
@@ -63,43 +59,43 @@ commands["delete"] = {
 
         local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
+            return false, "Requested classroom of ID: " .. tostring(realmID) .. " does not exist."
         end
         requestedRealm:Delete()
     end,
-    help = "realm delete <realmID> - Delete a realm", }
+    help = "classroom delete <classroomID> - Delete a classroom", }
 
 commands["list"] = {
     func = function(name, params)
-        minetest.chat_send_player(name, "Realm Name : Realm ID")
+        minetest.chat_send_player(name, "classroom Name : classroom ID")
         for i, t in pairs(Realm.realmDict) do
             minetest.chat_send_player(name, t.Name .. " : " .. t.ID)
         end
 
         return true
     end,
-    help = "realm list - List all realms", }
+    help = "classroom list - List all classrooms", }
 
 commands["info"] = {
     func = function(name, params)
         local realmID = params[1]
         local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
-            return false, "Requested realm does not exist."
+            return false, "Requested classroom does not exist."
         end
 
         local spawn = requestedRealm.SpawnPoint
         local startPos = requestedRealm.StartPos
         local endPos = requestedRealm.EndPos
 
-        return true, "Realm " .. realmID .. " has a spawn point of "
+        return true, "classroom ID " .. realmID .. " has a spawn point of "
                 .. "x:" .. tostring(spawn.x) .. " y:" .. tostring(spawn.y) .. " z:" .. tostring(spawn.z)
                 .. "; startPos of "
                 .. "x:" .. tostring(startPos.x) .. " y:" .. tostring(startPos.y) .. " z:" .. tostring(startPos.z)
                 .. "; endPos of "
                 .. "x:" .. tostring(endPos.x) .. " y:" .. tostring(endPos.y) .. " z:" .. tostring(endPos.z)
     end,
-    help = "realm info <realmID> - Get info about a realm", }
+    help = "classroom info <classroomID> - Get info about a classroom", }
 
 commands["tp"] = {
     privs = { teleport = true },
@@ -112,7 +108,7 @@ commands["tp"] = {
         end
 
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
+            return false, "Requested classroom ID: " .. tostring(realmID) .. " does not exist."
         end
 
         local player = minetest.get_player_by_name(name)
@@ -120,14 +116,14 @@ commands["tp"] = {
 
         return success, reason
     end,
-    help = "realm tp <realmID> - Teleport to a realm.", }
+    help = "reaclassroomlm tp <classroomID> - Teleport to a classroom.", }
 
 commands["walls"] = {
     func = function(name, params)
         local realmID = params[1]
         local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
+            return false, "Requested classroom ID: " .. tostring(realmID) .. " does not exist."
         end
 
         if (params[2] ~= nil and params[2] == "fast") then
@@ -136,9 +132,9 @@ commands["walls"] = {
             requestedRealm:CreateBarriers()
         end
 
-        return true, "created walls in realm: " .. tostring(realmID)
+        return true, "created walls in classroom: " .. tostring(realmID)
     end,
-    help = "realm walls <realmID> [<fast>] - Create walls in a realm", }
+    help = "classroom walls <classroomID> [<fast>] - Create walls in a classroom", }
 
 commands["gen"] = {
     func = function(name, params)
@@ -170,7 +166,7 @@ commands["gen"] = {
         local realmID = params[1]
         local requestedRealm = Realm.realmDict[tonumber(realmID)]
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
+            return false, "Requested classroom of ID: " .. tostring(realmID) .. " does not exist."
         end
 
         local seaLevel = math.floor((requestedRealm.EndPos.y - requestedRealm.StartPos.y) * 0.4) + requestedRealm.StartPos.y
@@ -218,16 +214,16 @@ commands["gen"] = {
         Debug.log("Creating barrier...")
         requestedRealm:CreateBarriersFast()
 
-        return true, "Generated terrain in realm: " .. tostring(realmID) .. " using seed " .. tostring(seed)
+        return true, "Generated terrain in classroom: " .. tostring(realmID) .. " using seed " .. tostring(seed)
     end,
-    help = "realm gen <list> | (<realmID> <heightGenKey> [<terrainDecKey>] ([<seaLevel>] [<seed>] [(optional param1), (optional param2) ...]) - Generate a realm", }
+    help = "classroom gen <list> | (<classroomID> <heightGenKey> [<terrainDecKey>] ([<seaLevel>] [<seed>] [(optional param1), (optional param2) ...]) - Generate a classroom", }
 
 commands["regen"] = {
     func = function(name, params)
         local realmID = params[1]
         local requestedRealm = Realm.realmDict[tonumber(realmID)]
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
+            return false, "Requested classroom ID: " .. tostring(realmID) .. " does not exist."
         end
 
         local seaLevel = math.floor((requestedRealm.EndPos.y - requestedRealm.StartPos.y) * 0.4) + requestedRealm.StartPos.y
@@ -241,15 +237,15 @@ commands["regen"] = {
 
 
         if (seed == nil or seed == "nil") then
-            return false, "Realm does not have any saved seed information."
+            return false, "Classroom does not have any saved seed information."
         end
 
         if (heightGen == nil or heightGen == "") then
-            return false, "Realm does not have any saved height generator information. Please try to manually regenerate world with gen command and seed " .. tostring(seed)
+            return false, "Classroom does not have any saved height generator information. Please try to manually regenerate world with gen command and seed " .. tostring(seed)
         end
 
         if (decGen == nil or decGen == "") then
-            return false, "Realm does not have any saved decorator information. Please try to manually regenerate world with gen command, seed " .. tostring(seed) .. " and height generator name " .. tostring(heightGen)
+            return false, "Classroom does not have any saved decorator information. Please try to manually regenerate world with gen command, seed " .. tostring(seed) .. " and height generator name " .. tostring(heightGen)
         end
 
         requestedRealm:GenerateTerrain(seed, seaLevel, heightGen, decGen, extraGenParams)
@@ -259,7 +255,7 @@ commands["regen"] = {
 
         return true
     end,
-    help = "realm regen <realmID> - Regenerates the terrain of a realm.", }
+    help = "classroom regen <classroomID> - Regenerates the terrain of a classroom.", }
 
 commands["biomes"] = { func = function(name, params)
     minetest.chat_send_player(name, "Biome Key")
@@ -271,20 +267,143 @@ commands["biomes"] = { func = function(name, params)
     end
     return true, "Listed all " .. tostring(count) .. " biomes."
 end,
-help = "realm biomes - Lists all biomes.", }
+help = "classroom biomes - Lists all biomes.", }
 
 commands["seed"] = { func = function(name, params)
     local realmID = params[1]
     local requestedRealm = Realm.GetRealm(tonumber(realmID))
     if (requestedRealm == nil) then
-        return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
+        return false, "Requested classroom ID: " .. tostring(realmID) .. " does not exist."
     end
 
     local seed = requestedRealm:get_data("worldSeed")
 
-    return true, "World Seed for Realm: " .. tostring(seed)
+    return true, "World Seed for classroom: " .. tostring(seed)
 end,
-                     help = "realm seed <realmID> - Get the seed of a realm.", }
+help = "classroom seed <classroomID> - Get the seed of a classroom.", }
+
+commands["players"] = { func = function(name, params)
+    minetest.chat_send_player(name, "======================")
+    minetest.chat_send_player(name, "All Registered Players")
+    minetest.chat_send_player(name, "======================")
+    for pname, value in minetest.get_auth_handler().iterate() do
+        minetest.chat_send_player(name, pname)
+    end
+end,
+help = "classroom players - Lists all the registered player names that have every connected to the server.", }
+
+commands["save"] = { func = function(name, params)
+    local classroomName = params[1]
+
+    local realmID
+    for _, realm in pairs(Realm.realmDict) do 
+        if realm.Name == classroomName then 
+            realmID = realm.ID
+        end 
+    end
+    if not realmID then
+        return false, "Requested classroom name: " .. tostring(classroomName) .. " does not exist."
+    end
+    local realm = Realm.GetRealm(tonumber(realmID))
+    local temp_data = {
+        Name = classroomName,
+        StartPos = realm.StartPos,
+        EndPos = realm.EndPos,
+        SpawnPoint = realm.SpawnPoint,
+        PlayerJoinTable = realm.PlayerJoinTable,
+        PlayerLeaveTable = realm.PlayerLeaveTable,
+        RealmDeleteTable = realm.RealmDeleteTable,
+        Permissions = realm.Permissions,
+        PermissionsOverride = realm.PermissionsOverride,
+        MetaStorage = realm.MetaStorage,
+        data_chunks = {},
+        light_chunks = {},
+        param2_chunks = {},
+    }
+
+    -- Avoid table overflow with chunking
+    local xsize = realm.EndPos.x - realm.StartPos.x
+    local ysize = realm.EndPos.y - realm.StartPos.y
+    local zsize = realm.EndPos.z - realm.StartPos.z
+    local chunks = Realm:Create_VM_Chunks(realm.StartPos, realm.EndPos, mc_core.VM_CHUNK_SIZE)
+    for index, chunk in pairs(chunks) do
+        -- Get the data for the chunk
+        local vm = VoxelManip(chunk.pos1, chunk.pos2)
+        local data = vm:get_data()
+        local light = vm:get_light_data()
+        local param2 = vm:get_param2_data()
+        
+        -- Index and write the data
+        temp_data.data_chunk = data
+        temp_data.light_chunk = light
+        temp_data.param2_chunk = param2
+        
+        -- Send classroom metadata in the first chunk
+        if index == 1 then
+            temp_data.Name = classroomName
+            temp_data.StartPos = realm.StartPos
+            temp_data.EndPos = realm.EndPos
+            temp_data.SpawnPoint = realm.SpawnPoint
+            temp_data.PlayerJoinTable = realm.PlayerJoinTable
+            temp_data.PlayerLeaveTable = realm.PlayerLeaveTable
+            temp_data.RealmDeleteTable = realm.RealmDeleteTable
+            temp_data.Permissions = realm.Permissions
+            temp_data.PermissionsOverride = realm.PermissionsOverride
+            temp_data.MetaStorage = realm.MetaStorage
+        end
+
+        lasfile.meta:set_string("classroom_"..classroomName.."_data_chunk_"..index, minetest.serialize(temp_data))
+        minetest.chat_send_player(name, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Saved classroom content for chunk "..index.." of "..#chunks.." total chunks"))
+
+        -- Clean up
+        vm, data, light, param2 = nil, nil, nil, nil, nil
+        
+    end
+    return true, minetest.chat_send_player(name, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Successfully copied classroom content. You can load this content into a new classroom using the original classroom name with `classroom load "..classroomName.."`."))
+end,
+help = "classroom save <classroomName> - Store a copy of classroom content to mod storage, including node content IDs, param2 data, and lighting data. Existing data will be overwritten for the given classroom name.", }
+
+commands["load"] = { func = function(name, params)
+    local classroomName = params[1]
+
+    -- Read the first chunk to get the necessary metadata
+    local temp_data = minetest.deserialize(lasfile.meta:get_string("classroom_"..classroomName.."_data_chunk_1"))
+    if not temp_data then
+        return false, "Requested classroom name: " .. tostring(classroomName) .. " does not exist."
+    end
+
+    -- Create the new classroom
+    local newRealm = Realm:New(classroomName, { x = (temp_data.EndPos.x - temp_data.StartPos.x), y = (temp_data.EndPos.y - temp_data.StartPos.y), z = (temp_data.EndPos.z - temp_data.StartPos.z) }, false)
+    newRealm:set_data("owner", name)
+    newRealm:CreateBarriersFast()
+    newRealm:CallOnCreateCallbacks()
+
+    -- Fill the content
+    local chunks = Realm:Create_VM_Chunks(newRealm.StartPos, newRealm.EndPos, mc_core.VM_CHUNK_SIZE)
+    for index, chunk in pairs(chunks) do
+        -- Read the serialized data for the current chunk
+        local temp_data = minetest.deserialize(lasfile.meta:get_string("classroom_"..classroomName.."_data_chunk_"..index))
+        local vm = VoxelManip(chunk.pos1, chunk.pos2)
+        local data = temp_data.data_chunk
+        local light = temp_data.light_chunk
+        local param2 = temp_data.param2_chunk
+
+        -- Write the chunk data to the map
+        if data then vm:set_data(data) end
+        if param2 then vm:set_param2_data(param2)  end
+        if light then vm:set_lighting(light)  end
+        vm:write_to_map(true)
+        
+        -- Clean up
+        vm, data, light, param2 = nil, nil, nil, nil, nil
+    end
+
+    -- Emerge classroom
+    newRealm:EmergeRealm()
+
+    return true, minetest.chat_send_player(name, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Successfully loaded classroom content into a new classroom with ID "..newRealm.ID.."."))
+end,
+help = "classroom load <classroomName> - Load a stored copy of classroom content (node content IDs, param2 data, and lighting) into a new classroom ID.", }
 
 commands["schematic"] = {
     func = function(name, params)
@@ -302,7 +421,7 @@ commands["schematic"] = {
             local requestedRealm = Realm.GetRealm(tonumber(realmID))
 
             if (requestedRealm == nil) then
-                return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
+                return false, "Requested classroom ID: " .. tostring(realmID) .. " does not exist."
             end
 
             local schemName = tostring(params[2])
@@ -315,12 +434,12 @@ commands["schematic"] = {
             end
 
             local path = requestedRealm:Save_Schematic(schemName, name, subparam)
-            return true, "Saved realm with ID " .. realmID .. " at path: " .. path
+            return true, "Saved classroom ID " .. realmID .. " at path: " .. path
         elseif (params[1] == "load") then
             table.remove(params, 1)
             local realmName = params[1]
             if (realmName == "" or realmName == nil) then
-                realmName = "Unnamed Realm"
+                realmName = "Unnamed classroom"
             end
 
             local key = params[1]
@@ -335,74 +454,11 @@ commands["schematic"] = {
             end
 
             local newRealm = Realm:NewFromSchematic(realmName, key)
-            return true, "creat[ing][ed] new realm with name: " .. newRealm.Name .. "and ID: " .. newRealm.ID .. " from schematic with key " .. key
+            return true, "creat[ing][ed] new classroom with name: " .. newRealm.Name .. "and ID: " .. newRealm.ID .. " from schematic with key " .. key
         else
-            return false, "unknown subcommand. Try realm schematic list | realm schematic save | realm schematic load"
+            return false, "unknown subcommand. Try classroom schematic list | classroom schematic save | classroom schematic load"
         end
     end }
-
-    commands["realterrain"] = {
-        func = function(name, params)
-            if params[1] == "list" then
-                table.remove(params, 1)
-    
-                minetest.chat_send_player(name, "Key : Filepath")
-                for i, t in pairs(realterrainManager.dems) do
-                    minetest.chat_send_player(name, i .. " : " .. t)
-                end
-                return true
-            elseif params[1] == "load" then
-                table.remove(params, 1)
-                local realmName = params[1]
-                if (realmName == "" or realmName == nil) then
-                    realmName = "Unnamed Realm"
-                end
-    
-                local key = params[1]
-                if (key == nil) then
-                    key = ""
-                end
-    
-                local DEM_PATH, config = realterrainManager.getDEM(key)
-    
-                if (config == nil) then
-                    return false, "DEM key: " .. tostring(key) .. " config file has not been registered with the system."
-                end
-    
-                -- Check if we are symbolizing a layer
-                if params[2] and params[2] == "symbolize" then
-                    realterrain.symbology.flag = true
-                    -- Check for colorbrewer dependency
-                    if minetest.get_modpath("colorbrewer") ~= nil then
-                        -- Check if colorbrewer palette is specified correctly
-                        if params[3] then
-                            if minetest.registered_nodes["colorbrewer:"..params[3]] then
-                                -- Check which layer the symbology will apply to
-                                if params[4] == "dem" or params[4] == "chm" or params[4] == "urban" or params[4] == "cover" then 
-                                    realterrain.symbology.palette = params[3]
-                                    realterrain.symbology.layer = params[4]
-                                else
-                                    if params[4] then
-                                        return false, "layer specified '"..params[4].."' is not valid, cannot symbolize realterrain. Try realm realterrain load [dem key] symbolize [palette name] [dem | chm | urban | cover]"
-                                    else
-                                        return false, "missing a specified layer to symbolize, cannot symbolize realterrain. Try realm realterrain load [dem key] symbolize [palette name] [dem | chm | urban | cover]"
-                                    end
-                                end
-                            else
-                                return false, "colorbrewer palette specified '"..params[3].."' is not registered, cannot symbolize realterrain. Try realm realterrain load [dem key] symbolize [palette_name] or use the /palettes command to see all registered colorbrewer palettes."
-                            end
-                        else
-                            return false, "missing a specified colorbrewer palette, cannot symbolize realterrain. Try realm realterrain load [dem key] symbolize [palette_name] or use the /palettes command to see all registered colorbrewer palettes."
-                        end
-                    else
-                        return false, "colorbrewer mod is not installed, cannot symbolize realterrain"
-                    end
-                end
-                
-                local newRealm = Realm:NewFromDEM(realmName, key)
-                return true, "creat[ing][ed] new realm with name: " .. newRealm.Name .. "and ID: " .. newRealm.ID .. " from DEM with key " .. key
-            end
-        end }
 
 commands["setspawn"] = {
     func = function(name, params)
@@ -413,33 +469,33 @@ commands["setspawn"] = {
         local playerPosition = player:get_pos()
 
         if (not requestedRealm:ContainsCoordinate(playerPosition)) then
-            return false, "You are not physically located in realm" .. tostring(requestedRealm.ID) .. " Please re-enter realm boundaries and try again."
+            return false, "You are not physically located in classroom" .. tostring(requestedRealm.ID) .. " Please re-enter classroom boundaries and try again."
         end
 
         local position = requestedRealm:WorldToLocalSpace(playerPosition)
         requestedRealm:UpdateSpawn(position)
 
-        return true, "Updated spawnpoint for realm with ID: " .. requestedRealm.ID
+        return true, "Updated spawnpoint for classroom ID: " .. requestedRealm.ID
     end,
-    help = "realm setspawn - Set the spawnpoint for the realm that you're currently located.", }
+    help = "classroom setspawn - Set the spawnpoint for the classroom that you are currently located in.", }
 
-commands["setspawnrealm"] = {
+commands["setspawnclassroom"] = {
     func = function(name, params)
         local realmID = params[1]
         local requestedRealm = Realm.GetRealm(tonumber(realmID))
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
+            return false, "Requested classroom ID: " .. tostring(realmID) .. " does not exist."
         end
 
         local success = mc_worldManager.SetSpawnRealm(requestedRealm)
 
         if (success) then
-            return true, "Updated the spawn realm to realm with ID: " .. realmID
+            return true, "Updated the spawn classroom to classroom ID: " .. realmID
         else
-            return false, "something went wrong... could not update the spawn realm."
+            return false, "something went wrong... could not update the spawn classroom."
         end
     end,
-    help = "realm setspawnrealm <realmID> - Sets the spawn realm to the realm with the given ID." }
+    help = "classroom setspawnclassroom <classroomID> - Sets the spawn classroom to the classroom with the given ID." }
 
 commands["category"] = {
     func = function(name, params)
@@ -449,7 +505,7 @@ commands["category"] = {
             local realmID = tonumber(params[2])
             local requestedRealm = Realm.GetRealm(tonumber(realmID))
             if (requestedRealm == nil) then
-                return false, "Requested realm of ID:" .. tostring(realmID) .. " does not exist."
+                return false, "Requested classroom of ID:" .. tostring(realmID) .. " does not exist."
             end
 
             local category = string.lower(tostring(params[3]))
@@ -459,38 +515,38 @@ commands["category"] = {
             end
 
             if (Realm.getRegisteredCategories()[category] == nil) then
-                return false, "Category: " .. category .. " is not registered. Try /realm category list to see all registered categories."
+                return false, "Category: " .. category .. " is not registered. Try classroom category list to see all registered categories."
             end
 
             requestedRealm:setCategoryKey(category)
-            return true, "Updated category for realm with ID: " .. realmID .. " to " .. category
+            return true, "Updated category for classroom with ID: " .. realmID .. " to " .. category
         elseif (string.lower(subcommand) == "list") then
 
-            minetest.chat_send_player(name, "=======================")
-            minetest.chat_send_player(name, "Valid Realm Categories")
-            minetest.chat_send_player(name, "=======================")
+            minetest.chat_send_player(name, "==========================")
+            minetest.chat_send_player(name, "Valid Classroom Categories")
+            minetest.chat_send_player(name, "==========================")
             local categories = Realm.getRegisteredCategories()
             for key, value in pairs(categories) do
                 minetest.chat_send_player(name, key)
             end
             minetest.chat_send_player(name, "=======================")
-            return true, "Listed all valid realm categories."
+            return true, "Listed all valid classroom categories."
         else
-            return false, "unknown subcommand. Try realm category set <category>"
+            return false, "unknown subcommand. Try classroom category set <category>"
         end
 
 
     end,
-    help = "realm category (set <realmID> <category>) | (list) - Set the category of a realm or list all valid categories.",
+    help = "classroom category (set <classroomID> <category>) | (list) - Set the category of a classroom or list all valid categories.",
 }
 
 commands["consolidate"] = {
     func = function(name, params)
         Realm.consolidateEmptySpace()
         Realm.SaveDataToStorage()
-        return true, "consolidated realms"
+        return true, "consolidated classrooms"
     end,
-    help = "consolidate realm placement information." }
+    help = "consolidate classroom placement information." }
 
 commands["entity"] = {
     func = function(name, params)
@@ -499,12 +555,12 @@ commands["entity"] = {
             local realmID = tonumber(params[2])
             local requestedRealm = Realm.GetRealm(tonumber(realmID))
             if (requestedRealm == nil) then
-                return false, "Requested realm of ID:" .. tostring(realmID) .. " does not exist."
+                return false, "Requested classroom ID:" .. tostring(realmID) .. " does not exist."
             end
             requestedRealm:ClearEntities()
-            return true, "Cleared items for realm with ID: " .. realmID
+            return true, "Cleared items for classroom ID: " .. realmID
         end
-        return false, "unknown subcommand. Try realm entity clear <realmID>"
+        return false, "unknown subcommand. Try 'classroom entity clear <classroomID>'."
     end
 }
 
@@ -576,20 +632,20 @@ commands["privs"] = {
         local privilege = tostring(params[3])
 
         if (operation == "nil" or operation == "") then
-            return false, "Incorrect parameter... Missing realm privilege operation. Execute 'realm help privs' for help."
+            return false, "Incorrect parameter... Missing classroom privilege operation. Try 'classroom help privs' for help."
         end
 
         if (operation == "help") then
-            return true, "execute 'realm help privs' for help."
+            return true, "execute 'classroom help privs' for help."
         end
 
         if (realmID == nil or realmID == "") then
-            return false, "Incorrect parameter... Missing realm ID. Execute 'realm help privs' for help."
+            return false, "Incorrect parameter... Missing classroom ID. Try 'classroom help privs' for help."
         end
 
         local requestedRealm = Realm.realmDict[realmID]
         if (requestedRealm == nil) then
-            return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
+            return false, "Requested classroom ID: " .. tostring(realmID) .. " does not exist."
         end
 
         if (operation == "list") then
@@ -599,20 +655,20 @@ commands["privs"] = {
                     minetest.chat_send_player(name, "- " .. i)
                 end
             else
-                minetest.chat_send_player(name, "No realm privileges have been set.")
+                minetest.chat_send_player(name, "No classroom privileges have been set.")
             end
 
             return true, "command executed succesfully"
         end
 
         if (privilege == "nil" or privilege == "") then
-            return false, "Incorrect parameter... Missing realm privilege to add or revoke. Execute 'realm help privs' for help."
+            return false, "Incorrect parameter... Missing classroom privilege to add or revoke. Try 'classroom help privs' for help."
         end
 
         if (operation == "grant") then
 
             if (minetest.check_player_privs(name, privilege) == false) then
-                return false, "Unable to add privilege: " .. privilege .. " to realm" .. tostring(realmID) .. " as you do not hold this privilege."
+                return false, "Unable to add privilege: " .. privilege .. " to classroom" .. tostring(realmID) .. " as you do not hold this privilege."
             end
             local privsTable = {}
             privsTable[privilege] = true
@@ -620,20 +676,20 @@ commands["privs"] = {
             local success, invalidPrivs = requestedRealm:UpdateRealmPrivilege(privsTable)
 
             if (not success) then
-                return false, "Unable to add privilege: " .. privilege .. " to realm" .. tostring(realmID) .. " as it has not been whitelisted."
+                return false, "Unable to add privilege: " .. privilege .. " to classroom" .. tostring(realmID) .. " as it has not been whitelisted."
             end
 
-            return true, "Added permission: " .. privilege .. " to realm " .. tostring(realmID)
+            return true, "Added permission: " .. privilege .. " to classroom " .. tostring(realmID)
         elseif (operation == "revoke") then
 
             local privsTable = {}
             privsTable[privilege] = false
 
             requestedRealm:UpdateRealmPrivilege(privsTable)
-            return true, "Removed permission: " .. privilege .. " from realm " .. tostring(realmID)
+            return true, "Removed permission: " .. privilege .. " from classroom " .. tostring(realmID)
         end
     end,
-    help = "realm privs (grant | list | revoke) <realmID> <privilege>"
+    help = "classroom privs (grant | list | revoke) <classroomID> <privilege>"
 }
 
 commands["players"] = {
@@ -644,13 +700,13 @@ commands["players"] = {
             local realmID = params[2]
             local requestedRealm = Realm.GetRealm(tonumber(realmID))
             if (requestedRealm == nil) then
-                return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
+                return false, "Requested classroom ID: " .. tostring(realmID) .. " does not exist."
             end
 
             local realmPlayerList = requestedRealm:get_tmpData("Inhabitants")
 
             if (realmPlayerList == nil) then
-                return false, "no players found in realm player list."
+                return false, "no players found in classroom player list."
             end
 
             Debug.log(minetest.serialize(realmPlayerList))
@@ -659,16 +715,16 @@ commands["players"] = {
                 minetest.chat_send_player(name, k)
             end
 
-            return true, "listed all players in realm."
+            return true, "listed all players in classroom."
         elseif (params[1] == "scan") then
             Realm.ScanForPlayerRealms()
-            return true, "re-associated players with realms."
+            return true, "re-associated players with classrooms."
 
         end
 
         return false, "unknown sub-command."
     end,
-    help = "players <list | scan> - lists all players in a realm. 'players scan' will re-associate players with realms."
+    help = "players <list | scan> - lists all players in a classroom. 'players scan' will re-associate players with classrooms."
 }
 
 commands["blocks"] = {
@@ -710,13 +766,11 @@ commands["blocks"] = {
             return true, "added teleporter to inventory."
         end
 
-        return false, "For help, execute /realm help blocks."
+        return false, "For help, try 'classroom help blocks'."
     end,
-    help = "realm blocks <block> <count> (<instanced: true | false> | <realmID>) <temporary: true | false> <realmName> <schematic>"
+    help = "classroom blocks <block> <count> (<instanced: true | false> | <classroomID>) <temporary: true | false> <classroomName> <schematic>"
 
 }
-
-
 
 commands["clean"] = {
     func = function(name, params)
@@ -727,9 +781,9 @@ commands["clean"] = {
         end
 
         requestedRealm:Clean()
-        return true, "cleaned realm " .. tostring(realmID)
+        return true, "cleaned classroom " .. tostring(realmID)
     end,
-    help = "realm clean <realmID> -- replaces any unknown block with air."
+    help = "classroom clean <classroomID> -- replaces any unknown block with air."
 }
 
 commands["coordinates"] = {
@@ -744,7 +798,7 @@ commands["coordinates"] = {
             local hasPrivs, missing = minetest.check_player_privs(name, { teacher = true })
 
             if (not hasPrivs) then
-                return false, "You do not have permission to set realm coordinates. Missing: " .. tostring(missing)
+                return false, "You do not have permission to set classroom coordinates. Missing: " .. tostring(missing)
             end
 
             if (format == "utm") then
@@ -794,7 +848,7 @@ commands["coordinates"] = {
 
         return false, "unknown command parameters."
     end,
-    help = "realm coordinates <set | get | hud> <format (world, grid, local, utm, latlong)>"
+    help = "classroom coordinates <set | get | hud> <format (world, grid, local, utm, latlong)>"
 }
 
 commands["data"] = {
@@ -804,7 +858,7 @@ commands["data"] = {
 
         local realm = Realm.GetRealm(realmID)
         if (realm == nil) then
-            return false, "realm " .. tostring(realmID) .. " does not exist."
+            return false, "classroom " .. tostring(realmID) .. " does not exist."
         end
         if (operation == "get") then
             local data = realm:get_data(tostring(params[3]))
@@ -823,12 +877,11 @@ commands["data"] = {
         end
         return false, "unknown sub-command."
     end,
-    help = "realm data <get | set | dump> <realmID> <dataName> <dataValue>"
+    help = "classroom data <get | set | dump> <classroomID> <dataName> <dataValue>"
 }
 
-
-minetest.register_chatcommand("realm", {
-    params = "Subcommand Realm ID Option",
+minetest.register_chatcommand("classroom", {
+    params = "Subcommand classroom ID Option",
     func = function(name, param)
         local params = mc_core.split(param, " ")
         local subcommand = params[1]
@@ -850,14 +903,13 @@ minetest.register_chatcommand("realm", {
 
             return commands[subcommand].func(name, params)
         else
-            return false, "Unknown subcommand. Use 'realm help' for a list of sub-commands."
+            return false, "Unknown subcommand. Use 'classroom help' for a list of sub-commands."
         end
     end,
 })
 
 -- Gets called when a command is called, before it is handled by the engine / lua runtime.
 minetest.register_on_chatcommand(function(name, command, params)
-
 
     if (command == "grantme") then
         local privTable = mc_core.split(params, ", ")
@@ -868,7 +920,6 @@ minetest.register_on_chatcommand(function(name, command, params)
         mc_worldManager.revokeUniversalPriv(minetest.get_player_by_name(name), privTable)
         return false -- we must return false so that the regular grant command proceeds.
     end
-
 
     -- Gets called when grant / revoke is called. We're using this to add permissions that are granted onto the universalPrivs table.
 
@@ -898,7 +949,6 @@ minetest.register_on_chatcommand(function(name, command, params)
     return false
 end)
 
-
 -- We could have also done minetest.override_chatcommand; but I want complete control
 minetest.unregister_chatcommand("teleport")
 
@@ -906,8 +956,8 @@ minetest.register_chatcommand("teleport", {
     privs = {
         teleport = true,
     },
-    description = "Teleport yourself or a specified player to a realm or another player.",
-    params = "<realm ID> | <target player> | (<player name> <realm ID>) | (<player name> <target player name>) | (<realm ID> <local x pos> <local y pos> <local z pos>)",
+    description = "Teleport yourself or a specified player to a classroom or another player.",
+    params = "<classroom ID> | <target player> | (<player name> <classroom ID>) | (<player name> <target player name>) | (<classroom ID> <local x pos> <local y pos> <local z pos>)",
     func = function(name, param)
 
         local function teleport(name, othername)
@@ -928,13 +978,13 @@ minetest.register_chatcommand("teleport", {
             local requestedRealm = Realm.realmDict[realmID]
 
             if (requestedRealm == nil) then
-                return false, "Player " .. tostring(othername) .. " is not listed in a realm OR current realm has been deleted; Try teleporting to a different realm and then back..."
+                return false, "Player " .. tostring(othername) .. " is not listed in a classroom OR current classroom has been deleted; Try teleporting to a different classroom and then back..."
             end
 
             requestedRealm:TeleportPlayer(player)
             local pos = otherPlayer:get_pos()
             player:set_pos(pos)
-            return true, "Teleported to " .. tostring(othername) .. " in realm " .. tostring(realmID)
+            return true, "Teleported to " .. tostring(othername) .. " in classroom " .. tostring(realmID)
         end
 
         local paramTable = mc_core.split(param, " ")
@@ -951,7 +1001,7 @@ minetest.register_chatcommand("teleport", {
             end
 
             if (requestedRealm == nil) then
-                return false, "Requested realm of ID: " .. tostring(realmID) .. " does not exist."
+                return false, "Requested classroom ID: " .. tostring(realmID) .. " does not exist."
             end
 
             local player = minetest.get_player_by_name(name)
@@ -960,7 +1010,7 @@ minetest.register_chatcommand("teleport", {
             local worldPosition = requestedRealm:LocalToWorldSpace(position)
 
             if (not requestedRealm:ContainsCoordinate(worldPosition)) then
-                return false, "requested position does not exist in realm " .. tostring(realmID)
+                return false, "requested position does not exist in classroom " .. tostring(realmID)
             end
 
             requestedRealm:TeleportPlayer(player)

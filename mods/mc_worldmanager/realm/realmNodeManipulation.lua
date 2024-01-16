@@ -267,6 +267,36 @@ function Realm:CreateBarriersFast()
     minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] Started creating the classroom, block placement might act unresponsive for a moment."))
 end
 
+---@public
+---Forces emerge of realm nodes.
+---This function dispatches additional asynchronous function calls to prevent crashing the server.
+---@return void
+function Realm:EmergeRealm()
+    local function emerge_callback(blockpos, action,
+                                   num_calls_remaining, context)
+        -- On first call, record number of blocks
+        if not context.total_blocks then
+            context.total_blocks = num_calls_remaining + 1
+            context.loaded_blocks = 0
+        end
+
+        -- Increment number of blocks loaded
+        context.loaded_blocks = context.loaded_blocks + 1
+
+        -- Send finished message
+        if context.total_blocks == context.loaded_blocks then
+            minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] Finished emerging the classroom."))
+        end
+    end
+
+    local context = {} -- persist data between callback calls
+    context.realm = self
+    context.startPos = self.StartPos
+    context.endPos = self.EndPos
+
+    minetest.emerge_area(context.startPos, context.endPos, emerge_callback, context)
+end
+
 function Realm:CleanNodes()
     local count = 0
     local vm = minetest.get_voxel_manip()
