@@ -13,7 +13,7 @@ function Realm:Save_Schematic(schematicName, author, mode)
     author = author or "unknown"
     mode = mode or "old"
 
-    local folderpath = minetest.get_worldpath() .. "\\realmSchematics\\"
+    local folderpath = minetest.get_modpath("mc_worldmanager") .. "/maps/"
 
     minetest.mkdir(folderpath)
 
@@ -47,7 +47,7 @@ function Realm:Save_Schematic(schematicName, author, mode)
             file:flush()
             file:close()
         else
-            Debug.log("Unable to save realm; save file wouldn't open...")
+            Debug.log("Unable to save classroom; save file would not open...")
         end
     else
         self:CleanNodes()
@@ -78,7 +78,7 @@ function Realm:Save_Schematic(schematicName, author, mode)
     local settingsWrote = settings:write()
 
     if (settingsWrote == false) then
-        Debug.log("Unable to save realm; Settings did not write correctly...")
+        Debug.log("Unable to save classroom; Settings did not write correctly.")
     end
 
     schematicManager.registerSchematicPath(schematicName, filepath)
@@ -98,7 +98,7 @@ function Realm:Load_Schematic(schematic, config)
     local schematicEndPos = self:LocalToWorldSpace(config.schematicSize)
     if (schematicEndPos.x > self.EndPos.x or schematicEndPos.y > self.EndPos.y or schematicEndPos.z > self.EndPos.z) then
 
-        Debug.log("Schematic is too large for realm, creating a new realm with the same name but larger size")
+        Debug.log("Schematic is too large for classroom, creating a new classroom with the same name but larger size")
 
         local realm = Realm:New(self.Name, schematicEndPos, true)
         self:Delete()
@@ -126,10 +126,6 @@ function Realm:Load_Schematic(schematic, config)
         self:set_data("UTMInfo", config.utmInfo)
     end
 
-
-
-
-
     --exschem is having issues loading random chunks, need to debug
     --Looks like it fails when there are unknown nodes...
     if (config.format == "exschem") then
@@ -147,7 +143,6 @@ function Realm:Load_Schematic(schematic, config)
 
                 end)
 
-
     elseif (config.format == "worldedit") then
         local file, err = io.open(schematic .. ".wes", 'rb')
         local data = ""
@@ -155,7 +150,7 @@ function Realm:Load_Schematic(schematic, config)
             data = file:read("*a")
             file:close()
         else
-            Debug.log("Unable to save realm; save file wouldn't open...")
+            Debug.log("Unable to save classroom; save file would not open.")
         end
 
         local decompressed = mc_core.decompress(data)

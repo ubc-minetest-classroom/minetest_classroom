@@ -111,10 +111,10 @@ function schematicManager.getSchematic(key)
     return schematic, config
 end
 
--- Scan the world realm schematics folder and add them to the schematics list.
-local files = minetest.get_dir_list(minetest.get_worldpath() .. "\\realmSchematics\\", false)
+-- Scan the map folder and add them to the schematics list.
+local files = minetest.get_dir_list(minetest.get_modpath("mc_worldmanager") .. "/maps/", false)
 for k, fileName in pairs(files) do
-    local filePath = minetest.get_worldpath() .. "\\realmSchematics\\" .. fileName
+    local filePath = minetest.get_modpath("mc_worldmanager") .. "/maps/" .. fileName
     local ext = string.sub(filePath, -5)
     if (ext == ".conf") then
         local path = string.sub(filePath, 1, -6)
