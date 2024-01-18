@@ -1300,7 +1300,7 @@ function lasfile.generate(minp, maxp, loadRealm, filename)
                                 local yy = math.floor(y - loadRealm.StartPos.y) -- Note: Minetest Y is LiDAR Z
                                 local zz = math.floor(z - loadRealm.StartPos.z) -- Note: Minetest Z is LiDAR Y
                                 
-                                if loadRealm.MetaStorage.symbology_attribute == "Classification" and voxels[xx][zz][yy] then
+                                if loadRealm.MetaStorage.symbology_attribute == "Classification" and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] then
                                     local class = voxels[xx][zz][yy].majority_class
                                     if class then
                                         -- Prepare and index the voxel manipulator
@@ -1382,6 +1382,9 @@ function lasfile.generate(minp, maxp, loadRealm, filename)
         vm:set_param2_data(param2)
         vm:write_to_map(true)
         
+        -- Clean up
+        vm, data, param2, voxels = nil, nil, nil, nil
+
     end
 end
 
