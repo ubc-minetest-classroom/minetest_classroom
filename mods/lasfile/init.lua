@@ -1250,7 +1250,7 @@ function lasfile.create_classroom(filename, realmName, pname, sizeX, sizeY, size
     newRealm.MetaStorage.symbology_attribute = attribute or nil
     newRealm.MetaStorage.symbology_palette = palette or nil
     newRealm:set_data("owner", pname)
-    newRealm:CreateBarriersFast()
+    newRealm:CreateBarriers()
     newRealm:CallOnCreateCallbacks()
     newRealm.MetaStorage.emerge = true
     return newRealm
