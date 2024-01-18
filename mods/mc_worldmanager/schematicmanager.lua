@@ -113,7 +113,6 @@ end
 
 -- Scan the world realm schematics folder and add them to the schematics list.
 local files = minetest.get_dir_list(minetest.get_worldpath() .. "\\realmSchematics\\", false)
-if files then minetest.chat_send_all("DEBUG: schematic files is not nil") end
 for k, fileName in pairs(files) do
     local filePath = minetest.get_worldpath() .. "\\realmSchematics\\" .. fileName
     local ext = string.sub(filePath, -5)
@@ -121,6 +120,5 @@ for k, fileName in pairs(files) do
         local path = string.sub(filePath, 1, -6)
         local key = string.sub(fileName, 1, -6)
         schematicManager.registerSchematicPath(key, path)
-        minetest.chat_send_all("DEBUG: Registered schematic key "..key.." at path "..path)
     end
 end

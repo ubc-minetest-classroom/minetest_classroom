@@ -497,7 +497,7 @@ commands["schematic"] = {
             end
             return true, "Registered "..count.." schematics"
         else
-            return false, "unknown subcommand. Try classroom schematic list | classroom schematic save | classroom schematic load"
+            return false, "unknown subcommand. Try classroom schematic list | classroom schematic save | classroom schematic load | classroom schematic register"
         end
     end,
     help = "classroom schematic [save | load | register] - Save a classroom ID to a Minetest schematic (.mts), load a Minetest schematic file basename into a new classroom, or force register Minetest schematics stored in the world/realmSchematics folder.", }
