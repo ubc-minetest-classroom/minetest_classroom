@@ -952,17 +952,34 @@ function lasfile.get_points_by_class(points,classcode)
     return classPoints
 end
 
-function lasfile.get_voxels(points, xmin, ymin, zmin, xmax, ymax, zmax, attributes)
+function lasfile.get_voxels(filename, points, xmin, ymin, zmin, xmax, ymax, zmax, attributes)
 
-    -- Get the dims
-    xmin = tonumber(xmin) or math.huge
-    ymin = tonumber(ymin) or math.huge
-    zmin = tonumber(zmin) or math.huge
-    xmax = tonumber(xmax) or -math.huge
-    ymax = tonumber(ymax) or -math.huge
-    zmax = tonumber(zmax) or -math.huge
+    -- Save some time by reading the header
+    local lasheader = lasfile.read_header(filename)
+    local minx = lasheader.MinX
+    local maxx = lasheader.MaxX
+    local miny = lasheader.MinY
+    local maxy = lasheader.MaxY
+    local minz = lasheader.MinZ -- Note Z here is absolute elevation above the vertical datum
+    local maxz = lasheader.MaxZ
 
-    -- Find the bounding extent of the class points
+    -- User-provided dims or data dims
+    xmin = tonumber(xmin) or minx
+    ymin = tonumber(ymin) or miny
+    zmin = tonumber(zmin) or minz
+    xmax = tonumber(xmax) or maxx
+    ymax = tonumber(ymax) or maxy
+    zmax = tonumber(zmax) or maxz
+
+    -- Ensure the dims are always within the range of the actual data
+    xmin = math.max(xmin, minx)
+    ymin = math.max(ymin, miny)
+    zmin = math.max(zmin, minz)
+    xmax = math.min(xmax, maxx)
+    ymax = math.min(ymax, maxy)
+    zmax = math.min(zmax, maxz)
+
+    --[[ -- Find the bounding extent of the class points
     for _, point in ipairs(points) do
         xmin = math.min(xmin, point.X)
         ymin = math.min(ymin, point.Y)
@@ -970,21 +987,32 @@ function lasfile.get_voxels(points, xmin, ymin, zmin, xmax, ymax, zmax, attribut
         xmax = math.max(xmax, point.X)
         ymax = math.max(ymax, point.Y)
         zmax = math.max(zmax, point.Z)
-    end
+    end ]]
 
     local xdim, ydim, zdim
     xdim = math.ceil(xmax - xmin) + 1
     ydim = math.ceil(ymax - ymin) + 1
     zdim = math.ceil(zmax - zmin) + 1
 
-    -- Initialize the voxels structure to store statistics
-    --minetest.chat_send_all("DEBUG: Initializing voxel structure with size {x="..xdim..", y="..ydim..", z="..zdim.."}")
     local voxels = {}
---[[     for x = 1, xdim do
-        voxels[x] = {}
-        for y = 1, ydim do
-            voxels[x][y] = {}
-            for z = 1, zdim do
+    minetest.chat_send_all("DEBUG: Calculating requested statistics on the voxels for:")
+    for attribute_name, bool in pairs(attributes) do
+        if bool then
+            minetest.chat_send_all("           "..attribute_name)
+        end
+    end
+    for _, point in ipairs(points) do
+        if point.X >= xmin and point.X <= xmax and point.Y >= ymin and point.Y <= ymax and point.Z >= zmin and point.Z <= zmax then
+
+            -- Scale to cartesian coordinates
+            local x = math.floor(point.X - xmin) + 1
+            local y = math.floor(point.Y - ymin) + 1
+            local z = math.floor(point.Z - zmin) + 1
+
+            -- We only hold voxels for locations where we have points
+            if not voxels[x] then voxels[x] = {} end
+            if not voxels[x][y] then voxels[x][y] = {} end
+            if not voxels[x][y][z] then 
                 voxels[x][y][z] = { 
                     class = {}, 
                     intensity = {}, 
@@ -996,86 +1024,58 @@ function lasfile.get_voxels(points, xmin, ymin, zmin, xmax, ymax, zmax, attribut
                     nir = {}
                 }
             end
-        end
-    end ]]
 
-    minetest.chat_send_all("DEBUG: Calculating requested statistics on the voxels for:")
-    for attribute_name, bool in pairs(attributes) do
-        if bool then
-            minetest.chat_send_all("           "..attribute_name)
-        end
-    end
-    for _, point in ipairs(points) do
-        local x = math.floor(point.X - xmin) + 1
-        local y = math.floor(point.Y - ymin) + 1
-        local z = math.floor(point.Z - zmin) + 1
-
-        -- We only hold voxels for locations where we have points
-        if not voxels[x] then voxels[x] = {} end
-        if not voxels[x][y] then voxels[x][y] = {} end
-        if not voxels[x][y][z] then 
-            voxels[x][y][z] = { 
-                class = {}, 
-                intensity = {}, 
-                point_count = 0,
-                return_number = {},
-                red = {},
-                green = {},
-                blue = {}, 
-                nir = {}
-            }
-        end
-
-        -- Classification code statistics
-        if attributes["Classification"] then
-            local c = point.Classification
-            if c then
-                voxels[x][y][z].class[c] = (voxels[x][y][z].class[c] or 0) + 1
+            -- Classification code statistics
+            if attributes["Classification"] then
+                local c = point.Classification
+                if c then
+                    voxels[x][y][z].class[c] = (voxels[x][y][z].class[c] or 0) + 1
+                end
             end
-        end
 
-        -- Intensity statistics
-        if attributes["Intensity"] then
-            local intensity = point.Intensity
-            if intensity then
-                table.insert(voxels[x][y][z].intensity, intensity)
+            -- Intensity statistics
+            if attributes["Intensity"] then
+                local intensity = point.Intensity
+                if intensity then
+                    table.insert(voxels[x][y][z].intensity, intensity)
+                end
             end
-        end
 
-        -- Return number statistics
-        if attributes["ReturnNumber"] then
-            local r = point.ReturnNumber
-            if r then
-                voxels[x][y][z].return_number[r] = (voxels[x][y][z].return_number[r] or 0) + 1
+            -- Return number statistics
+            if attributes["ReturnNumber"] then
+                local r = point.ReturnNumber
+                if r then
+                    voxels[x][y][z].return_number[r] = (voxels[x][y][z].return_number[r] or 0) + 1
+                end
             end
-        end
 
-        -- Count of points in each voxel
-        voxels[x][y][z].point_count = voxels[x][y][z].point_count + 1
+            -- Count of points in each voxel
+            voxels[x][y][z].point_count = voxels[x][y][z].point_count + 1
 
-        -- RGB + NIR values
-        if attributes["Red"] then
-            local red = point.Red
-            if red then
-                table.insert(voxels[x][y][z].red, red)
+            -- RGB + NIR values
+            if attributes["Red"] then
+                local red = point.Red
+                if red then
+                    table.insert(voxels[x][y][z].red, red)
+                end
             end
-        end
-        if attributes["Green"] then
-            local green = point.Green
-            if green then
-                table.insert(voxels[x][y][z].green, green)
+            if attributes["Green"] then
+                local green = point.Green
+                if green then
+                    table.insert(voxels[x][y][z].green, green)
+                end
             end
-        end
-        if attributes["Blue"] then
-            local blue = point.Blue
-            if blue then
-                table.insert(voxels[x][y][z].blue, blue)
+            if attributes["Blue"] then
+                local blue = point.Blue
+                if blue then
+                    table.insert(voxels[x][y][z].blue, blue)
+                end
             end
-        end
-        if attributes["NIR"] then
-            local nir = point.NIR
-            if nir then
-                table.insert(voxels[x][y][z].nir, nir)
+            if attributes["NIR"] then
+                local nir = point.NIR
+                if nir then
+                    table.insert(voxels[x][y][z].nir, nir)
+                end
             end
         end
     end
@@ -1410,10 +1410,10 @@ end)
 
 --- TODO: Retire these chat command and move these function calls to the teacher controller GUI, this is for testing only.
 minetest.register_chatcommand("las2ground", {
-    params = "<file_name> <realm_name> <xmin> <xmax> <ymin> <ymax> <attribute> <palette>",
+    params = "<file_name> <realm_name> <xmin> <xmax> <ymin> <ymax> <zmin> <zmax> <attribute> <palette>",
     description = "generate the map from las",
     func = function (name,params)
-        local filename, realmname, xmin, xmax, ymin, ymax, attribute, palette = params:match("^(%S*%.las)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)$")
+        local filename, realmname, xmin, xmax, ymin, ymax, zmin, zmax, attribute, palette = params:match("^(%S*%.las)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)$")
         if not filename then
             minetest.chat_send_player(name,"Expected .las filename, but none was provided or not formatted correctly.") 
             return
@@ -1424,15 +1424,17 @@ minetest.register_chatcommand("las2ground", {
             return
         end
 
-        local realmname2, xmin2, xmax2, ymin2, ymax2, attribute2, palette2
+        local realmname2, xmin2, xmax2, ymin2, ymax2, zmin2, zmax2, attribute2, palette2
         realmname2 = realmname or "nil"
         xmin2 = xmin or "nil"
         xmax2 = xmax or "nil"
         ymin2 = ymin or "nil"
         ymax2 = ymax or "nil"
+        zmin2 = zmin or "nil"
+        zmax2 = zmax or "nil"
         attribute2 = attribute or "nil"
         palette2 = palette or "nil"
-        minetest.chat_send_all("DEBUG: Command was parsed as: <file_name> "..filename.." <realm_name> "..realmname2.." <xmin> "..xmin2.." <xmax> "..xmax2.." <ymin> "..ymin2.." <ymax> "..ymax2.." <attribute> "..attribute2.." <palette> "..palette2)
+        minetest.chat_send_all("DEBUG: Command was parsed as: <file_name> "..filename.." <realm_name> "..realmname2.." <xmin> "..xmin2.." <xmax> "..xmax2.." <ymin> "..ymin2.." <ymax> "..ymax2.." <zmin> "..zmin2.." <zmax> "..zmax2.." <attribute> "..attribute2.." <palette> "..palette2)
 
         -- Initialize the data structure for the las file
         local lasdb = minetest.deserialize(lasfile.meta:get_string("las_db")) or {header = {}, points = {}, voxels = {}, extent = {}, size = {}, crs = {}}
@@ -1513,14 +1515,14 @@ minetest.register_chatcommand("las2ground", {
                 minetest.chat_send_player(name,("%02d:%02d:%02d"):format(time.hour, time.min, time.sec).." [lasfile] No points intersected the processing extent.")
                 return
             end
-            local voxels, xmin, ymin, zmin, xmax, ymax, zmax = lasfile.get_voxels(points, xmin, ymin, zmin, xmax, ymax, zmax, attributes)
+            local voxels, xmin, ymin, zmin, xmax, ymax, zmax = lasfile.get_voxels(filename, points, xmin, ymin, zmin, xmax, ymax, zmax, attributes)
             lasdb.voxels[filename] = voxels
 
             -- Size refers to the calculated Minetest dimensions of the classroom to contain all voxels (Note: Y dimension in Minetest is equivalent to Z in LAS)
             local size = {
                 X = math.ceil(xmax - xmin) + 1,
                 -- The height (Y) will always be a minimum of 80 nodes or a buffer of 80 nodes above the max Z of the LAS
-                Y = math.max(math.ceil(lasdb.header[filename].MaxZ + 80), 80),
+                Y = math.max(math.ceil(zmax - zmin + 80), 80),
                 Z = math.ceil(ymax - ymin) + 1,
             }
             lasdb.size[filename] = size
