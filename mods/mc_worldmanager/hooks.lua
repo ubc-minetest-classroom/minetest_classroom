@@ -54,16 +54,15 @@ minetest.register_on_joinplayer(function(player, last_login)
 
     local realm = Realm.GetRealmFromPlayer(player)
 
-    -- don't allow players to enter realms they no longer have access to when joining
-    if not realm:Joinable(player) then
-        realm = mc_worldManager.GetSpawnRealm()
-        mc_core.temp_unfreeze_and_run(player, realm.TeleportPlayer, realm, player)
-        pmeta:set_int("realm", realm.ID)
-    end
-
-    mc_worldManager.UpdateRealmHud(player)
-
     if (realm ~= nil) then
+        -- don't allow players to enter realms they no longer have access to when joining
+        if not realm:Joinable(player) then
+            realm = mc_worldManager.GetSpawnRealm()
+            mc_core.temp_unfreeze_and_run(player, realm.TeleportPlayer, realm, player)
+            pmeta:set_int("realm", realm.ID)
+        end
+
+        mc_worldManager.UpdateRealmHud(player)
         realm:RegisterPlayer(player)
         realm:RunTeleportInFunctions(player)
         realm:ApplyPrivileges(player)

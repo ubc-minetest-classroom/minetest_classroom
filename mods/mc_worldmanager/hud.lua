@@ -99,29 +99,31 @@ function mc_worldManager.UpdatePositionHud(player, positionMode)
     end
 
     local realm = Realm.GetRealmFromPlayer(player)
-    local seaLevel = realm:get_data("seaLevel")
+    if realm then
+        local seaLevel = realm:get_data("seaLevel")
 
-    mc_worldManager.hud:change(player, "worldManager:position", {
-        hud_elem_type = "text",
-        position = { x = 0, y = 1 },
-        offset = { x = 5, y = -25 },
-        alignment = { x = "right", y = "up" },
-        text = positionText[positionMode](player, realm),
-        color = 0xFFFFFF,
-    })
+        mc_worldManager.hud:change(player, "worldManager:position", {
+            hud_elem_type = "text",
+            position = { x = 0, y = 1 },
+            offset = { x = 5, y = -25 },
+            alignment = { x = "right", y = "up" },
+            text = positionText[positionMode](player, realm),
+            color = 0xFFFFFF,
+        })
 
-    if (seaLevel == nil) then
-        seaLevel = realm.StartPos.y
+        if (seaLevel == nil) then
+            seaLevel = realm.StartPos.y
+        end
+
+        mc_worldManager.hud:change(player, "worldManager:elevation", {
+            hud_elem_type = "text",
+            position = { x = 0, y = 1 },
+            offset = { x = 5, y = -45 },
+            alignment = { x = "right", y = "up" },
+            text = "Elevation: " .. math.ceil(player:get_pos().y - seaLevel) .. " m",
+            color = 0xFFFFFF,
+        })
     end
-
-    mc_worldManager.hud:change(player, "worldManager:elevation", {
-        hud_elem_type = "text",
-        position = { x = 0, y = 1 },
-        offset = { x = 5, y = -45 },
-        alignment = { x = "right", y = "up" },
-        text = "Elevation: " .. math.ceil(player:get_pos().y - seaLevel) .. " m",
-        color = 0xFFFFFF,
-    })
 
     return true
 end
