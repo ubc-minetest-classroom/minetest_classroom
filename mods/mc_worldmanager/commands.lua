@@ -482,11 +482,10 @@ commands["schematic"] = {
             local newRealm = Realm:NewFromSchematic(realmName, key)
             return true, "creat[ing][ed] new classroom with name: " .. newRealm.Name .. "and ID: " .. newRealm.ID .. " from schematic with key " .. key
         elseif (params[1] == "register") then
-            local schematic_path = minetest.get_worldpath() .. "\\realmSchematics\\"
-            local files = minetest.get_dir_list(minetest.get_worldpath() .. "\\realmSchematics\\", false)
+            local files = minetest.get_dir_list(minetest.get_modpath("mc_worldmanager") .. "/maps/", false)
             local count = 0
             for k, fileName in pairs(files) do
-                local filePath = minetest.get_worldpath() .. "\\realmSchematics\\" .. fileName
+                local filePath = minetest.get_modpath("mc_worldmanager") .. "/maps/" .. fileName
                 local ext = string.sub(filePath, -5)
                 if (ext == ".conf") then
                     local path = string.sub(filePath, 1, -6)
@@ -500,7 +499,7 @@ commands["schematic"] = {
             return false, "unknown subcommand. Try classroom schematic list | classroom schematic save | classroom schematic load | classroom schematic register"
         end
     end,
-    help = "classroom schematic [save | load | register] - Save a classroom ID to a Minetest schematic (.mts), load a Minetest schematic file basename into a new classroom, or force register Minetest schematics stored in the world/realmSchematics folder.", }
+    help = "classroom schematic [save <classroomID> | load <classroomName> | register] - Save a classroom ID to a Minetest schematic (.mts), load a Minetest schematic file basename into a new classroom, or force register Minetest schematics stored in the world/realmSchematics folder.", }
 
 commands["setspawn"] = {
     func = function(name, params)
