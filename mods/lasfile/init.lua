@@ -1520,6 +1520,8 @@ minetest.register_chatcommand("las2ground", {
             end
             local voxels, xmin, ymin, zmin, xmax, ymax, zmax = lasfile.get_voxels(filename, points, xmin, ymin, zmin, xmax, ymax, zmax, attributes)
             lasdb.voxels[filename] = voxels
+            points = nil
+            voxels = nil
 
             -- Size refers to the calculated Minetest dimensions of the classroom to contain all voxels (Note: Y dimension in Minetest is equivalent to Z in LAS)
             local size = {
@@ -1551,9 +1553,10 @@ minetest.register_chatcommand("las2ground", {
         end
 
         lasfile.generating_lasdb = lasdb
+        lasdb = nil
 
         -- Create the realm, we do not need to capture the output here
-        _ = lasfile.create_classroom(filename, realmname, name, lasdb.size[filename].X, lasdb.size[filename].Y, lasdb.size[filename].Z, attribute, palette)
+        _ = lasfile.create_classroom(filename, realmname, name, lasfile.generating_lasdb.size[filename].X, lasfile.generating_lasdb.size[filename].Y, lasfile.generating_lasdb.size[filename].Z, attribute, palette)
     end
 })
 
