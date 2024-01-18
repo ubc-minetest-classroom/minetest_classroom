@@ -78,21 +78,15 @@ function schematicManager.getSchematic(key)
     local realm_create_function_name = settings:get("realm_create_function_name") or nil
     local realm_delete_function_name = settings:get("realm_delete_function_name") or nil
 
-
     local offset_x = tonumber(settings:get("offset_x")) or 0
     local offset_y = tonumber(settings:get("offset_y")) or 0
     local offset_z = tonumber(settings:get("offset_z")) or 0
 
-
-
-  
-   
     local utm_zone = tonumber(settings:get("utm_zone") or 1)
     local utm_hemisphere = settings:get("utm_hemisphere") or "N"
     local utm_origin_easting = tonumber(settings:get("utm_origin_easting")) or 0
     local utm_origin_northing = tonumber(settings:get("utm_origin_northing")) or 0
     local elevation_offset = tonumber(settings:get("elevation_offset")) or 0
-
 
     local _miscData = {}
 
@@ -117,16 +111,16 @@ function schematicManager.getSchematic(key)
     return schematic, config
 end
 
-
 -- Scan the world realm schematics folder and add them to the schematics list.
 local files = minetest.get_dir_list(minetest.get_worldpath() .. "\\realmSchematics\\", false)
+if files then minetest.chat_send_all("DEBUG: schematic files is not nil") end
 for k, fileName in pairs(files) do
     local filePath = minetest.get_worldpath() .. "\\realmSchematics\\" .. fileName
     local ext = string.sub(filePath, -5)
-
     if (ext == ".conf") then
         local path = string.sub(filePath, 1, -6)
         local key = string.sub(fileName, 1, -6)
         schematicManager.registerSchematicPath(key, path)
+        minetest.chat_send_all("DEBUG: Registered schematic key "..key.." at path "..path)
     end
 end
