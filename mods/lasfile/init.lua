@@ -1245,7 +1245,6 @@ function lasfile.create_classroom(filename, realmName, pname, sizeX, sizeY, size
     newRealm.EndPos.x = newRealm.StartPos.x + sizeX + 1
     newRealm.EndPos.y = newRealm.StartPos.y + sizeY + 1
     newRealm.EndPos.z = newRealm.StartPos.z + sizeZ + 1
-    newRealm.MetaStorage.emerge = true
     newRealm.MetaStorage.las_filename = filename
     -- Symbology settings are used below only for visualizing LiDAR point clouds
     newRealm.MetaStorage.symbology_attribute = attribute or nil
@@ -1253,6 +1252,7 @@ function lasfile.create_classroom(filename, realmName, pname, sizeX, sizeY, size
     newRealm:set_data("owner", pname)
     newRealm:CreateBarriersFast()
     newRealm:CallOnCreateCallbacks()
+    newRealm.MetaStorage.emerge = true
     return newRealm
 end
 
