@@ -953,7 +953,6 @@ function lasfile.get_points_by_class(points,classcode)
 end
 
 function lasfile.get_voxels(points, xmin, ymin, zmin, xmax, ymax, zmax, attributes)
-    local voxels = {}
 
     -- Get the dims
     xmin = tonumber(xmin) or math.huge
@@ -979,9 +978,9 @@ function lasfile.get_voxels(points, xmin, ymin, zmin, xmax, ymax, zmax, attribut
     zdim = math.ceil(zmax - zmin) + 1
 
     -- Initialize the voxels structure to store statistics
-    minetest.chat_send_all("DEBUG: Initializing voxel structure with size {x="..xdim..", y="..ydim..", z="..zdim.."}")
+    --minetest.chat_send_all("DEBUG: Initializing voxel structure with size {x="..xdim..", y="..ydim..", z="..zdim.."}")
     local voxels = {}
-    for x = 1, xdim do
+--[[     for x = 1, xdim do
         voxels[x] = {}
         for y = 1, ydim do
             voxels[x][y] = {}
@@ -998,7 +997,7 @@ function lasfile.get_voxels(points, xmin, ymin, zmin, xmax, ymax, zmax, attribut
                 }
             end
         end
-    end
+    end ]]
 
     minetest.chat_send_all("DEBUG: Calculating requested statistics on the voxels for:")
     for attribute_name, bool in pairs(attributes) do
@@ -1010,6 +1009,22 @@ function lasfile.get_voxels(points, xmin, ymin, zmin, xmax, ymax, zmax, attribut
         local x = math.floor(point.X - xmin) + 1
         local y = math.floor(point.Y - ymin) + 1
         local z = math.floor(point.Z - zmin) + 1
+
+        -- We only hold voxels for locations where we have points
+        if not voxels[x] then voxels[x] = {} end
+        if not voxels[x][y] then voxels[x][y] = {} end
+        if not voxels[x][y][z] then 
+            voxels[x][y][z] = { 
+                class = {}, 
+                intensity = {}, 
+                point_count = 0,
+                return_number = {},
+                red = {},
+                green = {},
+                blue = {}, 
+                nir = {}
+            }
+        end
 
         -- Classification code statistics
         if attributes["Classification"] then
@@ -1065,145 +1080,147 @@ function lasfile.get_voxels(points, xmin, ymin, zmin, xmax, ymax, zmax, attribut
         end
     end
 
-    -- Calculate statistics for each voxel
+    -- Calculate statistics for all non-empty voxels
     for x = 1, xdim do
         for y = 1, ydim do
             for z = 1, zdim do
-                -- Calculate class statistics
-                if attributes["Classification"] then
-                    local class_statistics = {}
-                    for class_code, count in pairs(voxels[x][y][z].class) do
-                        table.insert(class_statistics, { class = class_code, count = count })
-                    end
-                
-                    -- Find majority class code
-                    local majority_class, majority_count = nil, 0
-                    for class_code, count in pairs(voxels[x][y][z].class) do
-                        if count > majority_count then
-                            majority_class = class_code
-                            majority_count = count
+                if voxels[x] and voxels[x][y] and voxels[x][y][z] then
+                    -- Calculate class statistics
+                    if attributes["Classification"] then
+                        local class_statistics = {}
+                        for class_code, count in pairs(voxels[x][y][z].class) do
+                            table.insert(class_statistics, { class = class_code, count = count })
                         end
+                    
+                        -- Find majority class code
+                        local majority_class, majority_count = nil, 0
+                        for class_code, count in pairs(voxels[x][y][z].class) do
+                            if count > majority_count then
+                                majority_class = class_code
+                                majority_count = count
+                            end
+                        end
+                        voxels[x][y][z].class_statistics = class_statistics
+                        voxels[x][y][z].majority_class = majority_class
+                        voxels[x][y][z].majority_count = majority_count
                     end
-                    voxels[x][y][z].class_statistics = class_statistics
-                    voxels[x][y][z].majority_class = majority_class
-                    voxels[x][y][z].majority_count = majority_count
-                end
 
-                -- Calculate intensity statistics
-                if attributes["Intensity"] then
-                    local intensity_values = voxels[x][y][z].intensity
-                    local min_intensity, max_intensity, mean_intensity, range_intensity
-                    if intensity_values and #intensity_values > 0 then
-                        min_intensity = math.min(unpack(intensity_values))
-                        max_intensity = math.max(unpack(intensity_values))
-                        mean_intensity = 0
-                        for _, value in ipairs(intensity_values) do
-                            mean_intensity = mean_intensity + value
+                    -- Calculate intensity statistics
+                    if attributes["Intensity"] then
+                        local intensity_values = voxels[x][y][z].intensity
+                        local min_intensity, max_intensity, mean_intensity, range_intensity
+                        if intensity_values and #intensity_values > 0 then
+                            min_intensity = math.min(unpack(intensity_values))
+                            max_intensity = math.max(unpack(intensity_values))
+                            mean_intensity = 0
+                            for _, value in ipairs(intensity_values) do
+                                mean_intensity = mean_intensity + value
+                            end
+                            mean_intensity = mean_intensity / #intensity_values
+                            range_intensity = max_intensity - min_intensity
                         end
-                        mean_intensity = mean_intensity / #intensity_values
-                        range_intensity = max_intensity - min_intensity
+                        voxels[x][y][z].intensity_statistics = {
+                            min = min_intensity,
+                            max = max_intensity,
+                            mean = mean_intensity,
+                            range = range_intensity,
+                        }
                     end
-                    voxels[x][y][z].intensity_statistics = {
-                        min = min_intensity,
-                        max = max_intensity,
-                        mean = mean_intensity,
-                        range = range_intensity,
-                    }
-                end
 
-                -- Find majority return number
-                if attributes["ReturnNumber"] then
-                    local majority_return, majority_return_count = nil, 0
-                    for return_number, count in pairs(voxels[x][y][z].return_number) do
-                        if count > majority_return_count then
-                            majority_return = return_number
-                            majority_return_count = count
+                    -- Find majority return number
+                    if attributes["ReturnNumber"] then
+                        local majority_return, majority_return_count = nil, 0
+                        for return_number, count in pairs(voxels[x][y][z].return_number) do
+                            if count > majority_return_count then
+                                majority_return = return_number
+                                majority_return_count = count
+                            end
                         end
+                        voxels[x][y][z].majority_return = majority_return
+                        voxels[x][y][z].majority_return_count = majority_return_count
                     end
-                    voxels[x][y][z].majority_return = majority_return
-                    voxels[x][y][z].majority_return_count = majority_return_count
-                end
 
-                -- Calculate Red, Green, Blue, NIR statistics
-                if attributes["Red"] then
-                    local min_red, max_red, mean_red, range_red
-                    local red_values = voxels[x][y][z].red
-                    if red_values and #red_values > 0 then
-                        min_red = math.min(unpack(red_values))
-                        max_red = math.max(unpack(red_values))
-                        mean_red = 0
-                        for _, value in ipairs(red_values) do
-                            mean_red = mean_red + value
+                    -- Calculate Red, Green, Blue, NIR statistics
+                    if attributes["Red"] then
+                        local min_red, max_red, mean_red, range_red
+                        local red_values = voxels[x][y][z].red
+                        if red_values and #red_values > 0 then
+                            min_red = math.min(unpack(red_values))
+                            max_red = math.max(unpack(red_values))
+                            mean_red = 0
+                            for _, value in ipairs(red_values) do
+                                mean_red = mean_red + value
+                            end
+                            mean_red = mean_red / #red_values
+                            range_red = max_red - min_red
                         end
-                        mean_red = mean_red / #red_values
-                        range_red = max_red - min_red
+                        voxels[x][y][z].red_statistics = {
+                            min = min_red,
+                            max = max_red,
+                            mean = mean_red,
+                            range = range_red,
+                        }
                     end
-                    voxels[x][y][z].red_statistics = {
-                        min = min_red,
-                        max = max_red,
-                        mean = mean_red,
-                        range = range_red,
-                    }
-                end
-                if attributes["Green"] then
-                    local min_green, max_green, mean_green, range_green
-                    local green_values = voxels[x][y][z].green
-                    if green_values and #green_values > 0 then
-                        min_green = math.min(unpack(green_values))
-                        max_green = math.max(unpack(green_values))
-                        mean_green = 0
-                        for _, value in ipairs(green_values) do
-                            mean_green = mean_green + value
+                    if attributes["Green"] then
+                        local min_green, max_green, mean_green, range_green
+                        local green_values = voxels[x][y][z].green
+                        if green_values and #green_values > 0 then
+                            min_green = math.min(unpack(green_values))
+                            max_green = math.max(unpack(green_values))
+                            mean_green = 0
+                            for _, value in ipairs(green_values) do
+                                mean_green = mean_green + value
+                            end
+                            mean_green = mean_green / #green_values
+                            range_green = max_green - min_green
                         end
-                        mean_green = mean_green / #green_values
-                        range_green = max_green - min_green
+                        voxels[x][y][z].green_statistics = {
+                            min = min_green,
+                            max = max_green,
+                            mean = mean_green,
+                            range = range_green,
+                        }
                     end
-                    voxels[x][y][z].green_statistics = {
-                        min = min_green,
-                        max = max_green,
-                        mean = mean_green,
-                        range = range_green,
-                    }
-                end
-                if attributes["Blue"] then
-                    local min_blue, max_blue, mean_blue, range_blue
-                    local blue_values = voxels[x][y][z].blue
-                    if blue_values and #blue_values > 0 then
-                        min_blue = math.min(unpack(blue_values))
-                        max_blue = math.max(unpack(blue_values))
-                        mean_blue = 0
-                        for _, value in ipairs(blue_values) do
-                            mean_blue = mean_blue + value
+                    if attributes["Blue"] then
+                        local min_blue, max_blue, mean_blue, range_blue
+                        local blue_values = voxels[x][y][z].blue
+                        if blue_values and #blue_values > 0 then
+                            min_blue = math.min(unpack(blue_values))
+                            max_blue = math.max(unpack(blue_values))
+                            mean_blue = 0
+                            for _, value in ipairs(blue_values) do
+                                mean_blue = mean_blue + value
+                            end
+                            mean_blue = mean_blue / #blue_values
+                            range_blue = max_blue - min_blue
                         end
-                        mean_blue = mean_blue / #blue_values
-                        range_blue = max_blue - min_blue
+                        voxels[x][y][z].blue_statistics = {
+                            min = min_blue,
+                            max = max_blue,
+                            mean = mean_blue,
+                            range = range_blue,
+                        }
                     end
-                    voxels[x][y][z].blue_statistics = {
-                        min = min_blue,
-                        max = max_blue,
-                        mean = mean_blue,
-                        range = range_blue,
-                    }
-                end
-                if attributes["NIR"] then
-                    local min_nir, max_nir, mean_nir, range_nir
-                    local nir_values = voxels[x][y][z].nir_values
-                    if nir_values and #nir_values > 0 then
-                        min_nir = math.min(unpack(nir_values))
-                        max_nir = math.max(unpack(nir_values))
-                        mean_nir = 0
-                        for _, value in ipairs(nir_values) do
-                            mean_nir = mean_nir + value
+                    if attributes["NIR"] then
+                        local min_nir, max_nir, mean_nir, range_nir
+                        local nir_values = voxels[x][y][z].nir_values
+                        if nir_values and #nir_values > 0 then
+                            min_nir = math.min(unpack(nir_values))
+                            max_nir = math.max(unpack(nir_values))
+                            mean_nir = 0
+                            for _, value in ipairs(nir_values) do
+                                mean_nir = mean_nir + value
+                            end
+                            mean_nir = mean_nir / #nir_values
+                            range_nir = max_nir - min_nir
                         end
-                        mean_nir = mean_nir / #nir_values
-                        range_nir = max_nir - min_nir
+                        voxels[x][y][z].nir_statistics = {
+                            min = min_nir,
+                            max = max_nir,
+                            mean = mean_nir,
+                            range = range_nir,
+                        }
                     end
-                    voxels[x][y][z].nir_statistics = {
-                        min = min_nir,
-                        max = max_nir,
-                        mean = mean_nir,
-                        range = range_nir,
-                    }
                 end
             end
         end
@@ -1280,8 +1297,8 @@ function lasfile.generate(minp, maxp, loadRealm, filename)
                             -- Check that the x of the chunk is within the realm
                             if x > loadRealm.StartPos.x and x < loadRealm.EndPos.x then 
                                 local xx = math.floor(x - loadRealm.StartPos.x)
-                                local zz = math.floor(z - loadRealm.StartPos.z)
-                                local yy = math.floor(y - loadRealm.StartPos.y)
+                                local yy = math.floor(y - loadRealm.StartPos.y) -- Note: Minetest Y is LiDAR Z
+                                local zz = math.floor(z - loadRealm.StartPos.z) -- Note: Minetest Z is LiDAR Y
                                 
                                 if loadRealm.MetaStorage.symbology_attribute == "Classification" and voxels[xx][zz][yy] then
                                     local class = voxels[xx][zz][yy].majority_class
@@ -1309,45 +1326,45 @@ function lasfile.generate(minp, maxp, loadRealm, filename)
                                         end
                                     end
                                 elseif loadRealm.MetaStorage.symbology_attribute == "RGB" then
-                                    if  voxels[xx][zz][yy] and voxels[xx][zz][yy].red_statistics and voxels[xx][zz][yy].red_statistics.mean and voxels[xx][zz][yy].green_statistics and voxels[xx][zz][yy].green_statistics.mean and voxels[xx][zz][yy].blue_statistics and voxels[xx][zz][yy].blue_statistics.mean then
-                                        local vi = area:index(x, y, z)
-                                        -- TODO: allow user input for the logical ranges below
-                                        local red = rgb8bit.map_value_to_3_bits(voxels[xx][zz][yy].red_statistics.mean, 0, 255) -- max is usually 255 (short) or 65535 (long)
-                                        local green = rgb8bit.map_value_to_3_bits(voxels[xx][zz][yy].green_statistics.mean, 0, 255)
-                                        local blue = rgb8bit.map_value_to_2_bits(voxels[xx][zz][yy].blue_statistics.mean, 0, 255)
-                                        data[vi] = minetest.get_content_id("rgb8bit:rgb8bit")
-                                        param2[vi] = rgb8bit.get_palette_index_from_rgb(red, green, blue)
+                                    if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].red_statistics and voxels[xx][zz][yy].red_statistics.mean and voxels[xx][zz][yy].green_statistics and voxels[xx][zz][yy].green_statistics.mean and voxels[xx][zz][yy].blue_statistics and voxels[xx][zz][yy].blue_statistics.mean then
+                                            local vi = area:index(x, y, z)
+                                            -- TODO: allow user input for the logical ranges below
+                                            local red = rgb8bit.map_value_to_3_bits(voxels[xx][zz][yy].red_statistics.mean, 0, 255) -- max is usually 255 (short) or 65535 (long)
+                                            local green = rgb8bit.map_value_to_3_bits(voxels[xx][zz][yy].green_statistics.mean, 0, 255)
+                                            local blue = rgb8bit.map_value_to_2_bits(voxels[xx][zz][yy].blue_statistics.mean, 0, 255)
+                                            data[vi] = minetest.get_content_id("rgb8bit:rgb8bit")
+                                            param2[vi] = rgb8bit.get_palette_index_from_rgb(red, green, blue)
                                     end
                                 elseif loadRealm.MetaStorage.symbology_attribute == "Red" then
-                                    if voxels[xx][zz][yy] and voxels[xx][zz][yy].red_statistics and voxels[xx][zz][yy].red_statistics.mean then
+                                    if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].red_statistics and voxels[xx][zz][yy].red_statistics.mean then
                                         local vi = area:index(x, y, z)
                                         data[vi] = minetest.get_content_id(loadRealm.MetaStorage.symbology_palette)
                                         -- TODO: allow user input for the logical range below
                                         param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].red_statistics.mean, 0, 65535)
                                     end
                                 elseif loadRealm.MetaStorage.symbology_attribute == "Green" then 
-                                    if voxels[xx][zz][yy] and voxels[xx][zz][yy].green_statistics and voxels[xx][zz][yy].green_statistics.mean then
+                                    if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].green_statistics and voxels[xx][zz][yy].green_statistics.mean then
                                         local vi = area:index(x, y, z)
                                         data[vi] = minetest.get_content_id(loadRealm.MetaStorage.symbology_palette)
                                         -- TODO: allow user input for the logical range below
                                         param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].green_statistics.mean, 0, 65535)
                                     end
                                 elseif loadRealm.MetaStorage.symbology_attribute == "Blue" then
-                                    if voxels[xx][zz][yy] and voxels[xx][zz][yy].blue_statistics and voxels[xx][zz][yy].blue_statistics.mean then
+                                    if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].blue_statistics and voxels[xx][zz][yy].blue_statistics.mean then
                                         local vi = area:index(x, y, z)
                                         data[vi] = minetest.get_content_id(loadRealm.MetaStorage.symbology_palette)
                                         -- TODO: allow user input for the logical range below
                                         param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].blue_statistics.mean, 0, 65535)
                                     end
                                 elseif loadRealm.MetaStorage.symbology_attribute == "NIR" then 
-                                    if voxels[xx][zz][yy] and voxels[xx][zz][yy].nir_statistics and voxels[xx][zz][yy].nir_statistics.mean then
+                                    if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].nir_statistics and voxels[xx][zz][yy].nir_statistics.mean then
                                         local vi = area:index(x, y, z)
                                         data[vi] = minetest.get_content_id(loadRealm.MetaStorage.symbology_palette)
                                         -- TODO: allow user input for the logical range below
                                         param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].nir_statistics.mean, 0, 65535)
                                     end
                                 elseif loadRealm.MetaStorage.symbology_attribute == "Intensity" then
-                                    if voxels[xx][zz][yy] and voxels[xx][zz][yy].intensity_statistics and voxels[xx][zz][yy].intensity_statistics.mean then
+                                    if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].intensity_statistics and voxels[xx][zz][yy].intensity_statistics.mean then
                                         local vi = area:index(x, y, z)
                                         data[vi] = minetest.get_content_id(loadRealm.MetaStorage.symbology_palette)
                                         -- TODO: allow user input for the logical range below

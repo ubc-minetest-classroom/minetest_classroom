@@ -353,7 +353,7 @@ commands["save"] = { func = function(name, params)
         end
 
         lasfile.meta:set_string("classroom_"..classroomName.."_data_chunk_"..index, minetest.serialize(temp_data))
-        minetest.chat_send_player(name, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Saved classroom content for chunk "..index.." of "..#chunks.." total chunks"))
+        minetest.chat_send_player(name, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Saved classroom content for chunk "..index.." of "..#chunks.." total chunks."))
 
         -- Clean up
         vm, data, light, param2 = nil, nil, nil, nil, nil
@@ -369,7 +369,7 @@ commands["load"] = { func = function(name, params)
     -- Read the first chunk to get the necessary metadata
     local temp_data = minetest.deserialize(lasfile.meta:get_string("classroom_"..classroomName.."_data_chunk_1"))
     if not temp_data then
-        return false, "Requested classroom name: " .. tostring(classroomName) .. " does not exist."
+        return false, "Requested classroom name " .. tostring(classroomName) .. " does not exist or is not chunked in memory. If you expected this classroom to be saved, then try `classroom save "..tostring(classroomName).."`."
     end
 
     -- Create the new classroom
@@ -396,6 +396,8 @@ commands["load"] = { func = function(name, params)
         
         -- Clean up
         vm, data, light, param2 = nil, nil, nil, nil, nil
+
+        minetest.chat_send_player(name, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Loaded classroom content for chunk "..index.." of "..#chunks.." total chunks."))
     end
 
     -- Emerge classroom
@@ -404,6 +406,30 @@ commands["load"] = { func = function(name, params)
     return true, minetest.chat_send_player(name, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Successfully loaded classroom content into a new classroom with ID "..newRealm.ID.."."))
 end,
 help = "classroom load <classroomName> - Load a stored copy of classroom content (node content IDs, param2 data, and lighting) into a new classroom ID.", }
+
+commands["delete_chunks"] = { func = function(name, params)
+    local classroomName = params[1]
+
+    -- Read the first chunk to get the necessary metadata
+    local temp_data = minetest.deserialize(lasfile.meta:get_string("classroom_"..classroomName.."_data_chunk_1"))
+    if not temp_data then
+        return false, "Requested classroom name " .. tostring(classroomName) .. " does not exist or is not chunked in memory."
+    end
+
+    -- Delete chunks from mod storage
+    local chunks = Realm:Create_VM_Chunks(newRealm.StartPos, newRealm.EndPos, mc_core.VM_CHUNK_SIZE)
+    for index, chunk in pairs(chunks) do
+        lasfile.meta:set_string("classroom_"..classroomName.."_data_chunk_"..index, minetest.serialize(nil))
+        minetest.chat_send_player(name, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Deleted classroom content for chunk "..index.." of "..#chunks.." total chunks."))
+    end
+
+    -- Emerge classroom
+    newRealm:EmergeRealm()
+
+    return true, minetest.chat_send_player(name, minetest.colorize(mc_core.col.log, "[Minetest Classroom] Successfully loaded classroom content into a new classroom with ID "..newRealm.ID.."."))
+end,
+help = "classroom delete_chunks <classroomName> - Delete a stored copy of classroom content (node content IDs, param2 data, and lighting) from mod storage.", }
+
 
 commands["schematic"] = {
     func = function(name, params)
