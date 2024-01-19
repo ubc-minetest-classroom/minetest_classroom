@@ -449,7 +449,7 @@ function lasfile.read_points(filename, attributes, extent)
                             end
 
                             if attributes.ScanAngle then
-                                ScanAngle = tonumber(point_data[7])*0.006
+                                ScanAngle = tonumber(point_data[7])
                             end
 
                             if attributes.UserData then 
@@ -575,7 +575,7 @@ function lasfile.read_points(filename, attributes, extent)
                             end
 
                             if attributes.ScanAngle then
-                                ScanAngle = tonumber(point_data[7])*0.006
+                                ScanAngle = tonumber(point_data[7])
                             end
 
                             if attributes.UserData then 
@@ -672,7 +672,7 @@ function lasfile.read_points(filename, attributes, extent)
                                 end
 
                                 if attributes.ScanAngle then
-                                    ScanAngle = tonumber(point_data[7])*0.006
+                                    ScanAngle = tonumber(point_data[7])
                                 end
 
                                 if attributes.UserData then 
@@ -979,16 +979,6 @@ function lasfile.get_voxels(filename, points, xmin, ymin, zmin, xmax, ymax, zmax
     ymax = math.min(ymax, maxy)
     zmax = math.min(zmax, maxz)
 
-    --[[ -- Find the bounding extent of the class points
-    for _, point in ipairs(points) do
-        xmin = math.min(xmin, point.X)
-        ymin = math.min(ymin, point.Y)
-        zmin = math.min(zmin, point.Z)
-        xmax = math.max(xmax, point.X)
-        ymax = math.max(ymax, point.Y)
-        zmax = math.max(zmax, point.Z)
-    end ]]
-
     local xdim, ydim, zdim
     xdim = math.ceil(xmax - xmin) + 1
     ydim = math.ceil(ymax - ymin) + 1
@@ -1018,6 +1008,7 @@ function lasfile.get_voxels(filename, points, xmin, ymin, zmin, xmax, ymax, zmax
                     intensity = {}, 
                     point_count = 0,
                     return_number = {},
+                    scan_angle = {},
                     red = {},
                     green = {},
                     blue = {}, 
@@ -1046,6 +1037,14 @@ function lasfile.get_voxels(filename, points, xmin, ymin, zmin, xmax, ymax, zmax
                 local r = point.ReturnNumber
                 if r then
                     voxels[x][y][z].return_number[r] = (voxels[x][y][z].return_number[r] or 0) + 1
+                end
+            end
+
+            -- Scan angle statistics
+            if attributes["ScanAngle"] then
+                local angle = point.ScanAngle
+                if angle then
+                    table.insert(voxels[x][y][z].scan_angle, angle)
                 end
             end
 
@@ -1138,6 +1137,27 @@ function lasfile.get_voxels(filename, points, xmin, ymin, zmin, xmax, ymax, zmax
                         end
                         voxels[x][y][z].majority_return = majority_return
                         voxels[x][y][z].majority_return_count = majority_return_count
+                    end
+
+                    if attributes["ScanAngle"] then
+                        local min_angle, max_angle, mean_angle, range_angle
+                        local angle_values = voxels[x][y][z].scan_angle
+                        if angle_values and #angle_values > 0 then
+                            min_angle = math.min(unpack(angle_values))
+                            max_angle = math.max(unpack(angle_values))
+                            mean_angle = 0
+                            for _, value in ipairs(angle_values) do
+                                mean_angle = mean_angle + value
+                            end
+                            mean_angle = mean_angle / #angle_values
+                            range_angle = max_angle - min_angle
+                        end
+                        voxels[x][y][z].scan_angle_statistics = {
+                            min = min_angle,
+                            max = max_angle,
+                            mean = mean_angle,
+                            range = range_angle,
+                        }
                     end
 
                     -- Calculate Red, Green, Blue, NIR statistics
@@ -1328,10 +1348,9 @@ function lasfile.generate(minp, maxp, loadRealm, filename)
                                 elseif loadRealm.MetaStorage.symbology_attribute == "RGB" then
                                     if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].red_statistics and voxels[xx][zz][yy].red_statistics.mean and voxels[xx][zz][yy].green_statistics and voxels[xx][zz][yy].green_statistics.mean and voxels[xx][zz][yy].blue_statistics and voxels[xx][zz][yy].blue_statistics.mean then
                                             local vi = area:index(x, y, z)
-                                            -- TODO: allow user input for the logical ranges below
-                                            local red = rgb8bit.map_value_to_3_bits(voxels[xx][zz][yy].red_statistics.mean, 0, 255) -- max is usually 255 (short) or 65535 (long)
-                                            local green = rgb8bit.map_value_to_3_bits(voxels[xx][zz][yy].green_statistics.mean, 0, 255)
-                                            local blue = rgb8bit.map_value_to_2_bits(voxels[xx][zz][yy].blue_statistics.mean, 0, 255)
+                                            local red = rgb8bit.map_value_to_3_bits(voxels[xx][zz][yy].red_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 255) -- max RGB value is usually 255 (short)
+                                            local green = rgb8bit.map_value_to_3_bits(voxels[xx][zz][yy].green_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 255)
+                                            local blue = rgb8bit.map_value_to_2_bits(voxels[xx][zz][yy].blue_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 255)
                                             data[vi] = minetest.get_content_id("rgb8bit:rgb8bit")
                                             param2[vi] = rgb8bit.get_palette_index_from_rgb(red, green, blue)
                                     end
@@ -1339,36 +1358,81 @@ function lasfile.generate(minp, maxp, loadRealm, filename)
                                     if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].red_statistics and voxels[xx][zz][yy].red_statistics.mean then
                                         local vi = area:index(x, y, z)
                                         data[vi] = minetest.get_content_id(loadRealm.MetaStorage.symbology_palette)
-                                        -- TODO: allow user input for the logical range below
-                                        param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].red_statistics.mean, 0, 65535)
+                                        if lasfile.generating_lasdb.inversepallete[filename] then
+                                            param2[vi] = (lasfile.generating_lasdb.maxstretch[filename] or 65535) - lasfile.map_to_8bit(voxels[xx][zz][yy].red_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        else
+                                            param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].red_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        end
                                     end
                                 elseif loadRealm.MetaStorage.symbology_attribute == "Green" then 
                                     if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].green_statistics and voxels[xx][zz][yy].green_statistics.mean then
                                         local vi = area:index(x, y, z)
                                         data[vi] = minetest.get_content_id(loadRealm.MetaStorage.symbology_palette)
-                                        -- TODO: allow user input for the logical range below
-                                        param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].green_statistics.mean, 0, 65535)
+                                        if lasfile.generating_lasdb.inversepallete[filename] then
+                                            param2[vi] = (lasfile.generating_lasdb.maxstretch[filename] or 65535) - lasfile.map_to_8bit(voxels[xx][zz][yy].green_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        else
+                                            param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].green_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        end
                                     end
                                 elseif loadRealm.MetaStorage.symbology_attribute == "Blue" then
                                     if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].blue_statistics and voxels[xx][zz][yy].blue_statistics.mean then
                                         local vi = area:index(x, y, z)
                                         data[vi] = minetest.get_content_id(loadRealm.MetaStorage.symbology_palette)
-                                        -- TODO: allow user input for the logical range below
-                                        param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].blue_statistics.mean, 0, 65535)
+                                        if lasfile.generating_lasdb.inversepallete[filename] then
+                                            param2[vi] = (lasfile.generating_lasdb.maxstretch[filename] or 65535) - lasfile.map_to_8bit(voxels[xx][zz][yy].blue_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        else
+                                            param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].blue_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        end
                                     end
                                 elseif loadRealm.MetaStorage.symbology_attribute == "NIR" then 
                                     if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].nir_statistics and voxels[xx][zz][yy].nir_statistics.mean then
                                         local vi = area:index(x, y, z)
                                         data[vi] = minetest.get_content_id(loadRealm.MetaStorage.symbology_palette)
-                                        -- TODO: allow user input for the logical range below
-                                        param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].nir_statistics.mean, 0, 65535)
+                                        if lasfile.generating_lasdb.inversepallete[filename] then
+                                            param2[vi] = (lasfile.generating_lasdb.maxstretch[filename] or 65535) - lasfile.map_to_8bit(voxels[xx][zz][yy].nir_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        else
+                                            param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].nir_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        end
                                     end
                                 elseif loadRealm.MetaStorage.symbology_attribute == "Intensity" then
                                     if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].intensity_statistics and voxels[xx][zz][yy].intensity_statistics.mean then
                                         local vi = area:index(x, y, z)
                                         data[vi] = minetest.get_content_id(loadRealm.MetaStorage.symbology_palette)
-                                        -- TODO: allow user input for the logical range below
-                                        param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].intensity_statistics.mean, 0, 65535)
+                                        if lasfile.generating_lasdb.inversepallete[filename] then
+                                            param2[vi] = (lasfile.generating_lasdb.maxstretch[filename] or 65535) - lasfile.map_to_8bit(voxels[xx][zz][yy].intensity_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        else
+                                            param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].intensity_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        end
+                                    end
+                                elseif loadRealm.MetaStorage.symbology_attribute == "ReturnNumber" then
+                                    if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].majority_return then
+                                        local vi = area:index(x, y, z)
+                                        data[vi] = minetest.get_content_id(loadRealm.MetaStorage.symbology_palette)
+                                        if lasfile.generating_lasdb.inversepallete[filename] then
+                                            param2[vi] = (lasfile.generating_lasdb.maxstretch[filename] or 65535) - lasfile.map_to_8bit(voxels[xx][zz][yy].majority_return, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        else
+                                            param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].majority_return, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        end
+                                    end
+                                elseif loadRealm.MetaStorage.symbology_attribute == "PointDensity" then
+                                    if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].point_count then
+                                        local vi = area:index(x, y, z)
+                                        data[vi] = minetest.get_content_id(loadRealm.MetaStorage.symbology_palette)
+                                        if lasfile.generating_lasdb.inversepallete[filename] then
+                                            param2[vi] = (lasfile.generating_lasdb.maxstretch[filename] or 65535) - lasfile.map_to_8bit(voxels[xx][zz][yy].point_count, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        else
+                                            param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].point_count, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        end
+                                    end
+                                elseif loadRealm.MetaStorage.symbology_attribute == "ScanAngle" then
+                                    if voxels and voxels[xx] and voxels[xx][zz] and voxels[xx][zz][yy] and voxels[xx][zz][yy].scan_angle_statistics and voxels[xx][zz][yy].scan_angle_statistics.mean then
+                                        local vi = area:index(x, y, z)
+                                        data[vi] = minetest.get_content_id(loadRealm.MetaStorage.symbology_palette)
+                                        if lasfile.generating_lasdb.inversepallete[filename] then
+                                            param2[vi] = (lasfile.generating_lasdb.maxstretch[filename] or 65535) - lasfile.map_to_8bit(voxels[xx][zz][yy].scan_angle_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        else
+                                            param2[vi] = lasfile.map_to_8bit(voxels[xx][zz][yy].scan_angle_statistics.mean, lasfile.generating_lasdb.minstretch[filename] or 0, lasfile.generating_lasdb.maxstretch[filename] or 65535)
+                                        end
                                     end
                                 end
                             end
@@ -1412,11 +1476,11 @@ minetest.register_on_generated(function(minp, maxp, seed)
 end)
 
 --- TODO: Retire these chat command and move these function calls to the teacher controller GUI, this is for testing only.
-minetest.register_chatcommand("las2ground", {
-    params = "<file_name> <realm_name> <xmin> <xmax> <ymin> <ymax> <zmin> <zmax> <attribute> <palette>",
-    description = "generate the map from las",
+minetest.register_chatcommand("las2voxel", {
+    params = "<file_name> <classroom_name> <xmin> <xmax> <ymin> <ymax> <zmin> <zmax> <attribute> <palette> <",
+    description = "Generate a classroom from a las file. Usage: las2voxel <file_name> <classroom_name> <xmin> <xmax> <ymin> <ymax> <zmin> <zmax> <attribute [Classification (default) | Intensity | RGB]> <palette [colorbrewer:Spectral] <min_stretch_value> <max_stretch_value> <inverse_palette>",
     func = function (name,params)
-        local filename, realmname, xmin, xmax, ymin, ymax, zmin, zmax, attribute, palette = params:match("^(%S*%.las)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)$")
+        local filename, realmname, xmin, xmax, ymin, ymax, zmin, zmax, attribute, palette, minstretch, maxstretch, inverse = params:match("^(%S*%.las)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)%s*(%S*)$")
         if not filename then
             minetest.chat_send_player(name,"Expected .las filename, but none was provided or not formatted correctly.") 
             return
@@ -1437,14 +1501,22 @@ minetest.register_chatcommand("las2ground", {
         zmax2 = zmax or "nil"
         attribute2 = attribute or "nil"
         palette2 = palette or "nil"
-        minetest.chat_send_all("DEBUG: Command was parsed as: <file_name> "..filename.." <realm_name> "..realmname2.." <xmin> "..xmin2.." <xmax> "..xmax2.." <ymin> "..ymin2.." <ymax> "..ymax2.." <zmin> "..zmin2.." <zmax> "..zmax2.." <attribute> "..attribute2.." <palette> "..palette2)
+        minetest.chat_send_all("DEBUG: Command was parsed as: <file_name> "..filename.." <realm_name> "..realmname2.." <xmin> "..xmin2.." <xmax> "..xmax2.." <ymin> "..ymin2.." <ymax> "..ymax2.." <zmin> "..zmin2.." <zmax> "..zmax2.." <attribute> "..attribute2.." <palette> "..palette2.." <minstretch> "..minstretch.." <maxstretch> "..maxstretch.." <inverse_pallete> "..inverse)
 
         -- Initialize the data structure for the las file
-        local lasdb = minetest.deserialize(lasfile.meta:get_string("las_db")) or {header = {}, points = {}, voxels = {}, extent = {}, size = {}, crs = {}}
+        local lasdb = minetest.deserialize(lasfile.meta:get_string("las_db")) or {header = {}, points = {}, voxels = {}, extent = {}, size = {}, crs = {}, minstretch = {}, maxstretch = {}, inversepallete = {}}
         if not lasdb.header[filename] then 
             lasdb.header[filename] = lasfile.read_header(filename)
         end
         if not realmname then realmname = filename end
+
+        lasdb.minstretch[filename] = tonumber(minstretch) or nil
+        lasdb.maxstretch[filename] = tonumber(maxstretch) or nil
+        if inverse == "nil" or inverse == "false" then
+            lasdb.inversepallete[filename] = false
+        else 
+            lasdb.inversepallete[filename] = true
+        end
 
         -- TODO: pass these as arguments CAUTION: flags below are currently set to disallow symbolizing some attributes
         local attributes = {
@@ -1480,15 +1552,14 @@ minetest.register_chatcommand("las2ground", {
         if not attributes[attribute] and not attribute == "RGB" then 
             attribute = "Classification"
             attributes["Classification"] = true
-        end
-        -- User defines textures, not a palette
-        if attribute and attribute == "Classification" then palette = nil end
-        -- Handle special case of RGB
-        -- TODO: Implement NIR and false color band combinations
-        if attribute == "RGB" then
+        elseif attribute == "RGB" then
+            -- Handle special case of RGB
+            -- TODO: Implement NIR and false color band combinations
             attributes["Red"] = true
             attributes["Green"] = true
             attributes["Blue"] = true
+        else
+            attributes[attribute] = true
         end
 
         xmin = xmin or nil
