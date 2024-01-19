@@ -15,7 +15,6 @@ function Realm:ClearNodes()
         context.loaded_blocks = context.loaded_blocks + 1
 
         -- Send progress message
-        -- Send progress message
         if context.total_blocks == context.loaded_blocks then
             minetest.chat_send_all(minetest.colorize(mc_core.col.log, "[Minetest Classroom] Finished deleting the classroom."))
         end

@@ -176,13 +176,15 @@ function mc_worldManager.GetTeleporterItemStack(count, instanced, temp, realmID,
     return item
 end
 
-Realm.RegisterOnCreateCallback(function(realm)
+--[[ 
+    -- Deactivated this callback because the teleporter node can cause server crashes when a classroom is saved as a schematic and then imported into a different world without a method for updating the metadata
+    -- Teleporter nodes may be removed in the future as they no longer serve a purpose with the current GUI implmentation
+    Realm.RegisterOnCreateCallback(function(realm)
     Debug.log("OnCreateCallback")
-
     local position = { x = realm.SpawnPoint.x, y = math.floor(realm.SpawnPoint.y) - 1, z = realm.SpawnPoint.z }
     minetest.set_node(position, { name = "mc_worldmanager:teleporter" })
     local nodeMeta = minetest.get_meta(position)
     nodeMeta:set_int('realm', 0)
     nodeMeta:set_string("instanced", "false")
     nodeMeta:set_string("name", "spawn")
-end)
+end) ]]
