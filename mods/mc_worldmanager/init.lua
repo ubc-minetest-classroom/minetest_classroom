@@ -58,7 +58,7 @@ function mc_worldManager.SetSpawnRealm(newSpawnRealm)
     if (newSpawnRealm ~= nil) then
         if (mc_worldManager.SpawnGenerated()) then
             local oldSpawnRealm = mc_worldManager.GetSpawnRealm()
-            oldSpawnRealm:setCategoryKey("default")
+            oldSpawnRealm:setCategoryKey("open")
         end
         mc_worldManager.spawnRealmID = newSpawnRealm.ID
         newSpawnRealm:setCategoryKey("spawn")
@@ -110,7 +110,7 @@ function mc_worldManager.GetCreateInstancedRealm(realmName, player, schematic, t
         end
 
         realmInstanceTable[realmKey] = realm.ID
-        realm:setCategoryKey("instanced")
+        realm:setCategoryKey("private")
         realm:AddOwner(player:get_player_name())
 
         if (temporary == nil) then

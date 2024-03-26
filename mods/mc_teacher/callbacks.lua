@@ -425,7 +425,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     if realm:getCategory().key == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.SPAWN] and context.edit_realm.type ~= mc_teacher.R.CAT_KEY.SPAWN and tonumber(realm.ID) == tonumber(mc_worldManager.spawnRealmID) then
                         context.edit_realm.name = fields.erealm_name
                         return mc_teacher.show_confirm_popup(player, "spawn_type_change", {
-                            action = "Are you sure you want to change the current spawn classroom into a "..(context.edit_realm.type == mc_teacher.R.CAT_KEY.INSTANCED and "private" or "standard").." classroom?\nThis will generate a new spawn classroom.",
+                            action = "Are you sure you want to change the current spawn classroom into a "..(context.edit_realm.type == mc_teacher.R.CAT_KEY.PRIVATE and "private" or "standard").." classroom?\nThis will generate a new spawn classroom.",
                             button = "Save new type", cancel = "Keep current type",
                         }, {x = 9.9, y = 3.8})
                     else
@@ -640,16 +640,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
         if fields.mode and fields.mode ~= context.selected_mode then
             context.selected_mode = fields.mode
-            -- digital twins are currently incompatible with instanced realms
-            if context.selected_mode == mc_teacher.MODES.LIDAR and context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
-                context.selected_realm_type = mc_teacher.R.CAT_KEY.CLASSROOM
+            -- digital twins are currently incompatible with private classrooms
+            if context.selected_mode == mc_teacher.MODES.LIDAR and context.selected_realm_type == mc_teacher.R.CAT_KEY.PRIVATE then
+                context.selected_realm_type = mc_teacher.R.CAT_KEY.RESTRICTED
             end
             reload = true
         end
         if fields.realmcategory and fields.realmcategory ~= context.selected_realm_type then
             context.selected_realm_type = fields.realmcategory
-            -- digital twins are currently incompatible with instanced realms
-            if context.selected_mode == mc_teacher.MODES.LIDAR and context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
+            -- digital twins are currently incompatible with private classrooms
+            if context.selected_mode == mc_teacher.MODES.LIDAR and context.selected_realm_type == mc_teacher.R.CAT_KEY.PRIVATE then
                 context.selected_mode = mc_teacher.MODES.SCHEMATIC
             end
             reload = true
@@ -1007,7 +1007,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                             return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
                         end
 
-                        if context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
+                        if context.selected_realm_type == mc_teacher.R.CAT_KEY.PRIVATE then
                             new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, nil, false, realm_size)
                         else
                             -- TODO: refactor realm.lua so that it can generate realms of non-block-aligned sizes
@@ -1041,7 +1041,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
                     end
 
-                    if context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
+                    if context.selected_realm_type == mc_teacher.R.CAT_KEY.PRIVATE then
                         new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, context.selected_schematic, false)
                     else
                         new_realm = Realm:NewFromSchematic(realm_name, context.selected_schematic)
@@ -1071,7 +1071,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Please check your inputs and try again."))
                     end
 
-                    if context.selected_realm_type == mc_teacher.R.CAT_KEY.INSTANCED then
+                    if context.selected_realm_type == mc_teacher.R.CAT_KEY.PRIVATE then
                         new_realm = mc_worldManager.GetCreateInstancedRealm(realm_name, player, nil, false, realm_size)
                     else
                         -- TODO: refactor realm.lua so that it can generate realms of non-block-aligned sizes
@@ -1252,7 +1252,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     mc_worldManager.SetSpawnRealm(new_realm)
                     minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] Server spawn classroom updated!"))
                 else
-                    new_realm:setCategoryKey(mc_teacher.R.CAT_MAP[context.selected_realm_type or mc_teacher.R.CAT_KEY.CLASSROOM])
+                    new_realm:setCategoryKey(mc_teacher.R.CAT_MAP[context.selected_realm_type or mc_teacher.R.CAT_KEY.RESTRICTED])
                 end
                 new_realm:UpdateRealmPrivilege(context.selected_privs)
                 new_realm:UpdateSkybox(context.skyboxes[context.selected_skybox])

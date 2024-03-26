@@ -347,7 +347,7 @@ function mc_teacher.show_edit_popup(player, realmID)
         local cat = realm:getCategory()
         context.edit_realm = {
             name = realm.Name or "",
-            type = cat and mc_teacher.R.CAT_RMAP[cat.key] or mc_teacher.R.CAT_KEY.CLASSROOM,
+            type = cat and mc_teacher.R.CAT_RMAP[cat.key] or mc_teacher.R.CAT_KEY.RESTRICTED,
             privs = {interact = "nil", shout = "nil", fast = "nil", fly = "nil", noclip = "nil", give = "nil"},
             id = realmID,
         }
@@ -740,7 +740,7 @@ function mc_teacher.show_controller_fs(player, tab)
                         local cat = realm:getCategory().key
 
                         if (realm:isHidden() and context.selected_c_tab == mc_teacher.CTAB.HIDDEN) or (not realm:isHidden() and
-                        ((context.selected_c_tab == mc_teacher.CTAB.PUBLIC and cat ~= mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.INSTANCED]) or (context.selected_c_tab == mc_teacher.CTAB.PRIVATE and cat == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.INSTANCED]))) then
+                        ((context.selected_c_tab == mc_teacher.CTAB.PUBLIC and cat ~= mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.PRIVATE]) or (context.selected_c_tab == mc_teacher.CTAB.PRIVATE and cat == mc_teacher.R.CAT_MAP[mc_teacher.R.CAT_KEY.PRIVATE]))) then
                             table.insert(classroom_list, table.concat({minetest.formspec_escape(mc_teacher.get_realm_prefix(realm, cat) or ""), minetest.formspec_escape(realm.Name or "Unnamed classroom"), " (", playerCount, " player", playerCount == 1 and "" or "s", ")"}))
                             table.insert(context.realm_i_to_id, id)
                         end
@@ -767,7 +767,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     "tabheader[", spacer, ",1.4;", panel_width - 2*spacer, ",0.5;c_list_header;Public,Private,Hidden;", context.selected_c_tab, ";false;true]",
                 }
                 
-                if #classroom_list == 0 then
+                if classroom_list and #classroom_list == 0 then
                     table.insert(fs, "style[c_teleport,c_edit,c_hide,c_hidden_restore,c_hidden_delete,c_hidden_deleteall;bgimg=mc_pixel.png^[multiply:"..mc_core.col.b.blocked.."]")
                 end
 
@@ -806,7 +806,7 @@ function mc_teacher.show_controller_fs(player, tab)
                     "field[", spacer, ",0.4;7.1,0.8;realmname;;", context.realmname or "", "]",
                     "field_close_on_enter[realmname;false]",
                     "textarea[", text_spacer, ",1.25;3.6,1;;;Type]",
-                    "dropdown[", spacer, ",1.7;3.5,0.8;realmcategory;Classroom,Spawn,Private" or "", ";", context.selected_realm_type or 1, ";true]",
+                    "dropdown[", spacer, ",1.7;3.5,0.8;realmcategory;Open,Classroom,Spawn,Private" or "", ";", context.selected_realm_type or 1, ";true]",
                     "textarea[", text_spacer + 3.6, ",1.25;3.6,1;;;Select Ground]",
                     "dropdown[", spacer + 3.6, ",1.7;3.5,0.8;mode;Flat,Random,Schematic" or "", ";", context.selected_mode or 1, ";true]",
                 }))

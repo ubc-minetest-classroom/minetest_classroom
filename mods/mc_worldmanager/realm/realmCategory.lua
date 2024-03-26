@@ -14,7 +14,7 @@ end
 ---@param categoryKey string the category key to apply to the realm.
 function Realm:setCategoryKey(categoryKey)
     if (categoryKey == nil or categoryKey == "nil" or categoryKey == "") then
-        self:set_data("category", "default")
+        self:set_data("category", "open")
     else
         self:set_data("category", categoryKey)
     end
@@ -27,7 +27,7 @@ end
 function Realm:getCategory()
     local category = self:get_data("category")
     if (category == nil or category == "") then
-        category = "default"
+        category = "open"
     end
 
     local categoryObject = Realm.categories[string.lower(category)]
@@ -93,27 +93,27 @@ function Realm:RemoveOwner(ownerName)
 end
 
 Realm.RegisterCategory({
-    key = "default",
+    key = "open",
     visible = function(realm, player)
-        return true, "Default realms are visible to all players."
+        return true, "Open classrooms are visible to all players."
     end,
     joinable = function(realm, player)
-        return true, "Default realms are joinable by all players."
+        return true, "Open classrooms are joinable by all players."
     end
 })
 
 Realm.RegisterCategory({
     key = "spawn",
     visible = function(realm, player)
-        return true, "Spawn realms are visible to all players."
+        return true, "The spawn classroom is always visible to all players."
     end,
     joinable = function(realm, player)
-        return true, "Spawn realms are joinable by all players."
+        return true, "The spawn classroom is always joinable by all players."
     end
 })
 
 Realm.RegisterCategory({
-    key = "classroom",
+    key = "restricted",
     visible = function(realm, player)
 
         if (realm:get_data("students") == nil) then
@@ -125,11 +125,11 @@ Realm.RegisterCategory({
         end
 
         if (realm:get_data("students")[player:get_player_name()] ~= nil) then
-            return true, "You are a student in this realm."
+            return true, "You are a student in this classroom."
         elseif (realm:GetOwners()[player:get_player_name()] ~= nil) then
-            return true, "You are an owner of this realm."
+            return true, "You are an owner of this classroom."
         else
-            return false, "You are not a student in this realm."
+            return false, "You are not a student in this classroom."
         end
     end,
     joinable = function(realm, player)
@@ -143,19 +143,19 @@ Realm.RegisterCategory({
         end
 
         if (realm:get_data("students")[player:get_player_name()] ~= nil) then
-            return true, "You are a student in this realm."
+            return true, "You are a student in this classroom."
         elseif (realm:GetOwners()[player:get_player_name()] ~= nil) then
-            return true, "You are an owner of this realm."
+            return true, "You are an owner of this classroom."
         elseif (minetest.check_player_privs(player, { teacher = true })) then
-            return true, "All realms are joinable by teachers."
+            return true, "All restricted classrooms are always joinable by teachers."
         else
-            return false, "You are not a student in this realm."
+            return false, "You are not a student in this classroom."
         end
     end
 })
 
 Realm.RegisterCategory({
-    key = "instanced",
+    key = "private",
     visible = function(realm, player)
 
         if (realm:GetOwners() == nil) then
@@ -163,7 +163,7 @@ Realm.RegisterCategory({
         end
 
         if (realm:GetOwners()[player:get_player_name()] ~= nil) then
-            return true, "You are an owner of this realm."
+            return true, "You are an owner of this classroom."
         end
 
         return false
@@ -175,9 +175,9 @@ Realm.RegisterCategory({
         end
 
         if (realm:GetOwners()[player:get_player_name()] ~= nil) then
-            return true, "You are an owner of this realm."
+            return true, "You are an owner of this classroom."
         elseif (minetest.check_player_privs(player, { teacher = true })) then
-            return true, "All realms are joinable by teachers."
+            return true, "All classrooms are always joinable by teachers."
         end
         return false
     end

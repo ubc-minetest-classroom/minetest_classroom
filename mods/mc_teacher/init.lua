@@ -44,9 +44,9 @@ mc_teacher = {
         DEC = {NONE = "1", V1 = "2", V2 = "3", BIOME = "4"},
         GEN_MAP = {["1"] = "nil", ["2"] = "v1", ["3"] = "v2", ["4"] = "dnr"},
         DEC_MAP = {["1"] = "nil", ["2"] = "v1", ["3"] = "v2", ["4"] = "biomegen"},
-        CAT_KEY = {CLASSROOM = "1", SPAWN = "2", INSTANCED = "3"},
-        CAT_MAP = {["1"] = "default", ["2"] = "spawn", ["3"] = "instanced"},
-        CAT_RMAP = {default = "1", spawn = "2", instanced = "3"},
+        CAT_KEY = {OPEN = "1", RESTRICTED = "2", SPAWN = "3", PRIVATE = "4"},
+        CAT_MAP = {["1"] = "open", ["2"] = "restricted", ["3"] = "spawn", ["4"] = "private"},
+        CAT_RMAP = {open = "1", restricted = "2", spawn = "3", private = "4"},
     },
     T_INDEX = {
         ["30 seconds"] = {i = 1, t = 30},

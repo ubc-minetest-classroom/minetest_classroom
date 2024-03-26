@@ -55,7 +55,7 @@ function Realm:New(name, area, callbacks)
     end
 
     if (name == nil or name == "") then
-        name = "Unnamed Realm"
+        name = "Unnamed Classroom"
     end
 
     local this = {

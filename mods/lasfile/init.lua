@@ -310,7 +310,7 @@ function lasfile.read_points(filename, attributes, extent)
                     local yy = tonumber(point_data[2])*tonumber(lasheader.YScaleFactor)+tonumber(lasheader.YOffset)
                     if (extent.xmin == nil and extent.xmax == nil and extent.ymin == nil and extent.ymax == nil) or (extent.xmin <= xx and xx <= extent.xmax and extent.ymin <= yy and yy <= extent.ymax) then                       
                         if position % 10000 == 0 then
-                            minetest.chat_send_all("DEBUG: Gathering point "..position.." of "..lasheader.LegacyNumberofPointRecords)
+                            minetest.chat_send_all("[lasfile] Gathering point "..position.." of "..lasheader.LegacyNumberofPointRecords)
                         end
                         local zz = tonumber(point_data[3])*tonumber(lasheader.ZScaleFactor)+tonumber(lasheader.ZOffset)
                         -- TODO: check that all attributes are supported here from all versions
@@ -985,7 +985,7 @@ function lasfile.get_voxels(filename, points, xmin, ymin, zmin, xmax, ymax, zmax
     zdim = math.ceil(zmax - zmin) + 1
 
     local voxels = {}
-    minetest.chat_send_all("DEBUG: Calculating requested statistics on the voxels for:")
+    --minetest.chat_send_all("DEBUG: Calculating requested statistics on the voxels for:")
     for attribute_name, bool in pairs(attributes) do
         if bool then
             minetest.chat_send_all("           "..attribute_name)
@@ -1270,6 +1270,17 @@ function lasfile.create_classroom(filename, realmName, pname, sizeX, sizeY, size
     newRealm.MetaStorage.symbology_attribute = attribute or nil
     newRealm.MetaStorage.symbology_palette = palette or nil
     newRealm:set_data("owner", pname)
+    newRealm:setCategoryKey("open") -- TODO: capture this option from the chat command or teacher tool GUI + callbacks
+    -- Calculate the spawn point Y
+    local voxels = lasfile.generating_lasdb.voxels[filename]
+    local localpos = newRealm:WorldToLocalSpace({x = newRealm.SpawnPoint.x, y = newRealm.SpawnPoint.y, z = newRealm.SpawnPoint.z})
+    local zdim = math.ceil(lasfile.generating_lasdb.extent[filename].max.Z - lasfile.generating_lasdb.extent[filename].min.Z) + 1
+    for z = zdim, 1, -1 do -- Here we search for the correct Y value that corresponds to our spawnpoint at X and Z
+        if voxels[math.ceil(localpos.x)][math.ceil(localpos.z)][z] then
+            newRealm:UpdateSpawn({x = localpos.x, y = z + 2, z = localpos.z})
+            break
+        end
+    end
     newRealm:CreateBarriers()
     newRealm:CallOnCreateCallbacks()
     newRealm.MetaStorage.emerge = true

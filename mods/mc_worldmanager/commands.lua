@@ -43,7 +43,7 @@ commands["new"] = {
 
         return true, "created new classroom with ID: " .. newRealm.ID
     end,
-    help = "classroom new [name] ([<sizeX>] [<sizeY>] [<sizeZ>]) - Create a new classroom", }
+    help = "classroom new <name> ([<sizeX>] [<sizeY>] [<sizeZ>]) - Create a new classroom", }
 
 commands["delete"] = {
     func = function(name, params)
@@ -116,7 +116,7 @@ commands["tp"] = {
 
         return success, reason
     end,
-    help = "reaclassroomlm tp <classroomID> - Teleport to a classroom.", }
+    help = "classroom tp <classroomID> - Teleport to a classroom.", }
 
 commands["walls"] = {
     func = function(name, params)
