@@ -11,14 +11,17 @@ function openstreetmap.fetch_kv_overpass_nodes(key, value, minlat, minlon, maxla
                 -- Get the range of eastings and northings for creating the realm size
                 local max_easting = 0
                 local max_northing = 0
-                local min_easting, min_northing
+                local min_easting, min_northing, isnorth, hemisphere
                 for _,node in pairs(data.elements) do
-                    local easting, northing = openstreetmap.latLonToUTM(node.lat, node.lon, utm_zone_min)
+                    local easting, northing, hemisphere = openstreetmap.latLonToUTM(node.lat, node.lon, utm_zone_min)
+                    if not hemisphere then isnorth = false end
                     if min_easting then min_easting = math.min(min_easting,easting) else min_easting = easting end
                     if min_northing then min_northing = math.min(min_northing,northing) else min_northing = northing end
                     max_easting = math.max(max_easting,easting)
                     max_northing = math.max(max_northing,northing)
                 end
+                -- If southern hemisphere was not detected, then assume northern hemisphere
+                if isnorth == nil then isnorth = true end
                 local sizeX = max_easting - min_easting + 1
                 local sizeZ = max_northing - min_northing + 1
 
@@ -27,9 +30,13 @@ function openstreetmap.fetch_kv_overpass_nodes(key, value, minlat, minlon, maxla
                 newRealm:CreateGround()
                 newRealm:CreateBarriersFast()
 
+                -- Update UTM coordinate metadata
+                utmInfo = { easting = min_easting, northing = min_northing, zone = utm_zone_min, utm_is_north = isnorth}
+                newRealm:set_data("UTMInfo", utmInfo)
+
                 -- Store everything
                 openstreetmap.temp.sizeX = sizeX
-                openstreetmap.temp.sizeY = 80
+                openstreetmap.temp.sizeY = 160
                 openstreetmap.temp.sizeZ = sizeZ
                 openstreetmap.temp.min_easting = min_easting
                 openstreetmap.temp.min_northing = min_northing
@@ -60,14 +67,17 @@ function openstreetmap.fetch_all_overpass_nodes(minlat, minlon, maxlat, maxlon, 
                 -- Get the range of eastings and northings for creating the realm size
                 local max_easting = 0
                 local max_northing = 0
-                local min_easting, min_northing, easting, northing, isnorth
+                local min_easting, min_northing, isnorth, hemisphere
                 for _,node in pairs(data.elements) do
-                    easting, northing, isnorth = openstreetmap.latLonToUTM(node.lat, node.lon, utm_zone_min)
+                    local easting, northing, hemisphere = openstreetmap.latLonToUTM(node.lat, node.lon, utm_zone_min)
+                    if not hemisphere then isnorth = false end
                     if min_easting then min_easting = math.min(min_easting,easting) else min_easting = easting end
                     if min_northing then min_northing = math.min(min_northing,northing) else min_northing = northing end
                     max_easting = math.max(max_easting,easting)
                     max_northing = math.max(max_northing,northing)
                 end
+                -- If southern hemisphere was not detected, then assume northern hemisphere
+                if isnorth == nil then isnorth = true end
                 local sizeX = max_easting - min_easting + 1
                 local sizeZ = max_northing - min_northing + 1
 
@@ -86,6 +96,15 @@ function openstreetmap.fetch_all_overpass_nodes(minlat, minlon, maxlat, maxlon, 
                         tags = node.tags,
                     }
                 end
+
+                -- Create the realm
+                local newRealm = Realm:New("OSM", { x = sizeX, y = 80, z = sizeZ })
+                newRealm:CreateGround()
+                newRealm:CreateBarriersFast()
+
+                -- Update UTM coordinate metadata
+                utmInfo = { easting = min_easting, northing = min_northing, zone = utm_zone_min, utm_is_north = isnorth}
+                newRealm:set_data("UTMInfo", utmInfo)
 
                 -- Store everything
                 openstreetmap.temp.sizeX = sizeX
