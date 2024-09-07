@@ -758,8 +758,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                             if utm_zone_min == utm_zone_max then
                                 
                                 -- Get the range of eastings and northings for creating the realm size
-                                local max_easting = 0
-                                local max_northing = 0
+                                local max_easting = -math.huge
+                                local max_northing = -math.huge
                                 local min_easting, min_northing, easting, northing, isnorth
                                 local tags = {}
                                 local indexedNodeData = {}
@@ -815,6 +815,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
                                 local sizeX = max_easting - min_easting + 1
                                 local sizeZ = max_northing - min_northing + 1
+                                minetest.chat_send_all("    DEBUG: min_northing = "..min_northing.." max_northing = "..max_northing.." sizeZ = "..sizeZ)
                                 
                                 -- Store everything
                                 openstreetmap.temp.sizeX = sizeX
