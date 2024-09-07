@@ -815,7 +815,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
                                 local sizeX = max_easting - min_easting + 1
                                 local sizeZ = max_northing - min_northing + 1
-                                minetest.chat_send_all("    DEBUG: min_northing = "..min_northing.." max_northing = "..max_northing.." sizeZ = "..sizeZ)
                                 
                                 -- Store everything
                                 openstreetmap.temp.sizeX = sizeX
@@ -1128,15 +1127,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                         if not GroundVoxelMap or not xmin or not ymin or not zmin or not xmax or not ymax or not zmax then
                             return minetest.chat_send_player(player:get_player_name(), minetest.colorize(mc_core.col.log, "[Minetest Classroom] The provided LAS file is not classified so no classroom can be created."))
                         else
-                            minetest.chat_send_all("DEBUG: xmin = "..xmin)
-                            minetest.chat_send_all("DEBUG: xmax = "..xmax)
-                            minetest.chat_send_all("DEBUG: ymin = "..ymin)
-                            minetest.chat_send_all("DEBUG: ymax = "..ymax)
                             -- Below ensures that all voxelMaps have the same dims as the ground
                             LASFile.temp.sizeX = math.ceil(xmax - xmin) + 1
-                            minetest.chat_send_all("DEBUG: LASFile.temp.sizeX = "..LASFile.temp.sizeX)
                             LASFile.temp.sizeY = math.ceil(ymax - ymin) + 1
-                            minetest.chat_send_all("DEBUG: LASFile.temp.sizeY = "..LASFile.temp.sizeY)
                             LASFile.temp.sizeZ = math.max(math.ceil(LASFile.temp.lasheader.MaxZ + 80), 80) -- The height will always be a minimum of 80 nodes or a buffer of 80 nodes above the max Z of the LAS
                             LASFile.temp.minX = xmin
                             LASFile.temp.minY = ymin
@@ -1205,9 +1198,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                             LASFile.temp.BuildingVoxelMap = BuildingVoxelMap
     
                             -- Note here we switch LAS Z and Y for the minetest convention
-                            minetest.chat_send_all("DEBUG: creating realm")
                             new_realm = Realm:New(realm_name or "LAS", { x = LASFile.temp.sizeX, y = LASFile.temp.sizeZ, z = LASFile.temp.sizeY }, false)
-                            minetest.chat_send_all("DEBUG: created realm")
     
                             -- Remove the buffer from the EndPos x,z so that the map fits snuggly in the new realm (add 1 for the barrier)
                             new_realm.EndPos.x = new_realm.StartPos.x + LASFile.temp.sizeX + 1
@@ -1216,7 +1207,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                             new_realm.MetaStorage.emerge = true
     
                             new_realm:CreateGround()
-                            minetest.chat_send_all("DEBUG: created ground")
                             new_realm:CreateBarriersFast()
                             --[[ -- TODO: get the UTM projection information from the header
                             local utmInfo = { zone = 10, utm_is_north = true, easting = LASFile.temp.minX, northing = LASFile.temp.minY }
