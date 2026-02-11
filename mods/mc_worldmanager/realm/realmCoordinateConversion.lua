@@ -87,8 +87,10 @@ function Realm:WorldToLatLongSpace(position)
     end
 
     local position = self:WorldToUTMSpace(position)
-
-    local latlongPosition = Realm.UTMToLatLong(position.x, position.z, utmInfo.zone, utmInfo.utm_is_north)
+    local zone = tonumber(utmInfo.zone) or 0
+    local isNorth = (utmInfo.utm_is_north == true)
+    
+    local latlongPosition = Realm.UTMToLatLong(position.x, position.z, zone, isNorth)
 
     return { x = latlongPosition.latitude, y = position.y, z = latlongPosition.longitude }
 end
