@@ -260,7 +260,7 @@ function mc_mapper.map_handler(player, raw_bounds)
 				realmMapCache.id[pos.x+i][pos.z+j] = c_no
 				realmMapCache.y[pos.x+i][pos.z+j] = k
 				realmMapCache.param2[pos.x+i][pos.z+j] = p2
-				def = registered_nodes[minetest.get_name_from_content_id(c_no)]
+				local def = registered_nodes[minetest.get_name_from_content_id(c_no)]
 				if def and pos.x+i <= realm.EndPos.x and pos.x+i >= realm.StartPos.x and pos.z+j <= realm.EndPos.z and pos.z+j >= realm.StartPos.z then 
 					save_tile(def, mapar, i-bounds.xmin, j-bounds.zmin, k, p2)
 				end
