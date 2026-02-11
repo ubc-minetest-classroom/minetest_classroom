@@ -246,14 +246,14 @@ function mc_student.show_notebook_fs(player, tab)
 							if mapar[i][j].y ~= mapar[i-1][j].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png^[transformR270)" end
 							if mapar[i][j].y ~= mapar[i+1][j].y then mapar[i][j].im = mapar[i][j].im .. "^(mc_mapper_blockb.png^[transformR90)" end
 							table.insert(fs, table.concat({
-								"image[", map_x + 0.15*(i - 1), ",", map_y + 0.15*(bounds.zmax - bounds.zmin - j - 1),
+								"image[", map_x + 0.15*(i -	 1), ",", map_y + 0.15*(bounds.zmax - bounds.zmin - j - 1),
 								";0.15,0.15;", mapar[i][j].im, "]";
 							}))
 						end
 					end
 				end
 
-				local yaw = player:get_look_yaw()
+				local yaw = player:get_look_horizontal()
 				local rotate = 0
 				if yaw ~= nil then
 					-- Find rotation and texture based on yaw.
