@@ -75,8 +75,18 @@ end
 ---@param player ObjectRef to check
 ---@return boolean
 function mc_core.is_frozen(player)
-    local pmeta = player and player:is_player() and player:get_meta()
-	return pmeta and minetest.deserialize(pmeta:get("mc_core:frozen")) or false
+    if not player or not player:is_player() then
+        return false
+    end
+
+    local pmeta = player:get_meta()
+    local frozen_str = pmeta:get("mc_core:frozen")
+
+    if not frozen_str or frozen_str == "" then
+        return false
+    end
+
+    return minetest.deserialize(frozen_str) or false
 end
 
 ---@public
