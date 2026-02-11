@@ -215,8 +215,18 @@ function mc_teacher.end_timeout(player)
 end
 
 function mc_teacher.is_in_timeout(player)
-    local pmeta = player and player:is_player() and player:get_meta()
-	return pmeta and minetest.deserialize(pmeta:get("mc_teacher:timeout")) or false
+    if not player or not player:is_player() then
+        return false
+    end
+
+    local pmeta = player:get_meta()
+    local timeout_str = pmeta:get("mc_teacher:timeout")
+
+    if not timeout_str or timeout_str == "" then
+        return false
+    end
+
+    return minetest.deserialize(timeout_str) or false
 end
 
 function mc_teacher.get_player_tab_groups(player)
